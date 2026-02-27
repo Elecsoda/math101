@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小数图像演示工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            user-select: none;
+            overflow-x: hidden;
+        }
+        canvas {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: block;
+            margin: 0 auto;
+        }
+        .btn-sm {
+            width: 60px;
+            height: 32px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        .btn-sm:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4">
+    <div class="max-w-4xl mx-auto space-y-4">
+        <!-- 顶部导航条 -->
+        <nav class="flex items-center justify-between px-2 py-1">
+            <a href="https://math101.yumath.com" class="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors group">
+                <div class="p-2 bg-white rounded-lg shadow-sm border border-slate-200 group-hover:border-blue-200 group-hover:bg-blue-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <span class="text-sm font-bold tracking-wide">MATH101 主页</span>
+            </a>
+            <div class="text-slate-400 text-xs font-bold uppercase tracking-widest hidden md:block">
+                小数面积实验室 · 嵌套演示
+            </div>
+        </nav>
+
+        <!-- 控制面板 -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <input type="number" id="valInput" value="1.26" step="0.0001" min="0" max="10" 
+                           class="text-3xl font-mono font-bold text-blue-600 bg-slate-50 border-b-2 border-blue-400 focus:border-blue-600 outline-none w-40 text-center rounded-t-lg">
+                    <div class="flex flex-col text-xs text-slate-400 font-bold">
+                        <span id="zoomStatusText">点击下方方块可放大观察</span>
+                        <button id="backBtn" onclick="toggleZoom(-1)" class="hidden text-blue-600 hover:underline">← 返回全局视图</button>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <div class="grid grid-cols-5 gap-1">
+                        <!-- 第一行：加数 -->
+                        <button onclick="change(1)" class="btn-sm bg-slate-700 text-white">+1.0</button>
+                        <button onclick="change(0.1)" class="btn-sm bg-orange-500 text-white">+0.1</button>
+                        <button onclick="change(0.01)" class="btn-sm bg-green-600 text-white">+0.01</button>
+                        <button onclick="change(0.001)" class="btn-sm bg-blue-600 text-white">+0.001</button>
+                        <button onclick="change(0.0001)" class="btn-sm bg-indigo-600 text-white">+0.0001</button>
+                        <!-- 第二行：减数 -->
+                        <button onclick="change(-1)" class="btn-sm bg-slate-100 text-slate-400 border border-slate-200">-1.0</button>
+                        <button onclick="change(-0.1)" class="btn-sm bg-orange-50 text-orange-400 border border-orange-100">-0.1</button>
+                        <button onclick="change(-0.01)" class="btn-sm bg-green-50 text-green-400 border border-green-100">-0.01</button>
+                        <button onclick="change(-0.001)" class="btn-sm bg-blue-50 text-blue-400 border border-blue-100">-0.001</button>
+                        <button onclick="change(-0.0001)" class="btn-sm bg-indigo-50 text-indigo-400 border border-indigo-100">-0.0001</button>
+                    </div>
+                    <button onclick="reset()" class="px-3 h-[68px] bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-100">重置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图形区域 -->
+        <div class="relative w-full flex justify-center">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <!-- 底部图例 -->
+        <div class="flex flex-wrap justify-center gap-4 md:gap-8 text-[10px] md:text-xs font-bold uppercase tracking-wider">
+            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-200 border border-slate-400"></div><span class="text-slate-500">1 (个)</span></div>
+            <div class="flex items-center gap-1"><div class="w-1.5 h-3 bg-orange-200 border border-orange-400"></div><span class="text-orange-500">0.1 (分)</span></div>
+            <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 bg-green-200 border border-green-400"></div><span class="text-green-500">0.01 (厘)</span></div>
+            <div class="flex items-center gap-1"><div class="w-0.5 h-1.5 bg-blue-400"></div><span class="text-blue-500">0.001 (毫)</span></div>
+            <div class="flex items-center gap-1"><div class="w-1 h-0.5 bg-indigo-600"></div><span class="text-indigo-600">0.0001 (丝)</span></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const valInput = document.getElementById('valInput');
+        const backBtn = document.getElementById('backBtn');
+        const zoomStatusText = document.getElementById('zoomStatusText');
+
+        let dpr = window.devicePixelRatio || 1;
+        const GRID_COLS = 5;
+        let zoomIndex = -1; 
+
+        function resize() {
+            const containerWidth = canvas.parentElement.clientWidth;
+            if (zoomIndex === -1) {
+                const padding = 20;
+                const size = (containerWidth - (GRID_COLS + 1) * padding) / GRID_COLS;
+                const canvasHeight = padding * 3 + size * 2;
+                canvas.width = containerWidth * dpr;
+                canvas.height = canvasHeight * dpr;
+                canvas.style.width = containerWidth + 'px';
+                canvas.style.height = canvasHeight + 'px';
+            } else {
+                const size = Math.min(containerWidth, 600);
+                canvas.width = size * dpr;
+                canvas.height = size * dpr;
+                canvas.style.width = size + 'px';
+                canvas.style.height = size + 'px';
+            }
+            ctx.scale(dpr, dpr);
+            render();
+        }
+
+        function drawSquare(index, value, x, y, size, isDetailed) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x, y, size, size);
+            
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1;
+            const step = size / 10;
+            for (let i = 0; i <= 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x + i * step, y); ctx.lineTo(x + i * step, y + size);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y + i * step); ctx.lineTo(x + size, y + i * step);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = zoomIndex === index ? '#3b82f6' : '#cbd5e1';
+            ctx.lineWidth = zoomIndex === index ? 3 : 1;
+            ctx.strokeRect(x, y, size, size);
+
+            if (value <= 0) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px Inter';
+                ctx.fillText(`${index + 1}`, x + 5, y + 12);
+                return;
+            }
+
+            const totalMicro = Math.round(value * 10000);
+            const d1 = Math.floor(totalMicro / 1000);        
+            const d2 = Math.floor((totalMicro % 1000) / 100); 
+            const d3 = Math.floor((totalMicro % 100) / 10);   
+            const d4 = totalMicro % 10;                       
+
+            if (totalMicro >= 10000) {
+                ctx.fillStyle = 'rgba(203, 213, 225, 0.5)';
+                ctx.fillRect(x, y, size, size);
+            } else {
+                ctx.fillStyle = 'rgba(249, 115, 22, 0.3)';
+                ctx.fillRect(x, y, d1 * step, size);
+                
+                const bx = x + d1 * step;
+                ctx.fillStyle = 'rgba(22, 163, 74, 0.3)';
+                ctx.fillRect(bx, y, step, d2 * step);
+
+                const cx = bx;
+                const cy = y + d2 * step;
+                const miniStep = step / 10;
+
+                if (isDetailed) {
+                    ctx.strokeStyle = 'rgba(37, 99, 235, 0.2)';
+                    ctx.lineWidth = 1;
+                    for (let m = 1; m < 10; m++) {
+                        ctx.beginPath();
+                        ctx.moveTo(cx + m * miniStep, cy);
+                        ctx.lineTo(cx + m * miniStep, cy + step);
+                        ctx.stroke();
+                    }
+                }
+
+                if (d3 > 0 || d4 > 0) {
+                    ctx.fillStyle = 'rgba(37, 99, 235, 0.6)';
+                    ctx.fillRect(cx, cy, d3 * miniStep, step);
+
+                    if (d4 > 0) {
+                        const dx = cx + d3 * miniStep;
+                        const dy = cy;
+                        
+                        if (isDetailed) {
+                            ctx.strokeStyle = 'rgba(79, 70, 229, 0.3)';
+                            ctx.lineWidth = 0.5;
+                            for (let n = 1; n < 10; n++) {
+                                ctx.beginPath();
+                                ctx.moveTo(dx, dy + n * miniStep);
+                                ctx.lineTo(dx + miniStep, dy + n * miniStep);
+                                ctx.stroke();
+                            }
+                        }
+                        ctx.fillStyle = '#4f46e5';
+                        ctx.fillRect(dx, dy, miniStep, d4 * miniStep);
+                    }
+                }
+            }
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = isDetailed ? 'bold 16px Inter' : '10px Inter';
+            ctx.fillText(isDetailed ? `方块 [${index + 1}]` : `${index + 1}`, x + 5, y + (isDetailed ? 25 : 12));
+        }
+
+        function render() {
+            const w = canvas.width / dpr;
+            const h = canvas.height / dpr;
+            ctx.clearRect(0, 0, w, h);
+
+            let totalValue = Math.round(parseFloat(valInput.value) * 10000) / 10000;
+            totalValue = Math.max(0, Math.min(10, totalValue));
+
+            if (zoomIndex === -1) {
+                const padding = 20;
+                const size = (w - (GRID_COLS + 1) * padding) / GRID_COLS;
+                for (let i = 0; i < 10; i++) {
+                    const col = i % GRID_COLS;
+                    const row = Math.floor(i / GRID_COLS);
+                    const x = padding + col * (size + padding);
+                    const y = padding + row * (size + padding);
+                    let drawVal = (totalValue >= 1) ? 1 : Math.max(0, totalValue);
+                    totalValue = Math.max(0, totalValue - 1);
+                    drawSquare(i, drawVal, x, y, size, false);
+                }
+                backBtn.classList.add('hidden');
+                zoomStatusText.classList.remove('hidden');
+            } else {
+                const size = Math.min(w, h) - 40;
+                const x = (w - size) / 2;
+                const y = (h - size) / 2;
+                let targetValue = 0;
+                if (totalValue >= zoomIndex + 1) targetValue = 1;
+                else if (totalValue > zoomIndex) targetValue = totalValue - zoomIndex;
+                drawSquare(zoomIndex, targetValue, x, y, size, true);
+                backBtn.classList.remove('hidden');
+                zoomStatusText.classList.add('hidden');
+            }
+        }
+
+        function toggleZoom(index) {
+            zoomIndex = index;
+            resize();
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (zoomIndex !== -1) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / dpr / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / dpr / rect.height);
+            const padding = 20;
+            const size = (canvas.width / dpr - (GRID_COLS + 1) * padding) / GRID_COLS;
+            for (let i = 0; i < 10; i++) {
+                const col = i % GRID_COLS;
+                const row = Math.floor(i / GRID_COLS);
+                const bx = padding + col * (size + padding);
+                const by = padding + row * (size + padding);
+                if (x >= bx && x <= bx + size && y >= by && y <= by + size) {
+                    toggleZoom(i);
+                    break;
+                }
+            }
+        });
+
+        function change(step) {
+            let v = parseFloat(valInput.value) || 0;
+            v = Math.round((v + step) * 10000) / 10000;
+            valInput.value = Math.max(0, Math.min(10, v));
+            render();
+        }
+
+        function reset() {
+            valInput.value = "1.26";
+            zoomIndex = -1;
+            resize();
+        }
+
+        valInput.addEventListener('input', render);
+        window.addEventListener('resize', resize);
+        window.addEventListener('load', resize);
+    </script>
+</body>
+</html>

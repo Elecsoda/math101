@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学数学运算可视化教学工具</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .grid-bg-main { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.3s ease; }
+        /* 针对模块3渲染的动态内容自定义样式 */
+        .step-text { color: #374151; }
+        .step-text .b { color: #2563eb; font-weight: 700; } /* 蓝色 */
+        .step-text .g { color: #16a34a; font-weight: 700; } /* 绿色 */
+        .step-text .y { color: #ca8a04; font-weight: 700; } /* 黄色 */
+        .step-text .r { color: #ef4444; font-weight: 700; } /* 红色 */
+        .step-text .p { color: #4338ca; font-weight: 700; } /* 紫色 */
+        .step-text .note { color: #6b7280; font-size: 0.875rem; margin-left: 1rem; font-weight: normal; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- 模块 1: 乘法面积模型 ---
+        const AreaModel = () => {
+            const [num1, setNum1] = useState(14);
+            const [num2, setNum2] = useState(12);
+            const [showGrid, setShowGrid] = useState(true);
+            const CELL_SIZE = 22;
+
+            const handleNum1Change = (e) => setNum1(Math.max(10, Math.min(40, Number(e.target.value))));
+            const handleNum2Change = (e) => setNum2(Math.max(10, Math.min(40, Number(e.target.value))));
+
+            const tens1 = Math.floor(num1 / 10) * 10;
+            const ones1 = num1 % 10;
+            const tens2 = Math.floor(num2 / 10) * 10;
+            const ones2 = num2 % 10;
+
+            const area1 = tens1 * tens2;
+            const area2 = ones1 * tens2;
+            const area3 = tens1 * ones2;
+            const area4 = ones1 * ones2;
+            const totalArea = area1 + area2 + area3 + area4;
+
+            const getGridStyle = () => {
+                if (!showGrid) return {};
+                return {
+                    backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.15) 1px, transparent 1px)`,
+                    backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`,
+                    backgroundPosition: '-1px -1px'
+                };
+            };
+
+            return (
+                <div className="flex flex-col items-center w-full fade-in">
+                    <h2 className="text-2xl font-bold mb-6 text-gray-800">第一节：乘法面积模型与分配律</h2>
+                    
+                    <div className="flex gap-6 mb-8 bg-white p-4 rounded-lg shadow items-center">
+                        <div className="flex items-center gap-2">
+                            <label className="font-semibold text-lg">长度 (10-40):</label>
+                            <input type="number" value={num1} onChange={handleNum1Change} className="border-2 border-blue-300 rounded p-2 w-20 text-center text-lg" />
+                        </div>
+                        <div className="flex items-center gap-2 text-xl font-bold">×</div>
+                        <div className="flex items-center gap-2">
+                            <label className="font-semibold text-lg">宽度 (10-40):</label>
+                            <input type="number" value={num2} onChange={handleNum2Change} className="border-2 border-green-300 rounded p-2 w-20 text-center text-lg" />
+                        </div>
+                        <div className="border-l-2 pl-6 ml-2 flex items-center">
+                            <label className="flex items-center cursor-pointer gap-2 font-bold text-gray-700">
+                                <input 
+                                    type="checkbox" 
+                                    checked={showGrid} 
+                                    onChange={(e) => setShowGrid(e.target.checked)} 
+                                    className="w-5 h-5 accent-indigo-600"
+                                />
+                                显示网格线
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-4xl bg-white shadow-xl rounded-lg p-8 grid-bg-main flex flex-col items-center justify-center overflow-auto min-h-[500px]">
+                        <div className="flex">
+                            <div className="flex flex-col mr-2 font-bold text-gray-600 w-8 text-right">
+                                <div style={{ height: `${tens2 * CELL_SIZE}px` }} className="flex items-center justify-end">{tens2}</div>
+                                {ones2 > 0 && <div style={{ height: `${ones2 * CELL_SIZE}px` }} className="flex items-center justify-end">{ones2}</div>}
+                            </div>
+                            
+                            <div className="flex flex-col">
+                                <div className="flex mb-2 font-bold text-gray-600 h-8">
+                                    <div style={{ width: `${tens1 * CELL_SIZE}px` }} className="flex items-center justify-center">{tens1}</div>
+                                    {ones1 > 0 && <div style={{ width: `${ones1 * CELL_SIZE}px` }} className="flex items-center justify-center">{ones1}</div>}
+                                </div>
+                                
+                                <div className="border-4 border-gray-800 flex flex-col bg-white w-max">
+                                    <div className="flex" style={{ height: `${tens2 * CELL_SIZE}px` }}>
+                                        <div style={{ width: `${tens1 * CELL_SIZE}px`, backgroundColor: '#bfdbfe', ...getGridStyle() }} className="border border-gray-400 flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer relative overflow-hidden">
+                                            <div className="bg-white/70 px-2 py-1 rounded text-center backdrop-blur-sm pointer-events-none z-10">
+                                                <span className="text-sm text-gray-800 block">{tens1} × {tens2}</span>
+                                                <span className="text-xl font-bold text-blue-900">{area1}</span>
+                                            </div>
+                                        </div>
+                                        {ones1 > 0 && (
+                                            <div style={{ width: `${ones1 * CELL_SIZE}px`, backgroundColor: '#bbf7d0', ...getGridStyle() }} className="border border-gray-400 flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer relative overflow-hidden">
+                                                <div className="bg-white/70 px-2 py-1 rounded text-center backdrop-blur-sm pointer-events-none z-10">
+                                                    <span className="text-xs text-gray-800 block">{ones1} × {tens2}</span>
+                                                    <span className="text-lg font-bold text-green-900">{area2}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {ones2 > 0 && (
+                                        <div className="flex" style={{ height: `${ones2 * CELL_SIZE}px` }}>
+                                            <div style={{ width: `${tens1 * CELL_SIZE}px`, backgroundColor: '#fef08a', ...getGridStyle() }} className="border border-gray-400 flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer relative overflow-hidden">
+                                                <div className="bg-white/70 px-2 py-1 rounded text-center backdrop-blur-sm pointer-events-none z-10">
+                                                    <span className="text-xs text-gray-800 block">{tens1} × {ones2}</span>
+                                                    <span className="text-lg font-bold text-yellow-900">{area3}</span>
+                                                </div>
+                                            </div>
+                                            {ones1 > 0 && (
+                                                <div style={{ width: `${ones1 * CELL_SIZE}px`, backgroundColor: '#fbcfe8', ...getGridStyle() }} className="border border-gray-400 flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer relative overflow-hidden">
+                                                    <div className="bg-white/70 px-1 py-1 rounded text-center backdrop-blur-sm pointer-events-none z-10">
+                                                        <span className="text-xs font-bold text-pink-900">{area4}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 flex gap-6 w-full max-w-4xl text-lg">
+                        <div className="flex-1 bg-white p-6 rounded-lg shadow-lg font-mono bg-gray-50">
+                            <h3 className="font-bold text-gray-700 mb-3 border-b pb-2">面积拆分过程</h3>
+                            <p>{num1} × {num2}</p>
+                            <p className="text-gray-500">= ({tens1} + {ones1}) × ({tens2} + {ones2})</p>
+                            <p className="text-gray-500">= ({tens1} × {tens2}) + ({ones1} × {tens2}) + ({tens1} × {ones2}) + ({ones1} × {ones2})</p>
+                            <p className="text-gray-500">= <span className="text-blue-600">{area1}</span> + <span className="text-green-600">{area2}</span> + <span className="text-yellow-600">{area3}</span> + <span className="text-pink-600">{area4}</span></p>
+                            <p className="font-bold text-2xl mt-2 border-t pt-2">= {totalArea}</p>
+                        </div>
+
+                        <div className="flex-1 bg-blue-50 p-6 rounded-lg shadow-lg border-l-4 border-blue-500 font-mono">
+                            <h3 className="font-bold text-gray-700 mb-3 border-b border-blue-200 pb-2">竖式对应计算</h3>
+                            <p>{num1} × {num2}</p>
+                            <p className="text-gray-600">
+                                = {num1} × {ones2} <span className="text-sm text-gray-400 ml-2">(先算个位: {num1} × {ones2})</span>
+                            </p>
+                            <p className="text-gray-600">
+                                &nbsp;&nbsp;+ {num1} × {tens2} <span className="text-sm text-gray-400 ml-2">(再算十位: {num1} × {tens2})</span>
+                            </p>
+                            <p className="text-gray-600 mt-2">
+                                = <span className="text-yellow-600 font-bold">{num1 * ones2}</span> + <span className="text-blue-600 font-bold">{num1 * tens2}</span>
+                            </p>
+                            <p className="font-bold text-2xl mt-2 border-t border-blue-200 pt-2 text-blue-900">= {totalArea}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 模块 2: 除法的双重意义 ---
+        const DivisionModel = () => {
+            const [total, setTotal] = useState(24);
+            const [divisor, setDivisor] = useState(4);
+            const [mode, setMode] = useState('sharing');
+            const [step, setStep] = useState(0);
+
+            const totalOptions = [12, 15, 16, 18, 20, 24, 30, 36, 40, 48, 60];
+            
+            const divisors = useMemo(() => {
+                const divs = [];
+                for (let i = 2; i <= total / 2; i++) {
+                    if (total % i === 0) divs.push(i);
+                }
+                return divs;
+            }, [total]);
+
+            useEffect(() => {
+                if (!divisors.includes(divisor)) {
+                    setDivisor(divisors[0] || 2);
+                }
+                setStep(0);
+            }, [total, divisors]);
+
+            useEffect(() => {
+                setStep(0);
+            }, [mode, divisor]);
+
+            const result = Math.floor(total / divisor);
+            const unallocatedCount = total - (step * divisor);
+
+            const handleNextStep = () => {
+                if (step < result) setStep(step + 1);
+            };
+
+            const handleReset = () => setStep(0);
+            const handleFinish = () => setStep(result);
+
+            return (
+                <div className="flex flex-col items-center w-full fade-in">
+                    <h2 className="text-2xl font-bold mb-6 text-gray-800">第二节：除法的分配意义</h2>
+                    
+                    <div className="flex gap-4 mb-6 bg-white p-4 rounded-lg shadow items-center w-full max-w-4xl justify-between">
+                        <div className="flex items-center gap-4">
+                            <label className="font-semibold text-gray-700">总数:</label>
+                            <select value={total} onChange={(e) => setTotal(Number(e.target.value))} className="border-2 border-gray-300 p-2 rounded focus:border-indigo-500 font-bold text-lg">
+                                {totalOptions.map(num => <option key={num} value={num}>{num}</option>)}
+                            </select>
+                            
+                            <label className="font-semibold text-gray-700 ml-4">除数 (能整除):</label>
+                            <select value={divisor} onChange={(e) => setDivisor(Number(e.target.value))} className="border-2 border-gray-300 p-2 rounded focus:border-indigo-500 font-bold text-lg">
+                                {divisors.map(num => <option key={num} value={num}>{num}</option>)}
+                            </select>
+                        </div>
+                        
+                        <div className="flex bg-gray-200 rounded-lg p-1">
+                            <button 
+                                className={`px-4 py-2 rounded-md font-bold transition-colors ${mode === 'sharing' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => setMode('sharing')}
+                            >
+                                等分除 (平均分)
+                            </button>
+                            <button 
+                                className={`px-4 py-2 rounded-md font-bold transition-colors ${mode === 'grouping' ? 'bg-white shadow text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => setMode('grouping')}
+                            >
+                                包含除 (按量装盒)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white w-full max-w-4xl p-6 rounded-lg shadow-lg flex flex-col items-center min-h-[500px]">
+                        <div className="text-xl mb-4 text-center font-medium h-16 text-gray-800">
+                            {mode === 'sharing' ? 
+                                `将 ${total} 个苹果平均分给 ${divisor} 个人，每人分到多少个？` : 
+                                `有 ${total} 个苹果，每 ${divisor} 个装一盒，可以装多少盒？`}
+                            <br/>
+                            <span className="font-bold text-2xl text-indigo-600 mt-2 inline-block bg-indigo-50 px-4 py-1 rounded">算式: {total} ÷ {divisor} = {result}</span>
+                        </div>
+
+                        <div className="flex gap-4 mb-6 border-b pb-4 w-full justify-center">
+                            <button onClick={handleReset} disabled={step === 0} className="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 disabled:opacity-50">重新分配</button>
+                            <button onClick={handleNextStep} disabled={step === result} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded shadow hover:bg-indigo-700 disabled:opacity-50">
+                                下一步 ({step}/{result})
+                            </button>
+                            <button onClick={handleFinish} disabled={step === result} className="px-4 py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 disabled:opacity-50">直接分完</button>
+                        </div>
+
+                        <div className="w-full bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-4 mb-8 min-h-[100px]">
+                            <h4 className="text-sm font-bold text-gray-500 mb-3">待分配苹果 (剩余: {unallocatedCount})</h4>
+                            <div className="flex flex-wrap gap-2 items-center">
+                                {Array.from({ length: total }).map((_, i) => {
+                                    const isAllocated = i < step * divisor;
+                                    const isNext = step < result && i >= step * divisor && i < (step + 1) * divisor;
+
+                                    if (isAllocated) {
+                                        return <div key={i} className="w-5 h-5 rounded-full border border-gray-200 bg-gray-100 opacity-20"></div>;
+                                    }
+                                    if (isNext) {
+                                        return (
+                                            <div key={i} className="w-5 h-5 rounded-full bg-red-500 shadow-md border border-red-700 ring-4 ring-yellow-400 ring-offset-1 animate-pulse relative z-10 transition-all"></div>
+                                        );
+                                    }
+                                    return <div key={i} className="w-5 h-5 rounded-full bg-red-500 shadow-sm border border-red-700 transition-all"></div>;
+                                })}
+                            </div>
+                        </div>
+
+                        {mode === 'sharing' && (
+                            <div className="flex flex-wrap justify-center gap-6 w-full fade-in">
+                                {Array.from({ length: divisor }).map((_, groupIdx) => (
+                                    <div key={groupIdx} className="border-4 border-blue-400 rounded-xl p-4 min-w-[120px] min-h-[140px] flex flex-col items-center gap-2 bg-blue-50 relative pt-6 smooth-transition">
+                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow">
+                                            学生 {groupIdx + 1}
+                                        </div>
+                                        <div className="text-gray-600 font-bold mb-1">已得: {step}</div>
+                                        <div className="flex flex-wrap justify-center gap-2 w-full">
+                                            {Array.from({ length: step }).map((_, i) => (
+                                                <div key={i} className="w-5 h-5 rounded-full bg-red-500 shadow-sm border border-red-700 fade-in"></div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {mode === 'grouping' && (
+                            <div className="flex flex-wrap justify-center gap-4 w-full fade-in">
+                                {Array.from({ length: result }).map((_, boxIdx) => {
+                                    const isFilled = boxIdx < step;
+                                    return (
+                                        <div key={boxIdx} className={`border-2 rounded-lg p-4 min-w-[140px] min-h-[120px] flex flex-col items-center gap-2 relative pt-8 smooth-transition ${isFilled ? 'border-green-600 bg-green-50 border-solid' : 'border-gray-400 bg-gray-50 border-dashed opacity-60'}`}>
+                                            <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded text-xs font-bold ${isFilled ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                                                盒子 {boxIdx + 1}
+                                            </div>
+                                            {isFilled ? (
+                                                <div className="flex flex-wrap justify-center gap-2 w-full fade-in">
+                                                    {Array.from({ length: divisor }).map((_, i) => (
+                                                        <div key={i} className="w-5 h-5 rounded-full bg-red-500 shadow-sm border border-red-700"></div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-gray-400 text-sm mt-4">空盒 (需{divisor}个)</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 模块 3: 数字拆分与巧算 (重构为题库版) ---
+        const StrategyModel = () => {
+            // 使用简化的标记语言来渲染样式: 
+            // [b:文字] -> 蓝色, [g:文字] -> 绿色, [y:文字] -> 黄色, [r:文字] -> 红色, [p:文字] -> 紫色, #注:文字# -> 注释
+            const parseStep = (text) => {
+                let html = text
+                    .replace(/\[b:(.*?)\]/g, '<span class="b">$1</span>')
+                    .replace(/\[g:(.*?)\]/g, '<span class="g">$1</span>')
+                    .replace(/\[y:(.*?)\]/g, '<span class="y">$1</span>')
+                    .replace(/\[r:(.*?)\]/g, '<span class="r">$1</span>')
+                    .replace(/\[p:(.*?)\]/g, '<span class="p">$1</span>')
+                    .replace(/#注:(.*?)#/g, '<span class="note">← $1</span>');
+                return { __html: html };
+            };
+
+            const strategyData = [
+                {
+                    id: 's1',
+                    title: "乘法凑整 (连乘拆分)",
+                    desc: "寻找 25 和 125 的好朋友（4 和 8），通过拆分凑成整百整千。",
+                    problems: [
+                        { q: "125 × 32", steps: ["125 × [b:32]", "125 × [b:(8 × 4)] #注:拆解：找125的朋友8#", "[g:(125 × 8)] × 4 #注:结合：优先计算#", "[g:1000] × 4 #注:产生整千数#", "[p:4000]"] },
+                        { q: "25 × 16", steps: ["25 × [b:16]", "25 × [b:(4 × 4)] #注:拆解：找25的朋友4#", "[g:(25 × 4)] × 4 #注:结合：优先计算#", "[g:100] × 4 #注:产生整百数#", "[p:400]"] },
+                        { q: "125 × 24", steps: ["125 × [b:24]", "125 × [b:(8 × 3)] #注:拆解：找125的朋友8#", "[g:(125 × 8)] × 3 #注:结合：优先计算#", "[g:1000] × 3 #注:产生整千数#", "[p:3000]"] },
+                        { q: "25 × 28", steps: ["25 × [b:28]", "25 × [b:(4 × 7)] #注:拆解：找25的朋友4#", "[g:(25 × 4)] × 7 #注:结合：优先计算#", "[g:100] × 7 #注:产生整百数#", "[p:700]"] },
+                        { q: "125 × 48", steps: ["125 × [b:48]", "125 × [b:(8 × 6)] #注:拆解：找125的朋友8#", "[g:(125 × 8)] × 6 #注:结合：优先计算#", "[g:1000] × 6 #注:产生整千数#", "[p:6000]"] },
+                        { q: "25 × 36", steps: ["25 × [b:36]", "25 × [b:(4 × 9)] #注:拆解：找25的朋友4#", "[g:(25 × 4)] × 9 #注:结合：优先计算#", "[g:100] × 9 #注:产生整百数#", "[p:900]"] },
+                        { q: "125 × 72", steps: ["125 × [b:72]", "125 × [b:(8 × 9)] #注:拆解：找125的朋友8#", "[g:(125 × 8)] × 9 #注:结合：优先计算#", "[g:1000] × 9 #注:产生整千数#", "[p:9000]"] },
+                        { q: "25 × 44", steps: ["25 × [b:44]", "25 × [b:(4 × 11)] #注:拆解：找25的朋友4#", "[g:(25 × 4)] × 11 #注:结合：优先计算#", "[g:100] × 11 #注:产生整百数#", "[p:1100]"] },
+                        { q: "125 × 64", steps: ["125 × [b:64]", "125 × [b:(8 × 8)] #注:拆解：找125的朋友8#", "[g:(125 × 8)] × 8 #注:结合：优先计算#", "[g:1000] × 8 #注:产生整千数#", "[p:8000]"] },
+                        { q: "25 × 12", steps: ["25 × [b:12]", "25 × [b:(4 × 3)] #注:拆解：找25的朋友4#", "[g:(25 × 4)] × 3 #注:结合：优先计算#", "[g:100] × 3 #注:产生整百数#", "[p:300]"] }
+                    ]
+                },
+                {
+                    id: 's2',
+                    title: "乘法分配 (加减法拆解)",
+                    desc: "将接近整百、整十的数拆分为 100+a 或 100-a，再利用乘法分配律。",
+                    problems: [
+                        { q: "102 × 45", steps: ["[b:102] × 45", "[b:(100 + 2)] × 45 #注:拆解：把102变成100+2#", "[g:100 × 45] + [y:2 × 45] #注:分配：分别相乘#", "[g:4500] + [y:90] #注:分别计算#", "[p:4590]"] },
+                        { q: "99 × 36", steps: ["[b:99] × 36", "[b:(100 - 1)] × 36 #注:拆解：把99变成100-1#", "[g:100 × 36] - [y:1 × 36] #注:分配：分别相乘#", "[g:3600] - [y:36] #注:分别计算#", "[p:3564]"] },
+                        { q: "101 × 73", steps: ["[b:101] × 73", "[b:(100 + 1)] × 73 #注:拆解：把101变成100+1#", "[g:100 × 73] + [y:1 × 73] #注:分配：分别相乘#", "[g:7300] + [y:73] #注:分别计算#", "[p:7373]"] },
+                        { q: "98 × 25", steps: ["[b:98] × 25", "[b:(100 - 2)] × 25 #注:拆解：把98变成100-2#", "[g:100 × 25] - [y:2 × 25] #注:分配：分别相乘#", "[g:2500] - [y:50] #注:分别计算#", "[p:2450]"] },
+                        { q: "103 × 15", steps: ["[b:103] × 15", "[b:(100 + 3)] × 15 #注:拆解：把103变成100+3#", "[g:100 × 15] + [y:3 × 15] #注:分配：分别相乘#", "[g:1500] + [y:45] #注:分别计算#", "[p:1545]"] },
+                        { q: "99 × 84", steps: ["[b:99] × 84", "[b:(100 - 1)] × 84 #注:拆解：把99变成100-1#", "[g:100 × 84] - [y:1 × 84] #注:分配：分别相乘#", "[g:8400] - [y:84] #注:分别计算#", "[p:8316]"] },
+                        { q: "102 × 31", steps: ["[b:102] × 31", "[b:(100 + 2)] × 31 #注:拆解：把102变成100+2#", "[g:100 × 31] + [y:2 × 31] #注:分配：分别相乘#", "[g:3100] + [y:62] #注:分别计算#", "[p:3162]"] },
+                        { q: "97 × 12", steps: ["[b:97] × 12", "[b:(100 - 3)] × 12 #注:拆解：把97变成100-3#", "[g:100 × 12] - [y:3 × 12] #注:分配：分别相乘#", "[g:1200] - [y:36] #注:分别计算#", "[p:1164]"] },
+                        { q: "101 × 99", steps: ["[b:101] × 99", "[b:(100 + 1)] × 99 #注:拆解：把101变成100+1#", "[g:100 × 99] + [y:1 × 99] #注:分配：分别相乘#", "[g:9900] + [y:99] #注:分别计算#", "[p:9999]"] },
+                        { q: "105 × 24", steps: ["[b:105] × 24", "[b:(100 + 5)] × 24 #注:拆解：把105变成100+5#", "[g:100 × 24] + [y:5 × 24] #注:分配：分别相乘#", "[g:2400] + [y:120] #注:分别计算#", "[p:2520]"] }
+                    ]
+                },
+                {
+                    id: 's3',
+                    title: "除法连除性质 (除数拆解)",
+                    desc: "连续除以两个数等于除以它们的积，将大除数拆成两个小除数便于口算。",
+                    problems: [
+                        { q: "360 ÷ 24", steps: ["360 ÷ [b:24]", "360 ÷ [b:(6 × 4)] #注:拆解：将除数分解#", "[g:360 ÷ 6] ÷ 4 #注:性质：转化为连除#", "[g:60] ÷ 4", "[p:15]"] },
+                        { q: "420 ÷ 14", steps: ["420 ÷ [b:14]", "420 ÷ [b:(7 × 2)] #注:拆解：将除数分解#", "[g:420 ÷ 7] ÷ 2 #注:性质：转化为连除#", "[g:60] ÷ 2", "[p:30]"] },
+                        { q: "540 ÷ 36", steps: ["540 ÷ [b:36]", "540 ÷ [b:(9 × 4)] #注:拆解：将除数分解#", "[g:540 ÷ 9] ÷ 4 #注:性质：转化为连除#", "[g:60] ÷ 4", "[p:15]"] },
+                        { q: "810 ÷ 45", steps: ["810 ÷ [b:45]", "810 ÷ [b:(9 × 5)] #注:拆解：将除数分解#", "[g:810 ÷ 9] ÷ 5 #注:性质：转化为连除#", "[g:90] ÷ 5", "[p:18]"] },
+                        { q: "720 ÷ 48", steps: ["720 ÷ [b:48]", "720 ÷ [b:(8 × 6)] #注:拆解：将除数分解#", "[g:720 ÷ 8] ÷ 6 #注:性质：转化为连除#", "[g:90] ÷ 6", "[p:15]"] },
+                        { q: "640 ÷ 32", steps: ["640 ÷ [b:32]", "640 ÷ [b:(8 × 4)] #注:拆解：将除数分解#", "[g:640 ÷ 8] ÷ 4 #注:性质：转化为连除#", "[g:80] ÷ 4", "[p:20]"] },
+                        { q: "560 ÷ 28", steps: ["560 ÷ [b:28]", "560 ÷ [b:(7 × 4)] #注:拆解：将除数分解#", "[g:560 ÷ 7] ÷ 4 #注:性质：转化为连除#", "[g:80] ÷ 4", "[p:20]"] },
+                        { q: "480 ÷ 16", steps: ["480 ÷ [b:16]", "480 ÷ [b:(8 × 2)] #注:拆解：将除数分解#", "[g:480 ÷ 8] ÷ 2 #注:性质：转化为连除#", "[g:60] ÷ 2", "[p:30]"] },
+                        { q: "900 ÷ 36", steps: ["900 ÷ [b:36]", "900 ÷ [b:(9 × 4)] #注:拆解：将除数分解#", "[g:900 ÷ 9] ÷ 4 #注:性质：转化为连除#", "[g:100] ÷ 4", "[p:25]"] },
+                        { q: "1000 ÷ 25", steps: ["1000 ÷ [b:25]", "1000 ÷ [b:(5 × 5)] #注:拆解：将除数分解#", "[g:1000 ÷ 5] ÷ 5 #注:性质：转化为连除#", "[g:200] ÷ 5", "[p:40]"] }
+                    ]
+                },
+                {
+                    id: 's4',
+                    title: "商不变性质 (同乘凑整)",
+                    desc: "被除数和除数同时乘相同的数（0除外），商不变。把除数凑成 100 或 1000。",
+                    problems: [
+                        { q: "450 ÷ 25", steps: ["450 ÷ [b:25]", "(450 [r:× 4]) ÷ (25 [r:× 4]) #注:凑整：同时乘4把除数凑成100#", "[g:1800] ÷ [b:100] #注:除数变为整百数#", "[p:18]"] },
+                        { q: "120 ÷ 5", steps: ["120 ÷ [b:5]", "(120 [r:× 2]) ÷ (5 [r:× 2]) #注:凑整：同时乘2把除数凑成10#", "[g:240] ÷ [b:10] #注:除数变为整十数#", "[p:24]"] },
+                        { q: "350 ÷ 25", steps: ["350 ÷ [b:25]", "(350 [r:× 4]) ÷ (25 [r:× 4]) #注:凑整：同时乘4把除数凑成100#", "[g:1400] ÷ [b:100] #注:除数变为整百数#", "[p:14]"] },
+                        { q: "800 ÷ 125", steps: ["800 ÷ [b:125]", "(800 [r:× 8]) ÷ (125 [r:× 8]) #注:凑整：同时乘8把除数凑成1000#", "[g:6400] ÷ [b:1000] #注:除数变为整千数#", "[p:6.4]"] },
+                        { q: "600 ÷ 25", steps: ["600 ÷ [b:25]", "(600 [r:× 4]) ÷ (25 [r:× 4]) #注:凑整：同时乘4把除数凑成100#", "[g:2400] ÷ [b:100] #注:除数变为整百数#", "[p:24]"] },
+                        { q: "240 ÷ 5", steps: ["240 ÷ [b:5]", "(240 [r:× 2]) ÷ (5 [r:× 2]) #注:凑整：同时乘2把除数凑成10#", "[g:480] ÷ [b:10] #注:除数变为整十数#", "[p:48]"] },
+                        { q: "900 ÷ 25", steps: ["900 ÷ [b:25]", "(900 [r:× 4]) ÷ (25 [r:× 4]) #注:凑整：同时乘4把除数凑成100#", "[g:3600] ÷ [b:100] #注:除数变为整百数#", "[p:36]"] },
+                        { q: "1500 ÷ 125", steps: ["1500 ÷ [b:125]", "(1500 [r:× 8]) ÷ (125 [r:× 8]) #注:凑整：同时乘8把除数凑成1000#", "[g:12000] ÷ [b:1000] #注:除数变为整千数#", "[p:12]"] },
+                        { q: "750 ÷ 25", steps: ["750 ÷ [b:25]", "(750 [r:× 4]) ÷ (25 [r:× 4]) #注:凑整：同时乘4把除数凑成100#", "[g:3000] ÷ [b:100] #注:除数变为整百数#", "[p:30]"] },
+                        { q: "320 ÷ 5", steps: ["320 ÷ [b:5]", "(320 [r:× 2]) ÷ (5 [r:× 2]) #注:凑整：同时乘2把除数凑成10#", "[g:640] ÷ [b:10] #注:除数变为整十数#", "[p:64]"] }
+                    ]
+                }
+            ];
+
+            const [activeStrategyIndex, setActiveStrategyIndex] = useState(0);
+            const [activeProblemIndex, setActiveProblemIndex] = useState(0);
+            const [stepIndex, setStepIndex] = useState(0);
+
+            useEffect(() => {
+                setActiveProblemIndex(0);
+                setStepIndex(0);
+            }, [activeStrategyIndex]);
+
+            useEffect(() => {
+                setStepIndex(0);
+            }, [activeProblemIndex]);
+
+            const nextStep = () => {
+                const currentSteps = strategyData[activeStrategyIndex].problems[activeProblemIndex].steps;
+                if (stepIndex < currentSteps.length - 1) {
+                    setStepIndex(prev => prev + 1);
+                }
+            };
+
+            const resetSteps = () => setStepIndex(0);
+
+            const activeStrategy = strategyData[activeStrategyIndex];
+            const activeProblem = activeStrategy.problems[activeProblemIndex];
+
+            return (
+                <div className="flex flex-col items-center w-full fade-in">
+                    <h2 className="text-2xl font-bold mb-6 text-gray-800">第三节：数字拆解与巧算策略题库 (共40题)</h2>
+                    
+                    {/* 策略分类选择 */}
+                    <div className="flex flex-wrap justify-center gap-3 mb-6 w-full max-w-5xl">
+                        {strategyData.map((strategy, idx) => (
+                            <button 
+                                key={strategy.id}
+                                className={`px-5 py-3 rounded-lg font-bold shadow-sm transition-colors text-lg ${activeStrategyIndex === idx ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-indigo-50 border border-gray-200'}`}
+                                onClick={() => setActiveStrategyIndex(idx)}
+                            >
+                                {strategy.title}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="w-full max-w-5xl bg-indigo-50 p-4 rounded-lg mb-6 text-center text-indigo-800 font-medium">
+                        💡 核心思路：{activeStrategy.desc}
+                    </div>
+
+                    <div className="flex w-full max-w-5xl gap-6">
+                        {/* 左侧：题目列表 (10题) */}
+                        <div className="w-1/3 bg-white p-4 rounded-lg shadow-lg flex flex-col h-[500px]">
+                            <h3 className="font-bold text-gray-700 border-b pb-3 mb-3 text-center">选择练习题 (1~10)</h3>
+                            <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-2">
+                                {activeStrategy.problems.map((prob, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveProblemIndex(idx)}
+                                        className={`p-3 rounded-md text-left font-mono text-lg transition-colors border ${activeProblemIndex === idx ? 'bg-blue-100 border-blue-300 text-blue-800 font-bold' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}
+                                    >
+                                        <span className="inline-block w-8 text-sm text-gray-400">#{idx + 1}</span> {prob.q}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 右侧：推导演示区 */}
+                        <div className="w-2/3 bg-white p-8 rounded-lg shadow-xl flex flex-col h-[500px]">
+                            <h3 className="text-xl font-bold text-gray-700 border-b pb-4 mb-6">计算演示：{activeProblem.q}</h3>
+                            
+                            <div className="flex-1 font-mono text-2xl leading-relaxed pl-8 overflow-y-auto">
+                                {activeProblem.steps.map((stepStr, idx) => (
+                                    <div 
+                                        key={idx} 
+                                        className={`py-3 transition-all duration-500 step-text ${idx <= stepIndex ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4 hidden'}`}
+                                    >
+                                        {idx === 0 ? 
+                                            <span dangerouslySetInnerHTML={parseStep(stepStr)} /> : 
+                                            <span dangerouslySetInnerHTML={parseStep(`= ${stepStr}`)} />
+                                        }
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-center gap-4 mt-6 border-t pt-6">
+                                <button 
+                                    onClick={resetSteps}
+                                    className="px-6 py-2 bg-gray-200 text-gray-700 font-bold rounded hover:bg-gray-300 transition-colors"
+                                >
+                                    重置推导
+                                </button>
+                                <button 
+                                    onClick={nextStep}
+                                    disabled={stepIndex >= activeProblem.steps.length - 1}
+                                    className={`px-8 py-2 font-bold rounded transition-colors ${stepIndex >= activeProblem.steps.length - 1 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'}`}
+                                >
+                                    下一步 ({stepIndex + 1}/{activeProblem.steps.length})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 主应用组件 ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('area');
+
+            return (
+                <div className="min-h-screen p-8 flex flex-col items-center">
+                    <header className="mb-10 text-center">
+                        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
+                            高阶运算思维可视化工具
+                        </h1>
+                        <div className="flex justify-center gap-2 bg-white p-1 rounded-xl shadow-md">
+                            <button 
+                                onClick={() => setActiveTab('area')}
+                                className={`px-6 py-3 rounded-lg font-bold transition-all ${activeTab === 'area' ? 'bg-blue-100 text-blue-700 shadow-inner' : 'text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                乘法面积模型
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('division')}
+                                className={`px-6 py-3 rounded-lg font-bold transition-all ${activeTab === 'division' ? 'bg-green-100 text-green-700 shadow-inner' : 'text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                除法分配意义
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('strategy')}
+                                className={`px-6 py-3 rounded-lg font-bold transition-all ${activeTab === 'strategy' ? 'bg-indigo-100 text-indigo-700 shadow-inner' : 'text-gray-600 hover:bg-gray-50'}`}
+                            >
+                                巧算策略推导
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="w-full max-w-5xl flex justify-center pb-20">
+                        {activeTab === 'area' && <AreaModel />}
+                        {activeTab === 'division' && <DivisionModel />}
+                        {activeTab === 'strategy' && <StrategyModel />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

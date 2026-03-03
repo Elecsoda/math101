@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运算律与性质交互演示系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        .block-item { width: 32px; height: 32px; flex-shrink: 0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; transition: all 0.4s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .block-sm { width: 24px; height: 24px; flex-shrink: 0; font-size: 10px; }
+        
+        .bg-c1 { background-color: #ef4444; }
+        .bg-c2 { background-color: #3b82f6; }
+        .bg-c3 { background-color: #10b981; }
+        .bg-c4 { background-color: #f59e0b; }
+        .bg-gray { background-color: #94a3b8; }
+        
+        .crossed { position: relative; opacity: 0.4; }
+        .crossed::after { content: "✕"; position: absolute; color: #000; font-size: 24px; font-weight: 300; }
+        
+        .op-mul { font-family: monospace; font-size: 28px; font-weight: 900; margin: 0 8px; color: #64748b; line-height: 1; }
+        .op-add { font-size: 24px; font-weight: bold; margin: 0 8px; color: #94a3b8; line-height: 1; }
+        
+        .box-group { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 8px; background: #ffffff; }
+        .box-solid { border: 2px solid #94a3b8; border-radius: 8px; padding: 8px; background: #f1f5f9; }
+        
+        .btn-side { width: 100%; text-align: left; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-left: 4px solid transparent; }
+        .btn-side.active { background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-side.active-basic { border-left-color: #3b82f6; color: #2563eb; }
+        .btn-side.active-prop { border-left-color: #f59e0b; color: #d97706; }
+        .btn-side.active-spec { border-left-color: #10b981; color: #059669; }
+        .btn-side:hover:not(.active) { background-color: #e2e8f0; }
+
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .scroll-area::-webkit-scrollbar { height: 8px; }
+        .scroll-area::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .scroll-area::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .number-input-group { display: flex; align-items: center; gap: 8px; background: white; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .number-input-group input[type="number"] { width: 50px; border: none; outline: none; text-align: center; font-weight: bold; color: #3b82f6; background: transparent; }
+        .number-input-group input[type="range"] { flex: 1; accent-color: #3b82f6; height: 4px; }
+        
+        .editable-num { display: inline-block; position: relative; cursor: pointer; color: #2563eb; border-bottom: 2px dashed #93c5fd; padding: 0 4px; margin: 0 2px; transition: all 0.2s; }
+        .editable-num:hover { background-color: #eff6ff; border-radius: 4px; }
+        .popover-slider { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); z-index: 50; display: none; width: 200px; margin-top: 8px; }
+        .popover-slider.show { display: block; }
+        .popover-slider::before { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); width: 10px; height: 10px; background: white; border-left: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; }
+
+    </style>
+</head>
+<body>
+
+<div id="app" class="max-w-7xl mx-auto p-4 md:p-6"></div>
+
+<script>
+    const TABLE_DATA = {
+        'comm_add': { type: '基本律', name: '加法交换律', idea: '交换顺序，结果不变', scene: '调整计算顺序，为结合律或凑整做准备' },
+        'comm_mul': { type: '基本律', name: '乘法交换律', idea: '交换顺序，结果不变', scene: '调整计算顺序，为结合律或凑整做准备' },
+        'assoc_add': { type: '基本律', name: '加法结合律', idea: '改变组合，结果不变', scene: '将能凑成整十、整百、整千的数先结合计算' },
+        'assoc_mul': { type: '基本律', name: '乘法结合律', idea: '改变组合，结果不变', scene: '将能凑成整十、整百、整千的数先结合计算' },
+        'dist': { type: '基本律', name: '乘法分配律', idea: '分配相乘，和/差不变', scene: '将复杂乘法展开或反向提取公因数进行简算' },
+        'sub_prop': { type: '运算性质', name: '减法性质 (连减)', idea: '连减可化减和或交换顺序', scene: '当减数能凑整或与首位相同的时候简化计算' },
+        'div_prop': { type: '运算性质', name: '除法性质 (连除)', idea: '连除可化除积或交换顺序', scene: '当除数能凑整或与首位相同的时候简化计算' },
+        'prod_prop': { type: '特殊规律', name: '积不变规律', idea: '同乘同除，积不变', scene: '将复杂运算转化为简单整数运算' },
+        'quot_prop': { type: '特殊规律', name: '商不变规律', idea: '同乘同除，商不变', scene: '将复杂运算转化为简单整数运算' }
+    };
+
+    const COLORS = ['bg-c1', 'bg-c2', 'bg-c3', 'bg-c4', 'bg-c5', 'bg-c6', 'bg-c7'];
+
+    let state = {
+        mode: 'comm_add',
+        valA: 4,
+        valB: 3,
+        valC: 2,
+        valT: 24,
+        scale: 2,
+        step: 0,
+        isTransformed: false,
+        activePopover: null
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.editable-num')) {
+            setState({ activePopover: null });
+        }
+    });
+
+    function setState(newState) {
+        state = { ...state, ...newState };
+        render();
+    }
+
+    function generateBlocks(count, colorClass, isCrossed = false, sizeClass = '') {
+        let html = '';
+        for (let i = 0; i < count; i++) {
+            html += `<div class="block-item ${sizeClass} ${colorClass} ${isCrossed ? 'crossed' : ''}"></div>`;
+        }
+        return html;
+    }
+
+    function generateGrid(rows, cols, colorClass, size = 32) {
+        let html = `<div class="grid gap-1" style="grid-template-columns: repeat(${cols}, ${size}px); grid-template-rows: repeat(${rows}, ${size}px);">`;
+        for (let i = 0; i < rows * cols; i++) {
+            html += `<div class="block-item ${colorClass}" style="width:${size}px; height:${size}px;"></div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    function createEditableNum(value, varName, min = 1, max = 10) {
+        const isShow = state.activePopover === varName;
+        return `
+            <div class="editable-num" onclick="event.stopPropagation(); setState({activePopover: '${varName}'})">
+                ${value}
+                <div class="popover-slider ${isShow ? 'show' : ''}" onclick="event.stopPropagation()">
+                    <div class="text-xs text-slate-500 mb-2 font-normal">调整数值</div>
+                    <div class="flex items-center gap-2">
+                        <input type="range" min="${min}" max="${max}" value="${value}" 
+                               oninput="setState({val${varName}: parseInt(this.value), step: 0})" class="w-full">
+                        <span class="font-bold text-slate-700">${value}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderVisualization() {
+        let A = parseInt(state.valA);
+        let B = parseInt(state.valB);
+        let C = parseInt(state.valC);
+        let T = parseInt(state.valT);
+        let S = parseInt(state.scale);
+        const isT = state.isTransformed;
+        const step = state.step;
+
+        let content = '';
+        let formula = '';
+
+        if (state.mode === 'comm_add') {
+            const numA = createEditableNum(A, 'A', 1, 8);
+            const numB = createEditableNum(B, 'B', 1, 8);
+            formula = isT ? `${numB} + ${numA} = ${A + B}` : `${numA} + ${numB} = ${A + B}`;
+            content = `
+                <div class="flex items-center gap-4 box-group">
+                    <div class="flex flex-wrap gap-1 max-w-[150px] justify-center">${generateBlocks(isT ? B : A, isT ? 'bg-c2' : 'bg-c1')}</div>
+                    <span class="op-add">+</span>
+                    <div class="flex flex-wrap gap-1 max-w-[150px] justify-center">${generateBlocks(isT ? A : B, isT ? 'bg-c1' : 'bg-c2')}</div>
+                </div>
+            `;
+        } 
+        else if (state.mode === 'comm_mul') {
+            const numA = createEditableNum(A, 'A', 1, 8);
+            const numB = createEditableNum(B, 'B', 1, 8);
+            formula = isT ? `${numB} <span class="op-mul">&times;</span> ${numA} = ${A * B}` : `${numA} <span class="op-mul">&times;</span> ${numB} = ${A * B}`;
+            content = `
+                <div class="box-group transition-all duration-500">
+                    ${generateGrid(isT ? B : A, isT ? A : B, isT ? 'bg-c2' : 'bg-c1')}
+                </div>
+            `;
+        }
+        else if (state.mode === 'assoc_add') {
+            const numA = createEditableNum(A, 'A', 1, 6);
+            const numB = createEditableNum(B, 'B', 1, 6);
+            const numC = createEditableNum(C, 'C', 1, 6);
+            formula = isT ? `${numA} + (${numB} + ${numC}) = ${A + B + C}` : `(${numA} + ${numB}) + ${numC} = ${A + B + C}`;
+            content = `
+                <div class="flex items-center gap-4 box-group">
+                    ${!isT ? `
+                        <div class="flex items-center gap-2 box-solid">
+                            <div class="flex flex-wrap gap-1 max-w-[120px]">${generateBlocks(A, 'bg-c1')}</div>
+                            <span class="op-add">+</span>
+                            <div class="flex flex-wrap gap-1 max-w-[120px]">${generateBlocks(B, 'bg-c2')}</div>
+                        </div>
+                        <span class="op-add">+</span>
+                        <div class="flex flex-wrap gap-1 max-w-[120px]">${generateBlocks(C, 'bg-c3')}</div>
+                    ` : `
+                        <div class="flex flex-wrap gap-1 max-w-[120px]">${generateBlocks(A, 'bg-c1')}</div>
+                        <span class="op-add">+</span>
+                        <div class="flex items-center gap-2 box-solid">
+                            <div class="flex flex-wrap gap-1 max-w-[120px]">${generateBlocks(B, 'bg-c2')}</div>
+                            <span class="op-add">+</span>
+                            <div class="flex flex-wrap gap-1 max-w-[120px]">${generateBlocks(C, 'bg-c3')}</div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        else if (state.mode === 'assoc_mul') {
+            const numA = createEditableNum(A, 'A', 1, 5);
+            const numB = createEditableNum(B, 'B', 1, 5);
+            const numC = createEditableNum(C, 'C', 1, 5);
+            formula = isT ? `${numA} <span class="op-mul">&times;</span> (${numB} <span class="op-mul">&times;</span> ${numC}) = ${A * B * C}` : `(${numA} <span class="op-mul">&times;</span> ${numB}) <span class="op-mul">&times;</span> ${numC} = ${A * B * C}`;
+            
+            let blocksHTML = '';
+            for(let r=0; r<A; r++){
+                for(let c=0; c<C; c++){
+                    for(let b=0; b<B; b++){
+                        let colorClass = !isT ? COLORS[c % COLORS.length] : COLORS[r % COLORS.length];
+                        blocksHTML += `<div class="block-item ${colorClass}" style="width:32px; height:32px;"></div>`;
+                    }
+                }
+            }
+
+            content = `
+                <div class="flex flex-col items-center">
+                    <div class="text-xs font-bold text-slate-500 mb-4 px-4 py-2 bg-slate-100 rounded-lg">
+                        ${!isT ? `基本单位 <b>${A}行 × ${B}列</b>，纵向复制 ${C} 组` : `基本单位 <b>1行 × ${B*C}列</b>，横向复制 ${A} 行`}
+                    </div>
+                    <div class="box-group bg-slate-50 relative p-4">
+                        <div class="grid gap-1 relative z-10" style="grid-template-columns: repeat(${B*C}, 32px); grid-template-rows: repeat(${A}, 32px);">
+                            ${blocksHTML}
+                        </div>
+                        <div class="absolute inset-2 border-2 border-slate-400 rounded-sm pointer-events-none z-20"></div>
+                    </div>
+                </div>
+            `;
+        }
+        else if (state.mode === 'dist') {
+            const numA = createEditableNum(A, 'A', 1, 6);
+            const numB = createEditableNum(B, 'B', 1, 6);
+            const numC = createEditableNum(C, 'C', 1, 6);
+            formula = isT ? `${numA}<span class="op-mul">&times;</span>${numB} + ${numA}<span class="op-mul">&times;</span>${numC} = ${A * (B + C)}` : `${numA} <span class="op-mul">&times;</span> (${numB} + ${numC}) = ${A * (B + C)}`;
+            content = `
+                <div class="flex items-center gap-4 box-group bg-slate-50 p-6">
+                    ${!isT ? `
+                        <div class="flex box-solid p-1 bg-white relative">
+                            ${generateGrid(A, B, 'bg-c1')}
+                            <div class="w-1"></div>
+                            ${generateGrid(A, C, 'bg-c2')}
+                            <div class="absolute -top-6 left-0 right-0 text-center text-xs font-bold text-slate-500">宽: ${B} + ${C}</div>
+                        </div>
+                    ` : `
+                        <div class="flex items-center gap-6">
+                            <div class="box-solid p-1 bg-white relative">
+                                ${generateGrid(A, B, 'bg-c1')}
+                                <div class="absolute -top-6 left-0 right-0 text-center text-xs font-bold text-slate-500">宽: ${B}</div>
+                            </div>
+                            <span class="op-add">+</span>
+                            <div class="box-solid p-1 bg-white relative">
+                                ${generateGrid(A, C, 'bg-c2')}
+                                <div class="absolute -top-6 left-0 right-0 text-center text-xs font-bold text-slate-500">宽: ${C}</div>
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        else if (state.mode === 'sub_prop') {
+            const maxVal = Math.min(A+B+10, 30);
+            const numT = createEditableNum(T, 'T', A+B, maxVal);
+            const numA = createEditableNum(A, 'A', 1, T-B);
+            const numB = createEditableNum(B, 'B', 1, T-A);
+            
+            formula = isT ? `${numT} - (${numA} + ${numB}) = ${T - A - B}` : `${numT} - ${numA} - ${numB} = ${T - A - B}`;
+            
+            let stepHtml = '';
+            if (!isT) {
+                stepHtml = `
+                    <div class="flex flex-wrap gap-2 justify-start bg-white p-4 rounded border" style="max-width: 480px;">
+                        ${generateBlocks(T - A - B, 'bg-gray')}
+                        ${generateBlocks(A, 'bg-c1', step >= 1)}
+                        ${generateBlocks(B, 'bg-c2', step >= 2)}
+                    </div>
+                `;
+            } else {
+                stepHtml = `
+                    <div class="flex flex-wrap gap-2 justify-start bg-white p-4 rounded border items-center" style="max-width: 480px;">
+                        ${generateBlocks(T - A - B, 'bg-gray')}
+                        <div class="flex flex-wrap gap-2 p-2 border-2 ${step >= 1 ? 'border-red-400 bg-red-50' : 'border-transparent'} rounded relative transition-all" style="max-width: 320px;">
+                            ${step >= 1 ? `<span class="absolute -top-6 left-0 text-xs font-bold text-red-500 whitespace-nowrap">打包扣除</span>` : ''}
+                            ${generateBlocks(A, 'bg-c1', step >= 2)}
+                            ${generateBlocks(B, 'bg-c2', step >= 2)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            content = `
+                <div class="w-full flex flex-col items-center">
+                    ${stepHtml}
+                    <div class="mt-8 flex justify-center gap-4">
+                        <button onclick="setState({step: Math.max(0, state.step - 1)})" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 ${step === 0 ? 'opacity-50 cursor-not-allowed' : ''}">上一步</button>
+                        <button onclick="setState({step: Math.min(2, state.step + 1)})" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 shadow-md ${step === 2 ? 'opacity-50 cursor-not-allowed' : ''}">下一步过程</button>
+                    </div>
+                </div>
+            `;
+        }
+        else if (state.mode === 'div_prop') {
+            const total = A * B * C;
+            
+            const numTotal = createEditableNum(total, 'C', A*B, A*B*5); 
+            const numA = createEditableNum(A, 'A', 1, 5);
+            const numB = createEditableNum(B, 'B', 1, 5);
+            
+            formula = isT ? `${numTotal} &divide; (${numA} <span class="op-mul">&times;</span> ${numB}) = ${total / (A * B)}` : `${numTotal} &divide; ${numA} &divide; ${numB} = ${total / (A * B)}`;
+            
+            let displayHTML = '';
+            if (!isT) {
+                if (step === 0) {
+                    displayHTML = `<div class="flex flex-wrap gap-1 max-w-[320px] justify-center">${generateBlocks(total, 'bg-gray', false, 'block-sm')}</div>`;
+                } else if (step === 1) {
+                    displayHTML = `<div class="flex flex-wrap gap-4 w-full justify-center">`;
+                    for(let i=0; i<A; i++) {
+                        displayHTML += `<div class="border-2 border-blue-400 p-2 rounded-xl bg-blue-50 w-full sm:w-[45%] flex flex-wrap gap-1 justify-center">${generateBlocks(total/A, 'bg-c2', false, 'block-sm')}</div>`;
+                    }
+                    displayHTML += `</div>`;
+                } else {
+                    displayHTML = `<div class="flex flex-wrap gap-4 w-full justify-center">`;
+                    for(let i=0; i<A; i++) {
+                        displayHTML += `<div class="border-2 border-blue-400 p-3 rounded-xl bg-blue-50 w-full sm:w-[45%] flex flex-wrap gap-2 justify-center">`;
+                        for(let j=0; j<B; j++) {
+                            displayHTML += `<div class="border border-green-500 p-1.5 rounded bg-white flex flex-wrap gap-1 min-w-[50px] justify-center">${generateBlocks(total/(A*B), 'bg-c3', false, 'block-sm')}</div>`;
+                        }
+                        displayHTML += `</div>`;
+                    }
+                    displayHTML += `</div>`;
+                }
+            } else {
+                if (step === 0) {
+                    displayHTML = `<div class="flex flex-wrap gap-1 max-w-[320px] justify-center">${generateBlocks(total, 'bg-gray', false, 'block-sm')}</div>`;
+                } else if (step === 1) {
+                     displayHTML = `
+                     <div class="flex flex-wrap justify-center gap-3">
+                        ${Array.from({length: A*B}).map(() => `<div class="h-16 w-16 border-2 border-dashed border-slate-400 rounded bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold">空位</div>`).join('')}
+                     </div>`;
+                } else {
+                    displayHTML = `<div class="flex flex-wrap justify-center gap-3">
+                        ${Array.from({length: A*B}).map(() => `<div class="w-16 h-16 border-2 border-green-500 rounded bg-green-50 flex flex-wrap gap-1 items-center justify-center p-1">${generateBlocks(total/(A*B), 'bg-c3', false, 'block-sm')}</div>`).join('')}
+                     </div>`;
+                }
+            }
+
+            content = `
+                <div class="w-full flex flex-col items-center fade-in">
+                    <div class="min-h-[160px] w-full max-w-2xl flex items-center justify-center bg-white p-6 rounded-xl border border-slate-200">
+                        ${displayHTML}
+                    </div>
+                    <div class="mt-8 flex justify-center gap-4">
+                        <button onclick="setState({step: Math.max(0, state.step - 1)})" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 ${step === 0 ? 'opacity-50 cursor-not-allowed' : ''}">上一步</button>
+                        <button onclick="setState({step: Math.min(2, state.step + 1)})" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 shadow-md ${step === 2 ? 'opacity-50 cursor-not-allowed' : ''}">下一步</button>
+                    </div>
+                </div>
+            `;
+        }
+        else if (state.mode === 'prod_prop') {
+            B = Math.max(S, Math.floor(B / S) * S); 
+            
+            const numA = createEditableNum(A, 'A', 2, 6);
+            const numB = createEditableNum(B, 'B', S, S*5);
+            const numS = createEditableNum(S, 'scale', 2, 4); 
+            
+            formula = isT ? `(${numA} <span class="op-mul">&times;</span> ${numS}) <span class="op-mul">&times;</span> (${numB} &divide; ${numS}) = ${A * B}` : `${numA} <span class="op-mul">&times;</span> ${numB} = ${A * B}`;
+            
+            let smallWidth = B / S;
+
+            let origGrid = `
+                <div class="flex items-center gap-4">
+                    <div class="box-solid p-2 bg-white flex relative">
+            `;
+            for(let i=0; i<S; i++){
+                origGrid += generateGrid(A, smallWidth, COLORS[i%COLORS.length]);
+                if(i < S-1) origGrid += `<div class="w-1 border-r border-dashed border-slate-300 mx-1"></div>`;
+            }
+            origGrid += `</div></div>`;
+
+            let transGrid = `
+                <div class="flex items-center gap-4">
+                    <div class="box-solid p-2 bg-white flex flex-col gap-1 relative">
+            `;
+            for(let i=0; i<S; i++){
+                transGrid += generateGrid(A, smallWidth, COLORS[i%COLORS.length]);
+                if(i < S-1) transGrid += `<div class="h-1 border-b border-dashed border-slate-300 my-1"></div>`;
+            }
+            transGrid += `</div></div>`;
+
+            content = `
+                <div class="flex flex-col items-center gap-10 w-full">
+                    ${!isT ? `
+                        <div class="flex flex-col items-center gap-3 w-full">
+                            <div class="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded">原始矩形</div>
+                            ${origGrid}
+                        </div>
+                    ` : `
+                        <div class="flex flex-col items-center gap-3 w-full">
+                            <div class="text-sm font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded">切分并重新拼接</div>
+                            ${transGrid}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        else if (state.mode === 'quot_prop') {
+            T = Math.max(B, Math.floor(T / B) * B);
+            let Q = T / B;
+
+            const numT = createEditableNum(T, 'T', B, B*8);
+            const numB = createEditableNum(B, 'B', 1, 5);
+            const numS = createEditableNum(S, 'scale', 2, 4);
+            
+            formula = isT ? `(${numT} <span class="op-mul">&times;</span> ${numS}) &divide; (${numB} <span class="op-mul">&times;</span> ${numS}) = ${Q}` : `${numT} &divide; ${numB} = ${Q}`;
+            
+            let g1 = `<div class="flex flex-wrap gap-2 p-3 border border-slate-300 rounded-lg bg-white shadow-sm w-full justify-center">`;
+            for(let i=0; i<B; i++){
+                g1 += `<div class="border-2 border-c1 p-2 rounded flex flex-col items-center gap-1 bg-red-50 relative mt-3">
+                          ${generateBlocks(Q, 'bg-c1', false, 'block-sm')}
+                       </div>`;
+            }
+            g1 += `</div>`;
+            
+            let gMulti = `<div class="flex flex-col gap-3 p-3 box-solid bg-slate-50 w-full max-w-xl">`;
+            for(let i=0; i<S; i++){
+                gMulti += g1;
+            }
+            gMulti += `</div>`;
+
+            content = `
+                <div class="flex flex-col items-center gap-6 w-full">
+                    ${!isT ? `
+                        <div class="flex flex-col items-center gap-3 w-full max-w-xl">
+                            ${g1}
+                        </div>
+                    ` : `
+                        <div class="flex flex-col items-center gap-3 w-full max-w-xl">
+                            ${gMulti}
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="flex flex-col items-center w-full fade-in">
+                
+                <div class="w-full flex justify-center mb-6">
+                    <button onclick="setState({isTransformed: !state.isTransformed, step: 0})" 
+                            class="group relative px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 hover:shadow-xl active:scale-95 transition-all text-lg flex items-center gap-3">
+                        <svg class="w-6 h-6 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        点击切换形态
+                    </button>
+                </div>
+
+                <div class="text-3xl sm:text-4xl font-mono font-bold text-slate-800 tracking-wider text-center mb-8 py-4 px-6 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm relative z-20">
+                    ${formula}
+                </div>
+                
+                <div class="w-full overflow-x-auto scroll-area pb-4 flex justify-center relative z-10">
+                    <div class="min-w-max px-4">
+                        ${content}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderSidebar() {
+        const categories = ['基本律', '运算性质', '特殊规律'];
+        
+        let html = '';
+        categories.forEach(cat => {
+            html += `
+                <div class="mb-6">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">${cat}</h4>
+                    <div class="flex flex-col">
+            `;
+            for (const [key, val] of Object.entries(TABLE_DATA)) {
+                if (val.type === cat) {
+                    const isActive = state.mode === key;
+                    let activeClass = '';
+                    if (isActive) {
+                        if (cat === '基本律') activeClass = 'active active-basic';
+                        else if (cat === '运算性质') activeClass = 'active active-prop';
+                        else activeClass = 'active active-spec';
+                    }
+                    html += `<button onclick="setState({mode: '${key}', step: 0, isTransformed: false})" class="btn-side ${activeClass}">${val.name}</button>`;
+                }
+            }
+            html += `</div></div>`;
+        });
+
+        const showSliders = true; 
+
+        if (showSliders) {
+            html += `
+                <div class="mt-4 pt-6 border-t border-slate-200">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">侧边控制面板</h4>
+                    <div class="space-y-3">
+                        <div class="number-input-group">
+                            <span class="text-sm font-bold text-slate-500 w-4">A</span>
+                            <input type="range" min="1" max="10" value="${state.valA}" oninput="setState({valA: parseInt(this.value), step: 0})">
+                            <input type="number" value="${state.valA}" onchange="setState({valA: parseInt(this.value), step: 0})">
+                        </div>
+                        <div class="number-input-group">
+                            <span class="text-sm font-bold text-slate-500 w-4">B</span>
+                            <input type="range" min="1" max="10" value="${state.valB}" oninput="setState({valB: parseInt(this.value), step: 0})">
+                            <input type="number" value="${state.valB}" onchange="setState({valB: parseInt(this.value), step: 0})">
+                        </div>
+                        ${['assoc_add', 'assoc_mul', 'dist', 'sub_prop', 'div_prop'].includes(state.mode) ? `
+                        <div class="number-input-group">
+                            <span class="text-sm font-bold text-slate-500 w-4">C</span>
+                            <input type="range" min="1" max="10" value="${state.valC}" oninput="setState({valC: parseInt(this.value), step: 0})">
+                            <input type="number" value="${state.valC}" onchange="setState({valC: parseInt(this.value), step: 0})">
+                        </div>
+                        ` : ''}
+                        ${['sub_prop', 'quot_prop'].includes(state.mode) ? `
+                        <div class="number-input-group">
+                            <span class="text-sm font-bold text-slate-500 w-4">T</span>
+                            <input type="range" min="${parseInt(state.valA) + parseInt(state.valB)}" max="30" value="${state.valT}" oninput="setState({valT: parseInt(this.value), step: 0})">
+                            <input type="number" value="${state.valT}" onchange="setState({valT: parseInt(this.value), step: 0})">
+                        </div>
+                        ` : ''}
+                        ${['prod_prop', 'quot_prop'].includes(state.mode) ? `
+                        <div class="number-input-group">
+                            <span class="text-sm font-bold text-slate-500 w-4" title="扩缩倍数">×</span>
+                            <input type="range" min="2" max="5" value="${state.scale}" oninput="setState({scale: parseInt(this.value), step: 0})">
+                            <input type="number" value="${state.scale}" onchange="setState({scale: parseInt(this.value), step: 0})">
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="text-xs text-slate-400 mt-2">* 也可以直接点击上方算式中的蓝色数字进行快捷调节。</div>
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+    function render() {
+        const app = document.getElementById('app');
+        app.innerHTML = `
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+                <aside class="w-full md:w-72 bg-slate-50 border-r border-slate-200 p-6 flex flex-col overflow-y-auto">
+                    ${renderSidebar()}
+                </aside>
+                
+                <main class="flex-1 flex flex-col p-6 md:p-8 relative bg-white overflow-hidden">
+                    <div class="flex-1 flex flex-col items-center justify-center">
+                        ${renderVisualization()}
+                    </div>
+                </main>
+            </div>
+        `;
+    }
+
+    render();
+</script>
+</body>
+</html>

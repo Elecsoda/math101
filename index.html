@@ -7,13 +7,14 @@
     <style>
         :root {
             --primary-color: #4a90e2;
+            --accent-color: #673ab7;
             --hover-color: #357abd;
             --bg-color: #f5f7fa;
             --text-color: #333;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -31,7 +32,7 @@
         h1 {
             font-size: 2.5rem;
             color: var(--primary-color);
-            margin-bottom: 10px;
+            margin: 0 0 10px 0;
         }
 
         .subtitle {
@@ -41,10 +42,10 @@
 
         .container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
             width: 90%;
-            max-width: 1000px;
+            max-width: 1100px;
             padding: 20px;
         }
 
@@ -54,22 +55,26 @@
             padding: 24px;
             text-decoration: none;
             color: inherit;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
             border-top: 5px solid var(--primary-color);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
 
         .tool-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.12);
+        }
+
+        /* 为新工具设置不同的顶部颜色以示区分 */
+        .tool-card.math-op {
+            border-top-color: var(--accent-color);
         }
 
         .tool-card h2 {
-            margin-top: 0;
-            font-size: 1.5rem;
+            margin: 10px 0;
+            font-size: 1.4rem;
             color: #2c3e50;
         }
 
@@ -77,47 +82,51 @@
             font-size: 0.95rem;
             line-height: 1.6;
             color: #555;
+            margin-bottom: 20px;
             flex-grow: 1;
         }
 
         .url-tag {
-            font-family: monospace;
-            background: #eee;
-            padding: 2px 6px;
+            font-family: 'Courier New', Courier, monospace;
+            background: #f0f0f0;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            color: #777;
             align-self: flex-start;
-            margin-bottom: 15px;
         }
 
         .status-badge {
             display: inline-block;
-            margin-top: 15px;
-            padding: 4px 12px;
+            padding: 6px 16px;
             border-radius: 20px;
-            background: #e1f5fe;
-            color: #0288d1;
-            font-size: 0.8rem;
-            font-weight: bold;
+            background: #e3f2fd;
+            color: #1976d2;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
         }
 
-        .coming-soon {
-            background: #f0f0f0;
-            border-top: 5px solid #ccc;
-            opacity: 0.7;
-            cursor: not-allowed;
+        .math-op .status-badge {
+            background: #f3e5f5;
+            color: #7b1fa2;
         }
 
-        .coming-soon:hover {
-            transform: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .update-tag {
+            background: #ffecb3;
+            color: #ffa000;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
         }
 
         footer {
             margin-top: auto;
-            padding: 40px;
-            color: #888;
-            font-size: 0.9rem;
+            padding: 30px;
+            color: #999;
+            font-size: 0.85rem;
         }
     </style>
 </head>
@@ -125,34 +134,34 @@
 
     <header>
         <h1>Math101 实验室</h1>
-        <p class="subtitle">有趣、直观的小学数学交互工具集</p>
+        <p class="subtitle">互动式小学数学教学辅助平台</p>
     </header>
 
     <div class="container">
         <a href="/decimal-1" class="tool-card">
             <div class="url-tag">/decimal-1</div>
             <h2>小数显示工具</h2>
-            <p>通过数轴或图形直观展示小数的大小与组成，帮助学生建立数感。</p>
-            <span class="status-badge">立即使用</span>
+            <p>通过动态数轴和面积模型，帮助学生理解百分位、十分位等抽象概念。</p>
+            <span class="status-badge">进入工具</span>
         </a>
 
         <a href="/decimal-2" class="tool-card">
             <div class="url-tag">/decimal-2</div>
             <h2>小数计算工具</h2>
-            <p>包含小数加减乘除的竖式演示与计算过程拆解，掌握计算逻辑。</p>
-            <span class="status-badge">立即使用</span>
+            <p>自动生成计算竖式，重点演示对齐小数点及进位补零的逻辑过程。</p>
+            <span class="status-badge">进入工具</span>
         </a>
 
-        <div class="tool-card coming-soon">
-            <div class="url-tag">/coming-soon</div>
-            <h2>更多工具开发中</h2>
-            <p>正在规划几何、分数、逻辑推理等模块，敬请期待。</p>
-            <span class="status-badge" style="background:#eee; color:#888;">持续更新中</span>
-        </div>
+        <a href="/multiply_and_div-1" class="tool-card math-op">
+            <div class="url-tag">/multiply_and_div-1</div>
+            <h2>乘除法直观演示 <span class="update-tag">NEW</span></h2>
+            <p>通过点阵图、面积模型演示乘法分配律；通过分物过程演示除法的余数意义。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
     </div>
 
     <footer>
-        math101.yumath.com © 2026
+        math101.yumath.com &copy; 2026 | 持续更新中
     </footer>
 
 </body>

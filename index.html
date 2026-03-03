@@ -8,7 +8,7 @@
         :root {
             --primary-color: #4a90e2;
             --accent-color: #673ab7;
-            --hover-color: #357abd;
+            --law-color: #27ae60; /* 运算律使用绿色系 */
             --bg-color: #f5f7fa;
             --text-color: #333;
         }
@@ -45,7 +45,7 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 25px;
             width: 90%;
-            max-width: 1100px;
+            max-width: 1200px;
             padding: 20px;
         }
 
@@ -67,10 +67,8 @@
             box-shadow: 0 12px 20px rgba(0,0,0,0.12);
         }
 
-        /* 为新工具设置不同的顶部颜色以示区分 */
-        .tool-card.math-op {
-            border-top-color: var(--accent-color);
-        }
+        .tool-card.math-op { border-top-color: var(--accent-color); }
+        .tool-card.math-law { border-top-color: var(--law-color); }
 
         .tool-card h2 {
             margin: 10px 0;
@@ -107,10 +105,8 @@
             text-align: center;
         }
 
-        .math-op .status-badge {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
+        .math-op .status-badge { background: #f3e5f5; color: #7b1fa2; }
+        .math-law .status-badge { background: #e8f5e9; color: #2e7d32; }
 
         .update-tag {
             background: #ffecb3;
@@ -141,21 +137,28 @@
         <a href="/decimal-1" class="tool-card">
             <div class="url-tag">/decimal-1</div>
             <h2>小数显示工具</h2>
-            <p>通过动态数轴和面积模型，帮助学生理解百分位、十分位等抽象概念。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/decimal-2" class="tool-card">
-            <div class="url-tag">/decimal-2</div>
-            <h2>小数计算工具</h2>
-            <p>自动生成计算竖式，重点演示对齐小数点及进位补零的逻辑过程。</p>
+            <p>动态数轴与数位顺序表，建立小数数感。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
         <a href="/multiply_and_div-1" class="tool-card math-op">
             <div class="url-tag">/multiply_and_div-1</div>
-            <h2>乘除法直观演示 <span class="update-tag">NEW</span></h2>
-            <p>通过点阵图、面积模型演示乘法分配律；通过分物过程演示除法的余数意义。</p>
+            <h2>乘除法直观演示</h2>
+            <p>通过点阵图与分物实验理解乘除法的数学本质。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/law_of_operation" class="tool-card math-law">
+            <div class="url-tag">/law_of_operation</div>
+            <h2>运算律直观演示 <span class="update-tag">NEW</span></h2>
+            <p>利用面积模型动态展示乘法分配律 $(a+b) \times c = a \times c + b \times c$ 及其他运算定律。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/decimal-2" class="tool-card">
+            <div class="url-tag">/decimal-2</div>
+            <h2>小数点移位工具</h2>
+            <p>演示小数点移位与乘除法关系。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>

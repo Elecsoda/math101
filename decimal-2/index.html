@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小数点移位演示与练习</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 隐藏输入框的上下箭头 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 p-6 font-sans text-slate-800">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <header class="flex items-center justify-between border-b pb-4 border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-900">小数点移位演示与练习</h1>
+            <div class="flex space-x-2 bg-slate-200 p-1 rounded-lg">
+                <button onclick="switchMainTab('demo')" id="tab-demo" class="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-blue-600">
+                    <i data-lucide="calculator" class="w-4 h-4 mr-2"></i>
+                    计算器演示
+                </button>
+                <button onclick="switchMainTab('test')" id="tab-test" class="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900">
+                    <i data-lucide="arrow-right-left" class="w-4 h-4 mr-2"></i>
+                    练习测试
+                </button>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- 模块一：计算器演示 -->
+            <div id="view-demo" class="space-y-6 animate-in fade-in duration-300 block">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-6 flex items-center">
+                        <i data-lucide="move-horizontal" class="w-6 h-6 mr-2 text-blue-600"></i>
+                        理解小数点移位
+                    </h2>
+
+                    <!-- 控制区 -->
+                    <div class="flex flex-col md:flex-row gap-6 mb-8 items-center justify-center p-6 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="flex flex-col w-full md:w-auto">
+                            <label class="text-sm font-medium text-slate-500 mb-2">输入数字</label>
+                            <input type="number" id="demo-input" value="1.23" oninput="updateDemo()" class="text-2xl font-mono text-center p-2 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none w-48" />
+                        </div>
+
+                        <div class="flex flex-col w-full md:w-auto">
+                            <label class="text-sm font-medium text-slate-500 mb-2 text-center">选择操作</label>
+                            <div class="flex bg-slate-200 p-1 rounded-lg" id="demo-ops">
+                                <!-- 动态渲染 -->
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col w-full md:w-auto">
+                            <label class="text-sm font-medium text-slate-500 mb-2 text-center">选择倍数</label>
+                            <div class="flex flex-wrap justify-center gap-2" id="demo-factors">
+                                <!-- 动态渲染 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 可视化演示区 -->
+                    <div class="bg-slate-800 text-white p-8 rounded-xl shadow-inner overflow-x-auto flex flex-col items-center">
+                        <div class="text-center mb-8 text-slate-300" id="demo-formula">
+                            <!-- 动态渲染 -->
+                        </div>
+
+                        <div class="flex flex-col space-y-4">
+                            <!-- 原始数字层 -->
+                            <div class="flex items-center">
+                                <span class="text-sm mr-4 w-12 text-right font-sans text-slate-400">原始:</span>
+                                <div class="flex items-center font-mono text-3xl md:text-4xl" id="demo-orig-digits">
+                                    <!-- 动态渲染 -->
+                                </div>
+                            </div>
+
+                            <!-- 移动后数字层 -->
+                            <div class="flex items-center">
+                                <span class="text-sm mr-4 w-12 text-right font-sans text-slate-400">结果:</span>
+                                <div class="flex items-center font-mono text-3xl md:text-4xl" id="demo-new-digits">
+                                    <!-- 动态渲染 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-10 text-xl font-bold bg-slate-700/50 px-6 py-3 rounded-full border border-slate-600" id="demo-conclusion">
+                            <!-- 动态渲染 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模块二：练习测试 -->
+            <div id="view-test" class="space-y-6 animate-in fade-in duration-300 hidden">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex space-x-4 mb-8 border-b border-slate-100 pb-4">
+                        <button onclick="switchTestTab('type1')" id="tab-test1" class="px-4 py-2 font-bold rounded-lg transition-colors bg-blue-100 text-blue-700">
+                            测试 1：点小数点
+                        </button>
+                        <button onclick="switchTestTab('type2')" id="tab-test2" class="px-4 py-2 font-bold rounded-lg transition-colors text-slate-500 hover:bg-slate-50">
+                            测试 2：判断移位规则
+                        </button>
+                    </div>
+
+                    <!-- 测试 1 容器 -->
+                    <div id="test1-container" class="block">
+                        <div class="flex flex-col items-center max-w-2xl mx-auto space-y-8">
+                            <div class="text-center space-y-2">
+                                <h3 class="text-2xl font-bold text-slate-800">计算结果并点上小数点</h3>
+                                <p class="text-slate-500">通过下方的左右按钮，将红色的小数点移动到正确的位置。</p>
+                            </div>
+
+                            <div class="text-3xl font-mono bg-slate-100 px-8 py-4 rounded-xl border-2 border-slate-200" id="test1-formula">
+                                <!-- 动态渲染 -->
+                            </div>
+
+                            <div class="bg-slate-800 p-8 rounded-xl w-full flex flex-col items-center shadow-inner relative overflow-x-auto">
+                                <div class="flex items-center font-mono text-3xl md:text-4xl py-4" id="test1-digits">
+                                    <!-- 动态渲染 -->
+                                </div>
+
+                                <div class="flex space-x-6 mt-12">
+                                    <button onclick="test1Move(-1)" id="test1-btn-left" class="flex items-center px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold transition-colors">
+                                        <i data-lucide="chevron-left" class="w-6 h-6 mr-1"></i>
+                                        向左移
+                                    </button>
+                                    <button onclick="test1Move(1)" id="test1-btn-right" class="flex items-center px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold transition-colors">
+                                        向右移
+                                        <i data-lucide="chevron-right" class="w-6 h-6 ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="test1-action-area" class="w-full flex justify-center">
+                                <!-- 动态渲染按钮和状态 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 测试 2 容器 -->
+                    <div id="test2-container" class="hidden">
+                        <div class="flex flex-col items-center max-w-2xl mx-auto space-y-8">
+                            <div class="text-center space-y-2">
+                                <h3 class="text-2xl font-bold text-slate-800">观察小数点，选择了什么运算？</h3>
+                                <p class="text-slate-500">对比原始数字和结果，选择正确的运算符和倍数。</p>
+                            </div>
+
+                            <div class="flex items-center space-x-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                <div class="text-3xl font-mono text-slate-600" id="test2-base"></div>
+                                <div class="text-xl text-slate-400">变成了</div>
+                                <div class="text-3xl font-mono text-slate-900 font-bold bg-white px-4 py-2 border border-slate-300 rounded shadow-sm" id="test2-result"></div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-6 w-full justify-center">
+                                <!-- 选择运算 -->
+                                <div class="flex flex-col border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                    <div class="bg-slate-100 px-4 py-2 text-center text-sm font-bold text-slate-600 border-b border-slate-200">运算</div>
+                                    <div class="flex bg-white" id="test2-ops">
+                                        <!-- 动态渲染 -->
+                                    </div>
+                                </div>
+
+                                <!-- 选择倍数 -->
+                                <div class="flex flex-col border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                                    <div class="bg-slate-100 px-4 py-2 text-center text-sm font-bold text-slate-600 border-b border-slate-200">倍数</div>
+                                    <div class="grid grid-cols-3 bg-white sm:flex sm:flex-wrap" id="test2-factors">
+                                        <!-- 动态渲染 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="test2-action-area" class="w-full flex justify-center mt-4">
+                                <!-- 动态渲染按钮和状态 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- 核心逻辑辅助函数 ---
+        function prepareDotPlacer(baseNum) {
+            const str = parseFloat(baseNum || "0").toString();
+            const parts = str.split('.');
+            const intPart = parts[0];
+            const decPart = parts[1] || "";
+            const rawDigits = intPart + decPart;
+
+            const prefixZeros = "00000000";
+            const suffixZeros = "00000000";
+            const combined = prefixZeros + rawDigits + suffixZeros;
+
+            const originalDotPos = prefixZeros.length + intPart.length;
+
+            return { combined, originalDotPos, prefixZerosLength: prefixZeros.length, rawDigitsLength: rawDigits.length };
+        }
+
+        function getDerivedValue(combined, dotPos) {
+            if (!combined) return 0;
+            let numStr = combined.slice(0, dotPos) + '.' + combined.slice(dotPos);
+            return parseFloat(numStr);
+        }
+
+        function getHighlightRange(prefixZerosLength, rawDigitsLength, dotPos) {
+            const firstRaw = prefixZerosLength;
+            const lastRaw = prefixZerosLength + rawDigitsLength - 1;
+            return {
+                start: Math.min(firstRaw, dotPos - 1),
+                end: Math.max(lastRaw, dotPos - 1)
+            };
+        }
+
+        // --- 全局状态 ---
+        let state = {
+            activeTab: 'demo', // 'demo' | 'test'
+            testType: 'type1', // 'type1' | 'type2'
+            
+            demo: {
+                operation: 'multiply',
+                factorPow: 1
+            },
+
+            test1: {
+                question: null,
+                currentDotPos: 0,
+                status: 'idle' // 'idle' | 'correct' | 'wrong'
+            },
+
+            test2: {
+                question: null,
+                selectedOp: '',
+                selectedFactor: '',
+                status: 'idle'
+            }
+        };
+
+        // --- 视图切换 ---
+        function switchMainTab(tab) {
+            state.activeTab = tab;
+            
+            const btnDemo = document.getElementById('tab-demo');
+            const btnTest = document.getElementById('tab-test');
+            const viewDemo = document.getElementById('view-demo');
+            const viewTest = document.getElementById('view-test');
+
+            if (tab === 'demo') {
+                btnDemo.className = "flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-blue-600";
+                btnTest.className = "flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900";
+                viewDemo.classList.remove('hidden');
+                viewTest.classList.add('hidden');
+            } else {
+                btnTest.className = "flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-blue-600";
+                btnDemo.className = "flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900";
+                viewTest.classList.remove('hidden');
+                viewDemo.classList.add('hidden');
+                if(!state.test1.question) initTest1();
+                if(!state.test2.question) initTest2();
+            }
+        }
+
+        function switchTestTab(type) {
+            state.testType = type;
+            
+            const btn1 = document.getElementById('tab-test1');
+            const btn2 = document.getElementById('tab-test2');
+            const cont1 = document.getElementById('test1-container');
+            const cont2 = document.getElementById('test2-container');
+
+            if (type === 'type1') {
+                btn1.className = "px-4 py-2 font-bold rounded-lg transition-colors bg-blue-100 text-blue-700";
+                btn2.className = "px-4 py-2 font-bold rounded-lg transition-colors text-slate-500 hover:bg-slate-50";
+                cont1.classList.remove('hidden');
+                cont2.classList.add('hidden');
+            } else {
+                btn2.className = "px-4 py-2 font-bold rounded-lg transition-colors bg-purple-100 text-purple-700";
+                btn1.className = "px-4 py-2 font-bold rounded-lg transition-colors text-slate-500 hover:bg-slate-50";
+                cont2.classList.remove('hidden');
+                cont1.classList.add('hidden');
+            }
+        }
+
+        // --- 模块一：计算器演示逻辑 ---
+        function setDemoOp(op) {
+            state.demo.operation = op;
+            updateDemo();
+        }
+
+        function setDemoFactor(pow) {
+            state.demo.factorPow = pow;
+            updateDemo();
+        }
+
+        function renderDigitsHTML(combined, dotPos, range, isNew) {
+            let html = '';
+            const chars = combined.split('');
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
+                const isHighlighted = i >= range.start && i <= range.end;
+                
+                let textClass = 'text-slate-500 opacity-30';
+                if (isHighlighted) {
+                    textClass = isNew ? 'text-white font-bold opacity-100' : 'text-blue-300 font-bold opacity-100';
+                }
+
+                html += `<span class="w-6 md:w-8 text-center transition-colors duration-300 ${textClass}">${char}</span>`;
+                
+                if (i === dotPos - 1) {
+                    const dotClass = isNew ? 'text-red-500 animate-pulse' : 'text-blue-400';
+                    html += `
+                        <span class="w-0 relative flex items-center justify-center z-10 translate-y-2 md:translate-y-3">
+                            <span class="absolute ${dotClass} font-bold text-5xl">.</span>
+                        </span>
+                    `;
+                }
+            }
+            return html;
+        }
+
+        function updateDemo() {
+            const inputValue = document.getElementById('demo-input').value;
+            const op = state.demo.operation;
+            const factorPow = state.demo.factorPow;
+
+            // 渲染控制按钮
+            document.getElementById('demo-ops').innerHTML = `
+                <button onclick="setDemoOp('multiply')" class="px-4 py-2 text-lg font-bold rounded ${op === 'multiply' ? 'bg-white shadow text-blue-600' : 'text-slate-600'}">×</button>
+                <button onclick="setDemoOp('divide')" class="px-4 py-2 text-lg font-bold rounded ${op === 'divide' ? 'bg-white shadow text-orange-600' : 'text-slate-600'}">÷</button>
+            `;
+
+            let factorsHtml = '';
+            [0, 1, 2, 3, 4, 5].forEach(pow => {
+                const isActive = factorPow === pow;
+                const activeClass = op === 'multiply' ? 'bg-blue-600 text-white' : 'bg-orange-500 text-white';
+                const className = `px-3 py-2 font-mono rounded-lg font-bold transition-colors ${isActive ? activeClass : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`;
+                factorsHtml += `<button onclick="setDemoFactor(${pow})" class="${className}">${Math.pow(10, pow)}</button>`;
+            });
+            document.getElementById('demo-factors').innerHTML = factorsHtml;
+
+            // 计算逻辑
+            const { combined, originalDotPos, prefixZerosLength, rawDigitsLength } = prepareDotPlacer(inputValue);
+            const newDotPos = op === 'multiply' ? originalDotPos + factorPow : originalDotPos - factorPow;
+            const targetValue = getDerivedValue(combined, newDotPos);
+            const factorValue = Math.pow(10, factorPow);
+
+            const origRange = getHighlightRange(prefixZerosLength, rawDigitsLength, originalDotPos);
+            const newRange = getHighlightRange(prefixZerosLength, rawDigitsLength, newDotPos);
+
+            // 渲染结果
+            document.getElementById('demo-formula').innerHTML = `算式： <span class="text-2xl text-white">${parseFloat(inputValue || 0)} ${op === 'multiply' ? '×' : '÷'} ${factorValue} = ${targetValue}</span>`;
+            document.getElementById('demo-orig-digits').innerHTML = renderDigitsHTML(combined, originalDotPos, origRange, false);
+            document.getElementById('demo-new-digits').innerHTML = renderDigitsHTML(combined, newDotPos, newRange, true);
+
+            const dirText = op === 'multiply' ? '右' : '左';
+            const dirColor = op === 'multiply' ? 'text-blue-400' : 'text-orange-400';
+            document.getElementById('demo-conclusion').innerHTML = `结论：小数点向 <span class="${dirColor}">${dirText}</span> 移动了 <span class="text-green-400">${factorPow}</span> 位`;
+        }
+
+
+        // --- 模块二：测试 1 逻辑 ---
+        function generateQuestionType1() {
+            const base = parseFloat(((Math.random() * 99) + 0.1).toFixed(2));
+            const isMultiply = Math.random() > 0.5;
+            const pow = Math.floor(Math.random() * 5) + 1;
+            const factor = Math.pow(10, pow);
+            const target = parseFloat((isMultiply ? base * factor : base / factor).toPrecision(12));
+            const { combined, originalDotPos, prefixZerosLength, rawDigitsLength } = prepareDotPlacer(base);
+            
+            return { base, isMultiply, pow, factor, target, combined, originalDotPos, prefixZerosLength, rawDigitsLength };
+        }
+
+        function initTest1() {
+            state.test1.question = generateQuestionType1();
+            state.test1.currentDotPos = state.test1.question.originalDotPos;
+            state.test1.status = 'idle';
+            updateTest1();
+        }
+
+        function test1Move(dir) {
+            if (state.test1.status === 'correct') return;
+            state.test1.currentDotPos += dir;
+            updateTest1();
+        }
+
+        function checkTest1() {
+            const userValue = getDerivedValue(state.test1.question.combined, state.test1.currentDotPos);
+            if (userValue === state.test1.question.target) {
+                state.test1.status = 'correct';
+            } else {
+                state.test1.status = 'wrong';
+            }
+            updateTest1();
+        }
+
+        function resetTest1State() {
+            state.test1.status = 'idle';
+            updateTest1();
+        }
+
+        function updateTest1() {
+            const q = state.test1.question;
+            const currentPos = state.test1.currentDotPos;
+            const status = state.test1.status;
+
+            document.getElementById('test1-formula').innerText = `${q.base} ${q.isMultiply ? '×' : '÷'} ${q.factor} = ?`;
+
+            const activeRange = getHighlightRange(q.prefixZerosLength, q.rawDigitsLength, currentPos);
+            
+            // 渲染数字层
+            let digitsHtml = '';
+            const chars = q.combined.split('');
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
+                const isHighlighted = i >= activeRange.start && i <= activeRange.end;
+                const textClass = isHighlighted ? 'text-white font-bold opacity-100' : 'text-slate-500 opacity-30';
+                
+                digitsHtml += `<span class="w-6 md:w-8 text-center transition-colors duration-300 ${textClass}">${char}</span>`;
+                
+                if (i === currentPos - 1) {
+                    digitsHtml += `
+                        <span class="w-0 relative flex items-center justify-center z-10 translate-y-2 md:translate-y-3">
+                            <span class="absolute text-red-500 font-bold text-5xl ${status === 'correct' ? '' : 'animate-bounce'}">.</span>
+                        </span>
+                    `;
+                }
+            }
+            document.getElementById('test1-digits').innerHTML = digitsHtml;
+
+            // 按钮状态
+            document.getElementById('test1-btn-left').disabled = status === 'correct';
+            document.getElementById('test1-btn-right').disabled = status === 'correct';
+            if(status === 'correct') {
+                document.getElementById('test1-btn-left').classList.add('opacity-50');
+                document.getElementById('test1-btn-right').classList.add('opacity-50');
+            } else {
+                document.getElementById('test1-btn-left').classList.remove('opacity-50');
+                document.getElementById('test1-btn-right').classList.remove('opacity-50');
+            }
+
+            // 动作区域
+            let actionHtml = '';
+            if (status === 'idle') {
+                actionHtml = `<button onclick="checkTest1()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-lg shadow-sm w-full md:w-auto">提交答案</button>`;
+            } else if (status === 'correct') {
+                const val = getDerivedValue(q.combined, currentPos);
+                actionHtml = `
+                    <div class="flex flex-col items-center space-y-4 w-full">
+                        <div class="flex items-center text-green-600 font-bold text-xl bg-green-50 px-6 py-3 rounded-lg w-full justify-center border border-green-200">
+                            <i data-lucide="check-circle-2" class="w-6 h-6 mr-2"></i>
+                            回答正确！结果是 ${val}
+                        </div>
+                        <button onclick="initTest1()" class="flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-lg shadow-sm">
+                            下一题 <i data-lucide="arrow-right-left" class="w-5 h-5 ml-2"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (status === 'wrong') {
+                const val = getDerivedValue(q.combined, currentPos);
+                actionHtml = `
+                    <div class="flex flex-col items-center space-y-4 w-full">
+                        <div class="flex items-center text-red-600 font-bold text-xl bg-red-50 px-6 py-3 rounded-lg w-full justify-center border border-red-200">
+                            <i data-lucide="x-circle" class="w-6 h-6 mr-2"></i>
+                            当前结果：${val}，再试一次！
+                        </div>
+                        <button onclick="resetTest1State()" class="flex items-center px-8 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-lg shadow-sm">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5 mr-2"></i> 继续修改
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('test1-action-area').innerHTML = actionHtml;
+            lucide.createIcons();
+        }
+
+        // --- 模块二：测试 2 逻辑 ---
+        function generateQuestionType2() {
+            const base = parseFloat(((Math.random() * 99) + 0.1).toFixed(2));
+            const isMultiply = Math.random() > 0.5;
+            const pow = Math.floor(Math.random() * 5) + 1;
+            const factor = Math.pow(10, pow);
+            const result = parseFloat((isMultiply ? base * factor : base / factor).toPrecision(12));
+            return { base, isMultiply: isMultiply ? 'multiply' : 'divide', factor: factor.toString(), result };
+        }
+
+        function initTest2() {
+            state.test2.question = generateQuestionType2();
+            state.test2.selectedOp = '';
+            state.test2.selectedFactor = '';
+            state.test2.status = 'idle';
+            updateTest2();
+        }
+
+        function setTest2Op(op) {
+            state.test2.selectedOp = op;
+            state.test2.status = 'idle';
+            updateTest2();
+        }
+
+        function setTest2Factor(f) {
+            state.test2.selectedFactor = f;
+            state.test2.status = 'idle';
+            updateTest2();
+        }
+
+        function checkTest2() {
+            const q = state.test2.question;
+            if (state.test2.selectedOp === q.isMultiply && state.test2.selectedFactor === q.factor) {
+                state.test2.status = 'correct';
+            } else {
+                state.test2.status = 'wrong';
+            }
+            updateTest2();
+        }
+
+        function updateTest2() {
+            const q = state.test2.question;
+            const op = state.test2.selectedOp;
+            const factor = state.test2.selectedFactor;
+            const status = state.test2.status;
+
+            document.getElementById('test2-base').innerText = q.base;
+            document.getElementById('test2-result').innerText = q.result;
+
+            // 运算按钮
+            document.getElementById('test2-ops').innerHTML = `
+                <button onclick="setTest2Op('multiply')" class="px-8 py-4 text-2xl font-bold border-r border-slate-100 ${op === 'multiply' ? 'bg-blue-100 text-blue-700' : 'hover:bg-slate-50 text-slate-700'}">×</button>
+                <button onclick="setTest2Op('divide')" class="px-8 py-4 text-2xl font-bold ${op === 'divide' ? 'bg-orange-100 text-orange-700' : 'hover:bg-slate-50 text-slate-700'}">÷</button>
+            `;
+
+            // 倍数按钮
+            let factorsHtml = '';
+            ['10', '100', '1000', '10000', '100000'].forEach(f => {
+                const isActive = factor === f;
+                factorsHtml += `<button onclick="setTest2Factor('${f}')" class="px-4 py-4 font-mono font-bold border-r last:border-r-0 border-b sm:border-b-0 border-slate-100 ${isActive ? 'bg-purple-100 text-purple-700' : 'hover:bg-slate-50 text-slate-700'}">${f}</button>`;
+            });
+            document.getElementById('test2-factors').innerHTML = factorsHtml;
+
+            // 动作区域
+            let actionHtml = '';
+            if (status === 'idle') {
+                const disabled = !op || !factor;
+                actionHtml = `<button onclick="checkTest2()" ${disabled ? 'disabled' : ''} class="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-lg shadow-sm w-full md:w-auto transition-colors">提交验证</button>`;
+            } else if (status === 'correct') {
+                const dir = q.isMultiply === 'multiply' ? '右' : '左';
+                const len = q.factor.length - 1;
+                actionHtml = `
+                    <div class="flex flex-col items-center space-y-4 w-full">
+                        <div class="flex items-center text-green-600 font-bold text-xl bg-green-50 px-6 py-3 rounded-lg w-full justify-center border border-green-200">
+                            <i data-lucide="check-circle-2" class="w-6 h-6 mr-2"></i>
+                            回答正确！小数点向${dir}移动了${len}位。
+                        </div>
+                        <button onclick="initTest2()" class="flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-lg shadow-sm">
+                            下一题 <i data-lucide="arrow-right-left" class="w-5 h-5 ml-2"></i>
+                        </button>
+                    </div>
+                `;
+            } else if (status === 'wrong') {
+                actionHtml = `
+                    <div class="flex flex-col items-center space-y-4 w-full">
+                        <div class="flex items-center text-red-600 font-bold text-xl bg-red-50 px-6 py-3 rounded-lg w-full justify-center border border-red-200">
+                            <i data-lucide="x-circle" class="w-6 h-6 mr-2"></i>
+                            回答错误，请仔细观察移动的方向和位数！
+                        </div>
+                        <button onclick="state.test2.status='idle'; updateTest2();" class="mt-2 flex items-center px-8 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-lg shadow-sm">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5 mr-2"></i> 重新选择
+                        </button>
+                    </div>
+                `;
+            }
+            document.getElementById('test2-action-area').innerHTML = actionHtml;
+            lucide.createIcons();
+        }
+
+        // --- 初始化 ---
+        window.onload = () => {
+            lucide.createIcons();
+            updateDemo();
+        };
+
+    </script>
+</body>
+</html>

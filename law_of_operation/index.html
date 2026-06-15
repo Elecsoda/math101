@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>运算律与性质交互演示系统</title>
+    <title>运算律直观演示 | Math101</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; }
@@ -534,6 +534,16 @@
     function render() {
         const app = document.getElementById('app');
         app.innerHTML = `
+            <header class="relative mb-6 px-12 text-center">
+                <a href="/" aria-label="返回主页" title="返回主页" class="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </a>
+                <h1 class="text-3xl font-bold text-slate-800">运算律直观演示</h1>
+                <p class="mt-1 text-slate-500">用图形变化理解运算律、运算性质与不变规律</p>
+            </header>
             <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
                 <aside class="w-full md:w-72 bg-slate-50 border-r border-slate-200 p-6 flex flex-col overflow-y-auto">
                     ${renderSidebar()}

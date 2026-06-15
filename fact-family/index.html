@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乘除互逆 · 一图四式 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.35s ease; }
+        .dot { transition: all 0.35s ease; }
+        .pop { animation: pop 0.4s ease; }
+        @keyframes pop { 0%{transform:scale(0.6);opacity:0} 100%{transform:scale(1);opacity:1} }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 点阵：可按"行/列"高亮，用来对应不同算式
+        const DotArray = ({ rows, cols, highlight }) => (
+            <div className="inline-grid gap-2 p-4 bg-white rounded-xl shadow-inner border border-gray-100"
+                 style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                {Array.from({ length: rows }).map((_, r) =>
+                    Array.from({ length: cols }).map((__, c) => {
+                        // highlight: 'rowFirst' 高亮第一行, 'colFirst' 高亮第一列
+                        let cls = "bg-indigo-500";
+                        if (highlight === 'row') cls = r === 0 ? "bg-rose-500" : "bg-indigo-300";
+                        else if (highlight === 'col') cls = c === 0 ? "bg-emerald-500" : "bg-indigo-300";
+                        return <div key={`${r}-${c}`} className={"dot w-6 h-6 rounded-full pop " + cls} />;
+                    })
+                )}
+            </div>
+        );
+
+        // 一个算式卡片
+        const EqCard = ({ text, type, sub }) => {
+            const color = type === 'mul' ? 'border-indigo-400 bg-indigo-50 text-indigo-800'
+                                         : 'border-amber-400 bg-amber-50 text-amber-800';
+            return (
+                <div className={"rounded-xl border-2 p-4 text-center smooth-transition " + color}>
+                    <div className="text-2xl font-bold font-mono">{text}</div>
+                    <div className="text-xs text-gray-500 mt-1">{sub}</div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [a, setA] = useState(3);   // 行
+            const [b, setB] = useState(4);   // 列
+            const [highlight, setHighlight] = useState(null);
+            const total = a * b;
+
+            const randomize = () => {
+                setA(2 + Math.floor(Math.random() * 7));
+                setB(2 + Math.floor(Math.random() * 7));
+                setHighlight(null);
+            };
+
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">乘除互逆 · 一图四式</h1>
+                        <p className="text-slate-500 mt-1">同一张点阵图，能写出两道乘法和两道除法</p>
+                    </header>
+
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-xl shadow p-5 mb-6 flex flex-wrap gap-5 items-center justify-center">
+                            <div className="flex items-center gap-2">
+                                <label className="font-semibold text-gray-700">行数</label>
+                                <select value={a} onChange={e => { setA(+e.target.value); setHighlight(null); }}
+                                    className="text-lg border-2 border-rose-300 rounded p-1.5">
+                                    {[2,3,4,5,6,7,8,9].map(n => <option key={n} value={n}>{n}</option>)}
+                                </select>
+                            </div>
+                            <span className="text-2xl font-bold text-gray-400">×</span>
+                            <div className="flex items-center gap-2">
+                                <label className="font-semibold text-gray-700">列数</label>
+                                <select value={b} onChange={e => { setB(+e.target.value); setHighlight(null); }}
+                                    className="text-lg border-2 border-emerald-300 rounded p-1.5">
+                                    {[2,3,4,5,6,7,8,9].map(n => <option key={n} value={n}>{n}</option>)}
+                                </select>
+                            </div>
+                            <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
+                        </div>
+
+                        <div className="flex flex-col lg:flex-row gap-8 items-center justify-center">
+                            {/* 点阵 */}
+                            <div className="flex flex-col items-center">
+                                <DotArray rows={a} cols={b} highlight={highlight} />
+                                <div className="mt-3 text-gray-600">
+                                    共 <span className="font-bold text-indigo-600 text-xl">{total}</span> 个点
+                                    （{a} 行，每行 {b} 个）
+                                </div>
+                            </div>
+
+                            {/* 四个算式 */}
+                            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
+                                <div onMouseEnter={() => setHighlight('row')} onMouseLeave={() => setHighlight(null)}>
+                                    <EqCard type="mul" text={`${a} × ${b} = ${total}`} sub={`${a} 行，每行 ${b} 个`} />
+                                </div>
+                                <div onMouseEnter={() => setHighlight('col')} onMouseLeave={() => setHighlight(null)}>
+                                    <EqCard type="mul" text={`${b} × ${a} = ${total}`} sub={`${b} 列，每列 ${a} 个`} />
+                                </div>
+                                <div onMouseEnter={() => setHighlight('row')} onMouseLeave={() => setHighlight(null)}>
+                                    <EqCard type="div" text={`${total} ÷ ${a} = ${b}`} sub={`${total} 个分成 ${a} 行，每行 ${b} 个`} />
+                                </div>
+                                <div onMouseEnter={() => setHighlight('col')} onMouseLeave={() => setHighlight(null)}>
+                                    <EqCard type="div" text={`${total} ÷ ${b} = ${a}`} sub={`${total} 个分成 ${b} 列，每列 ${a} 个`} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 bg-amber-50 border border-amber-200 rounded-xl p-5 max-w-2xl mx-auto">
+                            <h3 className="font-bold text-amber-800 mb-2">💡 为什么是"一家人"？</h3>
+                            <p className="text-gray-700 leading-relaxed">
+                                这 {total} 个点没有变，只是看的角度不同：
+                                按 <span className="text-rose-600 font-bold">行</span> 看，或按 <span className="text-emerald-600 font-bold">列</span> 看，
+                                就得到两道乘法；反过来"把总数分回去"，就是两道除法。
+                                把鼠标移到右边的算式上，看看点阵怎么高亮。
+                                记住：<span className="font-bold">乘法和除法是互相反过来的</span>，会一道就能想出其他三道。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

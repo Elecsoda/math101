@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竖式进位与退位 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .stick { transition: all 0.45s cubic-bezier(0.4,0,0.2,1); }
+        .bundle-pop { animation: bundlePop 0.5s ease; }
+        @keyframes bundlePop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+        .col-grid { font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 一根散棒
+        const Stick = ({ color = 'amber', highlight }) => (
+            <div className={"stick w-2 h-12 rounded-sm " +
+                (highlight ? "ring-2 ring-rose-400 " : "") +
+                (color === 'amber' ? "bg-amber-500" : "bg-emerald-500")} />
+        );
+
+        // 一捆（10 根捆在一起），用红绳框表示
+        const Bundle = ({ pop }) => (
+            <div className={"flex gap-0.5 p-1 border-2 border-rose-400 rounded bg-rose-50 " + (pop ? "bundle-pop" : "")}>
+                {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="w-1.5 h-12 rounded-sm bg-emerald-500" />
+                ))}
+            </div>
+        );
+
+        // 一列：显示若干捆 + 若干散棒
+        const PlaceColumn = ({ label, bundles, ones, onesHighlight = false, popBundle = false }) => (
+            <div className="flex flex-col items-center">
+                <div className="text-sm font-bold text-gray-500 mb-2">{label}</div>
+                <div className="flex flex-col gap-2 items-center min-h-[160px] justify-end">
+                    <div className="flex flex-wrap gap-1.5 justify-center max-w-[180px]">
+                        {Array.from({ length: bundles }).map((_, i) => (
+                            <Bundle key={i} pop={popBundle && i === bundles - 1} />
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1 justify-center max-w-[140px]">
+                        {Array.from({ length: ones }).map((_, i) => (
+                            <Stick key={i} highlight={onesHighlight} />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+
+        // ===== 进位加法 =====
+        const AddCarry = () => {
+            const [a, setA] = useState(28);
+            const [b, setB] = useState(35);
+            const [step, setStep] = useState(0); // 0 摆数 1 合个位 2 打捆进位 3 合十位 4 结果
+
+            const aT = Math.floor(a / 10), aO = a % 10;
+            const bT = Math.floor(b / 10), bO = b % 10;
+            const onesSum = aO + bO;
+            const carry = onesSum >= 10 ? 1 : 0;
+            const onesResult = onesSum % 10;
+            const tensSum = aT + bT + carry;
+            const total = a + b;
+
+            // 当前画面里"个位列"的散棒数、"十位列"的捆数
+            let onesShown, tensShown, popB = false, onesHi = false;
+            if (step <= 0) { onesShown = aO; tensShown = aT; }
+            else if (step === 1) { onesShown = onesSum; tensShown = aT + bT; onesHi = true; }
+            else if (step === 2) { onesShown = onesResult; tensShown = aT + bT + carry; popB = carry === 1; }
+            else { onesShown = onesResult; tensShown = tensSum; }
+
+            const randomize = () => {
+                let na, nb;
+                do { na = 11 + Math.floor(Math.random() * 78); nb = 11 + Math.floor(Math.random() * 78); }
+                while ((na % 10) + (nb % 10) < 10 || na + nb > 99);
+                setA(na); setB(nb); setStep(0);
+            };
+
+            return (
+                <div className="fade-in flex flex-col items-center">
+                    <Controls a={a} b={b} op="+" setA={setA} setB={setB} setStep={setStep} randomize={randomize} max={89} />
+
+                    {carry === 0 && (
+                        <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                            提示：个位 {aO} + {bO} = {onesSum}，没满 10，不需要进位。换一题试试满十进一。
+                        </div>
+                    )}
+
+                    <div className="flex gap-12 bg-white rounded-xl shadow p-6 mb-6">
+                        <PlaceColumn label="十位" bundles={tensShown} ones={0} popBundle={popB} />
+                        <div className="w-px bg-gray-200" />
+                        <PlaceColumn label="个位" bundles={0} ones={onesShown} onesHighlight={onesHi} />
+                    </div>
+
+                    <VerticalForm a={a} b={b} op="+" total={total} carry={carry} step={step}
+                        onesResult={onesResult} tensSum={tensSum} />
+
+                    <StepBar step={step} maxStep={4} color="blue"
+                        labels={['摆出两个数', '合并个位', '满十进一（打捆）', '合并十位', '完成']}
+                        onPrev={() => setStep(0)} onNext={() => setStep(s => Math.min(4, s + 1))} />
+                </div>
+            );
+        };
+
+        // ===== 退位减法 =====
+        const SubBorrow = () => {
+            const [a, setA] = useState(52);
+            const [b, setB] = useState(37);
+            const [step, setStep] = useState(0); // 0 摆数 1 个位不够 2 拆捆借十 3 减个位 4 减十位 结果
+
+            const aT = Math.floor(a / 10), aO = a % 10;
+            const bT = Math.floor(b / 10), bO = b % 10;
+            const needBorrow = aO < bO;
+            const total = a - b;
+
+            // 借位后
+            const onesAfterBorrow = needBorrow ? aO + 10 : aO;
+            const tensAfterBorrow = needBorrow ? aT - 1 : aT;
+
+            let tensShown, onesShown, onesHi = false;
+            if (step <= 1) { tensShown = aT; onesShown = aO; onesHi = step === 1; }
+            else if (step === 2) { tensShown = tensAfterBorrow; onesShown = onesAfterBorrow; onesHi = true; }
+            else if (step === 3) { tensShown = tensAfterBorrow; onesShown = onesAfterBorrow - bO; }
+            else { tensShown = tensAfterBorrow - bT; onesShown = onesAfterBorrow - bO; }
+
+            const randomize = () => {
+                let na, nb;
+                do { na = 21 + Math.floor(Math.random() * 78); nb = 11 + Math.floor(Math.random() * 78); }
+                while (!((na % 10) < (nb % 10)) || nb >= na || Math.floor(nb/10) > Math.floor(na/10));
+                setA(na); setB(nb); setStep(0);
+            };
+
+            return (
+                <div className="fade-in flex flex-col items-center">
+                    <Controls a={a} b={b} op="−" setA={setA} setB={setB} setStep={setStep} randomize={randomize} max={99} />
+
+                    {!needBorrow && (
+                        <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                            提示：个位 {aO} 够减 {bO}，不需要退位。换一题试试个位不够减。
+                        </div>
+                    )}
+
+                    <div className="flex gap-12 bg-white rounded-xl shadow p-6 mb-6">
+                        <PlaceColumn label="十位" bundles={tensShown} ones={0} />
+                        <div className="w-px bg-gray-200" />
+                        <PlaceColumn label="个位" bundles={0} ones={onesShown} onesHighlight={onesHi} />
+                    </div>
+
+                    <VerticalForm a={a} b={b} op="−" total={total} borrow={needBorrow} step={step} />
+
+                    <StepBar step={step} maxStep={4} color="rose"
+                        labels={['摆出被减数', '个位不够减', '借一当十（拆捆）', '减去个位', '减去十位 · 完成']}
+                        onPrev={() => setStep(0)} onNext={() => setStep(s => Math.min(4, s + 1))} />
+                </div>
+            );
+        };
+
+        // 共用：输入控件
+        const Controls = ({ a, b, op, setA, setB, setStep, randomize, max }) => (
+            <div className="bg-white rounded-xl shadow p-5 mb-6 flex flex-wrap gap-5 items-center justify-center">
+                <div className="flex items-center gap-2">
+                    <label className="font-semibold text-gray-700">{op === '+' ? '加数' : '被减数'}</label>
+                    <input type="number" min="10" max={max} value={a}
+                        onChange={e => { setA(Math.max(10, Math.min(99, +e.target.value || 10))); setStep(0); }}
+                        className="w-20 text-center text-lg border-2 border-blue-300 rounded p-1.5" />
+                </div>
+                <span className="text-2xl font-bold text-gray-400">{op}</span>
+                <div className="flex items-center gap-2">
+                    <label className="font-semibold text-gray-700">{op === '+' ? '加数' : '减数'}</label>
+                    <input type="number" min="1" max={max} value={b}
+                        onChange={e => { setB(Math.max(1, Math.min(99, +e.target.value || 1))); setStep(0); }}
+                        className="w-20 text-center text-lg border-2 border-green-300 rounded p-1.5" />
+                </div>
+                <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
+            </div>
+        );
+
+        // 共用：竖式书写区
+        const VerticalForm = ({ a, b, op, total, carry, borrow, step, onesResult, tensSum }) => {
+            const aT = Math.floor(a / 10), aO = a % 10;
+            const bT = Math.floor(b / 10), bO = b % 10;
+            const showResult = step >= 4;
+            return (
+                <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 mb-5 col-grid">
+                    <div className="font-mono text-3xl leading-snug text-gray-800">
+                        {/* 进位/退位小标记行 */}
+                        <div className="h-5 text-base text-right pr-2">
+                            {op === '+' && carry === 1 && step >= 2 && <span className="text-rose-500 mr-3">¹</span>}
+                            {op === '−' && borrow && step >= 2 && (
+                                <span className="text-rose-500">
+                                    <span className="line-through text-gray-300">{aT}</span>
+                                    <span className="ml-0.5">{aT - 1}</span>
+                                    <span className="ml-1 text-base">¹</span>
+                                </span>
+                            )}
+                        </div>
+                        <div className="text-right pr-2">{a}</div>
+                        <div className="text-right pr-2 border-b-2 border-gray-700 pb-1">
+                            <span className="mr-3 text-gray-500">{op}</span>{b}
+                        </div>
+                        <div className="text-right pr-2 pt-1 font-bold text-rose-600 min-h-[2.5rem]">
+                            {showResult ? total : <span className="text-gray-300">?</span>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 共用：步骤按钮条
+        const StepBar = ({ step, maxStep, labels, color, onPrev, onNext }) => {
+            const btn = color === 'rose' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-blue-500 hover:bg-blue-600';
+            return (
+                <div className="flex flex-col items-center gap-3">
+                    <div className="text-gray-600 font-semibold h-6">{labels[step]}</div>
+                    <div className="flex gap-3">
+                        <button onClick={onPrev} disabled={step === 0}
+                            className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700">重置</button>
+                        <button onClick={onNext} disabled={step === maxStep}
+                            className={"px-6 py-2.5 rounded-lg font-semibold smooth-transition text-white disabled:opacity-40 " + btn}>
+                            {step === maxStep ? '已完成' : '下一步'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [tab, setTab] = useState('add');
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">竖式进位与退位</h1>
+                        <p className="text-slate-500 mt-1">用数位小棒"打捆 / 拆捆"，把满十进一、借一当十做成动作</p>
+                    </header>
+
+                    <div className="flex justify-center gap-3 mb-8">
+                        <button onClick={() => setTab('add')}
+                            className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " + (tab === 'add' ? "bg-blue-500 text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                            进位加法
+                        </button>
+                        <button onClick={() => setTab('sub')}
+                            className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " + (tab === 'sub' ? "bg-rose-500 text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                            退位减法
+                        </button>
+                    </div>
+
+                    <div className="max-w-3xl mx-auto">
+                        {tab === 'add' ? <AddCarry /> : <SubBorrow />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

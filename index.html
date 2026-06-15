@@ -108,6 +108,37 @@
         .math-op .status-badge { background: #f3e5f5; color: #7b1fa2; }
         .math-law .status-badge { background: #e8f5e9; color: #2e7d32; }
 
+        /* 未实现工具：占位接口卡片 */
+        .tool-card.todo {
+            border-top-color: #cbd5e1;
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .tool-card.todo:hover { transform: none; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+        .tool-card.todo .status-badge { background: #eceff1; color: #90a4ae; }
+
+        /* 分区标题 */
+        .section-title {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto 0;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .section-title h3 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 12px;
+            margin: 0;
+        }
+        .section-title p {
+            font-size: 0.9rem;
+            color: #888;
+            margin: 6px 0 0 17px;
+        }
+
         .update-tag {
             background: #ffecb3;
             color: #ffa000;
@@ -133,6 +164,144 @@
         <p class="subtitle">互动式小学数学教学辅助平台</p>
     </header>
 
+    <!-- ============ 第一部分：巩固已学（运算熟练度） ============ -->
+    <div class="section-title">
+        <h3>第一部分 · 巩固与熟练</h3>
+        <p>针对"学过但不熟练"的整数加减乘除，强化算理与练习。</p>
+    </div>
+    <div class="container">
+        <a href="/make-ten" class="tool-card math-op">
+            <div class="url-tag">/make-ten</div>
+            <h2>凑十 / 借十法 <span class="update-tag">NEW</span></h2>
+            <p>用十格阵与计数珠动画演示进位加法的"凑十"与退位减法的"借十"。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/column-method" class="tool-card math-op">
+            <div class="url-tag">/column-method</div>
+            <h2>竖式进位与退位 <span class="update-tag">NEW</span></h2>
+            <p>用数位小棒"打捆 / 拆捆"，把"满十进一""借一当十"做成看得见的动作。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/times-table" class="tool-card math-op">
+            <div class="url-tag">/times-table</div>
+            <h2>乘法口诀练习 <span class="update-tag">NEW</span></h2>
+            <p>点阵图配合跳数数轴记忆口诀，含遮挡记忆与错题练习。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/fact-family" class="tool-card math-op">
+            <div class="url-tag">/fact-family</div>
+            <h2>乘除互逆·一图四式 <span class="update-tag">NEW</span></h2>
+            <p>同一张点阵同时生成两道乘法与两道除法，理解乘除互逆。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+    </div>
+
+    <!-- ============ 第二部分：二年级新知识（待实现接口） ============ -->
+    <div class="section-title">
+        <h3>第二部分 · 二年级新知识</h3>
+        <p>系统学习的新内容，接口已预留，逐步实现中。</p>
+    </div>
+    <div class="container">
+        <div class="tool-card todo">
+            <div class="url-tag">/remainder</div>
+            <h2>有余数的除法</h2>
+            <p>分物动画演示"每人几个、剩几个"，直观理解余数小于除数。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+
+        <a href="/clock" class="tool-card math-op">
+            <div class="url-tag">/clock</div>
+            <h2>认识时间·钟表 <span class="update-tag">NEW</span></h2>
+            <p>可拖动时针分针，时分联动，读取"几时几分"与经过时间。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/money" class="tool-card math-op">
+            <div class="url-tag">/money</div>
+            <h2>认识人民币·购物 <span class="update-tag">NEW</span></h2>
+            <p>仿真钞票硬币拼凑付款与找零，建立面额与计算的联系。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/shopping" class="tool-card math-op">
+            <div class="url-tag">/shopping</div>
+            <h2>购物计算·整数版 <span class="update-tag">NEW</span></h2>
+            <p>整元价按件买，预算购物与采购任务两个游戏，理解"单价×数量=总价"。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/shopping-decimal" class="tool-card math-op">
+            <div class="url-tag">/shopping-decimal</div>
+            <h2>购物计算·小数版 <span class="update-tag">NEW</span></h2>
+            <p>价格带角分、蔬果按公斤，练习带小数的"单价×数量=总价"与纸币付款。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <div class="tool-card todo">
+            <div class="url-tag">/length</div>
+            <h2>长度单位·米与厘米</h2>
+            <p>可拉伸标尺对比实物，建立 1 厘米 / 1 米的量感。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+
+        <div class="tool-card todo">
+            <div class="url-tag">/angle</div>
+            <h2>角的初步认识</h2>
+            <p>可张合的角动态变化，区分直角、锐角与钝角。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+
+        <div class="tool-card todo">
+            <div class="url-tag">/transform</div>
+            <h2>平移·旋转·对称</h2>
+            <p>在网格上拖动平移、翻转出对称图形，认识图形变换。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+
+        <div class="tool-card todo">
+            <div class="url-tag">/statistics</div>
+            <h2>简单数据与统计</h2>
+            <p>拖动实物分类，自动生成象形统计图与简单条形图。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+    </div>
+
+    <!-- ============ 第三部分：衔接与进阶（待实现接口） ============ -->
+    <div class="section-title">
+        <h3>第三部分 · 衔接与进阶</h3>
+        <p>稍超前但价值高的内容，与现有方向衔接，接口已预留。</p>
+    </div>
+    <div class="container">
+        <div class="tool-card todo">
+            <div class="url-tag">/fraction</div>
+            <h2>分数的初步认识</h2>
+            <p>平分披萨 / 巧克力条，高亮"几分之几"，对比 1/2 与 1/4。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+
+        <div class="tool-card todo">
+            <div class="url-tag">/times-as-many</div>
+            <h2>倍的认识</h2>
+            <p>用条形图把"几倍"做成几条等长的条，衔接乘法。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+
+        <div class="tool-card todo">
+            <div class="url-tag">/place-value</div>
+            <h2>数位与数感·千以内</h2>
+            <p>拖动个 / 十 / 百 / 千小棒，看数字随数位变化。</p>
+            <span class="status-badge">开发中</span>
+        </div>
+    </div>
+
+    <!-- ============ 已有工具 ============ -->
+    <div class="section-title">
+        <h3>其他工具 · 小数与运算律</h3>
+        <p>已上线的小数与运算律可视化工具。</p>
+    </div>
     <div class="container">
         <a href="/decimal-1" class="tool-card">
             <div class="url-tag">/decimal-1</div>
@@ -150,7 +319,7 @@
 
         <a href="/law_of_operation" class="tool-card math-law">
             <div class="url-tag">/law_of_operation</div>
-            <h2>运算律直观演示 <span class="update-tag">NEW</span></h2>
+            <h2>运算律直观演示</h2>
             <p>利用面积模型动态展示乘法分配律 $(a+b) \times c = a \times c + b \times c$ 及其他运算定律。</p>
             <span class="status-badge">进入工具</span>
         </a>

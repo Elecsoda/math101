@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认识钟表 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .clock-svg { touch-action: none; user-select: none; }
+        .hand-grab { cursor: grab; }
+        .hand-grab:active { cursor: grabbing; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+        // 全程用"当天总秒数"(0 ~ 86399)表示时间，这样分针绕一圈能自然带动时针，
+        // 时针绕一圈能带动"上午/下午"，完全模拟真实钟表的连续转动。
+        const DAY = 24 * 60 * 60;
+        const norm = (s) => ((s % DAY) + DAY) % DAY; // 规整到 [0, DAY)
+
+        // 由总秒数拆出 时/分/秒（12 小时制用于读数）。读数一律取整，不显示小数。
+        const split = (sec) => {
+            sec = Math.floor(norm(sec));
+            const h24 = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+            return { h24, h12, m, s };
+        };
+
+        // 各指针角度（0 = 12 点方向，顺时针），都随更小单位连续走动
+        const secAngle = (sec) => (norm(sec) % 60) * 6;
+        const minAngle = (sec) => ((norm(sec) % 3600) / 60) * 6;     // 含秒的零头
+        const hrAngle  = (sec) => ((norm(sec) % 43200) / 3600) * 30; // 含分的零头，12 小时一圈
+
+        const readChinese = ({ h12, m }) => {
+            if (m === 0) return `${h12}时整`;
+            if (m === 30) return `${h12}时半（${h12}时30分）`;
+            return `${h12}时${m}分`;
+        };
+        const pad = (n) => String(n).padStart(2, '0');
+
+        // ===== 表盘组件 =====
+        // value: 当天总秒数；onChange(newSec): 拖动时回调；showSecond: 是否显示秒针
+        const ClockFace = ({ value, onChange, draggable = true, showSecond = true, size = 320 }) => {
+            const svgRef = useRef(null);
+            const dragging = useRef(null);   // 'hour' | 'minute' | 'second' | null
+            const R = size / 2;
+
+            const pointToAngle = useCallback((clientX, clientY) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                let deg = Math.atan2(clientX - cx, -(clientY - cy)) * 180 / Math.PI;
+                if (deg < 0) deg += 360;
+                return deg;
+            }, []);
+
+            // 拖动核心：用"角度变化量"去增减总秒数，而不是直接重设——
+            // 这样越过 12 点时，分针会把进位/退位传给时针，绝不归位。
+            const applyAngle = useCallback((angle) => {
+                const which = dragging.current;
+                if (!which) return;
+                // 当前指针对应的角度
+                const cur = which === 'second' ? secAngle(value)
+                          : which === 'minute' ? minAngle(value)
+                          : hrAngle(value) % 360;
+                // 计算最短方向上的角度增量（-180 ~ 180），判定顺/逆时针越界
+                let delta = angle - cur;
+                if (delta > 180) delta -= 360;
+                if (delta < -180) delta += 360;
+                // 每种指针：1° 对应多少秒
+                const secPerDeg = which === 'second' ? 60 / 360       // 一圈 60 秒
+                                : which === 'minute' ? 3600 / 360     // 一圈 60 分 = 3600 秒
+                                : 43200 / 360;                        // 一圈 12 时 = 43200 秒
+                onChange(norm(value + delta * secPerDeg));
+            }, [value, onChange]);
+
+            const startDrag = (which) => (e) => {
+                if (!draggable) return;
+                e.preventDefault();
+                dragging.current = which;
+            };
+            const onMove = (e) => {
+                if (!dragging.current) return;
+                const pt = e.touches ? e.touches[0] : e;
+                applyAngle(pointToAngle(pt.clientX, pt.clientY));
+            };
+            const endDrag = () => { dragging.current = null; };
+
+            const polar = (angleDeg, radiusRatio) => {
+                const rad = (angleDeg - 90) * Math.PI / 180;
+                return [R + Math.cos(rad) * R * radiusRatio, R + Math.sin(rad) * R * radiusRatio];
+            };
+
+            // 指针尖端的箭头：以指针所指方向为轴，画一个等腰三角形。
+            // tipRatio 为针尖半径比例，w 为箭头底边半宽（像素），len 为箭头长度（像素）。
+            const arrowPoints = (angleDeg, tipRatio, w, len) => {
+                const rad = (angleDeg - 90) * Math.PI / 180;
+                const ux = Math.cos(rad), uy = Math.sin(rad);      // 指针方向单位向量
+                const px = -uy, py = ux;                            // 垂直方向
+                const [tx, ty] = polar(angleDeg, tipRatio);         // 针尖（三角形顶点）
+                const bx = tx - ux * len, by = ty - uy * len;       // 箭头底边中点
+                return `${tx},${ty} ${bx + px * w},${by + py * w} ${bx - px * w},${by - py * w}`;
+            };
+
+            const ticks = [];
+            for (let i = 0; i < 60; i++) {
+                const big = i % 5 === 0;
+                const [x1, y1] = polar(i * 6, big ? 0.86 : 0.91);
+                const [x2, y2] = polar(i * 6, 0.96);
+                ticks.push(<line key={'t' + i} x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke={big ? '#334155' : '#cbd5e1'} strokeWidth={big ? 3 : 1.5} strokeLinecap="round" />);
+            }
+            const numbers = [];
+            for (let i = 1; i <= 12; i++) {
+                const [x, y] = polar(i * 30, 0.74);
+                numbers.push(<text key={'n' + i} x={x} y={y} textAnchor="middle" dominantBaseline="central"
+                    fontSize={size * 0.085} fontWeight="700" fill="#1e293b">{i}</text>);
+            }
+            const minLabels = [];
+            for (let i = 0; i < 12; i++) {
+                const [x, y] = polar(i * 30, 1.04);
+                minLabels.push(<text key={'m' + i} x={x} y={y} textAnchor="middle" dominantBaseline="central"
+                    fontSize={size * 0.04} fill="#94a3b8">{pad(i * 5)}</text>);
+            }
+
+            const [hx, hy] = polar(hrAngle(value), 0.5);
+            const [mx, my] = polar(minAngle(value), 0.78);
+            const [sx, sy] = polar(secAngle(value), 0.86);
+
+            return (
+                <svg ref={svgRef} className="clock-svg" width={size} height={size + size * 0.14}
+                    viewBox={`0 ${-size * 0.07} ${size} ${size + size * 0.14}`}
+                    onMouseMove={onMove} onMouseUp={endDrag} onMouseLeave={endDrag}
+                    onTouchMove={onMove} onTouchEnd={endDrag}>
+                    <circle cx={R} cy={R} r={R * 0.99} fill="#ffffff" stroke="#0f172a" strokeWidth="4" />
+                    {minLabels}
+                    {ticks}
+                    {numbers}
+                    {/* 分针（细长，蓝），针尖为箭头 */}
+                    <line x1={R} y1={R} x2={mx} y2={my} stroke="#3b82f6" strokeWidth="5" strokeLinecap="round"
+                        className={draggable ? 'hand-grab' : ''}
+                        onMouseDown={startDrag('minute')} onTouchStart={startDrag('minute')} />
+                    <polygon points={arrowPoints(minAngle(value), 0.84, size * 0.035, size * 0.075)} fill="#3b82f6"
+                        className={draggable ? 'hand-grab' : ''}
+                        onMouseDown={startDrag('minute')} onTouchStart={startDrag('minute')} />
+                    {/* 时针（粗短，红），针尖为箭头 */}
+                    <line x1={R} y1={R} x2={hx} y2={hy} stroke="#ef4444" strokeWidth="8" strokeLinecap="round"
+                        className={draggable ? 'hand-grab' : ''}
+                        onMouseDown={startDrag('hour')} onTouchStart={startDrag('hour')} />
+                    <polygon points={arrowPoints(hrAngle(value), 0.57, size * 0.05, size * 0.085)} fill="#ef4444"
+                        className={draggable ? 'hand-grab' : ''}
+                        onMouseDown={startDrag('hour')} onTouchStart={startDrag('hour')} />
+                    {/* 秒针（最细，黄/橙；尾部留一小段），针尖为箭头 */}
+                    {showSecond && <>
+                        <line x1={R + (R - sx) * 0.18} y1={R + (R - sy) * 0.18} x2={sx} y2={sy}
+                            stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"
+                            className={draggable ? 'hand-grab' : ''}
+                            onMouseDown={startDrag('second')} onTouchStart={startDrag('second')} />
+                        <polygon points={arrowPoints(secAngle(value), 0.9, size * 0.022, size * 0.055)} fill="#f59e0b"
+                            className={draggable ? 'hand-grab' : ''}
+                            onMouseDown={startDrag('second')} onTouchStart={startDrag('second')} />
+                    </>}
+                    <circle cx={R} cy={R} r="8" fill="#0f172a" />
+                </svg>
+            );
+        };
+
+        const nowSeconds = () => {
+            const d = new Date();
+            return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+        };
+
+        // ===== 模块一：自由拨钟 + 数字时间联动 + 跟随系统时间 =====
+        const Playground = () => {
+            const [sec, setSec] = useState(nowSeconds);   // 默认与系统时间一致
+            const [running, setRunning] = useState(true); // 默认像真钟一样走动
+
+            // 每秒走动；拖动时（running=false）暂停，避免和手相冲突
+            useEffect(() => {
+                if (!running) return;
+                const id = setInterval(() => setSec(s => norm(s + 1)), 1000);
+                return () => clearInterval(id);
+            }, [running]);
+
+            // 拖动指针时自动暂停走动，让孩子能稳稳地拨
+            const onDrag = (newSec) => { setRunning(false); setSec(newSec); };
+
+            const t = split(sec);
+            const syncNow = () => setSec(nowSeconds());
+
+            const randomize = () => {
+                setRunning(false);
+                const h = Math.floor(Math.random() * 24);
+                const m = Math.floor(Math.random() * 12) * 5;
+                setSec(h * 3600 + m * 60);
+            };
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-10">
+                    <ClockFace value={sec} onChange={onDrag} />
+                    <div className="flex flex-col items-center gap-5 w-72">
+                        <div className="bg-white rounded-2xl shadow px-8 py-6 text-center w-full">
+                            <div className="text-sm text-gray-400 mb-1">电子表读数（24 小时制）</div>
+                            <div className="text-4xl font-mono font-bold text-gray-800 tracking-widest">
+                                {pad(t.h24)}<span className="text-blue-400">:</span>{pad(t.m)}<span className="text-amber-400">:</span>{pad(t.s)}
+                            </div>
+                            <div className="text-2xl font-bold text-rose-500 mt-3">{readChinese(t)}</div>
+                        </div>
+
+                        <div className="w-full flex gap-3">
+                            <button onClick={() => setRunning(r => !r)}
+                                className={"flex-1 px-4 py-2.5 rounded-lg font-semibold text-white smooth-transition " +
+                                    (running ? "bg-amber-500 hover:bg-amber-600" : "bg-green-500 hover:bg-green-600")}>
+                                {running ? '⏸ 暂停走动' : '▶ 开始走动'}
+                            </button>
+                            <button onClick={syncNow}
+                                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">
+                                ⟳ 对准现在
+                            </button>
+                        </div>
+
+                        <button onClick={randomize}
+                            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth-transition w-full">
+                            随机拨一个时间
+                        </button>
+                        <p className="text-xs text-gray-400 text-center leading-relaxed">
+                            <span className="text-rose-500 font-bold">红短针</span>是时针，
+                            <span className="text-blue-500 font-bold">蓝长针</span>是分针，
+                            <span className="text-amber-500 font-bold">黄细针</span>是秒针。<br/>
+                            可直接拖动指针——分针转一圈，时针会跟着往前走，<b>不会归位</b>。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== 模块二：读时间练习（看钟选答案） =====
+        const ReadQuiz = () => {
+            const gen = () => {
+                const h = 1 + Math.floor(Math.random() * 12);
+                const m = Math.floor(Math.random() * 12) * 5;
+                return h * 3600 + m * 60;
+            };
+            const [sec, setSec] = useState(gen);
+            const [picked, setPicked] = useState(null);
+            const [score, setScore] = useState({ right: 0, total: 0 });
+
+            const t = split(sec);
+            const correct = `${pad(t.h12)}:${pad(t.m)}`;
+
+            const options = useMemo(() => {
+                const set = new Set([correct]);
+                while (set.size < 4) {
+                    const dh = 1 + Math.floor(Math.random() * 12);
+                    const dm = Math.floor(Math.random() * 12) * 5;
+                    set.add(`${pad(dh)}:${pad(dm)}`);
+                }
+                return Array.from(set).sort(() => Math.random() - 0.5);
+            }, [sec]);
+
+            const choose = (opt) => {
+                if (picked) return;
+                setPicked(opt);
+                setScore(s => ({ right: s.right + (opt === correct ? 1 : 0), total: s.total + 1 }));
+            };
+            const next = () => { setSec(gen()); setPicked(null); };
+
+            return (
+                <div className="fade-in flex flex-col items-center">
+                    <div className="text-gray-500 mb-4">钟面显示的是几时几分？</div>
+                    <ClockFace value={sec} draggable={false} showSecond={false} size={280} />
+                    <div className="grid grid-cols-2 gap-3 mt-6 w-full max-w-sm">
+                        {options.map(opt => {
+                            const isCorrect = opt === correct;
+                            const isPicked = opt === picked;
+                            let cls = "bg-white hover:bg-blue-50 text-gray-700 border-gray-200";
+                            if (picked) {
+                                if (isCorrect) cls = "bg-green-100 text-green-700 border-green-400";
+                                else if (isPicked) cls = "bg-rose-100 text-rose-700 border-rose-400";
+                                else cls = "bg-white text-gray-400 border-gray-200";
+                            }
+                            return (
+                                <button key={opt} onClick={() => choose(opt)} disabled={!!picked}
+                                    className={"py-3 rounded-xl border-2 font-mono text-2xl font-bold smooth-transition " + cls}>
+                                    {opt}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <div className="h-8 mt-4 text-lg font-bold">
+                        {picked && (picked === correct
+                            ? <span className="text-green-600">✓ 答对了！读作 {readChinese(t)}</span>
+                            : <span className="text-rose-600">再看看，正确答案是 {correct}（{readChinese(t)}）</span>)}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2">
+                        <span className="text-gray-500">得分：<span className="font-bold text-gray-800">{score.right} / {score.total}</span></span>
+                        <button onClick={next} disabled={!picked}
+                            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth-transition disabled:opacity-40">
+                            下一题
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== 模块三：经过时间（从 A 到 B 过了多久） =====
+        const Elapsed = () => {
+            const [startH, setStartH] = useState(8);
+            const [startM, setStartM] = useState(0);
+            const [durH, setDurH] = useState(1);
+            const [durM, setDurM] = useState(30);
+
+            const startSec = startH * 3600 + startM * 60;
+            const endTotalMin = startH * 60 + startM + durH * 60 + durM;
+            const endH = Math.floor((endTotalMin % (24 * 60)) / 60);
+            const endM = endTotalMin % 60;
+            const endSec = endH * 3600 + endM * 60;
+
+            return (
+                <div className="fade-in flex flex-col items-center">
+                    <div className="text-gray-500 mb-6 text-center">
+                        从一个时刻出发，经过一段时间后是几时几分？<br/>
+                        <span className="text-sm">（左：开始时刻 &nbsp;→&nbsp; 右：结束时刻）</span>
+                    </div>
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        <div className="flex flex-col items-center">
+                            <ClockFace value={startSec} draggable={false} showSecond={false} size={220} />
+                            <div className="font-mono text-2xl font-bold text-gray-700 mt-1">{pad(startH)}:{pad(startM)}</div>
+                            <div className="text-sm text-gray-400">开始</div>
+                        </div>
+                        <div className="flex flex-col items-center text-blue-500">
+                            <div className="text-4xl">→</div>
+                            <div className="font-bold mt-1">经过</div>
+                            <div className="font-mono text-lg">{durH}时{durM}分</div>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <ClockFace value={endSec} draggable={false} showSecond={false} size={220} />
+                            <div className="font-mono text-2xl font-bold text-rose-600 mt-1">{pad(endH)}:{pad(endM)}</div>
+                            <div className="text-sm text-gray-400">结束</div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow p-5 mt-8 grid grid-cols-2 gap-x-8 gap-y-3 w-full max-w-md">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">开始 · 时</label>
+                            <input type="range" min="0" max="23" value={startH} onChange={e => setStartH(+e.target.value)} className="w-full accent-gray-600" />
+                            <div className="text-center font-mono">{pad(startH)}</div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-600 mb-1">开始 · 分</label>
+                            <input type="range" min="0" max="59" value={startM} onChange={e => setStartM(+e.target.value)} className="w-full accent-gray-600" />
+                            <div className="text-center font-mono">{pad(startM)}</div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-blue-600 mb-1">经过 · 时</label>
+                            <input type="range" min="0" max="11" value={durH} onChange={e => setDurH(+e.target.value)} className="w-full accent-blue-500" />
+                            <div className="text-center font-mono">{durH}</div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-blue-600 mb-1">经过 · 分</label>
+                            <input type="range" min="0" max="59" value={durM} onChange={e => setDurM(+e.target.value)} className="w-full accent-blue-500" />
+                            <div className="text-center font-mono">{durM}</div>
+                        </div>
+                    </div>
+                    <div className="mt-6 px-6 py-3 bg-rose-50 border border-rose-200 rounded-xl font-mono text-lg text-rose-700">
+                        {pad(startH)}:{pad(startM)} 经过 {durH}时{durM}分 = <span className="font-bold text-xl">{pad(endH)}:{pad(endM)}</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [tab, setTab] = useState('play');
+            const tabs = [
+                ['play', '自由拨钟', 'blue'],
+                ['quiz', '读时间练习', 'rose'],
+                ['elapsed', '经过的时间', 'green'],
+            ];
+            const colorMap = { blue: 'bg-blue-500', rose: 'bg-rose-500', green: 'bg-green-500' };
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">认识钟表</h1>
+                        <p className="text-slate-500 mt-1">拨一拨、读一读，把"几时几分几秒"看得见</p>
+                    </header>
+
+                    <div className="flex justify-center gap-3 mb-8 flex-wrap">
+                        {tabs.map(([key, label, color]) => (
+                            <button key={key} onClick={() => setTab(key)}
+                                className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " +
+                                    (tab === key ? colorMap[color] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="max-w-4xl mx-auto">
+                        {tab === 'play' && <Playground />}
+                        {tab === 'quiz' && <ReadQuiz />}
+                        {tab === 'elapsed' && <Elapsed />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

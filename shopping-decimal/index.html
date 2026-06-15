@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物计算 · 小数版 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .pop { animation: pop 0.3s ease; }
+        @keyframes pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* ===== 人民币仿真示意图（与 /money 工具一致） ===== */
+        .note {
+            position: relative; overflow: hidden;
+            border-radius: 8px; border: 1px solid rgba(0,0,0,.15);
+            box-shadow: 0 1px 3px rgba(0,0,0,.18);
+            background-image:
+                repeating-linear-gradient(45deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px),
+                repeating-linear-gradient(-45deg, rgba(0,0,0,.04) 0 4px, transparent 4px 10px);
+        }
+        .note::before { content: ''; position: absolute; inset: 4px; border: 1.5px solid currentColor; border-radius: 5px; opacity: .35; pointer-events: none; }
+        .note-portrait { width: 26px; height: 34px; border-radius: 40% 40% 45% 45% / 55% 55% 45% 45%;
+            background: radial-gradient(circle at 50% 32%, currentColor 0 42%, transparent 44%), linear-gradient(currentColor, currentColor); opacity: .28; }
+        .coin { position: relative; border-radius: 50%; border: 2px solid currentColor;
+            box-shadow: 0 1px 2px rgba(0,0,0,.25), inset 0 0 0 3px rgba(255,255,255,.4);
+            background-image: repeating-conic-gradient(from 0deg, rgba(0,0,0,.10) 0 6deg, transparent 6deg 12deg); }
+        .guilloche { background-image: radial-gradient(circle, currentColor 1px, transparent 1.4px); background-size: 5px 5px; opacity: .22; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // ============ 商品库（小数版：带角分的价格、蔬果按公斤买，要算小数） ============
+        // price 以"分"为单位存储，避免小数误差。生活用品价带角分（如 ¥6.50）。
+        // 蔬果 unit:'kg' 按公斤买，数量可为 0.5 公斤；其单价为 2角的整数倍，×0.5 仍落在 1角上，便于纸币付款。
+        const CATEGORIES = [
+            {
+                key: 'electronics', name: '电子产品', icon: '📱', accent: 'blue',
+                hint: '贵重的大件，价格成百上千元。',
+                items: [
+                    { id: 'phone',   name: '智能手机', emoji: '📱', price: 599900, unit: 'piece', uw: '个' },
+                    { id: 'laptop',  name: '笔记本电脑', emoji: '💻', price: 499900, unit: 'piece', uw: '台' },
+                    { id: 'tablet',  name: '平板电脑', emoji: '📲', price: 299900, unit: 'piece', uw: '台' },
+                    { id: 'tv',      name: '电视机', emoji: '📺', price: 219900, unit: 'piece', uw: '台' },
+                    { id: 'watch',   name: '电话手表', emoji: '⌚', price: 49900, unit: 'piece', uw: '个' },
+                    { id: 'earbuds', name: '耳机', emoji: '🎧', price: 19900, unit: 'piece', uw: '副' },
+                    { id: 'mouse',   name: '鼠标', emoji: '🖱️', price: 4900, unit: 'piece', uw: '个' },
+                    { id: 'battery', name: '充电电池', emoji: '🔋', price: 1500, unit: 'piece', uw: '个' },
+                ],
+            },
+            {
+                key: 'daily', name: '生活用品', icon: '🧺', accent: 'green',
+                hint: '家里常用的东西，价格常带几角几分。',
+                items: [
+                    { id: 'backpack', name: '书包', emoji: '🎒', price: 8900, unit: 'piece', uw: '个' },
+                    { id: 'umbrella', name: '雨伞', emoji: '☂️', price: 3550, unit: 'piece', uw: '把' },
+                    { id: 'book',     name: '故事书', emoji: '📚', price: 2580, unit: 'piece', uw: '本' },
+                    { id: 'cup',      name: '水杯', emoji: '🥤', price: 1950, unit: 'piece', uw: '个' },
+                    { id: 'toothbrush', name: '牙刷', emoji: '🪥', price: 990, unit: 'piece', uw: '支' },
+                    { id: 'soap',     name: '香皂', emoji: '🧼', price: 650, unit: 'piece', uw: '块' },
+                    { id: 'pencil',   name: '铅笔', emoji: '✏️', price: 350, unit: 'piece', uw: '支' },
+                    { id: 'eraser',   name: '橡皮', emoji: '🧽', price: 120, unit: 'piece', uw: '块' },
+                ],
+            },
+            {
+                key: 'fresh', name: '蔬菜水果', icon: '🍎', accent: 'rose',
+                hint: '按每公斤的价钱卖，想好买几公斤（可买 0.5 公斤）。',
+                items: [
+                    { id: 'beef',    name: '牛肉', emoji: '🥩', price: 7800, unit: 'kg' },
+                    { id: 'grape',   name: '葡萄', emoji: '🍇', price: 1600, unit: 'kg' },
+                    { id: 'apple',   name: '苹果', emoji: '🍎', price: 1000, unit: 'kg' },
+                    { id: 'tomato',  name: '西红柿', emoji: '🍅', price: 800, unit: 'kg' },
+                    { id: 'banana',  name: '香蕉', emoji: '🍌', price: 600, unit: 'kg' },
+                    { id: 'potato',  name: '土豆', emoji: '🥔', price: 400, unit: 'kg' },
+                    { id: 'cabbage', name: '白菜', emoji: '🥬', price: 280, unit: 'kg' },
+                    { id: 'carrot',  name: '胡萝卜', emoji: '🥕', price: 260, unit: 'kg' },
+                ],
+            },
+        ];
+        const ALL_ITEMS = CATEGORIES.flatMap(c => c.items.map(it => ({ ...it, cat: c.key })));
+        const itemById = Object.fromEntries(ALL_ITEMS.map(it => [it.id, it]));
+
+        const accentBg = { blue: 'bg-blue-500', green: 'bg-green-500', rose: 'bg-rose-500' };
+        const accentSoft = { blue: 'bg-blue-50 border-blue-200', green: 'bg-green-50 border-green-200', rose: 'bg-rose-50 border-rose-200' };
+        const accentText = { blue: 'text-blue-600', green: 'text-green-600', rose: 'text-rose-600' };
+
+        // ============ 金额格式化 ============
+        const yuan = (fen) => fen / 100;
+        const fmt = (fen) => {
+            const y = yuan(fen);
+            return Number.isInteger(y) ? `¥${y}` : `¥${y.toFixed(2)}`;
+        };
+        // 数量量词与步长：整数版按件（uw=个/台/把…，步长 1）；小数版蔬果按公斤（步长 0.5）。
+        const qtyLabel = (it) => it.unit === 'kg' ? '公斤' : (it.uw || '个');
+        const qtyStep = (it) => it.unit === 'kg' ? 0.5 : 1;
+        // 单价显示：¥单价/量词
+        const fmtUnit = (it) => `${fmt(it.price)}/${qtyLabel(it)}`;
+
+        // ============ 人民币面额与仿真示意图（用于"采购任务"付款） ============
+        const DENOMS = [
+            { fen: 10000, label: '100元', num: '100', cap: '壹佰圆', kind: 'note', ink: '#b91c1c', bg: 'linear-gradient(135deg,#fde2e2,#fca5a5)' },
+            { fen: 5000,  label: '50元',  num: '50',  cap: '伍拾圆', kind: 'note', ink: '#15803d', bg: 'linear-gradient(135deg,#dcfce7,#86efac)' },
+            { fen: 2000,  label: '20元',  num: '20',  cap: '贰拾圆', kind: 'note', ink: '#b45309', bg: 'linear-gradient(135deg,#fef3c7,#fcd34d)' },
+            { fen: 1000,  label: '10元',  num: '10',  cap: '拾圆',   kind: 'note', ink: '#1d4ed8', bg: 'linear-gradient(135deg,#dbeafe,#93c5fd)' },
+            { fen: 500,   label: '5元',   num: '5',   cap: '伍圆',   kind: 'note', ink: '#6d28d9', bg: 'linear-gradient(135deg,#ede9fe,#c4b5fd)' },
+            { fen: 100,   label: '1元',   num: '1',   cap: '壹圆',   kind: 'note', ink: '#0f766e', bg: 'linear-gradient(135deg,#ccfbf1,#5eead4)' },
+            { fen: 50,    label: '5角',   num: '5',   cap: '伍角',   kind: 'coin', ink: '#a16207', bg: 'radial-gradient(circle at 35% 30%,#fef9c3,#fde047 60%,#ca8a04)' },
+            { fen: 10,    label: '1角',   num: '1',   cap: '壹角',   kind: 'coin', ink: '#475569', bg: 'radial-gradient(circle at 35% 30%,#f1f5f9,#cbd5e1 60%,#94a3b8)' },
+        ];
+
+        const Bill = ({ d, onClick, count, small }) => {
+            const isCoin = d.kind === 'coin';
+            const noteSize = small ? { width: 96, height: 46 } : { width: 132, height: 64 };
+            const coinSize = small ? { width: 50, height: 50 } : { width: 64, height: 64 };
+            const size = isCoin ? coinSize : noteSize;
+            const face = isCoin ? (
+                <div className="coin flex flex-col items-center justify-center" style={{ ...size, background: d.bg, color: d.ink }}>
+                    <span className="font-extrabold leading-none" style={{ fontSize: small ? 18 : 22 }}>{d.num}</span>
+                    <span className="leading-none" style={{ fontSize: small ? 8 : 9 }}>{d.label.replace(/\d+/, '')}</span>
+                </div>
+            ) : (
+                <div className="note flex items-stretch" style={{ ...size, background: d.bg, color: d.ink }}>
+                    <div className="flex flex-col justify-between items-start" style={{ padding: small ? 4 : 6 }}>
+                        <div className="guilloche rounded" style={{ width: small ? 16 : 20, height: small ? 12 : 16 }}></div>
+                        <div className="note-portrait" style={{ width: small ? 18 : 26, height: small ? 24 : 34 }}></div>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center justify-center" style={{ gap: small ? 1 : 2 }}>
+                        <span className="font-semibold tracking-wider" style={{ fontSize: small ? 7 : 9, opacity: .85 }}>中国人民银行</span>
+                        <span className="font-bold" style={{ fontSize: small ? 11 : 15 }}>{d.cap}</span>
+                    </div>
+                    <div className="flex flex-col items-end justify-between" style={{ padding: small ? 4 : 6 }}>
+                        <span className="font-extrabold leading-none" style={{ fontSize: small ? 18 : 26 }}>{d.num}</span>
+                        <span className="font-semibold" style={{ fontSize: small ? 8 : 10, opacity: .8 }}>{isCoin ? '' : '圆'}</span>
+                    </div>
+                </div>
+            );
+            return (
+                <button onClick={onClick} title={d.label}
+                    className={"relative smooth-transition select-none " + (onClick ? 'hover:scale-105 active:scale-95 cursor-pointer ' : 'cursor-default ')}
+                    style={{ background: 'transparent', border: 'none', padding: 0 }}>
+                    {face}
+                    {count > 0 && (
+                        <span className="absolute -top-2 -right-2 bg-rose-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center pop z-10">{count}</span>
+                    )}
+                </button>
+            );
+        };
+
+        const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+        const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        // ============ 商品卡片 ============
+        const ItemCard = ({ it, onAdd }) => (
+            <button onClick={() => onAdd(it)}
+                className="bg-white rounded-xl border border-gray-200 p-3 flex flex-col items-center smooth-transition hover:shadow-md hover:-translate-y-1 active:scale-95">
+                <span className="text-4xl mb-1">{it.emoji}</span>
+                <span className="font-semibold text-gray-700 text-sm">{it.name}</span>
+                <span className="text-xs text-gray-500 mt-0.5">{fmtUnit(it)}</span>
+            </button>
+        );
+
+        // ============ 模块一：自由购物（购物车，单价×数量累加） ============
+        const Cart = () => {
+            const [catKey, setCatKey] = useState('electronics');
+            const [cart, setCart] = useState({}); // id -> qty（公斤可为小数）
+            const cat = CATEGORIES.find(c => c.key === catKey);
+
+            const addItem = (it) => {
+                setCart(c => ({ ...c, [it.id]: +( (c[it.id] || 0) + qtyStep(it) ).toFixed(2) }));
+            };
+            const setQty = (id, q) => setCart(c => {
+                const nc = { ...c };
+                if (q <= 0) delete nc[id]; else nc[id] = q;
+                return nc;
+            });
+            const lines = Object.entries(cart).map(([id, qty]) => {
+                const it = itemById[id];
+                return { it, qty, sub: Math.round(it.price * qty) };
+            });
+            const total = lines.reduce((s, l) => s + l.sub, 0);
+            const clear = () => setCart({});
+
+            return (
+                <div className="fade-in grid lg:grid-cols-3 gap-5">
+                    {/* 货架 */}
+                    <div className="lg:col-span-2">
+                        <div className="flex gap-2 mb-3 flex-wrap">
+                            {CATEGORIES.map(c => (
+                                <button key={c.key} onClick={() => setCatKey(c.key)}
+                                    className={"px-4 py-2 rounded-full font-semibold text-sm smooth-transition " +
+                                        (catKey === c.key ? accentBg[c.accent] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                    {c.icon} {c.name}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-sm text-gray-500 mb-3">{cat.hint}（点击商品放入购物车）</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {cat.items.map(it => <ItemCard key={it.id} it={it} onAdd={addItem} />)}
+                        </div>
+                    </div>
+
+                    {/* 购物车 / 小票 */}
+                    <div className="bg-white rounded-2xl shadow p-5 h-fit lg:sticky lg:top-4">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="font-bold text-gray-700">🛒 购物车</h3>
+                            {lines.length > 0 && <button onClick={clear} className="text-sm text-rose-500 hover:underline">清空</button>}
+                        </div>
+                        {lines.length === 0 ? (
+                            <div className="text-gray-300 text-center py-10">购物车是空的，去货架挑挑吧~</div>
+                        ) : (
+                            <div className="space-y-2">
+                                {lines.map(({ it, qty, sub }) => (
+                                    <div key={it.id} className="flex items-center gap-2 text-sm border-b border-gray-100 pb-2">
+                                        <span className="text-xl">{it.emoji}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-semibold text-gray-700 truncate">{it.name}</div>
+                                            <div className="text-xs text-gray-400">{fmtUnit(it)}</div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => setQty(it.id, +(qty - qtyStep(it)).toFixed(2))}
+                                                className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">−</button>
+                                            <span className="w-14 text-center font-semibold text-gray-700">{qty}<span className="text-xs text-gray-400">{qtyLabel(it)}</span></span>
+                                            <button onClick={() => setQty(it.id, +(qty + qtyStep(it)).toFixed(2))}
+                                                className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
+                                        </div>
+                                        <div className="w-16 text-right font-bold text-gray-800">{fmt(sub)}</div>
+                                    </div>
+                                ))}
+                                {/* 计算说明：单价 × 数量 = 小计 */}
+                                <div className="text-xs text-gray-400 pt-1 space-y-0.5">
+                                    {lines.map(({ it, qty, sub }) => (
+                                        <div key={it.id}>{fmt(it.price)} × {qty}{qtyLabel(it)} = {fmt(sub)}</div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className="mt-4 pt-3 border-t-2 border-dashed border-gray-200 flex justify-between items-baseline">
+                            <span className="font-semibold text-gray-600">合计</span>
+                            <span className="text-3xl font-bold text-rose-600">{fmt(total)}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 计算过程表：把若干 {it, qty, sub} 行显示成 单价×数量=小计，并求和。复用于两个游戏。
+        // 放在下方、突出显示，让"单价×数量=小计、再相加=总价"的过程一目了然。
+        const WorkingTable = ({ lines, total }) => (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-5 fade-in shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="text-2xl">🧮</span>
+                    <span className="text-lg font-bold text-amber-700">计算过程</span>
+                </div>
+                <div className="space-y-2">
+                    {lines.map(({ it, qty, sub }) => (
+                        <div key={it.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-amber-100">
+                            <span className="text-2xl">{it.emoji}</span>
+                            <span className="w-20 text-gray-600 text-sm truncate">{it.name}</span>
+                            <span className="flex-1 text-right text-base sm:text-lg text-gray-800 font-mono">
+                                <span className="text-blue-600 font-bold">{fmt(it.price)}</span>
+                                <span className="text-gray-400"> × </span>
+                                <span className="text-green-600 font-bold">{qty}{qtyLabel(it)}</span>
+                                <span className="text-gray-400"> = </span>
+                                <span className="text-gray-900 font-bold">{fmt(sub)}</span>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+                <div className="border-t-2 border-dashed border-amber-300 mt-3 pt-3 flex flex-wrap items-baseline justify-end gap-x-2">
+                    <span className="text-gray-600">合计：</span>
+                    <span className="text-base sm:text-lg font-mono text-gray-700">{lines.map(l => yuan(l.sub)).join(' + ')} =</span>
+                    <span className="text-3xl font-bold text-rose-600">{fmt(total)}</span>
+                </div>
+            </div>
+        );
+
+        // ============ 游戏一：预算购物（给随机的钱，自己买、自己算，再结账） ============
+        const BudgetGame = () => {
+            const newBudget = () => randInt(10, 60) * 1000; // 100~600元，整十元，单位分
+            const [budget, setBudget] = useState(newBudget);
+            const [catKey, setCatKey] = useState('electronics');
+            const [cart, setCart] = useState({});
+            const [guess, setGuess] = useState('');   // 学生自己算的总价
+            const [paid, setPaid] = useState(false);  // 是否已结账
+            const cat = CATEGORIES.find(c => c.key === catKey);
+
+            const addItem = (it) => { if (paid) return;
+                setCart(c => ({ ...c, [it.id]: +((c[it.id] || 0) + qtyStep(it)).toFixed(2) })); };
+            const setQty = (id, q) => setCart(c => { const nc = { ...c }; if (q <= 0) delete nc[id]; else nc[id] = q; return nc; });
+
+            const lines = Object.entries(cart).map(([id, qty]) => ({ it: itemById[id], qty, sub: Math.round(itemById[id].price * qty) }));
+            const total = lines.reduce((s, l) => s + l.sub, 0);
+
+            const guessFen = Math.round(parseFloat(guess) * 100);
+            const guessRight = paid && !Number.isNaN(guessFen) && guessFen === total;
+            const within = total <= budget;
+
+            const restart = () => { setBudget(newBudget()); setCart({}); setGuess(''); setPaid(false); };
+            const checkout = () => { if (lines.length && guess.trim() !== '') setPaid(true); };
+
+            return (
+                <div className="fade-in">
+                    {/* 给的钱 */}
+                    <div className="flex flex-col items-center mb-5">
+                        <div className="px-8 py-3 bg-amber-50 border-2 border-amber-300 rounded-2xl text-center">
+                            <div className="text-sm text-gray-500">老师给你的钱（每次都不一样）</div>
+                            <div className="text-3xl font-bold text-amber-600">{fmt(budget)}</div>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-2">想买什么就放进购物车，先自己算一算要花多少钱，再去结账。</p>
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-5">
+                        {/* 货架 */}
+                        <div className="lg:col-span-2">
+                            <div className="flex gap-2 mb-3 flex-wrap">
+                                {CATEGORIES.map(c => (
+                                    <button key={c.key} onClick={() => setCatKey(c.key)}
+                                        className={"px-4 py-2 rounded-full font-semibold text-sm smooth-transition " +
+                                            (catKey === c.key ? accentBg[c.accent] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                        {c.icon} {c.name}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {cat.items.map(it => <ItemCard key={it.id} it={it} onAdd={addItem} />)}
+                            </div>
+                        </div>
+
+                        {/* 购物车（结账前不显示小计与合计，要自己算） */}
+                        <div className="bg-white rounded-2xl shadow p-5 h-fit">
+                            <h3 className="font-bold text-gray-700 mb-3">🛒 我的购物车</h3>
+                            {lines.length === 0 ? (
+                                <div className="text-gray-300 text-center py-8">还没挑东西~</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {lines.map(({ it, qty }) => (
+                                        <div key={it.id} className="flex items-center gap-2 text-sm border-b border-gray-100 pb-2">
+                                            <span className="text-xl">{it.emoji}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-semibold text-gray-700 truncate">{it.name}</div>
+                                                <div className="text-xs text-gray-400">{fmtUnit(it)}</div>
+                                            </div>
+                                            {!paid && (
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={() => setQty(it.id, +(qty - qtyStep(it)).toFixed(2))}
+                                                        className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">−</button>
+                                                    <span className="w-14 text-center font-semibold text-gray-700">{qty}<span className="text-xs text-gray-400">{qtyLabel(it)}</span></span>
+                                                    <button onClick={() => setQty(it.id, +(qty + qtyStep(it)).toFixed(2))}
+                                                        className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600">+</button>
+                                                </div>
+                                            )}
+                                            {paid && <span className="font-bold text-gray-700">{qty}{qtyLabel(it)}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* 自己算：填总价 */}
+                            {!paid && lines.length > 0 && (
+                                <div className="mt-4 pt-3 border-t-2 border-dashed border-gray-200">
+                                    <div className="text-sm text-gray-600 mb-1">你算一算，一共要花多少钱？</div>
+                                    <div className="flex items-center gap-2">
+                                        <input type="number" step="0.5" value={guess} onChange={e => setGuess(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && checkout()}
+                                            placeholder="自己算" className="w-full text-center text-xl border-2 border-rose-300 rounded-lg p-2" />
+                                        <span className="text-gray-600 font-bold">元</span>
+                                    </div>
+                                    <button onClick={checkout} className="w-full mt-3 px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-semibold smooth-transition">去结账</button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 结账：揭晓计算过程 + 是否算对 + 够不够钱 */}
+                    {paid && (
+                        <div className="max-w-2xl mx-auto mt-6 space-y-3">
+                            <div className={"text-center font-bold text-lg " + (guessRight ? "text-green-600" : "text-rose-600")}>
+                                {guessRight ? "✓ 你算对了！" : <>你算的是 {fmt(guessFen)}，正确答案是 {fmt(total)}，再核对一下 ↓</>}
+                            </div>
+                            <WorkingTable lines={lines} total={total} />
+                            <div className={"text-center px-6 py-3 rounded-xl border-2 " + (within ? "bg-green-50 border-green-200 text-green-700" : "bg-rose-50 border-rose-200 text-rose-700")}>
+                                {within
+                                    ? <>钱够付！还剩 <b>{fmt(budget - total)}</b>（{yuan(budget)} − {yuan(total)} = {yuan(budget - total)}）</>
+                                    : <>钱不够啦！还差 <b>{fmt(total - budget)}</b>（{yuan(total)} − {yuan(budget)} = {yuan(total - budget)}），去掉一些东西吧。</>}
+                            </div>
+                            <div className="flex justify-center gap-3">
+                                <button onClick={() => setPaid(false)} className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">继续挑选</button>
+                                <button onClick={restart} className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth-transition">再玩一次</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ 游戏二：采购任务（按清单算总价，再用纸币付款） ============
+        const TaskGame = () => {
+            // 生成一张采购清单：2~3 样商品，数量适中，避免出现太贵的电子大件（便于付款）
+            const genTask = () => {
+                const affordable = ALL_ITEMS.filter(it => it.price <= 10000); // ≤100元的商品
+                const n = randInt(2, 3);
+                const chosen = [];
+                const pool = [...affordable];
+                for (let i = 0; i < n && pool.length; i++) {
+                    const idx = Math.floor(Math.random() * pool.length);
+                    const it = pool.splice(idx, 1)[0];
+                    const qty = it.unit === 'kg' ? randInt(1, 4) + (Math.random() < 0.5 ? 0 : 0.5) : randInt(1, 4);
+                    chosen.push({ it, qty, sub: Math.round(it.price * qty) });
+                }
+                return chosen;
+            };
+            const [task, setTask] = useState(genTask);
+            const total = task.reduce((s, l) => s + l.sub, 0);
+
+            const [answer, setAnswer] = useState('');   // 学生算的总价
+            const [stage, setStage] = useState('calc'); // calc → pay → done
+            const [counts, setCounts] = useState({});    // 付款用的纸币 fen->张数
+
+            const ansFen = Math.round(parseFloat(answer) * 100);
+            const ansRight = !Number.isNaN(ansFen) && ansFen === total;
+            const paid = DENOMS.reduce((s, d) => s + d.fen * (counts[d.fen] || 0), 0);
+
+            const submitCalc = () => { if (answer.trim() !== '' && ansRight) setStage('pay'); };
+            const addNote = (fen) => setCounts(c => ({ ...c, [fen]: (c[fen] || 0) + 1 }));
+            const clearNotes = () => setCounts({});
+            const restart = () => { setTask(genTask()); setAnswer(''); setStage('calc'); setCounts({}); };
+
+            return (
+                <div className="fade-in max-w-2xl mx-auto">
+                    {/* 采购清单 */}
+                    <div className="bg-white rounded-2xl shadow p-5 mb-5">
+                        <h3 className="font-bold text-gray-700 mb-3">📋 采购任务清单</h3>
+                        <div className="space-y-2">
+                            {task.map(({ it, qty }) => (
+                                <div key={it.id} className="flex items-center gap-3 text-gray-700 border-b border-gray-100 pb-2">
+                                    <span className="text-2xl">{it.emoji}</span>
+                                    <span className="flex-1 font-semibold">{it.name}</span>
+                                    <span className="text-sm text-gray-500">{fmtUnit(it)}</span>
+                                    <span className="font-bold w-20 text-right">买 {qty}{qtyLabel(it)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 步骤一：算总价 */}
+                    {stage === 'calc' && (
+                        <div className="bg-white rounded-2xl shadow p-5 text-center">
+                            <div className="text-gray-600 mb-3">先算一算：买齐这些东西，一共要付多少钱？</div>
+                            <div className="flex items-center justify-center gap-2">
+                                <input type="number" step="0.5" value={answer} onChange={e => setAnswer(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && submitCalc()}
+                                    placeholder="总价" className="w-36 text-center text-2xl border-2 border-rose-300 rounded-lg p-2" />
+                                <span className="text-xl font-bold text-gray-600">元</span>
+                            </div>
+                            {answer.trim() !== '' && !ansRight && (
+                                <div className="text-rose-500 text-sm mt-3">再算算看，把每一样的 单价×数量 加起来。</div>
+                            )}
+                            <button onClick={submitCalc} disabled={!ansRight}
+                                className="mt-4 px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-semibold smooth-transition disabled:opacity-40">
+                                算好了，去付钱
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 步骤二：用纸币付款 */}
+                    {stage !== 'calc' && (
+                        <div className="space-y-4">
+                            <WorkingTable lines={task} total={total} />
+
+                            <div className="bg-white rounded-2xl shadow p-5">
+                                <div className="text-sm text-gray-500 mb-3 font-semibold">点击纸币硬币，凑出 {fmt(total)} 付款</div>
+                                <div className="flex flex-wrap gap-3 justify-center">
+                                    {DENOMS.map(d => <Bill key={d.fen} d={d} count={counts[d.fen] || 0} onClick={() => addNote(d.fen)} />)}
+                                </div>
+                                <div className="flex justify-between items-center mt-4 px-1">
+                                    <span className="text-gray-600">已付：<b className="text-gray-800">{fmt(paid)}</b></span>
+                                    <button onClick={clearNotes} className="text-sm text-rose-500 hover:underline">重新付</button>
+                                    <span className="text-gray-600">还差：<b className={paid < total ? "text-rose-500" : "text-gray-400"}>{fmt(Math.max(0, total - paid))}</b></span>
+                                </div>
+                                <div className="h-8 mt-3 text-center font-bold">
+                                    {paid === total && <span className="text-green-600">✓ 正好付清，采购完成！</span>}
+                                    {paid > total && <span className="text-amber-600">付多了 {fmt(paid - total)}，收银员要找你 {fmt(paid - total)}。</span>}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-center">
+                                <button onClick={restart} className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth-transition">换一个任务</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ 主应用 ============
+        const App = () => {
+            const [tab, setTab] = useState('budget');
+            const tabs = [
+                ['budget', '💰 预算购物'],
+                ['task', '📋 采购任务'],
+                ['cart', '🛒 自由购物'],
+            ];
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">购物计算 · 小数版</h1>
+                        <p className="text-slate-500 mt-1">价格带角分、蔬果按公斤，练习带小数的"单价 × 数量 = 总价"</p>
+                        <a href="/shopping" className="mt-2 inline-block text-sm text-blue-500 hover:underline">← 切换到整数版</a>
+                    </header>
+
+                    <div className="flex justify-center gap-3 mb-8 flex-wrap">
+                        {tabs.map(([key, label]) => (
+                            <button key={key} onClick={() => setTab(key)}
+                                className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " +
+                                    (tab === key ? "bg-gray-800 text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="max-w-5xl mx-auto">
+                        {tab === 'cart' && <Cart />}
+                        {tab === 'budget' && <BudgetGame />}
+                        {tab === 'task' && <TaskGame />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

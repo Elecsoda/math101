@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角的初步认识 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .angle-svg { touch-action: none; user-select: none; -webkit-user-select: none; }
+        .grab { cursor: grab; }
+        .grab:active { cursor: grabbing; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+        // ===== 公共数学小工具 =====
+        // 角度统一约定：以"水平向右"为 0°，逆时针为正（符合数学习惯）。
+        // 屏幕坐标 y 轴向下，所以画图时要把角度取负。
+        const TAU = Math.PI * 2;
+        const toRad = (deg) => deg * Math.PI / 180;
+        const round1 = (n) => Math.round(n * 10) / 10;       // 保留 1 位小数
+        const clampDeg = (d) => Math.max(0, Math.min(360, d));
+
+        // 由"屏幕坐标里以顶点为中心的方向"求角度（0°向右，逆时针为正，0~360）
+        const dirToDeg = (dx, dy) => {
+            let deg = Math.atan2(-dy, dx) * 180 / Math.PI; // 取负抵消屏幕 y 向下
+            if (deg < 0) deg += 360;
+            return deg;
+        };
+
+        // 角的名称（按整度判断，避免 89.9 这种被算成锐角）
+        const angleName = (deg) => {
+            const d = Math.round(deg);
+            if (d === 0 || d === 360) return { name: '零角 / 周角边界', color: 'text-slate-500', tag: '—' };
+            if (d < 90)  return { name: '锐角', color: 'text-emerald-600', tag: '小于 90°' };
+            if (d === 90) return { name: '直角', color: 'text-blue-600', tag: '正好 90°' };
+            if (d < 180) return { name: '钝角', color: 'text-orange-600', tag: '90° ~ 180°' };
+            if (d === 180) return { name: '平角', color: 'text-purple-600', tag: '正好 180°' };
+            if (d < 360) return { name: '优角', color: 'text-rose-500', tag: '180° ~ 360°' };
+            return { name: '周角', color: 'text-rose-600', tag: '正好 360°' };
+        };
+
+        // 画弧线（SVG path），从 a0 到 a1（度，逆时针为正），半径 r，圆心 (cx,cy)
+        const arcPath = (cx, cy, r, a0, a1) => {
+            const p = (deg) => [cx + r * Math.cos(toRad(deg)), cy - r * Math.sin(toRad(deg))];
+            const [x0, y0] = p(a0);
+            const [x1, y1] = p(a1);
+            const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
+            // sweep=0 表示在 SVG 中逆时针（因为 y 轴翻转）
+            return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 0 ${x1} ${y1}`;
+        };
+
+        // ===========================================================
+        // 模块一：认识角 —— 自由张合，看角度、辨名称
+        // ===========================================================
+        const Recognize = () => {
+            const [deg, setDeg] = useState(45);
+            const [showScale, setShowScale] = useState(false); // 是否叠加量角器刻度（看"格"）
+            const svgRef = useRef(null);
+            const dragging = useRef(false);
+            // 画布做成接近正方形，并把顶点放在中心，这样开启刻度盘（整圈 360°）时
+            // 上下左右都放得下，不会被裁掉。
+            const W = 480, H = 460;
+            const vx = W / 2, vy = H / 2;          // 顶点居中
+            const armLen = 205;                    // 边的长度（略短，给刻度数字留边距）
+            const scaleR = 175;                    // 刻度盘半径
+
+            // 固定边沿 0°（水平向右），活动边沿 deg
+            const fixedEnd = [vx + armLen, vy];
+            const movEnd = [vx + armLen * Math.cos(toRad(deg)), vy - armLen * Math.sin(toRad(deg))];
+
+            const pointDeg = useCallback((clientX, clientY) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                const sx = (clientX - rect.left) / rect.width * W;
+                const sy = (clientY - rect.top) / rect.height * H;
+                return clampDeg(dirToDeg(sx - vx, sy - vy));
+            }, []);
+
+            const onDown = (e) => { e.preventDefault(); dragging.current = true; onMove(e); };
+            const onMove = (e) => {
+                if (!dragging.current) return;
+                const pt = e.touches ? e.touches[0] : e;
+                setDeg(pointDeg(pt.clientX, pt.clientY));
+            };
+            const onUp = () => { dragging.current = false; };
+
+            const info = angleName(deg);
+            const r = round1(deg);
+            // 弧线半径：角越小弧越靠里，方便看清
+            const arcR = 56;
+
+            const presets = [
+                ['30°', 30], ['45°', 45], ['直角 90°', 90],
+                ['120°', 120], ['平角 180°', 180], ['270°', 270],
+            ];
+
+            // 量角器刻度：从固定边（0°）开始，每 1° 一格，整十度画长线并标数。
+            // 角张开到 deg，落在格子里的部分高亮成橙色，方便数"几格 = 几度"。
+            const scaleTicks = [];
+            if (showScale) {
+                const span = Math.min(360, Math.round(deg)); // 高亮到当前度数
+                for (let i = 0; i <= 360; i++) {
+                    const big = i % 10 === 0;
+                    const inAngle = i <= span;
+                    const rr = big ? scaleR - 16 : scaleR - 7;
+                    scaleTicks.push(<line key={'s' + i}
+                        x1={vx + scaleR * Math.cos(toRad(i))} y1={vy - scaleR * Math.sin(toRad(i))}
+                        x2={vx + rr * Math.cos(toRad(i))} y2={vy - rr * Math.sin(toRad(i))}
+                        stroke={inAngle ? '#f59e0b' : (big ? '#94a3b8' : '#dbe2ea')}
+                        strokeWidth={big ? 1.4 : 0.6} />);
+                    if (big && i <= 180) {
+                        const lr = scaleR - 28;
+                        scaleTicks.push(<text key={'sl' + i}
+                            x={vx + lr * Math.cos(toRad(i))} y={vy - lr * Math.sin(toRad(i))}
+                            textAnchor="middle" dominantBaseline="central" fontSize="9"
+                            fill={inAngle ? '#b45309' : '#94a3b8'}>{i}</text>);
+                    }
+                }
+            }
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-8">
+                    <div className="bg-white rounded-2xl shadow p-3">
+                        <svg ref={svgRef} className="angle-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`}
+                            onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                            onTouchMove={onMove} onTouchEnd={onUp}>
+                            {/* 量角器刻度盘（可开关）：一格 = 1°，整十度有数字 */}
+                            {showScale && <circle cx={vx} cy={vy} r={scaleR} fill="#f8fafc" stroke="#cbd5e1" strokeWidth="1" />}
+                            {scaleTicks}
+                            {/* 直角参考：到 90° 时高亮一个小方块，帮助识别直角 */}
+                            {Math.round(deg) === 90 && (
+                                <rect x={vx} y={vy - 22} width="22" height="22" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
+                            )}
+                            {/* 张开的扇形（淡色填充），直观感受"角是张开的程度" */}
+                            <path d={`M ${vx} ${vy} L ${fixedEnd[0]} ${fixedEnd[1]} ` +
+                                `A ${armLen} ${armLen} 0 ${deg > 180 ? 1 : 0} 0 ${movEnd[0]} ${movEnd[1]} Z`}
+                                fill="#fde68a" opacity="0.35" />
+                            {/* 角度弧线 */}
+                            <path d={arcPath(vx, vy, arcR, 0, deg)} fill="none" stroke="#f59e0b" strokeWidth="3" />
+                            <text x={vx + (arcR + 22) * Math.cos(toRad(deg / 2))}
+                                y={vy - (arcR + 22) * Math.sin(toRad(deg / 2))}
+                                textAnchor="middle" dominantBaseline="central"
+                                fontSize="20" fontWeight="800" fill="#b45309">{r}°</text>
+
+                            {/* 固定边 */}
+                            <line x1={vx} y1={vy} x2={fixedEnd[0]} y2={fixedEnd[1]}
+                                stroke="#64748b" strokeWidth="5" strokeLinecap="round" />
+                            {/* 活动边（可拖动） */}
+                            <line x1={vx} y1={vy} x2={movEnd[0]} y2={movEnd[1]}
+                                stroke="#3b82f6" strokeWidth="6" strokeLinecap="round"
+                                className="grab" onMouseDown={onDown} onTouchStart={onDown} />
+                            {/* 活动边端点的"把手"，更好拖 */}
+                            <circle cx={movEnd[0]} cy={movEnd[1]} r="13" fill="#3b82f6" className="grab"
+                                onMouseDown={onDown} onTouchStart={onDown} />
+                            <circle cx={movEnd[0]} cy={movEnd[1]} r="5" fill="#fff" pointerEvents="none" />
+                            {/* 顶点 */}
+                            <circle cx={vx} cy={vy} r="6" fill="#1e293b" />
+                            <text x={vx - 14} y={vy + 22} fontSize="16" fontWeight="700" fill="#1e293b">顶点</text>
+                            <text x={fixedEnd[0] - 20} y={vy + 24} fontSize="14" fill="#64748b">固定边</text>
+                        </svg>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-72">
+                        <div className="bg-white rounded-2xl shadow px-6 py-5 text-center">
+                            <div className="text-sm text-gray-400 mb-1">这个角的度数</div>
+                            <div className="text-5xl font-bold text-amber-500">{r}<span className="text-2xl">°</span></div>
+                            <div className={"text-2xl font-bold mt-3 " + info.color}>{info.name}</div>
+                            <div className="text-sm text-gray-400 mt-1">{info.tag}</div>
+                            {showScale && (
+                                <div className="text-sm text-amber-600 mt-3 border-t pt-3">
+                                    一格 = 1°，这个角 = <span className="font-bold">{Math.round(deg)}</span> 格 = {Math.round(deg)}°
+                                </div>
+                            )}
+                        </div>
+
+                        <button onClick={() => setShowScale(s => !s)}
+                            className={"px-4 py-2.5 rounded-lg font-semibold smooth-transition " +
+                                (showScale ? "bg-amber-500 text-white shadow hover:bg-amber-600" : "bg-white text-amber-600 border-2 border-amber-300 hover:bg-amber-50")}>
+                            {showScale ? '✓ 已显示刻度（一格=1°）' : '显示刻度（看一格=1°）'}
+                        </button>
+
+                        <div>
+                            <input type="range" min="0" max="360" step="0.5" value={deg}
+                                onChange={(e) => setDeg(parseFloat(e.target.value))}
+                                className="w-full accent-blue-500" />
+                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>0°</span><span>180°</span><span>360°</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                            {presets.map(([label, v]) => (
+                                <button key={v} onClick={() => setDeg(v)}
+                                    className={"px-2 py-2 rounded-lg text-sm font-semibold smooth-transition " +
+                                        (Math.round(deg) === v ? "bg-blue-500 text-white shadow" : "bg-white text-gray-600 hover:bg-blue-50")}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            拖动<span className="text-blue-500 font-bold">蓝色的边</span>把角张大或合小，
+                            两条边张开得越大，角就越大。注意：角的大小只跟两条边张开的程度有关，
+                            跟边画得长短<span className="font-bold">没有关系</span>。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 模块二：1 度有多大 —— 把圆 360 等分，感受 1°
+        // ===========================================================
+        const OneDegree = () => {
+            const [count, setCount] = useState(1);   // 点亮多少个 1°
+            const W = 420, H = 420;
+            const cx = W / 2, cy = H / 2, R = 170;
+
+            // 画 360 根细线（每 1° 一根），高亮前 count 根
+            const lines = [];
+            for (let i = 0; i < 360; i++) {
+                const big = i % 10 === 0;
+                const x2 = cx + R * Math.cos(toRad(i));
+                const y2 = cy - R * Math.sin(toRad(i));
+                lines.push(<line key={i} x1={cx} y1={cy} x2={x2} y2={y2}
+                    stroke={i < count ? '#f59e0b' : (big ? '#cbd5e1' : '#eef2f7')}
+                    strokeWidth={i < count ? 1.3 : (big ? 0.8 : 0.4)} />);
+            }
+            // 高亮扇形
+            const ex = cx + R * Math.cos(toRad(count));
+            const ey = cy - R * Math.sin(toRad(count));
+            const sector = `M ${cx} ${cy} L ${cx + R} ${cy} A ${R} ${R} 0 ${count > 180 ? 1 : 0} 0 ${ex} ${ey} Z`;
+
+            const steps = [
+                ['1°', 1], ['5°', 5], ['10°', 10], ['30°', 30],
+                ['45°', 45], ['90°', 90], ['180°', 180], ['360°', 360],
+            ];
+
+            // ===== 真·放大镜 =====
+            // 关键：1° 永远是 1°，绝不能把一格画成 5° 或 10°！
+            // 做法和真正的放大镜一样——把同一张图整体放大很多倍：用一个半径很大的圆，
+            // 在它边缘画出真实的、相邻相差 1° 的分隔线，只看靠近圆弧的一小段。
+            // 离圆心越远，相邻 1° 线之间的缝隙看起来越宽，但张开的角度始终是真实的 1°。
+            const MW = 320, MH = 230;
+            const halfSpan = 4;                 // 正中线左右各画 4°，共约 8 格——刚好填满窗口
+            const gapPx = 36;                   // 让每 1° 在弧边大约分开 36px（看得清又放得下）
+            const bigR = gapPx / Math.sin(toRad(1)); // 由"每度的像素宽"反推大圆半径
+            const bcx = MW / 2;                 // 圆心水平居中
+            const rimY = 34;                    // 圆弧顶部在窗口里的高度
+            const bcy = rimY + bigR;            // 圆心在窗口下方很远处（弧顶朝上）
+            const magTicks = [];
+            for (let k = -halfSpan; k <= halfSpan; k++) {
+                const a = 90 + k;              // 真实角度（正上方为 90°）
+                const inHi = k >= 0 && k < count; // 落在高亮的 count 度里
+                const x2 = bcx + bigR * Math.cos(toRad(a));               // 弧边上的点
+                const y2 = bcy - bigR * Math.sin(toRad(a));
+                const x1 = bcx + (bigR - 999) * Math.cos(toRad(a));       // 朝圆心方向延伸出窗口
+                const y1 = bcy - (bigR - 999) * Math.sin(toRad(a));
+                magTicks.push(<line key={'mk' + k} x1={x1} y1={y1} x2={x2} y2={y2}
+                    stroke={inHi ? '#f59e0b' : '#cbd5e1'} strokeWidth={inHi ? 3 : 1.4} />);
+                // 在每个 1° 缝隙中间标"1°"
+                if (k >= 0 && k < halfSpan && k < count) {
+                    const am = 90 + k + 0.5;
+                    magTicks.push(<text key={'mkt' + k}
+                        x={bcx + (bigR - 26) * Math.cos(toRad(am))}
+                        y={bcy - (bigR - 26) * Math.sin(toRad(am))}
+                        textAnchor="middle" dominantBaseline="central" fontSize="12" fontWeight="700" fill="#92400e">1°</text>);
+                }
+            }
+            // 大圆弧本身（一小段），让"这是圆的一部分"看得出来
+            const arcL = bcx + bigR * Math.cos(toRad(90 + halfSpan));
+            const arcLy = bcy - bigR * Math.sin(toRad(90 + halfSpan));
+            const arcR2 = bcx + bigR * Math.cos(toRad(90 - halfSpan));
+            const arcRy = bcy - bigR * Math.sin(toRad(90 - halfSpan));
+            const magArc = `M ${arcL} ${arcLy} A ${bigR} ${bigR} 0 0 0 ${arcR2} ${arcRy}`;
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-8">
+                    <div className="flex flex-col gap-4">
+                        <div className="bg-white rounded-2xl shadow p-3">
+                            <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="angle-svg">
+                                <circle cx={cx} cy={cy} r={R} fill="#fff" stroke="#94a3b8" strokeWidth="2" />
+                                <path d={sector} fill="#fde68a" opacity="0.55" />
+                                {lines}
+                                <circle cx={cx} cy={cy} r="4" fill="#1e293b" />
+                                <text x={cx} y={cy - R - 12} textAnchor="middle" fontSize="13" fill="#94a3b8">
+                                    整个圆 = 360 等份，每一份就是 1°
+                                </text>
+                            </svg>
+                        </div>
+
+                        {/* 放大镜面板：把上面那张圆的边缘放大，看清真实的 1° */}
+                        <div className="bg-white rounded-2xl shadow p-3">
+                            <div className="text-sm font-bold text-amber-600 px-2 pt-1 flex items-center gap-1">
+                                🔍 放大看圆的边缘：相邻两条线之间正好是 1°
+                            </div>
+                            <svg width={MW} height={MH} viewBox={`0 0 ${MW} ${MH}`} className="angle-svg">
+                                <path d={magArc} fill="none" stroke="#94a3b8" strokeWidth="2" />
+                                {magTicks}
+                            </svg>
+                            <div className="text-xs text-gray-400 px-2 pb-1 text-center">
+                                就像拿放大镜贴着圆边看——缝再小，每一格也都是 1°
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-72">
+                        <div className="bg-white rounded-2xl shadow px-6 py-5 text-center">
+                            <div className="text-sm text-gray-400 mb-1">已经点亮</div>
+                            <div className="text-5xl font-bold text-amber-500">{count}<span className="text-2xl"> 份</span></div>
+                            <div className="text-lg text-gray-600 mt-2">就是 <span className="font-bold text-amber-600">{count}°</span></div>
+                            {count === 1 && <div className="text-sm text-emerald-600 mt-2">这一份很窄，1° 真的很小！</div>}
+                            {count === 90 && <div className="text-sm text-blue-600 mt-2">这是一个直角 = 90 个 1°</div>}
+                            {count === 360 && <div className="text-sm text-rose-600 mt-2">转满一圈 = 周角 = 360°</div>}
+                        </div>
+
+                        <input type="range" min="1" max="360" step="1" value={count}
+                            onChange={(e) => setCount(parseInt(e.target.value))}
+                            className="w-full accent-amber-500" />
+
+                        <div className="grid grid-cols-4 gap-2">
+                            {steps.map(([label, v]) => (
+                                <button key={v} onClick={() => setCount(v)}
+                                    className={"px-1 py-2 rounded-lg text-sm font-semibold smooth-transition " +
+                                        (count === v ? "bg-amber-500 text-white shadow" : "bg-white text-gray-600 hover:bg-amber-50")}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            把一个圆平均分成 <span className="font-bold text-amber-600">360</span> 份，
+                            其中的一份所对的角就是 <span className="font-bold text-amber-600">1 度（1°）</span>。
+                            拖一拖看看：要多少个 1° 才能拼成一个直角、一个平角、一整圈。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 模块三：量角器的使用 —— 把量角器对准角，读出度数
+        // ===========================================================
+        const Protractor = () => {
+            // 量角器水平放置，平边朝下、半圆在上。两条边都从顶点出发、都可拖动。
+            // side = 'right' 表示 0 刻度在右端（读蓝色内圈，从右往左读）；
+            // side = 'left'  表示 0 刻度在左端（读红色外圈，从左往右读）。
+            const [a0, setA0] = useState(0);     // 第一条边的方向（0°=右，180°=左）
+            const [a1, setA1] = useState(50);    // 第二条边的方向
+            const [side, setSide] = useState('right');
+            const [show, setShow] = useState(false);
+            // 视图缩放：用 viewBox 实现"以鼠标为中心"的滚轮放大缩小。
+            const [view, setView] = useState({ x: 0, y: 0, w: 540, h: 420 });
+            const svgRef = useRef(null);
+            const dragging = useRef(null);       // 'a0' | 'a1' | null
+            const W = 540, H = 420;
+            const vx = W / 2, vy = H * 0.66;
+            const armLen = 205;
+            const R = 178;   // 量角器半径
+
+            // 把屏幕坐标换算成 SVG 内部坐标（要按当前 viewBox 来换算，缩放后才准）
+            const toSvg = useCallback((clientX, clientY) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                return {
+                    x: view.x + (clientX - rect.left) / rect.width * view.w,
+                    y: view.y + (clientY - rect.top) / rect.height * view.h,
+                };
+            }, [view]);
+
+            // 拖动：把指针位置换算成 0~180 的方向（半圆内）
+            const pointDeg = useCallback((clientX, clientY) => {
+                const p = toSvg(clientX, clientY);
+                let d = dirToDeg(p.x - vx, p.y - vy);
+                return Math.max(0, Math.min(180, d)); // 限制在上半圆
+            }, [toSvg]);
+            const onDown = (which) => (e) => { e.preventDefault(); dragging.current = which; };
+            const onMove = (e) => {
+                if (!dragging.current) return;
+                const pt = e.touches ? e.touches[0] : e;
+                const d = pointDeg(pt.clientX, pt.clientY);
+                if (dragging.current === 'a0') setA0(d); else setA1(d);
+                setShow(false);
+            };
+            const onUp = () => { dragging.current = null; };
+
+            // 滚轮缩放：以鼠标所在的 SVG 点为中心，放大/缩小 viewBox。
+            const onWheel = useCallback((e) => {
+                e.preventDefault();
+                const p = toSvg(e.clientX, e.clientY);     // 鼠标对应的内部坐标（缩放中心）
+                const factor = e.deltaY < 0 ? 0.85 : 1 / 0.85; // 向上滚放大
+                setView(v => {
+                    // 限制缩放范围：最大放大到原来 4 倍，最小不超过原始大小
+                    let nw = v.w * factor;
+                    nw = Math.max(W / 4, Math.min(W, nw));
+                    const nh = nw * (H / W);
+                    // 保持鼠标点在屏幕上的相对位置不变
+                    const rx = (p.x - v.x) / v.w, ry = (p.y - v.y) / v.h;
+                    return { x: p.x - rx * nw, y: p.y - ry * nh, w: nw, h: nh };
+                });
+            }, [toSvg]);
+            const resetZoom = () => setView({ x: 0, y: 0, w: W, h: H });
+
+            // React 的 onWheel 是被动监听，preventDefault 无效（页面会跟着滚动），
+            // 所以用原生非被动监听器接管滚轮。
+            useEffect(() => {
+                const el = svgRef.current;
+                if (!el) return;
+                el.addEventListener('wheel', onWheel, { passive: false });
+                return () => el.removeEventListener('wheel', onWheel);
+            }, [onWheel]);
+
+            const angle = Math.round(Math.abs(a1 - a0)); // 两边之间的夹角
+            const end0 = [vx + armLen * Math.cos(toRad(a0)), vy - armLen * Math.sin(toRad(a0))];
+            const end1 = [vx + armLen * Math.cos(toRad(a1)), vy - armLen * Math.sin(toRad(a1))];
+
+            // 刻度：i 是几何角度（0=右，180=左）。
+            // 内圈蓝：从右往左 0→180；外圈红：从左往右 0→180。
+            const protTicks = [];
+            for (let i = 0; i <= 180; i++) {
+                const big = i % 10 === 0, mid = i % 5 === 0;
+                const rr = big ? R - 22 : (mid ? R - 14 : R - 8);
+                protTicks.push(<line key={i}
+                    x1={vx + R * Math.cos(toRad(i))} y1={vy - R * Math.sin(toRad(i))}
+                    x2={vx + rr * Math.cos(toRad(i))} y2={vy - rr * Math.sin(toRad(i))}
+                    stroke={big ? '#475569' : '#94a3b8'} strokeWidth={big ? 1.6 : 0.8} />);
+                if (big) {
+                    const innerVal = i;        // 蓝（从右端 0 起）
+                    const outerVal = 180 - i;  // 红（从左端 0 起）
+                    const lr = R - 36, lx = vx + lr * Math.cos(toRad(i)), ly = vy - lr * Math.sin(toRad(i));
+                    protTicks.push(<text key={'in' + i} x={lx} y={ly} textAnchor="middle" dominantBaseline="central"
+                        fontSize="11" fontWeight={side === 'right' ? '700' : '400'}
+                        fill={side === 'right' ? '#1e40af' : '#93c5fd'}>{innerVal}</text>);
+                    const or = R - 52, ox = vx + or * Math.cos(toRad(i)), oy = vy - or * Math.sin(toRad(i));
+                    protTicks.push(<text key={'out' + i} x={ox} y={oy} textAnchor="middle" dominantBaseline="central"
+                        fontSize="10" fontWeight={side === 'left' ? '700' : '400'}
+                        fill={side === 'left' ? '#be123c' : '#fca5a5'}>{outerVal}</text>);
+                }
+            }
+
+            // 半圆外框：从右端到左端走上半圆
+            const semi = `M ${vx + R} ${vy} A ${R} ${R} 0 0 0 ${vx - R} ${vy} Z`;
+            // 高亮被测角的扇形
+            const lo = Math.min(a0, a1), hi = Math.max(a0, a1);
+            const sectorFill = `M ${vx} ${vy} L ${vx + armLen * Math.cos(toRad(lo))} ${vy - armLen * Math.sin(toRad(lo))} ` +
+                `A ${armLen} ${armLen} 0 0 0 ${vx + armLen * Math.cos(toRad(hi))} ${vy - armLen * Math.sin(toRad(hi))} Z`;
+
+            const randomize = () => {
+                setShow(false);
+                const ang = Math.floor(Math.random() * 16) * 10 + 20;  // 20~170
+                const start = Math.floor(Math.random() * (181 - ang)); // 保证两边都在半圆内
+                setA0(start); setA1(start + ang);
+            };
+
+            // 哪条边压在 0 上的小判断（用于提示）
+            const zeroDir = side === 'right' ? 0 : 180;
+            const onZero = Math.min(Math.abs(a0 - zeroDir), Math.abs(a1 - zeroDir)) <= 3;
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-8">
+                    <div className="bg-white rounded-2xl shadow p-3 relative">
+                        {/* 缩放提示 + 复位按钮 */}
+                        <div className="absolute top-3 left-4 text-xs text-gray-400 pointer-events-none">
+                            🖱 滚动鼠标滚轮可放大 / 缩小（{Math.round(W / view.w * 100)}%）
+                        </div>
+                        {Math.abs(view.w - W) > 0.5 && (
+                            <button onClick={resetZoom}
+                                className="absolute top-2.5 right-3 z-10 px-3 py-1 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg smooth-transition">
+                                复位
+                            </button>
+                        )}
+                        <svg ref={svgRef} width={W} height={H} viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`} className="angle-svg"
+                            onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                            onTouchMove={onMove} onTouchEnd={onUp}>
+                            <path d={semi} fill="#eff6ff" stroke="#3b82f6" strokeWidth="2" opacity="0.9" />
+                            {/* 中心十字 */}
+                            <line x1={vx - 12} y1={vy} x2={vx + 12} y2={vy} stroke="#3b82f6" strokeWidth="1.5" />
+                            <line x1={vx} y1={vy - 12} x2={vx} y2={vy + 12} stroke="#3b82f6" strokeWidth="1.5" />
+                            {/* 底边 0 线 */}
+                            <line x1={vx + R} y1={vy} x2={vx - R} y2={vy}
+                                stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4 3" />
+                            {/* 标出 0 在哪一端 */}
+                            <text x={side === 'right' ? vx + R - 6 : vx - R + 6} y={vy + 18}
+                                textAnchor="middle" fontSize="13" fontWeight="800" fill="#1e40af">0</text>
+                            {protTicks}
+
+                            {/* 被测角 */}
+                            <path d={sectorFill} fill="#fde68a" opacity="0.45" />
+                            <line x1={vx} y1={vy} x2={end0[0]} y2={end0[1]} stroke="#0ea5e9" strokeWidth="5" strokeLinecap="round"
+                                className="grab" onMouseDown={onDown('a0')} onTouchStart={onDown('a0')} />
+                            <line x1={vx} y1={vy} x2={end1[0]} y2={end1[1]} stroke="#f59e0b" strokeWidth="5" strokeLinecap="round"
+                                className="grab" onMouseDown={onDown('a1')} onTouchStart={onDown('a1')} />
+                            {/* 端点把手 */}
+                            <circle cx={end0[0]} cy={end0[1]} r="12" fill="#0ea5e9" className="grab"
+                                onMouseDown={onDown('a0')} onTouchStart={onDown('a0')} />
+                            <circle cx={end0[0]} cy={end0[1]} r="4.5" fill="#fff" pointerEvents="none" />
+                            <circle cx={end1[0]} cy={end1[1]} r="12" fill="#f59e0b" className="grab"
+                                onMouseDown={onDown('a1')} onTouchStart={onDown('a1')} />
+                            <circle cx={end1[0]} cy={end1[1]} r="4.5" fill="#fff" pointerEvents="none" />
+                            <circle cx={vx} cy={vy} r="5" fill="#1e293b" />
+
+                            {show && (
+                                <text x={vx} y={vy + 52} textAnchor="middle" fontSize="22" fontWeight="800" fill="#b45309">
+                                    {angle}°
+                                </text>
+                            )}
+                        </svg>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-72">
+                        {/* 从左 / 从右 读数切换 */}
+                        <div className="bg-white rounded-2xl shadow p-1.5 flex gap-1.5">
+                            {[['right', '从右边看 0→', '#1e40af'], ['left', '←从左边看 0', '#be123c']].map(([k, label]) => (
+                                <button key={k} onClick={() => setSide(k)}
+                                    className={"flex-1 px-2 py-2 rounded-xl text-sm font-semibold smooth-transition " +
+                                        (side === k ? (k === 'right' ? "bg-blue-500 text-white shadow" : "bg-rose-500 text-white shadow")
+                                                    : "bg-white text-gray-500 hover:bg-gray-100")}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow px-6 py-5">
+                            <div className="text-sm font-bold text-gray-700 mb-2">量角器怎么用？</div>
+                            <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside leading-relaxed">
+                                <li>量角器<span className="text-blue-600 font-semibold">中心点</span>对准角的顶点；</li>
+                                <li>把一条边对准 <span className="font-semibold" style={{color: side === 'right' ? '#1e40af' : '#be123c'}}>{side === 'right' ? '右端' : '左端'}的 0</span>；</li>
+                                <li>看另一条边对着的刻度，那就是<span className="text-amber-600 font-semibold">角的度数</span>。</li>
+                            </ol>
+                            <div className="text-xs mt-3 leading-relaxed" style={{color: onZero ? '#059669' : '#9ca3af'}}>
+                                {onZero
+                                    ? '✓ 有一条边压在 0 上了，沿另一条边读数吧！'
+                                    : '提示：先把一条边拖到 0 刻度线上，读数才准。'}
+                                <span className="block mt-1">
+                                    现在读<span className="font-semibold" style={{color: side === 'right' ? '#1e40af' : '#be123c'}}>
+                                    {side === 'right' ? '蓝色内圈' : '红色外圈'}</span>。
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={() => setShow(s => !s)}
+                                className={"flex-1 px-4 py-2.5 rounded-lg font-semibold text-white smooth-transition " +
+                                    (show ? "bg-gray-400 hover:bg-gray-500" : "bg-emerald-500 hover:bg-emerald-600")}>
+                                {show ? '隐藏答案' : '我读完了，看答案'}
+                            </button>
+                            <button onClick={randomize}
+                                className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth-transition">
+                                换一个
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            拖动<span className="font-bold" style={{color:'#0ea5e9'}}>蓝</span>、
+                            <span className="text-amber-600 font-bold">橙</span>两条射线张出一个角，
+                            先自己读出度数，再点"看答案"对一对。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 模块四：找一找 —— 判断锐角 / 直角 / 钝角（小练习）
+        // ===========================================================
+        const Quiz = () => {
+            const make = () => {
+                const d = Math.floor(Math.random() * 160) + 15; // 15~174，避开太接近边界
+                return d;
+            };
+            const [deg, setDeg] = useState(make);
+            const [picked, setPicked] = useState(null);
+            const [score, setScore] = useState({ ok: 0, total: 0 });
+            const W = 360, H = 300;
+            const vx = W * 0.28, vy = H * 0.68, armLen = 190;
+            const e0 = [vx + armLen, vy];
+            const e1 = [vx + armLen * Math.cos(toRad(deg)), vy - armLen * Math.sin(toRad(deg))];
+
+            const correct = deg < 90 ? 'acute' : (deg > 90 ? 'obtuse' : 'right');
+            const labels = { acute: '锐角', right: '直角', obtuse: '钝角' };
+
+            const choose = (key) => {
+                if (picked) return;
+                setPicked(key);
+                setScore(s => ({ ok: s.ok + (key === correct ? 1 : 0), total: s.total + 1 }));
+            };
+            const next = () => { setDeg(make()); setPicked(null); };
+
+            const btnClass = (key) => {
+                if (!picked) return "bg-white text-gray-700 hover:bg-blue-50 border-2 border-gray-200";
+                if (key === correct) return "bg-emerald-500 text-white border-2 border-emerald-500";
+                if (key === picked) return "bg-rose-400 text-white border-2 border-rose-400";
+                return "bg-white text-gray-400 border-2 border-gray-100";
+            };
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <div className="flex flex-col lg:flex-row items-center gap-8">
+                        <div className="bg-white rounded-2xl shadow p-3">
+                            <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="angle-svg">
+                                <path d={`M ${vx} ${vy} L ${e0[0]} ${e0[1]} A ${armLen} ${armLen} 0 0 0 ${e1[0]} ${e1[1]} Z`}
+                                    fill="#fde68a" opacity="0.3" />
+                                <path d={arcPath(vx, vy, 46, 0, deg)} fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+                                <line x1={vx} y1={vy} x2={e0[0]} y2={e0[1]} stroke="#64748b" strokeWidth="5" strokeLinecap="round" />
+                                <line x1={vx} y1={vy} x2={e1[0]} y2={e1[1]} stroke="#3b82f6" strokeWidth="5" strokeLinecap="round" />
+                                <circle cx={vx} cy={vy} r="5" fill="#1e293b" />
+                            </svg>
+                        </div>
+                        <div className="flex flex-col gap-3 w-60">
+                            <div className="text-center text-gray-500 text-sm">这是什么角？</div>
+                            {['acute', 'right', 'obtuse'].map(key => (
+                                <button key={key} onClick={() => choose(key)}
+                                    className={"px-4 py-3 rounded-xl font-bold text-lg smooth-transition " + btnClass(key)}>
+                                    {labels[key]}
+                                </button>
+                            ))}
+                            {picked && (
+                                <div className="text-center mt-1">
+                                    <div className={picked === correct ? "text-emerald-600 font-bold" : "text-rose-500 font-bold"}>
+                                        {picked === correct ? '✓ 答对了！' : '再想想～'}
+                                    </div>
+                                    <div className="text-sm text-gray-500 mt-1">这个角是 {Math.round(deg)}°，{labels[correct]}</div>
+                                    <button onClick={next}
+                                        className="mt-3 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth-transition">
+                                        下一题 →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="text-gray-500">
+                        得分：<span className="font-bold text-emerald-600">{score.ok}</span> / {score.total}
+                    </div>
+                    <p className="text-xs text-gray-400 max-w-md text-center leading-relaxed">
+                        小窍门：和<span className="text-blue-600 font-semibold">直角（90°）</span>比一比——
+                        比直角小是<span className="text-emerald-600 font-semibold">锐角</span>，
+                        比直角大是<span className="text-orange-600 font-semibold">钝角</span>。
+                    </p>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 应用外壳
+        // ===========================================================
+        const App = () => {
+            const [tab, setTab] = useState('recognize');
+            const tabs = [
+                ['recognize', '认识角', 'blue'],
+                ['onedeg', '1° 有多大', 'amber'],
+                ['protractor', '量角器', 'emerald'],
+                ['quiz', '判一判', 'rose'],
+            ];
+            const colorMap = { blue: 'bg-blue-500', amber: 'bg-amber-500', emerald: 'bg-emerald-500', rose: 'bg-rose-500' };
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">角的初步认识</h1>
+                        <p className="text-slate-500 mt-1">张一张、量一量，把"角有多大"看得见</p>
+                    </header>
+
+                    <div className="flex justify-center gap-3 mb-8 flex-wrap">
+                        {tabs.map(([key, label, color]) => (
+                            <button key={key} onClick={() => setTab(key)}
+                                className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " +
+                                    (tab === key ? colorMap[color] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="max-w-4xl mx-auto">
+                        {tab === 'recognize' && <Recognize />}
+                        {tab === 'onedeg' && <OneDegree />}
+                        {tab === 'protractor' && <Protractor />}
+                        {tab === 'quiz' && <Quiz />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

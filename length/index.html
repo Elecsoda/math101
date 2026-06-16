@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>长度单位与进位 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ruler-svg { touch-action: none; user-select: none; -webkit-user-select: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+        // ===========================================================
+        // 公共数据：五个长度单位（按从小到大排列）
+        // 每个单位都换算成"毫米"作为基准长度，方便统一比较与换算。
+        // 相邻单位的进率：mm→cm→dm→m 都是 ×10，m→km 是 ×1000。
+        // ===========================================================
+        const UNITS = [
+            { key: 'mm', name: '毫米', sym: 'mm', mm: 1,       color: '#ef4444', bg: 'bg-red-500',    soft: 'bg-red-50',    text: 'text-red-600' },
+            { key: 'cm', name: '厘米', sym: 'cm', mm: 10,      color: '#f59e0b', bg: 'bg-amber-500',  soft: 'bg-amber-50',  text: 'text-amber-600' },
+            { key: 'dm', name: '分米', sym: 'dm', mm: 100,     color: '#10b981', bg: 'bg-emerald-500',soft: 'bg-emerald-50',text: 'text-emerald-600' },
+            { key: 'm',  name: '米',   sym: 'm',  mm: 1000,    color: '#3b82f6', bg: 'bg-blue-500',   soft: 'bg-blue-50',   text: 'text-blue-600' },
+            { key: 'km', name: '千米', sym: 'km', mm: 1000000, color: '#8b5cf6', bg: 'bg-violet-500', soft: 'bg-violet-50', text: 'text-violet-600' },
+        ];
+        const byKey = Object.fromEntries(UNITS.map(u => [u.key, u]));
+        // 相邻单位之间的进率（小 → 大需要除以它，大 → 小需要乘以它）
+        const factorBetween = (smallKey, bigKey) => byKey[bigKey].mm / byKey[smallKey].mm;
+        // 把数字写得好看（去掉多余小数 0）
+        const pretty = (n) => {
+            if (!isFinite(n)) return '—';
+            const r = Math.round(n * 1000) / 1000;
+            return (r % 1 === 0) ? r.toLocaleString('en-US') : r.toString();
+        };
+
+        // ===========================================================
+        // 模块一：认识单位 —— 一把"固定比例"的尺子（每毫米都一样宽）
+        // 关键：尺子刻度永远不变，1 毫米永远是 1 小格那么宽。
+        // 点不同按钮，只是在同一把尺上高亮"1 毫米 / 1 厘米 / 1 分米"那一段，
+        // 于是 1 厘米看起来正好是 1 毫米的 10 倍长、1 分米又是 1 厘米的 10 倍长，
+        // 大小差别和进位都在同一把尺上看得见。
+        // ===========================================================
+        const Recognize = () => {
+            // 当前高亮哪个单位的"1 个"：mm / cm / dm
+            const [unit, setUnit] = useState('cm');
+            const u = byKey[unit];
+
+            // 固定比例：每 1 毫米 = PPM 像素，整把尺画 0~100 毫米（=10 厘米=1 分米）
+            const PPM = 6.6;                 // pixels per millimeter（固定，永不变）
+            const TOTAL_MM = 100;
+            const left = 30, top = 64, barH = 52;
+            const W = left * 2 + TOTAL_MM * PPM, H = 150;
+            const xOfMm = (mm) => left + mm * PPM;
+
+            // 高亮段长度（毫米）：1 毫米=1，1 厘米=10，1 分米=100
+            const hiMm = { mm: 1, cm: 10, dm: 100 }[unit];
+
+            // 对照实物：让学生把"1 个单位"和身边的东西对上
+            const realLife = {
+                mm: ['🐜 蚂蚁身长约 1 毫米', '一张银行卡厚度约 1 毫米', '1 元硬币厚约 2 毫米'],
+                cm: ['🖐 大拇指宽约 1 厘米', '田字格一格约 1 厘米', '一颗黄豆约 1 厘米'],
+                dm: ['📏 手掌张开约 1 分米', '一支粉笔长约 1 分米', '成人一拃约 2 分米'],
+            };
+
+            // 画刻度：每毫米一根细线，每 10 毫米（=1 厘米）一根粗线并标厘米数
+            const ticks = [];
+            for (let mm = 0; mm <= TOTAL_MM; mm++) {
+                const x = xOfMm(mm);
+                const isCm = mm % 10 === 0;
+                const isHalfCm = mm % 5 === 0;
+                ticks.push(<line key={'t' + mm}
+                    x1={x} y1={isCm ? top - 16 : (isHalfCm ? top - 8 : top - 2)} x2={x} y2={top + barH}
+                    stroke={isCm ? '#475569' : '#94a3b8'} strokeWidth={isCm ? 1.6 : 0.6} />);
+                if (isCm) {
+                    ticks.push(<text key={'tc' + mm} x={x} y={top + barH + 18} textAnchor="middle"
+                        fontSize="13" fontWeight="700" fill="#475569">{mm / 10}</text>);
+                }
+            }
+
+            const subUnit = unit === 'mm' ? null : (unit === 'cm' ? byKey['mm'] : byKey['cm']);
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <p className="text-gray-500 text-center max-w-2xl">
+                        这把尺子的刻度<span className="font-semibold text-gray-700">固定不变，每一小格永远是 1 毫米</span>。
+                        点下面的按钮，在<span className="font-semibold text-gray-700">同一把尺</span>上高亮出"1 个"该单位，
+                        看看它们差多少、是怎样 10 个一进位的。
+                    </p>
+
+                    <div className="flex gap-2">
+                        {['mm', 'cm', 'dm'].map(k => (
+                            <button key={k} onClick={() => setUnit(k)}
+                                className={"px-5 py-2 rounded-full font-semibold smooth-transition " +
+                                    (unit === k ? byKey[k].bg + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                1 {byKey[k].name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow p-4 w-full max-w-3xl overflow-x-auto">
+                        <svg className="ruler-svg" width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+                            {/* 尺身（固定 0~10 厘米 = 0~100 毫米） */}
+                            <rect x={left} y={top} width={TOTAL_MM * PPM} height={barH} rx="6" fill="#fffbeb" stroke="#e5e7eb" />
+                            {/* 高亮"1 个该单位"那一段（从 0 开始，真实长度） */}
+                            <rect x={left} y={top} width={hiMm * PPM} height={barH} fill={u.color} opacity="0.22" />
+                            {/* 高亮段上方的标注尺寸线 */}
+                            <line x1={left} y1={top - 30} x2={left + hiMm * PPM} y2={top - 30} stroke={u.color} strokeWidth="2.5" strokeLinecap="round" />
+                            <line x1={left} y1={top - 35} x2={left} y2={top - 25} stroke={u.color} strokeWidth="2.5" />
+                            <line x1={left + hiMm * PPM} y1={top - 35} x2={left + hiMm * PPM} y2={top - 25} stroke={u.color} strokeWidth="2.5" />
+                            <rect x={left + hiMm * PPM / 2 - 52} y={top - 52} width="104" height="18" rx="9" fill={u.color} />
+                            <text x={left + hiMm * PPM / 2} y={top - 39} textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">
+                                1 {u.name} ({u.sym})
+                            </text>
+                            {ticks}
+                            <text x={W - left} y={H - 6} textAnchor="end" fontSize="12" fill="#9ca3af">尺上数字单位：厘米（每小格 1 毫米）</text>
+                        </svg>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4 w-full max-w-3xl">
+                        <div className={"rounded-2xl p-5 " + u.soft}>
+                            <div className="text-sm text-gray-400 mb-1">高亮这一段有多长</div>
+                            <div className={"text-2xl font-bold " + u.text}>1 {u.name} = {hiMm} 毫米</div>
+                            {subUnit && (
+                                <div className="text-gray-600 mt-2">
+                                    数一数高亮里有几小格：正好 <span className="font-bold">10</span> 个
+                                    <span className={"font-bold " + subUnit.text}> 1 {subUnit.name}</span> 那么长。
+                                    <div className="mt-1 font-semibold text-gray-700">所以 1 {u.name} = 10 {subUnit.name}</div>
+                                </div>
+                            )}
+                            {!subUnit && (
+                                <div className="text-gray-600 mt-2">高亮的只有 <span className="font-bold">1 小格</span>——毫米是尺上最小的一格，很短很短。</div>
+                            )}
+                        </div>
+                        <div className="rounded-2xl p-5 bg-white shadow">
+                            <div className="text-sm text-gray-400 mb-2">生活里的 1 {u.name}</div>
+                            <ul className="space-y-1 text-gray-700">
+                                {realLife[unit].map((t, i) => <li key={i}>· {t}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 模块二：进位关系 —— 按真实比例画长度条，点哪个单位它就当"1"
+        // 选中的单位画成满格（参照长度），其它单位的长度 = 与它的真实倍数关系。
+        // 这样不同单位"长得就是不一样长"，千米最长、毫米最短，一眼看出区别。
+        // ===========================================================
+        const Ladder = () => {
+            // refKey：当前被设为"单位 1"的单位（它高 UNIT_PX 像素，其它按真实倍数）
+            const [refKey, setRefKey] = useState('dm');
+            const ref = byKey[refKey];
+            const scrollRef = useRef(null);
+
+            // 真实比例：1 个标准单位 = UNIT_PX 像素，其它单位高度 = 真实倍数 × UNIT_PX。
+            // 倍数可能很大（千米是毫米的 100 万倍），所以图区固定高度、能上下滚动看高柱子。
+            const UNIT_PX = 46;           // 1 个标准单位画这么高
+            const VIEW_H = 460;           // 图区可视高度（超出可滚动）
+            const CAP_PX = 9000;          // 单根柱子最高画到这里（再高浏览器吃不消），到顶就标注"还没完"
+            const MIN_PX = 3;             // 太矮也留一点点，免得完全消失
+
+            const heightOf = (u) => (u.mm / ref.mm) * UNIT_PX;
+            const ratioLabel = (u) => {
+                const r = u.mm / ref.mm;
+                if (r === 1) return '标准 1';
+                return r >= 1 ? '×' + pretty(r) : '÷' + pretty(1 / r);
+            };
+
+            // 最高柱子的真实像素高度（用于撑开滚动内容区）
+            const tallestRaw = Math.max(...UNITS.map(heightOf));
+            const contentH = Math.min(CAP_PX, tallestRaw) + 70; // 给顶部标注留空间
+            // 切换标准后，滚动到底部（地面），从"脚下"开始往上看
+            useEffect(() => {
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [refKey]);
+
+            const overTall = tallestRaw > VIEW_H + 1;   // 有柱子超出可视区 → 需要滚动
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <p className="text-gray-500 text-center max-w-2xl">
+                        柱子高度<span className="font-semibold text-gray-700">就是真实长度的比例</span>：
+                        点一个单位当作标准 <span className="font-semibold text-gray-700">1</span>，
+                        是它 10 倍的单位就<span className="font-semibold text-gray-700">正好高 10 倍</span>。
+                        高柱子一屏放不下，可以在图里<span className="font-semibold text-gray-700">上下滚动</span>看它到底有多高。
+                    </p>
+
+                    {/* 单位按钮：点击设为"1" */}
+                    <div className="flex gap-2 flex-wrap justify-center">
+                        {UNITS.map(unitObj => (
+                            <button key={unitObj.key} onClick={() => setRefKey(unitObj.key)}
+                                className={"px-4 py-2 rounded-full font-semibold smooth-transition " +
+                                    (refKey === unitObj.key ? unitObj.bg + " text-white shadow ring-2 ring-offset-2 ring-gray-300" : "bg-white text-gray-600 border hover:bg-gray-50")}>
+                                把 1 {unitObj.name} 当作 1
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* 柱状图：真实比例，高度=真实倍数；图区固定高、可上下滚动 */}
+                    <div className="w-full max-w-3xl bg-white rounded-2xl shadow p-5">
+                        <div className="text-sm text-gray-400 mb-3 text-center">
+                            当前标准：<span className={"font-bold " + ref.text}>1 {ref.name}</span>
+                            （柱高按真实倍数画）{overTall && <span className="text-amber-600 font-semibold"> · 有柱子超出窗口，向上滚动查看 ↑</span>}
+                        </div>
+                        <div ref={scrollRef} className="relative overflow-y-auto rounded-xl bg-gray-50 border border-gray-100"
+                            style={{ height: VIEW_H + 'px' }}>
+                            {/* 内容区：高度撑到最高柱子，列在底部对齐 */}
+                            <div className="flex items-end justify-around gap-2 px-2" style={{ minHeight: VIEW_H + 'px', height: contentH + 'px' }}>
+                                {UNITS.map(unitObj => {
+                                    const isRef = unitObj.key === refKey;
+                                    const raw = heightOf(unitObj);
+                                    const capped = raw > CAP_PX;
+                                    const h = Math.max(MIN_PX, Math.min(CAP_PX, raw));
+                                    return (
+                                        <div key={unitObj.key} className="flex flex-col items-center justify-end flex-1 h-full">
+                                            <div className={"text-xs sm:text-sm font-bold mb-1 whitespace-nowrap " + (isRef ? 'text-gray-800' : unitObj.text)}>
+                                                {ratioLabel(unitObj)}{capped && '…'}
+                                            </div>
+                                            <div className={"w-full max-w-[72px] rounded-t-lg smooth-transition " + unitObj.bg + (isRef ? " ring-2 ring-offset-2 ring-gray-400" : "")}
+                                                style={{ height: h + 'px' }}>
+                                                {capped && (
+                                                    <div className="text-white text-[10px] text-center pt-1 leading-tight">还<br/>没<br/>完</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        {/* 底座标签（固定在图区下方，和上面的列对齐） */}
+                        <div className="flex items-start justify-around gap-2 px-2 mt-2">
+                            {UNITS.map(unitObj => (
+                                <div key={unitObj.key} className="flex-1 text-center">
+                                    <div className={"font-bold " + unitObj.text}>{unitObj.name}</div>
+                                    <div className="text-xs text-gray-400">{unitObj.sym}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-400 mt-3 text-center">
+                            提示：把<span className="font-semibold">毫米</span>当标准时，千米要高 100 万倍，柱子高得滚不到头——这正说明它们差得有多远。
+                            想看清矮的单位，可把<span className="font-semibold">分米 / 米</span>当标准。
+                        </p>
+                    </div>
+
+                    {/* 进率讲解：仍保留 ×10 / ×1000 的关系说明 */}
+                    <div className="w-full max-w-2xl">
+                        <p className="text-gray-500 text-center mb-3">
+                            从小到大，每上一级就要乘进率；从大到小，每下一级就要除以进率。
+                            <span className="font-semibold text-gray-700">毫米→厘米→分米→米都是 ×10，米→千米一下子是 ×1000。</span>
+                        </p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl shadow p-5 w-full max-w-2xl">
+                        <div className="text-sm text-gray-400 mb-3">完整进率表（相邻单位）</div>
+                        <table className="w-full text-center border-collapse">
+                            <thead>
+                                <tr className="text-gray-500 text-sm">
+                                    <th className="py-2">小单位</th><th></th><th className="py-2">大单位</th><th className="py-2">进率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {UNITS.slice(0, -1).map((unitObj, i) => {
+                                    const next = UNITS[i + 1];
+                                    const f = factorBetween(unitObj.key, next.key);
+                                    return (
+                                        <tr key={unitObj.key} className="border-t">
+                                            <td className={"py-2 font-semibold " + unitObj.text}>{f} {unitObj.name}</td>
+                                            <td className="text-gray-400">=</td>
+                                            <td className={"py-2 font-semibold " + next.text}>1 {next.name}</td>
+                                            <td className="py-2 text-gray-600">×{pretty(f)}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 模块三：单位换算 —— 任选两个单位，看一个量怎样换算
+        // ===========================================================
+        const Convert = () => {
+            const [value, setValue] = useState(3);
+            const [from, setFrom] = useState('m');
+            const [to, setTo] = useState('cm');
+            const uf = byKey[from], ut = byKey[to];
+
+            const baseMm = value * uf.mm;            // 先化成毫米
+            const result = baseMm / ut.mm;           // 再化成目标单位
+
+            // 算"乘还是除、乘几"，方便给出讲解
+            const ratio = uf.mm / ut.mm;             // from 相对 to 的倍数
+            const explain = ratio === 1
+                ? '两个单位相同，数值不变。'
+                : (ratio > 1
+                    ? `1 ${uf.name} = ${pretty(ratio)} ${ut.name}（大单位换小单位，要 ×${pretty(ratio)}）`
+                    : `${pretty(1 / ratio)} ${uf.name} = 1 ${ut.name}（小单位换大单位，要 ÷${pretty(1 / ratio)}）`);
+
+            const UnitPicker = ({ val, set, label }) => (
+                <div className="flex flex-col items-center gap-2">
+                    <span className="text-xs text-gray-400">{label}</span>
+                    <div className="flex gap-1 flex-wrap justify-center">
+                        {UNITS.map(unitObj => (
+                            <button key={unitObj.key} onClick={() => set(unitObj.key)}
+                                className={"px-3 py-1.5 rounded-lg text-sm font-semibold smooth-transition " +
+                                    (val === unitObj.key ? unitObj.bg + " text-white shadow" : "bg-white text-gray-600 border hover:bg-gray-50")}>
+                                {unitObj.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <div className="bg-white rounded-2xl shadow p-6 w-full max-w-2xl flex flex-col gap-5">
+                        <div className="flex items-center justify-center gap-3 flex-wrap">
+                            <input type="number" value={value} min="0" step="0.1"
+                                onChange={(e) => setValue(Math.max(0, parseFloat(e.target.value) || 0))}
+                                className="w-28 text-2xl font-bold text-center border-2 border-gray-200 rounded-xl py-2 focus:border-blue-400 outline-none" />
+                            <UnitPicker val={from} set={setFrom} label="从" />
+                        </div>
+
+                        <div className="flex justify-center text-2xl text-gray-300">⬇</div>
+
+                        <UnitPicker val={to} set={setTo} label="换算成" />
+
+                        <div className={"rounded-xl p-5 text-center " + ut.soft}>
+                            <div className="text-sm text-gray-400">结果</div>
+                            <div className={"text-4xl font-bold " + ut.text}>
+                                {pretty(result)} <span className="text-2xl">{ut.sym}</span>
+                            </div>
+                            <div className="text-gray-600 mt-2">
+                                {pretty(value)} {uf.name} = {pretty(result)} {ut.name}
+                            </div>
+                        </div>
+
+                        <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3 text-center">
+                            💡 {explain}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 模块四：换算练习 —— 出题填空，巩固进率
+        // ===========================================================
+        const Quiz = () => {
+            // 生成一道相邻单位换算题：a 小单位 = ? 大单位，或反过来
+            const makeQ = () => {
+                const i = Math.floor(Math.random() * (UNITS.length - 1)); // 相邻对 i, i+1
+                const small = UNITS[i], big = UNITS[i + 1];
+                const f = factorBetween(small.key, big.key);
+                const dir = Math.random() < 0.5 ? 'up' : 'down';
+                if (dir === 'up') {
+                    // 小 → 大：给 small 的整数倍，问等于几个 big
+                    const k = (1 + Math.floor(Math.random() * 8)) * f; // f 的整数倍，结果是整数
+                    return { text: `${k} ${small.name} = （ ? ） ${big.name}`, answer: k / f, hint: `每 ${f} ${small.name} = 1 ${big.name}` };
+                } else {
+                    // 大 → 小：给 big 的整数，问等于几个 small
+                    const k = 1 + Math.floor(Math.random() * 9);
+                    return { text: `${k} ${big.name} = （ ? ） ${small.name}`, answer: k * f, hint: `1 ${big.name} = ${f} ${small.name}` };
+                }
+            };
+
+            const [q, setQ] = useState(makeQ);
+            const [input, setInput] = useState('');
+            const [state, setState] = useState('ask'); // ask | right | wrong
+            const [score, setScore] = useState({ ok: 0, total: 0 });
+
+            const submit = () => {
+                if (input === '') return;
+                const correct = Math.abs(parseFloat(input) - q.answer) < 1e-6;
+                setState(correct ? 'right' : 'wrong');
+                setScore(s => ({ ok: s.ok + (correct ? 1 : 0), total: s.total + 1 }));
+            };
+            const next = () => { setQ(makeQ()); setInput(''); setState('ask'); };
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <div className="bg-white rounded-2xl shadow p-8 w-full max-w-xl flex flex-col items-center gap-5">
+                        <div className="text-sm text-gray-400">
+                            答对 {score.ok} / {score.total} 题
+                        </div>
+                        <div className="text-2xl font-bold text-gray-800 text-center">{q.text}</div>
+
+                        <div className="flex items-center gap-3">
+                            <input type="number" value={input} autoFocus
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') (state === 'ask' ? submit() : next()); }}
+                                disabled={state !== 'ask'}
+                                className="w-32 text-2xl font-bold text-center border-2 border-gray-200 rounded-xl py-2 focus:border-blue-400 outline-none disabled:bg-gray-100" />
+                        </div>
+
+                        {state === 'ask' && (
+                            <button onClick={submit}
+                                className="px-8 py-2.5 rounded-full bg-blue-500 text-white font-semibold shadow hover:bg-blue-600 smooth-transition">
+                                确定
+                            </button>
+                        )}
+                        {state === 'right' && (
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="text-emerald-600 font-bold text-xl">✓ 答对了！</div>
+                                <button onClick={next} className="px-8 py-2.5 rounded-full bg-emerald-500 text-white font-semibold shadow hover:bg-emerald-600 smooth-transition">下一题</button>
+                            </div>
+                        )}
+                        {state === 'wrong' && (
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="text-rose-500 font-bold text-xl">✗ 再想想</div>
+                                <div className="text-gray-600">正确答案是 <span className="font-bold text-emerald-600">{pretty(q.answer)}</span></div>
+                                <div className="text-sm text-gray-400">提示：{q.hint}</div>
+                                <button onClick={next} className="mt-2 px-8 py-2.5 rounded-full bg-blue-500 text-white font-semibold shadow hover:bg-blue-600 smooth-transition">下一题</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ===========================================================
+        // 主程序：标签页切换
+        // ===========================================================
+        const App = () => {
+            const [tab, setTab] = useState('recognize');
+            const tabs = [
+                ['recognize', '认识单位', 'amber'],
+                ['ladder', '进位关系', 'emerald'],
+                ['convert', '单位换算', 'blue'],
+                ['quiz', '换算练习', 'rose'],
+            ];
+            const colorMap = { blue: 'bg-blue-500', amber: 'bg-amber-500', emerald: 'bg-emerald-500', rose: 'bg-rose-500' };
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">长度单位与进位</h1>
+                        <p className="text-slate-500 mt-1">毫米 · 厘米 · 分米 · 米 · 千米，看清它们怎样进位换算</p>
+                    </header>
+
+                    <div className="flex justify-center gap-3 mb-8 flex-wrap">
+                        {tabs.map(([key, label, color]) => (
+                            <button key={key} onClick={() => setTab(key)}
+                                className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " +
+                                    (tab === key ? colorMap[color] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="max-w-4xl mx-auto">
+                        {tab === 'recognize' && <Recognize />}
+                        {tab === 'ladder' && <Ladder />}
+                        {tab === 'convert' && <Convert />}
+                        {tab === 'quiz' && <Quiz />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

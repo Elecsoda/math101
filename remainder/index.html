@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>有余数的除法 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.35s cubic-bezier(0.4,0,0.2,1); }
+        .pop { animation: pop 0.4s ease; }
+        @keyframes pop { 0%{transform:scale(0.4);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+        .shake { animation: shake 0.35s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+        /* 竖式：等宽数字 + 固定网格列，保证位值对齐 */
+        .ld { font-variant-numeric: tabular-nums; font-family: 'Courier New', ui-monospace, monospace; }
+        .cell-in { width: 2.2rem; text-align: center; border: none; border-bottom: 2px dashed #cbd5e1; background: transparent; font: inherit; outline: none; }
+        .cell-in:focus { border-bottom-color: #6366f1; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        // ============ 难度配置 ============
+        const LEVELS = {
+            t1: { label: '两位数 ÷ 一位数', dividend: [10, 99],    divisor: [2, 9] },
+            m1: { label: '多位数 ÷ 一位数', dividend: [100, 9999], divisor: [2, 9] },
+            m2: { label: '多位数 ÷ 两位数', dividend: [120, 9999], divisor: [11, 99] },
+            mm: { label: '多位数 ÷ 多位数', dividend: [1000, 99999], divisor: [100, 999] },
+        };
+        function randInt(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+
+        // 生成一道有余数的题（余数 > 0，商 ≥ 1）
+        function genProblem(levelKey) {
+            const L = LEVELS[levelKey];
+            for (let t = 0; t < 800; t++) {
+                const divisor = randInt(L.divisor[0], L.divisor[1]);
+                const dividend = randInt(L.dividend[0], L.dividend[1]);
+                const q = Math.floor(dividend / divisor), r = dividend % divisor;
+                if (r > 0 && q >= 1 && divisor > 1) return { dividend, divisor, q, r };
+            }
+            return { dividend: 13, divisor: 4, q: 3, r: 1 };
+        }
+
+        // ============ 长除法计算引擎 ============
+        // 输出按"被除数数位"对齐的结构，供网格渲染使用。
+        // 关键：从最高位除起；每一位算出 商位、积、余；余数与下一位合并继续。
+        function longDivPlan(dividend, divisor) {
+            const digits = String(dividend).split('').map(Number);
+            const n = digits.length;
+            const rows = [];            // 每个"有效除法步骤"产生一行积 + 一行余数
+            const quotient = new Array(n).fill(null); // 每个数位上的商（null=该位不写商，前导）
+            let cur = 0, started = false;
+            for (let i = 0; i < n; i++) {
+                cur = cur * 10 + digits[i];          // 把第 i 位下拉/合并进来
+                const qd = Math.floor(cur / divisor);
+                if (qd === 0 && !started) {
+                    // 前导：当前位不够除，不写商，继续合并下一位
+                    quotient[i] = null;
+                    continue;
+                }
+                started = true;
+                const prod = qd * divisor;
+                const rem = cur - prod;
+                quotient[i] = qd;
+                rows.push({
+                    atCol: i,                 // 这一步"除到"被除数第 i 位（积、余的最右列）
+                    partial: cur,             // 参与本步运算的部分被除数
+                    qd, prod, rem,
+                    nextDigit: i + 1 < n ? digits[i + 1] : null, // 下一位（要下拉的）
+                    nextCol: i + 1,
+                });
+                cur = rem;
+            }
+            return { digits, n, rows, quotient, remainder: cur, quotientStr: String(Math.floor(dividend / divisor)) };
+        }
+
+        // 竖式总步骤数：每个有效行 = 2 步（写商+积 / 减得余+下拉）
+        function demoMaxStep(dividend, divisor) {
+            return longDivPlan(dividend, divisor).rows.length * 2;
+        }
+
+        // ============ 竖式网格渲染（核心：位值对齐） ============
+        // 用 CSS Grid，列数 = 被除数位数 + 1（最左列放除数与符号）。
+        // step: 0 只摆算式；之后每个有效行贡献 2 步。
+        const LongDivisionGrid = ({ dividend, divisor, step }) => {
+            const plan = longDivPlan(dividend, divisor);
+            const { digits, n, rows, quotient, remainder } = plan;
+            const COL = 2.4;            // 每个数位列宽 rem
+            const LEAD = 3.2;           // 最左列（除数列）宽 rem
+            const gridStyle = { display: 'grid', gridTemplateColumns: `${LEAD}rem repeat(${n}, ${COL}rem)`, justifyContent: 'start' };
+
+            // 一个数字格
+            const Cell = ({ col, children, cls = '' }) => (
+                <div className={"text-2xl text-center leading-9 " + cls} style={{ gridColumnStart: col + 2 }}>{children}</div>
+            );
+
+            // —— 商行（最顶）——
+            const quotientRow = (
+                <div style={gridStyle} className="ld">
+                    <div style={{ gridColumnStart: 1 }} />
+                    {digits.map((_, i) => {
+                        // 第 i 位的商，在"写到该位"那一步出现。该位对应的 row 是 atCol===i 的行；
+                        // 写商发生在该行的第 1 个 step。
+                        const rowIdx = rows.findIndex(r => r.atCol === i);
+                        const visible = rowIdx >= 0 && step >= rowIdx * 2 + 1;
+                        return (
+                            <div key={i} className={"text-2xl text-center leading-9 font-bold text-blue-600 " + (visible ? 'pop' : '')}
+                                 style={{ gridColumnStart: i + 2 }}>
+                                {visible ? quotient[i] : ''}
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+
+            // —— 被除数行（除数 + 除号 + 被除数）——
+            const dividendRow = (
+                <div style={gridStyle} className="ld relative">
+                    <div style={{ gridColumnStart: 1 }} className="text-2xl text-right pr-1 leading-9 text-emerald-600 font-semibold flex items-center justify-end">
+                        {divisor}
+                        {/* 长除号的竖线 */}
+                        <span className="ml-1 self-stretch border-l-2 border-gray-700" />
+                    </div>
+                    {digits.map((d, i) => (
+                        <div key={i} className="text-2xl text-center leading-9 text-indigo-600 border-t-2 border-gray-700"
+                             style={{ gridColumnStart: i + 2 }}>{d}</div>
+                    ))}
+                </div>
+            );
+
+            // —— 中间各行：每个有效 row 产出"积行"和"余数(+下拉)行" ——
+            const body = [];
+            rows.forEach((r, ri) => {
+                const prodStep = ri * 2 + 1;   // 写商 + 写积
+                const subStep  = ri * 2 + 2;   // 画线 + 写余 + 下拉
+
+                // 积行：右端落在 atCol，左侧加"−"
+                if (step >= prodStep) {
+                    body.push(
+                        <div key={'p' + ri} style={gridStyle} className="ld fade-in">
+                            <div style={{ gridColumnStart: 1 }} className="text-2xl text-right pr-1 leading-9 text-rose-400">−</div>
+                            {String(r.prod).split('').map((ch, k) => {
+                                const col = r.atCol - (String(r.prod).length - 1 - k); // 右对齐到 atCol
+                                return <div key={k} className="text-2xl text-center leading-9 text-rose-500"
+                                            style={{ gridColumnStart: col + 2 }}>{ch}</div>;
+                            })}
+                        </div>
+                    );
+                }
+                // 横线 + 余数行 + 下拉
+                if (step >= subStep) {
+                    const remDigits = String(r.rem).split('');
+                    body.push(
+                        <div key={'l' + ri} style={gridStyle} className="ld">
+                            {/* 横线：覆盖参与本步的列（从 atCol - (积位数-1) 到 atCol） */}
+                            {Array.from({ length: String(r.prod).length }).map((_, k) => {
+                                const col = r.atCol - (String(r.prod).length - 1) + k;
+                                return <div key={k} className="border-t-2 border-gray-700 h-1" style={{ gridColumnStart: col + 2 }} />;
+                            })}
+                        </div>,
+                        <div key={'r' + ri} style={gridStyle} className="ld fade-in">
+                            {remDigits.map((ch, k) => {
+                                const col = r.atCol - (remDigits.length - 1 - k);
+                                return <div key={k} className="text-2xl text-center leading-9 text-gray-800"
+                                            style={{ gridColumnStart: col + 2 }}>{ch}</div>;
+                            })}
+                            {/* 下拉下一位 */}
+                            {r.nextDigit !== null && (
+                                <div className="text-2xl text-center leading-9 text-indigo-400" style={{ gridColumnStart: r.nextCol + 2 }}>
+                                    <span>{r.nextDigit}</span>
+                                    <span className="block text-[10px] text-indigo-300 leading-none -mt-1">↓</span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+            });
+
+            const maxStep = rows.length * 2;
+            const done = step >= maxStep;
+
+            return (
+                <div className="inline-block bg-white rounded-xl shadow p-5">
+                    {quotientRow}
+                    {dividendRow}
+                    <div className="mt-1 flex flex-col gap-0.5">{body}</div>
+                    {done && (
+                        <div className="mt-3 text-center text-sm fade-in">
+                            最后剩下 <b className="text-rose-500">{remainder}</b>，不够再除一次，就是<b className="text-rose-500">余数</b>
+                            <div className="text-xs text-gray-400 mt-0.5">余数 {remainder} &lt; 除数 {divisor} ✔</div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ 小棒分物（拆捆）——与竖式同步 ============
+        // 以"位值小棒"表示被除数：用整捆 / 散根表达每一位。
+        // 把当前位的小棒平均分成"除数"份，分不完的拆成下一位继续。
+        // 这里用最高位起的"两位数÷一位数"做清晰的拆捆动画；位数更高时用通用的"单位块"示意。
+        const PLACE_NAMES = ['个', '十', '百', '千', '万'];
+
+        // 单位块：一个代表 10^power 的方块，颜色随数位
+        const UnitBlock = ({ power, big }) => {
+            const colors = ['bg-sky-400', 'bg-emerald-400', 'bg-amber-400', 'bg-violet-400', 'bg-rose-400'];
+            const sz = big ? 'w-3 h-3' : 'w-5 h-5';
+            return <div className={"rounded-sm pop smooth-transition " + sz + ' ' + (colors[power] || 'bg-gray-400')} />;
+        };
+
+        // 把数 n 拆成每个数位的"块"数组，从高位到低位
+        function toPlaceBlocks(n) {
+            const s = String(n);
+            return s.split('').map((d, i) => ({ power: s.length - 1 - i, count: +d }));
+        }
+
+        // 分物演示：展示"当前要分的这一位有多少块，平均分成 divisor 份，每份几块，剩几块拆到下一位"
+        const SharingViz = ({ dividend, divisor, step }) => {
+            const plan = longDivPlan(dividend, divisor);
+            const { rows } = plan;
+            // 当前进行到第几个有效行（每行 2 步）
+            const activeRow = Math.min(rows.length - 1, Math.floor((step - 1) / 2));
+            const phase = step === 0 ? 'idle' : ((step - 1) % 2 === 0 ? 'split' : 'leftover');
+            const big = dividend > 999;
+
+            if (step === 0) {
+                // 初始：摆出被除数的位值块
+                const blocks = toPlaceBlocks(dividend);
+                return (
+                    <div className="flex flex-col gap-3 items-center">
+                        <div className="text-sm text-gray-500 text-center">先把 <b className="text-indigo-600">{dividend}</b> 按数位摆出来</div>
+                        <div className="flex gap-3 flex-wrap justify-center">
+                            {blocks.map((b, i) => (
+                                <div key={i} className="flex flex-col items-center gap-1">
+                                    <div className="flex flex-wrap gap-1 justify-center max-w-[120px] min-h-[1.5rem]">
+                                        {Array.from({ length: b.count }).map((_, k) => <UnitBlock key={k} power={b.power} big={big} />)}
+                                    </div>
+                                    <div className="text-xs text-gray-400">{PLACE_NAMES[b.power] || `10^${b.power}`}位 · {b.count}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="text-xs text-gray-400 text-center px-2">数学约定：<b>从最高位开始分</b>——先分大单位，分不完的再拆小。</div>
+                    </div>
+                );
+            }
+
+            const r = rows[activeRow];
+            const placePower = plan.n - 1 - r.atCol;           // 当前除到的数位
+            const placeName = PLACE_NAMES[placePower] || `10^${placePower}`;
+            const sharePer = r.qd;                              // 每份分得（这一位的商）
+            const leftover = r.rem;                             // 这一位分完剩下的（要拆到下一位）
+
+            return (
+                <div className="flex flex-col gap-3 items-center">
+                    <div className="text-sm text-gray-500 text-center">
+                        现在分 <b className="text-indigo-600">{placeName}位</b>：把 <b>{r.partial}</b>（{placeName}）平均分成 <b className="text-emerald-600">{divisor}</b> 份
+                    </div>
+                    {/* divisor 个盘子，每盘 sharePer 块 */}
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        {Array.from({ length: Math.min(divisor, 12) }).map((_, gi) => (
+                            <div key={gi} className="border-2 border-emerald-400 bg-emerald-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center"
+                                 style={{ minWidth: 44 }}>
+                                {Array.from({ length: sharePer }).map((__, k) => <UnitBlock key={k} power={placePower} big={big} />)}
+                            </div>
+                        ))}
+                        {divisor > 12 && <div className="self-center text-gray-400 text-sm">…共 {divisor} 份</div>}
+                    </div>
+                    <div className="text-center text-sm">
+                        每份分到 <b className="text-blue-600">{sharePer}</b> 个{placeName}（写在商的{placeName}位）
+                    </div>
+                    {/* 剩余 / 拆捆 */}
+                    {phase === 'leftover' && (
+                        <div className="flex flex-col items-center gap-1 fade-in">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-rose-500">剩</span>
+                                <div className="border-2 border-dashed border-rose-300 bg-rose-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center min-w-[2.5rem] items-center">
+                                    {leftover > 0
+                                        ? Array.from({ length: Math.min(leftover, 20) }).map((_, k) => <UnitBlock key={k} power={placePower} big={big} />)
+                                        : <span className="text-rose-300 text-xs px-1">0</span>}
+                                </div>
+                                <span className="text-sm text-rose-500">{leftover} 个{placeName}</span>
+                            </div>
+                            {r.nextDigit !== null
+                                ? <div className="text-xs text-gray-500 text-center px-2">
+                                    {leftover} 个{placeName}不够再分，<b>拆开换成下一位</b>，和下一位的 {r.nextDigit} 合起来接着分。
+                                  </div>
+                                : (leftover > 0
+                                    ? <div className="text-xs text-rose-500 text-center px-2">没有更低的数位了，这 {leftover} 就是<b>余数</b>（{leftover} &lt; {divisor}）。</div>
+                                    : <div className="text-xs text-emerald-600 text-center">正好分完。</div>)}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============ 通用组件 ============
+        const PageHeader = ({ title, subtitle }) => (
+            <header className="relative max-w-4xl mx-auto text-center mb-6 px-12">
+                <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600">
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                </a>
+                <h1 className="text-3xl font-bold text-slate-800">{title}</h1>
+                <p className="text-slate-500 mt-1">{subtitle}</p>
+            </header>
+        );
+
+        const LevelPicker = ({ value, onChange }) => (
+            <div className="flex flex-wrap justify-center gap-2">
+                {Object.entries(LEVELS).map(([k, v]) => (
+                    <button key={k} onClick={() => onChange(k)}
+                        className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth-transition " +
+                            (value === k ? "bg-indigo-500 text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200")}>
+                        {v.label}
+                    </button>
+                ))}
+            </div>
+        );
+
+        const InlineEq = ({ dividend, divisor, q, r, showAns }) => (
+            <div className="ld text-2xl text-center text-gray-800">
+                <span className="text-indigo-600">{dividend}</span>
+                <span className="mx-2 text-gray-400">÷</span>
+                <span className="text-emerald-600">{divisor}</span>
+                <span className="mx-2 text-gray-400">=</span>
+                {showAns
+                    ? <><span className="text-blue-600 font-bold">{q}</span><span className="mx-1 text-gray-400">……</span><span className="text-rose-500 font-bold">{r}</span></>
+                    : <span className="text-gray-300">? …… ?</span>}
+            </div>
+        );
+
+        const StepBar = ({ step, maxStep, hint, onReset, onNext, color = 'indigo' }) => {
+            const btn = { indigo: 'bg-indigo-500 hover:bg-indigo-600', rose: 'bg-rose-500 hover:bg-rose-600' }[color];
+            return (
+                <div className="flex flex-col items-center gap-3">
+                    <div className="text-gray-600 font-semibold min-h-[1.5rem] text-center px-4 max-w-md">{hint}</div>
+                    <div className="flex gap-3">
+                        <button onClick={onReset} disabled={step === 0}
+                            className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700">重新开始</button>
+                        <button onClick={onNext} disabled={step >= maxStep}
+                            className={"px-6 py-2.5 rounded-lg font-semibold smooth-transition text-white disabled:opacity-40 " + btn}>
+                            {step >= maxStep ? '已完成' : '下一步'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============ Tab 1：演示 ============
+        const DemoTab = () => {
+            const [level, setLevel] = useState('t1');
+            const [prob, setProb] = useState(() => genProblem('t1'));
+            const [step, setStep] = useState(0);
+            const { dividend, divisor, q, r } = prob;
+            const maxStep = demoMaxStep(dividend, divisor);
+
+            const newProblem = (lv = level) => { setProb(genProblem(lv)); setStep(0); };
+            const onLevel = (lv) => { setLevel(lv); newProblem(lv); };
+
+            const hint = step === 0
+                ? '从最高位开始分：先分大单位，分不完的拆成小单位'
+                : step >= maxStep ? '分完啦！分不动的就是余数'
+                : ((step - 1) % 2 === 0
+                    ? '这一位平均分成几份、每份几个？把份数写到商上'
+                    : '减一减看剩多少，剩的拆开和下一位合起来接着分');
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-5">
+                    <LevelPicker value={level} onChange={onLevel} />
+                    <div className="flex items-center gap-3">
+                        <InlineEq dividend={dividend} divisor={divisor} q={q} r={r} showAns={step >= maxStep} />
+                        <button onClick={() => newProblem()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 smooth-transition">换一题</button>
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start justify-center w-full">
+                        <div className="bg-white rounded-xl shadow p-5 w-full lg:w-[360px]">
+                            <div className="text-center font-semibold text-gray-700 mb-3">① 分一分（直观）</div>
+                            <SharingViz dividend={dividend} divisor={divisor} step={step} />
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <div className="text-center font-semibold text-gray-700 mb-3">② 写竖式（算法）</div>
+                            <LongDivisionGrid dividend={dividend} divisor={divisor} step={step} />
+                        </div>
+                    </div>
+
+                    <StepBar step={step} maxStep={maxStep} hint={hint}
+                        onReset={() => setStep(0)} onNext={() => setStep(s => Math.min(maxStep, s + 1))} />
+                </div>
+            );
+        };
+
+        // ============ Tab 2：逆过程·验算 ============
+        const InverseTab = () => {
+            const [level, setLevel] = useState('t1');
+            const [prob, setProb] = useState(() => genProblem('t1'));
+            const [phase, setPhase] = useState(0);
+            const { dividend, divisor, q, r } = prob;
+            const product = q * divisor;
+
+            const newProblem = (lv = level) => { setProb(genProblem(lv)); setPhase(0); };
+            const onLevel = (lv) => { setLevel(lv); newProblem(lv); };
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <LevelPicker value={level} onChange={onLevel} />
+                    <div className="flex items-center gap-3">
+                        <InlineEq dividend={dividend} divisor={divisor} q={q} r={r} showAns />
+                        <button onClick={() => newProblem()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 smooth-transition">换一题</button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow p-6 w-full max-w-xl">
+                        <div className="text-center text-gray-600 mb-4">
+                            除法做完，怎么知道对不对？<b className="text-indigo-600">把它倒回去</b>（乘法是除法的逆运算）：
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-2 ld text-2xl">
+                            <span className="px-3 py-2 rounded-lg bg-blue-50 text-blue-600 border-2 border-blue-200">商 {q}</span>
+                            <span className="text-gray-400">×</span>
+                            <span className="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-600 border-2 border-emerald-200">除数 {divisor}</span>
+                            <span className={"text-gray-400 smooth-transition " + (phase >= 1 ? '' : 'opacity-20')}>=</span>
+                            <span className={"px-3 py-2 rounded-lg bg-purple-50 text-purple-600 border-2 border-purple-200 smooth-transition " + (phase >= 1 ? 'pop' : 'opacity-20')}>{phase >= 1 ? product : '?'}</span>
+                        </div>
+                        <div className={"flex flex-wrap items-center justify-center gap-2 ld text-2xl mt-3 smooth-transition " + (phase >= 2 ? '' : 'opacity-20')}>
+                            <span className="px-3 py-2 rounded-lg bg-purple-50 text-purple-600 border-2 border-purple-200">{product}</span>
+                            <span className="text-gray-400">+</span>
+                            <span className="px-3 py-2 rounded-lg bg-rose-50 text-rose-500 border-2 border-rose-200">余数 {r}</span>
+                            <span className={"text-gray-400 smooth-transition " + (phase >= 3 ? '' : 'opacity-20')}>=</span>
+                            <span className={"px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 border-2 border-indigo-300 smooth-transition " + (phase >= 3 ? 'pop' : 'opacity-20')}>
+                                {phase >= 3 ? product + r : '?'}
+                            </span>
+                        </div>
+                        {phase >= 3 && (
+                            <div className="mt-5 text-center fade-in">
+                                <div className="inline-block px-4 py-2 bg-green-50 text-green-700 rounded-lg font-semibold border border-green-200">
+                                    ✓ 正好等于被除数 {dividend}，除法做对了！
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 max-w-xl">
+                        <h3 className="font-bold text-amber-800 mb-2">💡 验算公式</h3>
+                        <p className="text-gray-700 leading-relaxed">
+                            没有余数时：<b>商 × 除数 = 被除数</b>。<br/>
+                            有余数时：<b>商 × 除数 ＋ 余数 = 被除数</b>。<br/>
+                            除法是"把总数分开"，乘法（再加上剩余）是"把它们拼回原样"——这就是乘除互逆。
+                        </p>
+                    </div>
+
+                    <StepBar step={phase} maxStep={3}
+                        hint={['先看这道除法的结果', '商 × 除数 等于多少？', '再加上余数', '看看是不是等于被除数'][phase]}
+                        color="rose"
+                        onReset={() => setPhase(0)} onNext={() => setPhase(p => Math.min(3, p + 1))} />
+                </div>
+            );
+        };
+
+        // ============ Tab 3：练习 ============
+        const ColumnSkeleton = ({ dividend, divisor }) => {
+            const digits = String(dividend).split('');
+            const n = digits.length;
+            const gridStyle = { display: 'grid', gridTemplateColumns: `3.2rem repeat(${n}, 2.4rem)`, justifyContent: 'start' };
+            return (
+                <div className="ld">
+                    <div style={gridStyle}>
+                        <div style={{ gridColumnStart: 1 }} className="text-2xl text-right pr-1 leading-9 text-emerald-600 font-semibold flex items-center justify-end">
+                            {divisor}<span className="ml-1 self-stretch border-l-2 border-gray-700" />
+                        </div>
+                        {digits.map((d, i) => (
+                            <div key={i} className="text-2xl text-center leading-9 text-indigo-600 border-t-2 border-gray-700" style={{ gridColumnStart: i + 2 }}>{d}</div>
+                        ))}
+                    </div>
+                    <div className="text-xs text-gray-400 text-center mt-2">在纸上按这个竖式算一算，再填下面的商和余数</div>
+                </div>
+            );
+        };
+
+        const PracticeTab = () => {
+            const [level, setLevel] = useState('t1');
+            const [mode, setMode] = useState('share');
+            const [prob, setProb] = useState(() => genProblem('t1'));
+            const [qIn, setQIn] = useState('');
+            const [rIn, setRIn] = useState('');
+            const [result, setResult] = useState(null); // null | 'ok' | 'bad' | 'show'
+            const { dividend, divisor, q, r } = prob;
+
+            const reset = (lv = level) => { setProb(genProblem(lv)); setQIn(''); setRIn(''); setResult(null); };
+            const onLevel = (lv) => { setLevel(lv); reset(lv); };
+            const check = () => {
+                const okQ = qIn.trim() !== '' && +qIn === q;
+                const okR = rIn.trim() !== '' && +rIn === r;
+                setResult(okQ && okR ? 'ok' : 'bad');
+            };
+
+            // 分东西填空：只在小数字时画位值块，便于点数
+            const showBlocks = dividend <= 60 && divisor <= 9;
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-5">
+                    <LevelPicker value={level} onChange={onLevel} />
+                    <div className="flex gap-2">
+                        <button onClick={() => { setMode('share'); setResult(null); }}
+                            className={"px-4 py-1.5 rounded-full text-sm font-semibold smooth-transition " + (mode === 'share' ? 'bg-emerald-500 text-white shadow' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100')}>
+                            分东西填空
+                        </button>
+                        <button onClick={() => { setMode('column'); setResult(null); }}
+                            className={"px-4 py-1.5 rounded-full text-sm font-semibold smooth-transition " + (mode === 'column' ? 'bg-blue-500 text-white shadow' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100')}>
+                            竖式填空
+                        </button>
+                    </div>
+
+                    <div className={"bg-white rounded-xl shadow p-6 w-full max-w-xl flex flex-col items-center gap-5 " + (result === 'bad' ? 'shake' : '')}>
+                        {mode === 'share' ? (
+                            <>
+                                <div className="text-gray-600 text-center">
+                                    把 <b className="text-indigo-600">{dividend}</b> 个，每 <b className="text-emerald-600">{divisor}</b> 个装一盘，能装几盘、剩几个？
+                                </div>
+                                {showBlocks && (
+                                    <div className="flex flex-wrap gap-2 justify-center max-w-sm">
+                                        {Array.from({ length: q }).map((_, gi) => (
+                                            <div key={gi} className="border-2 border-emerald-400 bg-emerald-50 rounded-lg p-1 flex flex-wrap gap-1 justify-center" style={{ width: 70 }}>
+                                                {Array.from({ length: divisor }).map((__, k) => <div key={k} className="w-3 h-3 rounded-full bg-sky-400" />)}
+                                            </div>
+                                        ))}
+                                        <div className="border-2 border-dashed border-rose-300 bg-rose-50 rounded-lg p-1 flex flex-wrap gap-1 justify-center items-center" style={{ minWidth: 40 }}>
+                                            {r > 0 ? Array.from({ length: r }).map((_, k) => <div key={k} className="w-3 h-3 rounded-full bg-rose-500" />) : <span className="text-rose-300 text-xs px-1">剩</span>}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="ld text-2xl flex items-center gap-2 flex-wrap justify-center">
+                                    <span className="text-indigo-600">{dividend}</span> ÷ <span className="text-emerald-600">{divisor}</span> =
+                                    <input className="cell-in text-blue-600 font-bold" value={qIn} onChange={e => setQIn(e.target.value.replace(/\D/g,''))} placeholder="?" />
+                                    <span className="text-base">盘 ……</span>
+                                    <input className="cell-in text-rose-500 font-bold" value={rIn} onChange={e => setRIn(e.target.value.replace(/\D/g,''))} placeholder="?" />
+                                    <span className="text-base">个</span>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="text-gray-600 text-center">先用竖式从最高位算起，再填出商和余数：</div>
+                                <ColumnSkeleton dividend={dividend} divisor={divisor} />
+                                <div className="ld text-2xl flex items-center gap-2 flex-wrap justify-center">
+                                    <span className="text-indigo-600">{dividend}</span> ÷ <span className="text-emerald-600">{divisor}</span> =
+                                    <input className="cell-in text-blue-600 font-bold" style={{ width: '3.4rem' }} value={qIn} onChange={e => setQIn(e.target.value.replace(/\D/g,''))} placeholder="商" />
+                                    <span className="text-gray-400">……</span>
+                                    <input className="cell-in text-rose-500 font-bold" style={{ width: '3.4rem' }} value={rIn} onChange={e => setRIn(e.target.value.replace(/\D/g,''))} placeholder="余" />
+                                </div>
+                            </>
+                        )}
+
+                        {result === 'ok' && <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-semibold fade-in">🎉 答对了！商 {q}，余数 {r}（余数 {r} &lt; 除数 {divisor}）</div>}
+                        {result === 'bad' && <div className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg fade-in">再想想～ 记住：余数一定要比除数小</div>}
+                        {result === 'show' && <div className="text-gray-500 fade-in">正确答案：商 = <b className="text-blue-600">{q}</b>，余数 = <b className="text-rose-500">{r}</b></div>}
+
+                        <div className="flex gap-3 flex-wrap justify-center">
+                            <button onClick={check} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-indigo-500 hover:bg-indigo-600 smooth-transition">检查</button>
+                            <button onClick={() => setResult(result === 'show' ? null : 'show')} className="px-4 py-2.5 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 smooth-transition">
+                                {result === 'show' ? '隐藏答案' : '看答案'}
+                            </button>
+                            <button onClick={() => reset()} className="px-5 py-2.5 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 smooth-transition">下一题</button>
+                        </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 max-w-xl text-gray-700 text-sm leading-relaxed">
+                        小提示：余数一定要 <b>比除数小</b>。如果你算出的余数 ≥ 除数，说明商还可以再大一点。
+                    </div>
+                </div>
+            );
+        };
+
+        // ============ 主应用 ============
+        const App = () => {
+            const [tab, setTab] = useState('demo');
+            const tabs = [
+                { k: 'demo', label: '演示', color: 'bg-indigo-500' },
+                { k: 'inverse', label: '逆过程·验算', color: 'bg-rose-500' },
+                { k: 'practice', label: '练习', color: 'bg-emerald-500' },
+            ];
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <PageHeader title="有余数的除法" subtitle="从最高位分起，一边分小棒、一边写竖式，理解商、余数和乘除互逆" />
+                    <div className="flex justify-center gap-3 mb-8">
+                        {tabs.map(t => (
+                            <button key={t.k} onClick={() => setTab(t.k)}
+                                className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " +
+                                    (tab === t.k ? t.color + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="max-w-4xl mx-auto">
+                        {tab === 'demo' && <DemoTab />}
+                        {tab === 'inverse' && <InverseTab />}
+                        {tab === 'practice' && <PracticeTab />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

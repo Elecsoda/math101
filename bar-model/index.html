@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>读题·画图·列式 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 方块出现动画 */
+        .cell-pop { animation: pop 0.35s ease; }
+        @keyframes pop { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+        /* 关键词高亮的脉冲 */
+        .kw-pulse { animation: kwpulse 1.2s ease-in-out infinite; }
+        @keyframes kwpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.0); } 50% { box-shadow: 0 0 0 4px rgba(251,191,36,0.35); } }
+        .grow-bar { transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // ============================================================
+        // 题库：每道题描述一种"数量关系语句"
+        // kind: compare-more 比多 / compare-less 比少 / total 一共 /
+        //       difference 相差 / times 几倍 /
+        //       sum-times 和倍 / diff-times 差倍 / sum-diff 和差
+        // ============================================================
+        const COLORS = {
+            A: { bar: 'bg-blue-500', light: 'bg-blue-100', text: 'text-blue-600', border: 'border-blue-400', ring: 'ring-blue-300' },
+            B: { bar: 'bg-rose-500', light: 'bg-rose-100', text: 'text-rose-600', border: 'border-rose-400', ring: 'ring-rose-300' },
+            diff: { bar: 'bg-amber-400', light: 'bg-amber-100', text: 'text-amber-600', border: 'border-amber-400', ring: 'ring-amber-300' },
+        };
+
+        // 统一的方块尺寸：所有题型、所有模式共用，保证大小一致
+        const CELL = { w: 30, h: 30, gap: 3 };        // 方块边长与间距（px）
+        const UNIT = CELL.w + CELL.gap;               // 每个单位占的宽度（含间距），线段图也用它换算长度
+
+        // 一个标准方块（实心 / 虚线两种）
+        const Cell = ({ dashed }) => (
+            <div className={"cell-pop rounded-sm shrink-0 " +
+                (dashed ? 'border-2 border-dashed border-amber-400 bg-amber-100 ' : 'border border-white/60 ')}
+                style={{ width: CELL.w, height: CELL.h, marginRight: CELL.gap }}></div>
+        );
+        // 带颜色的实心方块（颜色类名由调用方给）
+        const ColorCell = ({ color }) => (
+            <div className={"cell-pop rounded-sm shrink-0 border border-white/60 " + color}
+                style={{ width: CELL.w, height: CELL.h, marginRight: CELL.gap }}></div>
+        );
+
+        // 基础版题库（单步：加 / 减 / 乘）
+        const BASIC = [
+            {
+                label: '比多（求大数）①', kind: 'compare-more', unit: '个',
+                nameA: '小明', nameB: '小红', item: '贴纸',
+                story: '小红有 5 个贴纸，小明比小红多 3 个。小明有几个？',
+                keywords: [ {text:'比小红多', type:'more'}, {text:'3 个', type:'num'} ],
+                base: 5, gap: 3, ask: 'A',  // 已知 B=5、多 gap，求 A
+            },
+            {
+                label: '比多（求大数）②', kind: 'compare-more', unit: '颗',
+                nameA: '弟弟', nameB: '姐姐', item: '草莓',
+                story: '姐姐摘了 4 颗草莓，弟弟比姐姐多摘 5 颗。弟弟摘了几颗？',
+                keywords: [ {text:'比姐姐多摘', type:'more'}, {text:'5 颗', type:'num'} ],
+                base: 4, gap: 5, ask: 'A',
+            },
+            {
+                label: '比少（求小数）①', kind: 'compare-less', unit: '本',
+                nameA: '小明', nameB: '小红', item: '故事书',
+                story: '小明有 8 本书，小红比小明少 2 本。小红有几本？',
+                keywords: [ {text:'比小明少', type:'less'}, {text:'2 本', type:'num'} ],
+                base: 8, gap: 2, ask: 'B', // 已知 A=8、少 gap，求 B
+            },
+            {
+                label: '比少（求小数）②', kind: 'compare-less', unit: '辆',
+                nameA: '红色车', nameB: '蓝色车', item: '玩具车',
+                story: '红色车有 7 辆，蓝色车比红色车少 3 辆。蓝色车有几辆？',
+                keywords: [ {text:'比红色车少', type:'less'}, {text:'3 辆', type:'num'} ],
+                base: 7, gap: 3, ask: 'B',
+            },
+            {
+                label: '一共（求总数）①', kind: 'total', unit: '只',
+                nameA: '白兔', nameB: '黑兔', item: '兔子',
+                story: '草地上有白兔 6 只，黑兔 4 只。一共有几只兔子？',
+                keywords: [ {text:'一共', type:'total'} ],
+                valA: 6, valB: 4, ask: 'total',
+            },
+            {
+                label: '一共（求总数）②', kind: 'total', unit: '朵',
+                nameA: '红花', nameB: '黄花', item: '花',
+                story: '花瓶里插了红花 5 朵，黄花 7 朵。一共插了几朵花？',
+                keywords: [ {text:'一共', type:'total'} ],
+                valA: 5, valB: 7, ask: 'total',
+            },
+            {
+                label: '相差（多几）①', kind: 'difference', unit: '颗',
+                nameA: '哥哥', nameB: '弟弟', item: '糖',
+                story: '哥哥有 9 颗糖，弟弟有 6 颗糖。哥哥比弟弟多几颗？',
+                keywords: [ {text:'多几颗', type:'morewh'} ],
+                valA: 9, valB: 6, ask: 'diff',
+            },
+            {
+                label: '相差（多几）②', kind: 'difference', unit: '本',
+                nameA: '小红', nameB: '小芳', item: '本子',
+                story: '小红有 12 本本子，小芳有 8 本。小红比小芳多几本？',
+                keywords: [ {text:'多几本', type:'morewh'} ],
+                valA: 12, valB: 8, ask: 'diff',
+            },
+            {
+                label: '几倍（求倍数）①', kind: 'times', unit: '朵',
+                nameA: '小华', nameB: '小丽', item: '花',
+                story: '小丽折了 4 朵花，小华折的是小丽的 3 倍。小华折了几朵？',
+                keywords: [ {text:'小丽的 3 倍', type:'times'} ],
+                base: 4, factor: 3, ask: 'A', // A = B × factor
+            },
+            {
+                label: '几倍（求倍数）②', kind: 'times', unit: '个',
+                nameA: '鸭子', nameB: '鹅', item: '只',
+                story: '池塘里有鹅 3 只，鸭子的只数是鹅的 4 倍。鸭子有几只？',
+                keywords: [ {text:'鹅的 4 倍', type:'times'} ],
+                base: 3, factor: 4, ask: 'A',
+            },
+        ];
+
+        // 复杂版题库（两步：和差倍）
+        const ADVANCED = [
+            {
+                label: '和倍问题①', kind: 'sum-times', unit: '本',
+                nameA: '故事书', nameB: '科技书', item: '书',
+                story: '书架上故事书和科技书一共 24 本，故事书的数量是科技书的 3 倍。两种书各有几本？',
+                keywords: [ {text:'一共 24 本', type:'total'}, {text:'是科技书的 3 倍', type:'times'} ],
+                sum: 24, factor: 3, // 大(A)=小(B)×factor，A+B=sum
+            },
+            {
+                label: '和倍问题②', kind: 'sum-times', unit: '个',
+                nameA: '苹果', nameB: '梨', item: '水果',
+                story: '果盘里苹果和梨一共 20 个，苹果的个数是梨的 4 倍。两种水果各有几个？',
+                keywords: [ {text:'一共 20 个', type:'total'}, {text:'是梨的 4 倍', type:'times'} ],
+                sum: 20, factor: 4,
+            },
+            {
+                label: '差倍问题①', kind: 'diff-times', unit: '元',
+                nameA: '哥哥', nameB: '弟弟', item: '钱',
+                story: '哥哥的钱比弟弟多 20 元，哥哥的钱是弟弟的 3 倍。两人各有多少钱？',
+                keywords: [ {text:'多 20 元', type:'more'}, {text:'弟弟的 3 倍', type:'times'} ],
+                diff: 20, factor: 3, // A=B×factor，A-B=diff
+            },
+            {
+                label: '差倍问题②', kind: 'diff-times', unit: '只',
+                nameA: '大鱼', nameB: '小鱼', item: '鱼',
+                story: '鱼缸里大鱼比小鱼多 12 只，大鱼的只数是小鱼的 4 倍。两种鱼各有几只？',
+                keywords: [ {text:'多 12 只', type:'more'}, {text:'是小鱼的 4 倍', type:'times'} ],
+                diff: 12, factor: 4,
+            },
+            {
+                label: '和差问题①', kind: 'sum-diff', unit: '个',
+                nameA: '小明', nameB: '小红', item: '积木',
+                story: '小明和小红一共有 18 个积木，小明比小红多 4 个。两人各有几个？',
+                keywords: [ {text:'一共有 18 个', type:'total'}, {text:'多 4 个', type:'more'} ],
+                sum: 18, diff: 4, // A+B=sum，A-B=diff
+            },
+            {
+                label: '和差问题②', kind: 'sum-diff', unit: '张',
+                nameA: '小刚', nameB: '小强', item: '邮票',
+                story: '小刚和小强一共有 20 张邮票，小刚比小强多 6 张。两人各有几张？',
+                keywords: [ {text:'一共有 20 张', type:'total'}, {text:'多 6 张', type:'more'} ],
+                sum: 20, diff: 6,
+            },
+        ];
+
+        // ============================================================
+        // 关键词高亮：把题干中的关键短语标注颜色
+        // ============================================================
+        const KW_STYLE = {
+            more:   'bg-blue-100 text-blue-700 border-blue-300',
+            less:   'bg-rose-100 text-rose-700 border-rose-300',
+            total:  'bg-green-100 text-green-700 border-green-300',
+            morewh: 'bg-amber-100 text-amber-700 border-amber-300',
+            times:  'bg-purple-100 text-purple-700 border-purple-300',
+            num:    'bg-gray-100 text-gray-700 border-gray-300',
+        };
+
+        const HighlightStory = ({ story, keywords, active }) => {
+            // 把关键词在 story 中切分高亮
+            let parts = [{ t: story, kw: null }];
+            keywords.forEach((k) => {
+                const next = [];
+                parts.forEach(p => {
+                    if (p.kw) { next.push(p); return; }
+                    const idx = p.t.indexOf(k.text);
+                    if (idx === -1) { next.push(p); return; }
+                    if (idx > 0) next.push({ t: p.t.slice(0, idx), kw: null });
+                    next.push({ t: k.text, kw: k.type });
+                    if (idx + k.text.length < p.t.length) next.push({ t: p.t.slice(idx + k.text.length), kw: null });
+                });
+                parts = next;
+            });
+            return (
+                <p className="text-xl leading-relaxed text-gray-800">
+                    {parts.map((p, i) => p.kw
+                        ? <span key={i} className={"inline-block px-1.5 py-0.5 mx-0.5 rounded border font-semibold " + KW_STYLE[p.kw] + (active ? ' kw-pulse' : '')}>{p.t}</span>
+                        : <span key={i}>{p.t}</span>
+                    )}
+                </p>
+            );
+        };
+
+        // ============================================================
+        // 条形图：一行 = 一个量，用方块或实心条表示
+        // segments: [{ value, color, label, dashed }]
+        // mode: 'block'（方块）| 'line'（线段图）
+        // 所有方块尺寸由全局常量 CELL / UNIT 决定，跨题型保持一致
+        // ============================================================
+        const BarRow = ({ name, nameColor, segments, mode }) => {
+            return (
+                <div className="flex items-center gap-3 mb-3">
+                    <div className={"w-16 text-right font-bold shrink-0 " + nameColor}>{name}</div>
+                    <div className="relative flex items-center" style={{ minHeight: mode === 'line' ? 28 : CELL.h + 10 }}>
+                        {segments.map((seg, si) => {
+                            if (mode === 'line') {
+                                const w = seg.value * UNIT;
+                                return (
+                                    <div key={si} className="relative grow-bar" style={{ width: w }}>
+                                        <div className={"h-1.5 rounded " + seg.color + (seg.dashed ? ' opacity-50' : '')}></div>
+                                        {/* 两端竖线 */}
+                                        <div className={"absolute left-0 top-0 w-0.5 h-4 -mt-1 " + seg.color}></div>
+                                        <div className={"absolute right-0 top-0 w-0.5 h-4 -mt-1 " + seg.color}></div>
+                                        {seg.label && <div className="absolute -top-5 left-0 w-full text-center text-sm font-semibold text-gray-600">{seg.label}</div>}
+                                    </div>
+                                );
+                            }
+                            // 方块模式：把 value 拆成一个个统一大小的方块
+                            return (
+                                <div key={si} className="flex items-center grow-bar">
+                                    {Array.from({ length: seg.value }).map((_, ci) => (
+                                        seg.dashed ? <Cell key={ci} dashed /> : <ColorCell key={ci} color={seg.color} />
+                                    ))}
+                                    {seg.label && <span className="ml-1 mr-2 text-sm font-semibold text-gray-500 whitespace-nowrap">{seg.label}</span>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // 大括号（用于标注"一共""相差"等总量）；widthUnits 以"单位个数"给出
+        const Brace = ({ widthUnits, label, color = 'text-gray-600', offsetUnits = 0 }) => (
+            <div className="flex items-center gap-3 mb-1" style={{ height: 22 }}>
+                <div className="w-16 shrink-0"></div>
+                <div style={{ marginLeft: offsetUnits * UNIT }}>
+                    <div className="relative" style={{ width: widthUnits * UNIT }}>
+                        <div className="border-t-2 border-l-2 border-r-2 border-gray-400 rounded-t-md" style={{ height: 8 }}></div>
+                        <div className={"text-center text-sm font-bold mt-0.5 " + color}>{label}</div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // ============================================================
+        // 基础题求解与画图数据
+        // ============================================================
+        function solveBasic(q) {
+            switch (q.kind) {
+                case 'compare-more': { // B 已知, A = B + gap
+                    const B = q.base, A = B + q.gap;
+                    return { A, B, answer: A, expr: `${B} + ${q.gap} = ${A}`, askName: q.nameA };
+                }
+                case 'compare-less': { // A 已知, B = A - gap
+                    const A = q.base, B = A - q.gap;
+                    return { A, B, answer: B, expr: `${A} - ${q.gap} = ${B}`, askName: q.nameB };
+                }
+                case 'total': {
+                    const A = q.valA, B = q.valB;
+                    return { A, B, answer: A + B, expr: `${A} + ${B} = ${A + B}`, askName: '一共' };
+                }
+                case 'difference': {
+                    const A = q.valA, B = q.valB;
+                    return { A, B, answer: A - B, expr: `${A} - ${B} = ${A - B}`, askName: '相差' };
+                }
+                case 'times': { // A = B × factor
+                    const B = q.base, A = B * q.factor;
+                    return { A, B, answer: A, expr: `${B} × ${q.factor} = ${A}`, askName: q.nameA };
+                }
+            }
+        }
+
+        // ============================================================
+        // 主组件：基础版
+        // ============================================================
+        const BasicMode = ({ qi, setQi }) => {
+            const [step, setStep] = useState(0); // 0读题 1画已知 2画关系/比较 3列式
+            const [mode, setMode] = useState('block');
+            const q = BASIC[qi];
+            const sol = useMemo(() => solveBasic(q), [q]);
+
+            // 题目切换时回到第一步
+            useEffect(() => { setStep(0); }, [qi]);
+            const next = () => setQi((qi + 1) % BASIC.length);
+            const prev = () => setQi((qi - 1 + BASIC.length) % BASIC.length);
+
+            // 根据题型与步骤，构造两行条形
+            const bars = buildBasicBars(q, sol, step, mode);
+
+            const stepNames = ['① 读题，找关键词', '② 画出已知的量', '③ 画出数量关系', '④ 列式计算'];
+
+            return (
+                <div className="fade-in">
+                    {/* 题目导航 */}
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div className="flex gap-2">
+                            <button onClick={prev} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">‹ 上一题</button>
+                            <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">下一题 ›</button>
+                        </div>
+                        <div className="flex gap-1 items-center">
+                            <span className="text-sm text-gray-400 mr-1">画法</span>
+                            <button onClick={() => setMode('block')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='block'?'bg-blue-500 text-white':'bg-gray-100 text-gray-500')}>方块</button>
+                            <button onClick={() => setMode('line')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='line'?'bg-blue-500 text-white':'bg-gray-100 text-gray-500')}>线段</button>
+                        </div>
+                    </div>
+
+                    {/* 题干 */}
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-5 border border-gray-100">
+                        <HighlightStory story={q.story} keywords={q.keywords} active={step >= 1} />
+                    </div>
+
+                    {/* 步骤条 */}
+                    <div className="flex gap-2 mb-5 flex-wrap">
+                        {stepNames.map((s, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-blue-500 text-white' : step > i ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400')}>{s}</div>
+                        ))}
+                    </div>
+
+                    {/* 画图区 */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 180 }}>
+                        {step === 0 && <p className="text-gray-400 text-center py-12">先读题，把关键词找出来，再点"下一步"开始画图 →</p>}
+                        {step >= 1 && bars}
+                    </div>
+
+                    {/* 列式区 */}
+                    {step >= 3 && (
+                        <div className="bg-blue-50 rounded-xl p-5 mb-5 border border-blue-100 fade-in">
+                            <p className="text-gray-500 mb-2 text-sm">看着图，把式子列出来：</p>
+                            <p className="text-2xl font-bold font-mono text-blue-700">{sol.expr}</p>
+                            <p className="mt-2 text-lg text-gray-700">答：{sol.askName}有 <span className="font-bold text-blue-600">{sol.answer}</span> {q.unit === '元' ? '元' : q.unit}。</p>
+                        </div>
+                    )}
+
+                    {/* 步骤按钮 */}
+                    <div className="flex gap-3">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 3 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 3 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">从头再看一遍</button>}
+                    </div>
+                </div>
+            );
+        };
+
+        // 构造基础题两行条形（含分步显隐）
+        function buildBasicBars(q, sol, step, mode) {
+            const cA = COLORS.A, cB = COLORS.B;
+
+            if (q.kind === 'compare-more') {
+                // B 已知；A = B + gap，gap 段在 step>=2 出现
+                const aSegs = [{ value: sol.B, color: cA.bar }];
+                if (step >= 2) aSegs.push({ value: q.gap, color: cB.bar, dashed: true, label: `多 ${q.gap} ${q.unit}` });
+                return (
+                    <div>
+                        <BarRow name={q.nameB} nameColor={cB.text} mode={mode}
+                            segments={[{ value: sol.B, color: cB.bar, label: `${sol.B} ${q.unit}` }]} />
+                        {step >= 2 && <BarRow name={q.nameA} nameColor={cA.text} mode={mode} segments={aSegs} />}
+                        {step >= 1 && step < 2 && <p className="text-sm text-gray-400 mt-2">先画出已知的 {q.nameB}：{sol.B} {q.unit}。{q.nameA} 比它多，所以更长 →</p>}
+                    </div>
+                );
+            }
+            if (q.kind === 'compare-less') {
+                // A 已知；B = A - gap
+                const showGap = step >= 2;
+                return (
+                    <div>
+                        <BarRow name={q.nameA} nameColor={cA.text} mode={mode}
+                            segments={[{ value: sol.B, color: cA.bar }, showGap ? { value: q.gap, color: cA.bar, dashed: true, label: `少 ${q.gap} ${q.unit}` } : { value: q.gap, color: cA.bar, label: `${sol.A} ${q.unit}` }]} />
+                        {step >= 2 && <BarRow name={q.nameB} nameColor={cB.text} mode={mode}
+                            segments={[{ value: sol.B, color: cB.bar, label: `? ${q.unit}` }]} />}
+                        {step >= 1 && step < 2 && <p className="text-sm text-gray-400 mt-2">先画出已知的 {q.nameA}：{sol.A} {q.unit}。{q.nameB} 比它少，所以更短 →</p>}
+                    </div>
+                );
+            }
+            if (q.kind === 'total') {
+                return (
+                    <div>
+                        {step >= 2 && <Brace widthUnits={sol.A + sol.B} label={`一共 ? ${q.unit}`} />}
+                        <BarRow name={q.nameA} nameColor={cA.text} mode={mode}
+                            segments={[{ value: sol.A, color: cA.bar, label: `${sol.A} ${q.unit}` }]} />
+                        <BarRow name={q.nameB} nameColor={cB.text} mode={mode}
+                            segments={[{ value: sol.B, color: cB.bar, label: `${sol.B} ${q.unit}` }]} />
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-2">把两部分合起来，就是"一共"，用加法。</p>}
+                    </div>
+                );
+            }
+            if (q.kind === 'difference') {
+                return (
+                    <div>
+                        <BarRow name={q.nameA} nameColor={cA.text} mode={mode}
+                            segments={[{ value: sol.B, color: cA.bar }, { value: sol.A - sol.B, color: cA.bar, dashed: step >= 2, label: step >= 2 ? `多 ? ${q.unit}` : `${sol.A} ${q.unit}` }]} />
+                        <BarRow name={q.nameB} nameColor={cB.text} mode={mode}
+                            segments={[{ value: sol.B, color: cB.bar, label: `${sol.B} ${q.unit}` }]} />
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-2">对齐后，{q.nameA} 比 {q.nameB} 多出来的那一段，就是"相差"，用减法。</p>}
+                    </div>
+                );
+            }
+            if (q.kind === 'times') {
+                // B 一份，A 是 factor 份
+                return (
+                    <div>
+                        <BarRow name={q.nameB} nameColor={cB.text} mode={mode}
+                            segments={[{ value: sol.B, color: cB.bar, label: `${sol.B} ${q.unit}（1 份）` }]} />
+                        {step >= 2 && (
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className={"w-16 text-right font-bold shrink-0 " + cA.text}>{q.nameA}</div>
+                                <div className="flex items-center">
+                                    {Array.from({ length: q.factor }).map((_, i) => (
+                                        <div key={i} className="flex items-center">
+                                            {mode === 'line'
+                                                ? <div className={"h-1.5 rounded " + cA.bar} style={{ width: sol.B * UNIT }}></div>
+                                                : Array.from({ length: sol.B }).map((_, ci) => <ColorCell key={ci} color={cA.bar} />)
+                                            }
+                                            {i < q.factor - 1 && <span className="mx-1 text-gray-300 font-bold">|</span>}
+                                        </div>
+                                    ))}
+                                    <span className="ml-2 text-sm font-semibold text-purple-500">{q.factor} 份</span>
+                                </div>
+                            </div>
+                        )}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-2">{q.nameA} 是 {q.nameB} 的 {q.factor} 倍，就是 {q.factor} 个这样的"1 份"，用乘法。</p>}
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        // ============================================================
+        // 复杂版：和差倍
+        // ============================================================
+        function solveAdvanced(q) {
+            if (q.kind === 'sum-times') {
+                // A + B = sum, A = B*factor  => B*(factor+1)=sum
+                const B = q.sum / (q.factor + 1), A = B * q.factor;
+                return { A, B, parts: q.factor + 1,
+                    steps: [
+                        `把小数（${q.nameB}）看作 1 份，大数（${q.nameA}）是 ${q.factor} 份。`,
+                        `一共有 ${q.factor} + 1 = ${q.factor + 1} 份。`,
+                        `每份（${q.nameB}）：${q.sum} ÷ ${q.factor + 1} = ${B}（${q.unit}）`,
+                        `${q.nameA}：${B} × ${q.factor} = ${A}（${q.unit}）`,
+                    ] };
+            }
+            if (q.kind === 'diff-times') {
+                // A - B = diff, A = B*factor => B*(factor-1)=diff
+                const B = q.diff / (q.factor - 1), A = B * q.factor;
+                return { A, B, parts: q.factor,
+                    steps: [
+                        `把小数（${q.nameB}）看作 1 份，大数（${q.nameA}）是 ${q.factor} 份。`,
+                        `多出来的 ${q.diff} ${q.unit}，正好是 ${q.factor} − 1 = ${q.factor - 1} 份。`,
+                        `每份（${q.nameB}）：${q.diff} ÷ ${q.factor - 1} = ${B}（${q.unit}）`,
+                        `${q.nameA}：${B} × ${q.factor} = ${A}（${q.unit}）`,
+                    ] };
+            }
+            if (q.kind === 'sum-diff') {
+                // A + B = sum, A - B = diff
+                const A = (q.sum + q.diff) / 2, B = (q.sum - q.diff) / 2;
+                return { A, B, parts: 2,
+                    steps: [
+                        `如果把多的 ${q.diff} ${q.unit}先去掉，两人就同样多了。`,
+                        `这时一共是 ${q.sum} − ${q.diff} = ${q.sum - q.diff}（${q.unit}），是 2 个小数。`,
+                        `${q.nameB}（小数）：(${q.sum} − ${q.diff}) ÷ 2 = ${B}（${q.unit}）`,
+                        `${q.nameA}（大数）：${B} + ${q.diff} = ${A}（${q.unit}）`,
+                    ] };
+            }
+        }
+
+        const AdvancedMode = ({ qi, setQi }) => {
+            const [step, setStep] = useState(0);
+            const [mode, setMode] = useState('block');
+            const q = ADVANCED[qi];
+            const sol = useMemo(() => solveAdvanced(q), [q]);
+            const unit = q.unit;
+
+            useEffect(() => { setStep(0); }, [qi]);
+            const next = () => setQi((qi + 1) % ADVANCED.length);
+            const prev = () => setQi((qi - 1 + ADVANCED.length) % ADVANCED.length);
+
+            // 与基础版统一的四步骤
+            const stepNames = ['① 读题，找关键词', '② 画出已知的量', '③ 画出数量关系', '④ 列式计算'];
+
+            return (
+                <div className="fade-in">
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div className="flex gap-2">
+                            <button onClick={prev} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">‹ 上一题</button>
+                            <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">下一题 ›</button>
+                        </div>
+                        <div className="flex gap-1 items-center">
+                            <span className="text-sm text-gray-400 mr-1">画法</span>
+                            <button onClick={() => setMode('block')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='block'?'bg-purple-500 text-white':'bg-gray-100 text-gray-500')}>方块</button>
+                            <button onClick={() => setMode('line')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='line'?'bg-purple-500 text-white':'bg-gray-100 text-gray-500')}>线段</button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-5 border border-gray-100">
+                        <HighlightStory story={q.story} keywords={q.keywords} active={step >= 1} />
+                    </div>
+
+                    {/* 步骤条 */}
+                    <div className="flex gap-2 mb-5 flex-wrap">
+                        {stepNames.map((s, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-purple-500 text-white' : step > i ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400')}>{s}</div>
+                        ))}
+                    </div>
+
+                    {/* 画图区：分份条形 */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 160 }}>
+                        {step === 0 && <p className="text-gray-400 text-center py-12">先读题，把关键词找出来，再点"下一步"开始画图 →</p>}
+                        {step >= 1 && buildAdvancedBars(q, sol, step, mode)}
+                        {step === 1 && <p className="text-sm text-gray-400 mt-2">先把小数看作 1 份，照着画出大数有几份。下一步再标出它们的关系 →</p>}
+                    </div>
+
+                    {/* 列式计算（第④步一次性展开推理） */}
+                    {step >= 3 && (
+                        <div className="bg-purple-50 rounded-xl p-5 mb-5 border border-purple-100 fade-in">
+                            <p className="text-gray-500 mb-2 text-sm">看着图，一步步算出来：</p>
+                            {sol.steps.map((s, i) => (
+                                <p key={i} className="font-mono text-lg mb-2 text-gray-700">
+                                    <span className="inline-block w-6 text-purple-400">{i + 1}.</span>{s}
+                                </p>
+                            ))}
+                            <p className="mt-3 text-lg text-gray-700">答：{q.nameA} <span className="font-bold text-purple-600">{sol.A}</span> {unit}，{q.nameB} <span className="font-bold text-purple-600">{sol.B}</span> {unit}。</p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-3">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 3 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 3 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">从头再看一遍</button>}
+                    </div>
+                </div>
+            );
+        };
+
+        // 复杂版分份条形图
+        function buildAdvancedBars(q, sol, step, mode) {
+            const cA = COLORS.A, cB = COLORS.B;
+            const part = sol.B; // 一份的大小（单位个数）
+            // 每份用统一大小的方块表示，份与份之间用竖线分隔
+            const renderParts = (n, color, name, nameColor, tail) => (
+                <div className="flex items-center gap-3 mb-3">
+                    <div className={"w-16 text-right font-bold shrink-0 " + nameColor}>{name}</div>
+                    <div className="flex items-center">
+                        {Array.from({ length: n }).map((_, i) => (
+                            <div key={i} className="flex items-center">
+                                {mode === 'line'
+                                    ? <div className={"h-2 rounded " + color} style={{ width: part * UNIT }}></div>
+                                    : Array.from({ length: part }).map((_, ci) => <ColorCell key={ci} color={color} />)
+                                }
+                                {i < n - 1 && <span className="mx-1 text-gray-300 font-bold">|</span>}
+                            </div>
+                        ))}
+                        {tail}
+                    </div>
+                </div>
+            );
+
+            // 步骤语义（与基础版统一）：
+            //   step 0 读题（画图区由 AdvancedMode 显示提示语，不调用本函数）
+            //   step 1 画出已知的量（分份，不加"份"标签 / 不画括号）
+            //   step 2 画出数量关系（加"份"标签 + 大括号）
+            //   step 3 列式计算（画面同 step 2）
+            if (q.kind === 'sum-times') {
+                const big = q.factor;
+                return (
+                    <div>
+                        {renderParts(1, cB.bar, q.nameB, cB.text, step >= 2 ? <span className="ml-2 text-sm font-semibold text-rose-500">1 份</span> : null)}
+                        {renderParts(big, cA.bar, q.nameA, cA.text, step >= 2 ? <span className="ml-2 text-sm font-semibold text-blue-500">{big} 份</span> : null)}
+                        {step >= 2 && <Brace widthUnits={(q.factor + 1) * part} label={`一共 ${q.sum} ${q.unit} = ${q.factor + 1} 份`} color="text-green-600" />}
+                    </div>
+                );
+            }
+            if (q.kind === 'diff-times') {
+                const big = q.factor;
+                return (
+                    <div>
+                        {renderParts(1, cB.bar, q.nameB, cB.text, step >= 2 ? <span className="ml-2 text-sm font-semibold text-rose-500">1 份</span> : null)}
+                        {renderParts(big, cA.bar, q.nameA, cA.text, step >= 2 ? <span className="ml-2 text-sm font-semibold text-blue-500">{big} 份</span> : null)}
+                        {step >= 2 && <Brace widthUnits={(q.factor - 1) * part} offsetUnits={part} label={`多 ${q.diff} ${q.unit} = ${q.factor - 1} 份`} color="text-amber-600" />}
+                    </div>
+                );
+            }
+            if (q.kind === 'sum-diff') {
+                // 大数 = 小数 + diff
+                return (
+                    <div>
+                        <BarRow name={q.nameB} nameColor={cB.text} mode={mode}
+                            segments={[{ value: sol.B, color: cB.bar, label: step >= 2 ? `小数` : '' }]} />
+                        <BarRow name={q.nameA} nameColor={cA.text} mode={mode}
+                            segments={[{ value: sol.B, color: cA.bar }, { value: q.diff, color: cA.bar, dashed: step >= 2, label: step >= 2 ? `多 ${q.diff} ${q.unit}` : '' }]} />
+                        {step >= 2 && <Brace widthUnits={sol.A + sol.B} label={`两人一共 ${q.sum} ${q.unit}`} color="text-green-600" />}
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        // ============================================================
+        // 互动练习模式：给题，学生选关系类型 + 填式子 + 判分
+        // ============================================================
+        const PRACTICE = [
+            { story: '小红有 6 个气球，小明比小红多 4 个。小明有几个？', ops: ['+','−','×'], correctOp: '+', a: 6, b: 4, answer: 10, hint: '"多"是求大数，用加法。' },
+            { story: '篮子里有 12 个苹果，吃掉了 5 个，还剩几个？', ops: ['+','−','×'], correctOp: '−', a: 12, b: 5, answer: 7, hint: '"吃掉/还剩"是去掉一部分，用减法。' },
+            { story: '一盘有 4 个包子，3 盘一共几个？', ops: ['+','−','×'], correctOp: '×', a: 4, b: 3, answer: 12, hint: '"几盘，每盘几个"是几个几，用乘法。' },
+            { story: '哥哥 8 岁，弟弟 5 岁，哥哥比弟弟大几岁？', ops: ['+','−','×'], correctOp: '−', a: 8, b: 5, answer: 3, hint: '"大几岁/相差"是求差，用减法。' },
+            { story: '一个文具盒 7 元，买 2 个要多少钱？', ops: ['+','−','×'], correctOp: '×', a: 7, b: 2, answer: 14, hint: '"每个几元，买几个"是几个几，用乘法。' },
+        ];
+
+        const PracticeMode = () => {
+            const [pi, setPi] = useState(0);
+            const [op, setOp] = useState(null);
+            const [input, setInput] = useState('');
+            const [checked, setChecked] = useState(false);
+            const p = PRACTICE[pi];
+
+            const opOk = op === p.correctOp;
+            const ansOk = Number(input) === p.answer;
+            const allOk = checked && opOk && ansOk;
+
+            const reset = () => { setOp(null); setInput(''); setChecked(false); };
+            const nextQ = () => { setPi((pi + 1) % PRACTICE.length); reset(); };
+
+            return (
+                <div className="fade-in">
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-sm text-gray-400">第 {pi + 1} / {PRACTICE.length} 题</span>
+                        <button onClick={nextQ} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">换一题 ›</button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100">
+                        <p className="text-xl text-gray-800 mb-5">{p.story}</p>
+
+                        <p className="text-sm text-gray-400 mb-2">① 想一想，这道题用什么运算？</p>
+                        <div className="flex gap-3 mb-6">
+                            {p.ops.map(o => (
+                                <button key={o} onClick={() => { setOp(o); setChecked(false); }}
+                                    className={"w-14 h-14 rounded-xl text-2xl font-bold smooth border-2 " +
+                                        (op === o ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300')}>{o}</button>
+                            ))}
+                        </div>
+
+                        <p className="text-sm text-gray-400 mb-2">② 把式子填完整：</p>
+                        <div className="flex items-center gap-2 text-2xl font-mono flex-wrap">
+                            <span className="px-3 py-2 bg-gray-100 rounded">{p.a}</span>
+                            <span className="font-bold text-gray-500 w-8 text-center">{op || '?'}</span>
+                            <span className="px-3 py-2 bg-gray-100 rounded">{p.b}</span>
+                            <span className="font-bold">=</span>
+                            <input type="number" value={input} onChange={e => { setInput(e.target.value); setChecked(false); }}
+                                className="w-24 text-center border-2 border-blue-300 rounded p-2" placeholder="?" />
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                        <button onClick={() => setChecked(true)} disabled={!op || input === ''}
+                            className="px-6 py-2.5 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-semibold smooth">判分</button>
+                        {allOk && <button onClick={nextQ} className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth">下一题 →</button>}
+                    </div>
+
+                    {checked && (
+                        <div className={"mt-5 rounded-xl p-5 border fade-in " + (allOk ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200')}>
+                            {allOk
+                                ? <p className="text-green-700 text-lg font-bold">✓ 完全正确！{p.a} {op} {p.b} = {p.answer}</p>
+                                : <div className="text-amber-700">
+                                    {!opOk && <p className="mb-1">运算符号再想想哦。{p.hint}</p>}
+                                    {opOk && !ansOk && <p className="mb-1">运算选对了！算一算 {p.a} {p.correctOp} {p.b} 等于几？</p>}
+                                  </div>}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 顶层：三个标签页
+        // ============================================================
+        // 左侧题目列表项
+        const SideItem = ({ active, color, children, onClick }) => (
+            <button onClick={onClick}
+                className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth mb-1 flex items-center gap-2 " +
+                    (active
+                        ? (color === 'blue' ? 'bg-blue-500 text-white font-semibold' : 'bg-purple-500 text-white font-semibold')
+                        : 'text-gray-600 hover:bg-gray-100')}>
+                <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (active ? 'bg-white' : color === 'blue' ? 'bg-blue-400' : 'bg-purple-400')}></span>
+                {children}
+            </button>
+        );
+
+        const App = () => {
+            const [tab, setTab] = useState('basic');       // basic | advanced | practice
+            const [basicQi, setBasicQi] = useState(0);
+            const [advQi, setAdvQi] = useState(0);
+
+            const go = (t, i) => { setTab(t); if (t === 'basic') setBasicQi(i); if (t === 'advanced') setAdvQi(i); };
+
+            return (
+                <div className="max-w-5xl mx-auto px-4 py-8">
+                    <header className="text-center mb-6">
+                        <h1 className="text-3xl font-bold text-gray-800">读题 · 画图 · 列式</h1>
+                        <p className="text-gray-500 mt-2">把文字、图和式子对应起来，理解最基本的数量关系</p>
+                    </header>
+
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                        {/* 左侧：分类题目列表 */}
+                        <aside className="w-full md:w-56 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:sticky md:top-6">
+                            <div className="px-2 pt-1 pb-2 text-xs font-bold text-blue-500 tracking-wide">基础版 · 单步</div>
+                            {BASIC.map((q, i) => (
+                                <SideItem key={i} color="blue" active={tab === 'basic' && basicQi === i} onClick={() => go('basic', i)}>{q.label}</SideItem>
+                            ))}
+
+                            <div className="px-2 pt-3 pb-2 text-xs font-bold text-purple-500 tracking-wide">复杂版 · 和差倍</div>
+                            {ADVANCED.map((q, i) => (
+                                <SideItem key={i} color="purple" active={tab === 'advanced' && advQi === i} onClick={() => go('advanced', i)}>{q.label}</SideItem>
+                            ))}
+
+                            <div className="px-2 pt-3 pb-2 text-xs font-bold text-green-500 tracking-wide">练习</div>
+                            <button onClick={() => setTab('practice')}
+                                className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth flex items-center gap-2 " +
+                                    (tab === 'practice' ? 'bg-green-500 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100')}>
+                                <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (tab === 'practice' ? 'bg-white' : 'bg-green-400')}></span>
+                                我来试试 · 判分
+                            </button>
+                        </aside>
+
+                        {/* 右侧：主演示区 */}
+                        <main className="flex-1 min-w-0 w-full">
+                            {tab === 'basic' && <BasicMode qi={basicQi} setQi={setBasicQi} />}
+                            {tab === 'advanced' && <AdvancedMode qi={advQi} setQi={setAdvQi} />}
+                            {tab === 'practice' && <PracticeMode />}
+                        </main>
+                    </div>
+
+                    <footer className="text-center text-gray-400 text-sm mt-10">
+                        Math101 · 数量关系可视化 · 适用人教版一二年级
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>速算原理演示 | Math101</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; }
+
+        /* 侧边栏按钮 */
+        .btn-side { width: 100%; text-align: left; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-left: 4px solid transparent; background: transparent; }
+        .btn-side.active { background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-side.active-ord { border-left-color: #8b5cf6; color: #7c3aed; }
+        .btn-side.active-add { border-left-color: #3b82f6; color: #2563eb; }
+        .btn-side.active-mul { border-left-color: #f59e0b; color: #d97706; }
+        .btn-side.active-div { border-left-color: #06b6d4; color: #0891b2; }
+        .btn-side.active-seq { border-left-color: #10b981; color: #059669; }
+        .btn-side:hover:not(.active) { background-color: #e2e8f0; }
+
+        /* 算式中的数字 / 标记 */
+        .tok { display: inline-block; padding: 0 2px; transition: all .35s ease; }
+        .tok-pair-a { color: #2563eb; font-weight: 800; }
+        .tok-pair-b { color: #2563eb; font-weight: 800; }
+        .tok-round  { color: #059669; font-weight: 800; }
+        .tok-extra  { color: #d97706; font-weight: 800; }
+        .tok-faded  { color: #cbd5e1; }
+        .hl-box { background: #ecfdf5; border-radius: 6px; padding: 0 4px; box-shadow: inset 0 0 0 2px #6ee7b7; }
+        .hl-blue { background: #eff6ff; border-radius: 6px; padding: 0 4px; box-shadow: inset 0 0 0 2px #93c5fd; }
+        .hl-purple { background: #f5f3ff; border-radius: 6px; padding: 0 4px; box-shadow: inset 0 0 0 2px #c4b5fd; }
+        .tok-order { color: #7c3aed; font-weight: 800; }
+
+        .fade-in { animation: fadeIn .45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+        .pop { animation: pop .35s ease; }
+        @keyframes pop { 0% { transform: scale(.85);} 60% { transform: scale(1.08);} 100% { transform: scale(1);} }
+
+        .step-line { transition: all .35s ease; }
+
+        /* 练习区 */
+        .ex-input { width: 110px; text-align: center; font-weight: 700; font-size: 1.1rem; color: #2563eb; border: 2px solid #cbd5e1; border-radius: 8px; padding: 6px 8px; outline: none; }
+        .ex-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+        .ex-input.ok { border-color: #10b981; background:#ecfdf5; color:#059669; }
+        .ex-input.bad { border-color: #ef4444; background:#fef2f2; color:#dc2626; }
+
+        .chip { display:inline-block; font-size:.72rem; font-weight:700; padding:2px 8px; border-radius:999px; }
+        .chip-ord { background:#f5f3ff; color:#7c3aed; }
+        .chip-add { background:#eff6ff; color:#2563eb; }
+        .chip-mul { background:#fffbeb; color:#d97706; }
+        .chip-div { background:#ecfeff; color:#0891b2; }
+        .chip-seq { background:#ecfdf5; color:#059669; }
+
+        .scroll-area::-webkit-scrollbar { height: 8px; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="max-w-7xl mx-auto p-4 md:p-6"></div>
+
+<script>
+/* =========================================================================
+   方法库：每种速算方法 = 原理 + 一个可分步演示的例题 + 一组练习题
+   来源参考：华罗庚学校《速算与巧算》、小学奥数"速算与巧算"专题
+   ========================================================================= */
+
+const METHODS = {
+    /* ---------------------------------------------------------------- 四则混合运算·运算顺序 */
+    order: {
+        cat: '运算顺序',
+        chip: 'chip-ord', side: 'active-ord',
+        name: '四则混合运算（含括号）',
+        idea: '先算括号里的，再算乘除，最后算加减；同级从左到右。',
+        principle: '运算顺序口诀：① 有括号先算括号里 → ② 再算乘、除 → ③ 最后算加、减。每一步只动“该先算”的那部分，其余原样抄下来。',
+        demo: {
+            title: '120 − (15 + 5) × 4',
+            steps: [
+                { f: `120 − <span class="hl-purple">(15 + 5)</span> × 4`,
+                  note: '第①步：先看括号。括号里是 15 + 5，要最先算。' },
+                { f: `120 − <span class="tok tok-order">20</span> × 4`,
+                  note: '括号算完得 20，其余部分原样抄下来。' },
+                { f: `120 − <span class="hl-box">20 × 4</span>`,
+                  note: '第②步：再算乘除。这里有一个乘法 20 × 4。' },
+                { f: `120 − <span class="tok tok-round">80</span>`,
+                  note: '乘法算完得 80。' },
+                { f: `= <span class="tok tok-round pop">40</span>`,
+                  note: '第③步：最后算减法 120 − 80 = 40。' }
+            ]
+        },
+        ex: [
+            { q: '120 − (15 + 5) × 4',   a: 40,  hint: '先括号 20，再 ×4=80，最后 120−80' },
+            { q: '(36 + 24) ÷ 6',        a: 10,  hint: '先算括号 36+24=60，再 ÷6' },
+            { q: '8 + 6 × 5 − 3',        a: 35,  hint: '没有括号：先 6×5=30，再 8+30−3' },
+            { q: '100 ÷ (2 + 3) ÷ 2',    a: 10,  hint: '先括号 5，再从左到右 100÷5÷2' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 凑整法（加减） */
+    couzheng: {
+        cat: '加减巧算',
+        chip: 'chip-add', side: 'active-add',
+        name: '凑整法 · 找“好朋友”',
+        idea: '把能凑成整十、整百、整千的数先加（减）起来。',
+        principle: '依据加法交换律、结合律，调整顺序，让“好朋友”先碰头：87+13=100。',
+        // 演示步骤：每步给出一行算式（HTML）与一句说明
+        demo: {
+            title: '88 + 47 + 12 + 53',
+            steps: [
+                { f: `<span class="tok tok-pair-a">88</span> + 47 + <span class="tok tok-pair-b">12</span> + 53`,
+                  note: '观察：88 和 12 是好朋友（凑 100）。' },
+                { f: `<span class="hl-box">88 + 12</span> + <span class="hl-blue">47 + 53</span>`,
+                  note: '交换、结合：把两对好朋友各自靠拢。47 和 53 也凑 100。' },
+                { f: `<span class="tok tok-round">100</span> + <span class="tok tok-round">100</span>`,
+                  note: '两组分别凑整。' },
+                { f: `= <span class="tok tok-round pop">200</span>`,
+                  note: '整十整百相加，一步得出结果。' }
+            ]
+        },
+        ex: [
+            { q: '57 + 28 + 43 + 72', a: 200, hint: '57+43=100，28+72=100' },
+            { q: '125 + 68 + 75 + 32', a: 300, hint: '125+75=200，68+32=100' },
+            { q: '64 + 99 + 36',       a: 199, hint: '64+36=100，再加 99' },
+            { q: '46 + 53 + 54 + 47',  a: 200, hint: '46+54=100，53+47=100' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 拆分·借整去尾（加减） */
+    chaifen: {
+        cat: '加减巧算',
+        chip: 'chip-add', side: 'active-add',
+        name: '拆分法 · 借整去尾',
+        idea: '把接近整十整百的数，先当成整数算，再把多算的还回去。',
+        principle: '298 = 300 − 2。先加 300 好算，再减掉多加的 2。拆数不改变大小。',
+        demo: {
+            title: '376 + 298',
+            steps: [
+                { f: `376 + <span class="tok tok-extra">298</span>`,
+                  note: '298 离 300 只差 2，先借成 300。' },
+                { f: `376 + <span class="hl-box">300</span> <span class="tok tok-extra">− 2</span>`,
+                  note: '298 = 300 − 2，把多借的 2 记在后面。' },
+                { f: `<span class="tok tok-round">676</span> − <span class="tok tok-extra">2</span>`,
+                  note: '376 + 300 = 676，整百相加很轻松。' },
+                { f: `= <span class="tok tok-round pop">674</span>`,
+                  note: '再把多加的 2 减掉。' }
+            ]
+        },
+        ex: [
+            { q: '456 + 99',   a: 555, hint: '99 = 100 − 1' },
+            { q: '283 + 198',  a: 481, hint: '198 = 200 − 2' },
+            { q: '675 − 297',  a: 378, hint: '减 297 = 减 300 再加 3' },
+            { q: '1000 − 458', a: 542, hint: '想 458 离 1000 差多少' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 基准数法 */
+    jizhun: {
+        cat: '加减巧算',
+        chip: 'chip-add', side: 'active-add',
+        name: '基准数法',
+        idea: '几个数都接近某个整数时，取它做“基准”，先按基准算，再补差。',
+        principle: '23+20+19+22+18 都在 20 上下，取 20×5，再把每个数与 20 的差加加减减。',
+        demo: {
+            title: '102 + 98 + 99 + 101 + 100',
+            steps: [
+                { f: `102 + 98 + 99 + 101 + 100`,
+                  note: '五个数都挨着 100，选 100 作基准数。' },
+                { f: `<span class="hl-box">100 × 5</span> + (<span class="tok tok-extra">+2 −2 −1 +1 +0</span>)`,
+                  note: '先算 5 个 100，再记下每个数比 100 多或少几。' },
+                { f: `<span class="tok tok-round">500</span> + <span class="tok tok-extra">0</span>`,
+                  note: '差额 +2−2−1+1+0 正好抵消为 0。' },
+                { f: `= <span class="tok tok-round pop">500</span>`,
+                  note: '基准乘个数，加上差额总和即可。' }
+            ]
+        },
+        ex: [
+            { q: '23 + 20 + 19 + 22 + 18 + 21', a: 123, hint: '基准 20，差额 +3+0−1+2−2+1' },
+            { q: '198 + 202 + 199 + 201',       a: 800, hint: '基准 200，差额抵消' },
+            { q: '51 + 49 + 52 + 48 + 50',      a: 250, hint: '基准 50，共 5 个' },
+            { q: '997 + 1003 + 999 + 1001',     a: 4000, hint: '基准 1000，差额为 0' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 乘法凑整·好朋友 */
+    mulcouzheng: {
+        cat: '乘法巧算',
+        chip: 'chip-mul', side: 'active-mul',
+        name: '乘法凑整 · 好朋友',
+        idea: '记住乘法好朋友：2×5=10、4×25=100、8×125=1000，先把它们配对。',
+        principle: '依据乘法交换律、结合律，先让 25×4、125×8 等结合出整百整千。',
+        demo: {
+            title: '25 × 32 × 125',
+            steps: [
+                { f: `25 × <span class="tok tok-extra">32</span> × 125`,
+                  note: '32 可以拆成 4 × 8，去配 25 和 125。' },
+                { f: `25 × <span class="hl-blue">4</span> × <span class="hl-box">8</span> × 125`,
+                  note: '32 = 4 × 8，拆开找好朋友。' },
+                { f: `<span class="hl-blue">(25 × 4)</span> × <span class="hl-box">(8 × 125)</span>`,
+                  note: '25×4=100，8×125=1000，各自结合。' },
+                { f: `<span class="tok tok-round">100</span> × <span class="tok tok-round">1000</span> = <span class="tok tok-round pop">100000</span>`,
+                  note: '整百乘整千，直接得 100000。' }
+            ]
+        },
+        ex: [
+            { q: '25 × 16 × 125', a: 50000, hint: '16 = 2 × 8，凑出 25×... 和 8×125' },
+            { q: '125 × 8 × 9',   a: 9000,  hint: '125×8=1000，再 ×9' },
+            { q: '4 × 27 × 25',   a: 2700,  hint: '4×25=100，再 ×27' },
+            { q: '8 × 25 × 125',  a: 25000, hint: '8×125=1000，再 ×25' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 乘法分配律巧用 */
+    fenpei: {
+        cat: '乘法巧算',
+        chip: 'chip-mul', side: 'active-mul',
+        name: '乘法分配律 · 拆与提',
+        idea: '把接近整十整百的因数拆开分配；或反过来提取公因数。',
+        principle: '99×38 = (100−1)×38 = 100×38 − 38；67×0.93+33×0.93 = (67+33)×0.93。',
+        demo: {
+            title: '99 × 38',
+            steps: [
+                { f: `<span class="tok tok-extra">99</span> × 38`,
+                  note: '99 离 100 只差 1，把它拆成 (100 − 1)。' },
+                { f: `<span class="hl-box">(100 − 1)</span> × 38`,
+                  note: '用分配律展开：每一部分都乘 38。' },
+                { f: `<span class="tok tok-round">100 × 38</span> − <span class="tok tok-extra">1 × 38</span>`,
+                  note: '= 3800 − 38。' },
+                { f: `3800 − 38 = <span class="tok tok-round pop">3762</span>`,
+                  note: '整百乘法好算，再减一个 38。' }
+            ]
+        },
+        ex: [
+            { q: '99 × 56',          a: 5544, hint: '(100−1)×56' },
+            { q: '102 × 45',         a: 4590, hint: '(100+2)×45' },
+            { q: '67 × 93 + 33 × 93', a: 9300, hint: '提取公因数 93' },
+            { q: '38 × 101 − 38',    a: 3800, hint: '38×101−38×1 = 38×100' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 乘法分配律·正向展开 */
+    fenpeizheng: {
+        cat: '乘法巧算',
+        chip: 'chip-mul', side: 'active-mul',
+        name: '乘法分配律 · 正向展开',
+        idea: '一个数乘以两数之和，可以分别乘再相加。',
+        principle: 'a×(b+c) = a×b + a×c。把括号里的和拆开，让每一项各自和好朋友凑整。',
+        demo: {
+            title: '25 × (4 + 8)',
+            steps: [
+                { f: `25 × <span class="hl-purple">(4 + 8)</span>`,
+                  note: '括号里是 4 + 8，可以先算，也可以用分配律展开。' },
+                { f: `<span class="hl-blue">25 × 4</span> + <span class="hl-box">25 × 8</span>`,
+                  note: '分配律：25 分别乘 4 和 8。' },
+                { f: `<span class="tok tok-round">100</span> + <span class="tok tok-round">200</span>`,
+                  note: '25×4=100，25×8=200，各自凑成整百。' },
+                { f: `= <span class="tok tok-round pop">300</span>`,
+                  note: '再如 125×(8+4)=125×8+125×4=1000+500=1500。' }
+            ]
+        },
+        ex: [
+            { q: '125 × (8 + 4)',  a: 1500, hint: '125×8 + 125×4 = 1000 + 500' },
+            { q: '25 × (4 + 40)',  a: 1100, hint: '25×4 + 25×40 = 100 + 1000' },
+            { q: '4 × (25 + 50)',  a: 300,  hint: '4×25 + 4×50 = 100 + 200' },
+            { q: '8 × (125 + 25)', a: 1200, hint: '8×125 + 8×25 = 1000 + 200' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 商不变规律 */
+    shangbubian: {
+        cat: '除法与乘除混合',
+        chip: 'chip-div', side: 'active-div',
+        name: '商不变规律',
+        idea: '被除数和除数同时乘（或除以）相同的数（0 除外），商不变。',
+        principle: '被除数、除数同乘一个数，商不变。把除数凑成整十整百，除法就好算了：÷25 时同乘 4 变成 ÷100。',
+        demo: {
+            title: '7200 ÷ 25',
+            steps: [
+                { f: `7200 ÷ <span class="tok tok-extra">25</span>`,
+                  note: '除以 25 不好算，但 25 × 4 = 100。' },
+                { f: `(7200 <span class="hl-blue">× 4</span>) ÷ (25 <span class="hl-blue">× 4</span>)`,
+                  note: '被除数、除数同时乘 4，商不变。' },
+                { f: `<span class="tok tok-round">28800</span> ÷ <span class="hl-box">100</span>`,
+                  note: '除数变成整百 100，立刻好算。' },
+                { f: `= <span class="tok tok-round pop">288</span>`,
+                  note: '除以 100，小数点向左移两位。' }
+            ]
+        },
+        ex: [
+            { q: '8100 ÷ 25',  a: 324, hint: '同乘 4：32400 ÷ 100' },
+            { q: '4800 ÷ 25',  a: 192, hint: '同乘 4：19200 ÷ 100' },
+            { q: '36000 ÷ 125', a: 288, hint: '同乘 8：288000 ÷ 1000' },
+            { q: '900 ÷ 50',   a: 18,  hint: '同乘 2：1800 ÷ 100' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 乘除混合·交换位置 */
+    jiaohuan: {
+        cat: '除法与乘除混合',
+        chip: 'chip-div', side: 'active-div',
+        name: '乘除混合 · 交换位置',
+        idea: '只有乘除的混合运算，可以交换因数、除数的位置，让好朋友先碰头。',
+        principle: '在连乘连除中，每个数带着自己前面的 ×或÷ 号一起搬家。交换后让 25÷25、4×4 这样的好算组合先算。',
+        demo: {
+            title: '25 × 4 ÷ 25 × 4',
+            steps: [
+                { f: `<span class="tok tok-pair-a">25</span> × 4 <span class="tok tok-extra">÷ 25</span> × 4`,
+                  note: '只有乘和除，可以调整顺序。注意 ÷25 要带着除号一起搬。' },
+                { f: `<span class="hl-box">25 ÷ 25</span> <span class="hl-blue">× 4 × 4</span>`,
+                  note: '把 25 和 ÷25 凑到一起，4 和 4 凑到一起。' },
+                { f: `<span class="tok tok-round">1</span> × <span class="tok tok-round">16</span>`,
+                  note: '25÷25=1，4×4=16。' },
+                { f: `= <span class="tok tok-round pop">16</span>`,
+                  note: '再如 125×8÷125×8 = 125÷125×8×8 = 64。' }
+            ]
+        },
+        ex: [
+            { q: '125 × 8 ÷ 125 × 8', a: 64,  hint: '125÷125×8×8 = 1×64' },
+            { q: '36 × 5 ÷ 9 ÷ 5',   a: 4,   hint: '36÷9 × (5÷5) = 4×1' },
+            { q: '48 ÷ 6 × 5 ÷ 8',   a: 5,   hint: '48÷6÷8 ×5 = 1×5' },
+            { q: '7 × 8 ÷ 7 ÷ 8',    a: 1,   hint: '7÷7 × (8÷8) = 1×1' }
+        ]
+    },
+
+    /* ---------------------------------------------------------------- 等差数列·首尾相加 */
+    dengcha: {
+        cat: '数列求和',
+        chip: 'chip-seq', side: 'active-seq',
+        name: '等差数列 · 首尾相加',
+        idea: '连续数求和：把首尾配对，每对的和都相同。',
+        principle: '高斯法：1+2+…+100 = (1+100)×100÷2。和 = (首+尾)×项数÷2。',
+        demo: {
+            title: '1 + 2 + 3 + … + 100',
+            steps: [
+                { f: `1 + 2 + 3 + … + 98 + 99 + 100`,
+                  note: '从 1 加到 100，一个一个加太慢。' },
+                { f: `<span class="hl-box">(1+100)</span> = <span class="hl-blue">(2+99)</span> = (3+98) = … = 101`,
+                  note: '首尾两两配对，每对的和都是 101。' },
+                { f: `共 <span class="tok tok-extra">100 ÷ 2 = 50</span> 对，每对 <span class="tok tok-round">101</span>`,
+                  note: '100 个数能凑成 50 对。' },
+                { f: `101 × 50 = <span class="tok tok-round pop">5050</span>`,
+                  note: '公式：(首+尾) × 项数 ÷ 2。' }
+            ]
+        },
+        ex: [
+            { q: '1 + 2 + 3 + … + 10',   a: 55,   hint: '(1+10)×10÷2' },
+            { q: '1 + 2 + 3 + … + 50',   a: 1275, hint: '(1+50)×50÷2' },
+            { q: '2 + 4 + 6 + … + 20',   a: 110,  hint: '(2+20)×10÷2，共 10 项' },
+            { q: '5 + 6 + 7 + … + 15',   a: 110,  hint: '(5+15)×11÷2，共 11 项' }
+        ]
+    }
+};
+
+const CATS = ['运算顺序', '加减巧算', '乘法巧算', '除法与乘除混合', '数列求和'];
+
+let state = {
+    mode: 'order',
+    step: 0,            // 当前演示到第几步
+    exVals: {},         // 练习输入：key = mode+index
+    exStatus: {}        // 练习判分：'ok' | 'bad' | undefined
+};
+
+function setState(p) { state = { ...state, ...p }; render(); }
+
+/* ----------------------------- 演示区 ----------------------------- */
+function renderDemo() {
+    const m = METHODS[state.mode];
+    const d = m.demo;
+    const maxStep = d.steps.length - 1;
+
+    const lines = d.steps.map((s, i) => {
+        const shown = i <= state.step;
+        return `
+            <div class="step-line flex items-start gap-3 px-4 py-3 rounded-xl ${shown ? 'fade-in' : 'opacity-0 h-0 py-0 overflow-hidden'}">
+                <div class="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">${i + 1}</div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-mono font-bold text-slate-800 leading-relaxed">${s.f}</div>
+                    <div class="mt-1 text-sm text-slate-500">${s.note}</div>
+                </div>
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="fade-in">
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+                <span class="chip ${m.chip}">${m.cat}</span>
+                <h2 class="text-2xl font-bold text-slate-800">${m.name}</h2>
+            </div>
+            <p class="text-slate-600">${m.idea}</p>
+            <div class="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+                <span class="font-bold">原理：</span>${m.principle}
+            </div>
+
+            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-2 sm:p-4 overflow-x-auto scroll-area">
+                <div class="text-center text-sm font-bold text-slate-400 mb-2">例题：${d.title}</div>
+                <div class="min-w-max">${lines}</div>
+            </div>
+
+            <div class="mt-5 flex items-center justify-center gap-4">
+                <button onclick="setState({step: Math.max(0, state.step - 1)})"
+                    class="px-6 py-2 rounded-lg bg-slate-200 font-bold text-slate-700 hover:bg-slate-300 ${state.step === 0 ? 'opacity-40 cursor-not-allowed' : ''}">上一步</button>
+                <span class="text-sm text-slate-400">第 ${state.step + 1} / ${maxStep + 1} 步</span>
+                <button onclick="setState({step: Math.min(${maxStep}, state.step + 1)})"
+                    class="px-6 py-2 rounded-lg bg-indigo-600 font-bold text-white shadow hover:bg-indigo-700 ${state.step === maxStep ? 'opacity-40 cursor-not-allowed' : ''}">下一步 →</button>
+            </div>
+            ${state.step === maxStep ? `<div class="mt-3 text-center text-green-600 font-bold fade-in">✓ 拆分 → 重组 → 凑整，速算完成！</div>` : ''}
+        </div>`;
+}
+
+/* ----------------------------- 练习区 ----------------------------- */
+function checkAnswer(idx) {
+    const m = METHODS[state.mode];
+    const key = state.mode + '_' + idx;
+    const val = state.exVals[key];
+    const correct = parseFloat(val) === m.ex[idx].a;
+    setState({ exStatus: { ...state.exStatus, [key]: correct ? 'ok' : 'bad' } });
+}
+
+function renderExercises() {
+    const m = METHODS[state.mode];
+    const rows = m.ex.map((e, idx) => {
+        const key = state.mode + '_' + idx;
+        const st = state.exStatus[key];
+        const val = state.exVals[key] ?? '';
+        return `
+            <div class="rounded-xl border border-slate-200 bg-white p-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="text-lg font-mono font-bold text-slate-800">${e.q} =</span>
+                    <input type="number" inputmode="numeric" class="ex-input ${st === 'ok' ? 'ok' : st === 'bad' ? 'bad' : ''}"
+                        value="${val}"
+                        oninput="state.exVals['${key}'] = this.value"
+                        onkeydown="if(event.key==='Enter') checkAnswer(${idx})"
+                        placeholder="?">
+                    <button onclick="checkAnswer(${idx})"
+                        class="px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-bold hover:bg-blue-600">检查</button>
+                    ${st === 'ok' ? `<span class="text-green-600 font-bold">✓ 正确</span>` : ''}
+                    ${st === 'bad' ? `<span class="text-red-500 font-bold">✗ 再想想</span>` : ''}
+                    <button onclick="setState({exStatus:{...state.exStatus, '${key}':'hint'}})"
+                        class="ml-auto text-xs text-slate-400 hover:text-slate-600 underline">提示</button>
+                </div>
+                ${st === 'hint' || st === 'bad' ? `<div class="mt-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2 fade-in">💡 ${e.hint}</div>` : ''}
+                ${st === 'ok' ? `<div class="mt-2 text-sm text-green-700">答案 ${e.a}。${e.hint}</div>` : ''}
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="fade-in">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">练一练 · ${m.name}</h3>
+            <p class="text-sm text-slate-500 mb-4">先在心里拆分、重组凑整，再填结果，回车或点“检查”判分。</p>
+            <div class="grid grid-cols-1 gap-3">${rows}</div>
+        </div>`;
+}
+
+/* ----------------------------- 侧边栏 ----------------------------- */
+function renderSidebar() {
+    let html = '';
+    CATS.forEach(cat => {
+        html += `<h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 mt-2">${cat}</h4><div class="flex flex-col mb-4">`;
+        for (const [key, m] of Object.entries(METHODS)) {
+            if (m.cat !== cat) continue;
+            const active = state.mode === key ? `active ${m.side}` : '';
+            html += `<button onclick="setState({mode:'${key}', step:0})" class="btn-side ${active}">${m.name}</button>`;
+        }
+        html += `</div>`;
+    });
+    return html;
+}
+
+/* ----------------------------- 总装 ----------------------------- */
+function render() {
+    document.getElementById('app').innerHTML = `
+        <header class="relative mb-6 px-12 text-center">
+            <a href="/" aria-label="返回主页" title="返回主页" class="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-slate-800">速算原理演示</h1>
+            <p class="mt-1 text-slate-500">看清每道题怎样“拆分 → 重组 → 凑整”，再动手练一练</p>
+        </header>
+
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row min-h-[640px]">
+            <aside class="w-full md:w-64 bg-slate-50 border-r border-slate-200 p-5 overflow-y-auto">
+                ${renderSidebar()}
+            </aside>
+            <main class="flex-1 p-6 md:p-8 overflow-hidden">
+                ${renderDemo()}
+                <hr class="my-8 border-slate-200">
+                ${renderExercises()}
+            </main>
+        </div>
+
+        <footer class="text-center text-xs text-slate-400 mt-6">
+            题型参考：华罗庚学校《速算与巧算》· 小学奥数“速算与巧算”专题
+        </footer>`;
+}
+
+render();
+</script>
+</body>
+</html>

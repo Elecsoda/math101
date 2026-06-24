@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每份数 × 份数 = 总数 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 物体 / 方块出现动画 */
+        .pop { animation: pop 0.35s ease backwards; }
+        @keyframes pop { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+        /* 一份（一组）出现动画 */
+        .group-in { animation: groupIn 0.4s ease backwards; }
+        @keyframes groupIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* 关键词高亮脉冲 */
+        .kw-pulse { animation: kwpulse 1.2s ease-in-out infinite; }
+        @keyframes kwpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.0); } 50% { box-shadow: 0 0 0 4px rgba(168,85,247,0.30); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // ============================================================
+        // 这个工具只讲一个核心结构：
+        //          每份数 × 份数 = 总数
+        // 三种题型（知二求一）：
+        //   total    已知 每份数、份数 → 求总数（用乘法）
+        //   groups   已知 总数、每份数 → 求份数（用除法·包含分："里面有几个几"）
+        //   each     已知 总数、份数  → 求每份数（用除法·平均分："平均分成几份"）
+        // 每道题都来自教材 / 教辅里最常见的"等组"情境。
+        // ============================================================
+
+        // 情境用一个 emoji 表示"一个物体"，让图尽量贴近场景；
+        // container 是装这些物体的"一份"的外形（盘子 / 排 / 袋子 …）。
+        const SCENES = {
+            apple:   { item: '🍎', box: '🍽️', boxName: '盘' },
+            bread:   { item: '🥐', box: '🧺', boxName: '篮' },
+            flower:  { item: '🌷', box: '💐', boxName: '束' },
+            candy:   { item: '🍬', box: '🛍️', boxName: '袋' },
+            fish:    { item: '🐟', box: '🪣', boxName: '桶' },
+            pencil:  { item: '✏️', box: '🥡', boxName: '盒' },
+            egg:     { item: '🥚', box: '📦', boxName: '盒' },
+            star:    { item: '⭐', box: '🗂️', boxName: '行' },
+            kid:     { item: '🧒', box: '🚗', boxName: '辆' },
+            book:    { item: '📕', box: '🎒', boxName: '包' },
+        };
+
+        // ============================================================
+        // 题库
+        //   each   = 每份数      groups = 份数      （二者相乘 = total）
+        //   ask    = 'total' | 'groups' | 'each'   要求的未知量
+        //   per / cnt / unit 用于组织题干（per=每份多少 unit，cnt=多少份）
+        // ============================================================
+
+        // 求总数：每份数 × 份数 = 总数（乘法）
+        const TOTAL_Q = [
+            { id:'t1', scene:'apple',  each:3, groups:4, unit:'个',
+              story:'每个盘子里放 3 个苹果，有 4 个盘子。一共有多少个苹果？',
+              keywords:[{text:'每个盘子里放 3 个',type:'each'},{text:'4 个盘子',type:'groups'},{text:'一共',type:'total'}] },
+            { id:'t2', scene:'flower', each:5, groups:3, unit:'朵',
+              story:'每束花有 5 朵，扎了 3 束。一共有多少朵花？',
+              keywords:[{text:'每束花有 5 朵',type:'each'},{text:'3 束',type:'groups'},{text:'一共',type:'total'}] },
+            { id:'t3', scene:'kid',    each:4, groups:5, unit:'人',
+              story:'每辆车坐 4 个人，有 5 辆车。一共坐了多少人？',
+              keywords:[{text:'每辆车坐 4 个人',type:'each'},{text:'5 辆车',type:'groups'},{text:'一共',type:'total'}] },
+            { id:'t4', scene:'egg',    each:6, groups:2, unit:'个',
+              story:'每盒装 6 个鸡蛋，买了 2 盒。一共有多少个鸡蛋？',
+              keywords:[{text:'每盒装 6 个',type:'each'},{text:'2 盒',type:'groups'},{text:'一共',type:'total'}] },
+        ];
+
+        // 求份数：总数 ÷ 每份数 = 份数（包含除法："里面有几个几"）
+        const GROUPS_Q = [
+            { id:'g1', scene:'bread',  each:4, groups:3, unit:'个',
+              story:'有 12 个面包，每个篮子里放 4 个，可以放满几个篮子？',
+              keywords:[{text:'12 个面包',type:'total'},{text:'每个篮子里放 4 个',type:'each'},{text:'几个篮子',type:'groups'}] },
+            { id:'g2', scene:'candy',  each:5, groups:4, unit:'颗',
+              story:'有 20 颗糖，每袋装 5 颗，能装几袋？',
+              keywords:[{text:'20 颗糖',type:'total'},{text:'每袋装 5 颗',type:'each'},{text:'几袋',type:'groups'}] },
+            { id:'g3', scene:'fish',   each:3, groups:5, unit:'条',
+              story:'有 15 条鱼，每个桶里放 3 条，需要几个桶？',
+              keywords:[{text:'15 条鱼',type:'total'},{text:'每个桶里放 3 条',type:'each'},{text:'几个桶',type:'groups'}] },
+            { id:'g4', scene:'pencil', each:6, groups:3, unit:'支',
+              story:'有 18 支铅笔，每盒放 6 支，可以装几盒？',
+              keywords:[{text:'18 支铅笔',type:'total'},{text:'每盒放 6 支',type:'each'},{text:'几盒',type:'groups'}] },
+        ];
+
+        // 求每份数：总数 ÷ 份数 = 每份数（平均分："平均分成几份，每份几"）
+        const EACH_Q = [
+            { id:'e1', scene:'apple',  each:4, groups:3, unit:'个',
+              story:'有 12 个苹果，平均放在 3 个盘子里，每盘放几个？',
+              keywords:[{text:'12 个苹果',type:'total'},{text:'平均放在 3 个盘子',type:'groups'},{text:'每盘放几个',type:'each'}] },
+            { id:'e2', scene:'kid',    each:5, groups:4, unit:'人',
+              story:'20 个小朋友平均坐 4 辆车，每辆车坐几人？',
+              keywords:[{text:'20 个小朋友',type:'total'},{text:'平均坐 4 辆车',type:'groups'},{text:'每辆车坐几人',type:'each'}] },
+            { id:'e3', scene:'flower', each:3, groups:5, unit:'朵',
+              story:'有 15 朵花，平均扎成 5 束，每束几朵？',
+              keywords:[{text:'15 朵花',type:'total'},{text:'平均扎成 5 束',type:'groups'},{text:'每束几朵',type:'each'}] },
+            { id:'e4', scene:'star',   each:6, groups:2, unit:'颗',
+              story:'有 12 颗星星，平均贴成 2 行，每行几颗？',
+              keywords:[{text:'12 颗星星',type:'total'},{text:'平均贴成 2 行',type:'groups'},{text:'每行几颗',type:'each'}] },
+        ];
+
+        // ============================================================
+        // 进阶题库（保留基础后新开的模块）。six 个方向：
+        //   total-pm : 总量加减 —— 先乘后加 / 减（乘加乘减）   each×groups ± delta
+        //   groups-pm: 份数加减 —— 份数先变      each×(groups±delta)
+        //   each-pm  : 每份数加减 —— 每份先变     (each±delta)×groups
+        //   two-group: 两组合并 —— 两种"份"各算各的再相加（分配律雏形）
+        //   div-pm   : 除法两步 —— 先减后除 / 先除后加减
+        //   chain    : 连乘 —— 每份本身又是"几个几"  a×b×c
+        // 字段说明见各题注释；delta 为变化量，sign 为 '+' / '-'。
+        // ============================================================
+        const ADVANCED = [
+            // ---- A 总量加减：先乘后加 / 减 ----
+            { id:'a1', kind:'total-pm', scene:'apple', each:4, groups:5, sign:'+', delta:3, unit:'个',
+              story:'每盘放 4 个苹果，有 5 盘，又拿来 3 个。一共有多少个苹果？',
+              keywords:[{text:'每盘放 4 个',type:'each'},{text:'5 盘',type:'groups'},{text:'又拿来 3 个',type:'add'}] },
+            { id:'a2', kind:'total-pm', scene:'flower', each:5, groups:6, sign:'-', delta:7, unit:'朵',
+              story:'每束 5 朵花，扎了 6 束，送走了 7 朵。还剩多少朵？',
+              keywords:[{text:'每束 5 朵',type:'each'},{text:'6 束',type:'groups'},{text:'送走了 7 朵',type:'remove'}] },
+
+            // ---- B 份数加减：份数先算 ----
+            { id:'b1', kind:'groups-pm', scene:'kid', each:6, groups:3, sign:'+', delta:2, unit:'人',
+              story:'每辆车坐 6 人。上午来了 3 辆车，下午又来了 2 辆。一共能坐多少人？',
+              keywords:[{text:'每辆车坐 6 人',type:'each'},{text:'3 辆车',type:'groups'},{text:'又来了 2 辆',type:'add'}] },
+            { id:'b2', kind:'groups-pm', scene:'egg', each:8, groups:5, sign:'-', delta:2, unit:'个',
+              story:'每盒装 8 个鸡蛋。原来有 5 盒，卖掉了 2 盒。还剩多少个鸡蛋？',
+              keywords:[{text:'每盒装 8 个',type:'each'},{text:'原来有 5 盒',type:'groups'},{text:'卖掉了 2 盒',type:'remove'}] },
+
+            // ---- C 每份数加减：每份先变 ----
+            { id:'c1', kind:'each-pm', scene:'pencil', each:4, groups:3, sign:'+', delta:2, unit:'支',
+              story:'每个盒子里原有 4 支铅笔，又往每盒各放进 2 支。3 个盒子一共有多少支？',
+              keywords:[{text:'每盒原有 4 支',type:'each'},{text:'每盒各放进 2 支',type:'add'},{text:'3 个盒子',type:'groups'}] },
+            { id:'c2', kind:'each-pm', scene:'candy', each:10, groups:4, sign:'-', delta:3, unit:'颗',
+              story:'每袋有 10 颗糖，每袋都吃掉 3 颗。4 袋一共还剩多少颗？',
+              keywords:[{text:'每袋有 10 颗',type:'each'},{text:'每袋都吃掉 3 颗',type:'remove'},{text:'4 袋',type:'groups'}] },
+
+            // ---- D 两组合并：两种份各算各的再相加 ----
+            { id:'d1', kind:'two-group', scene:'apple', sceneB:'egg',
+              eachA:6, groupsA:2, eachB:4, groupsB:3, unit:'个',
+              story:'大盘每盘 6 个苹果，有 2 盘；小盒每盒 4 个鸡蛋，有 3 盒。两种一共有多少个？',
+              keywords:[{text:'每盘 6 个',type:'each'},{text:'2 盘',type:'groups'},{text:'每盒 4 个',type:'each'},{text:'3 盒',type:'groups'}] },
+            { id:'d2', kind:'two-group', scene:'flower', sceneB:'flower',
+              eachA:5, groupsA:3, eachB:2, groupsB:4, unit:'朵',
+              story:'红花每束 5 朵，扎了 3 束；黄花每束 2 朵，扎了 4 束。一共有多少朵花？',
+              keywords:[{text:'每束 5 朵',type:'each'},{text:'3 束',type:'groups'},{text:'每束 2 朵',type:'each'},{text:'4 束',type:'groups'}] },
+
+            // ---- E 除法两步：先减后除 / 先除后加 ----
+            { id:'p1', kind:'div-pm', scene:'apple', sub:18, sign:'-', delta:3, groups:5, unit:'个',
+              story:'有 18 个苹果，先吃掉 3 个，剩下的平均放进 5 个盘子。每盘放几个？',
+              keywords:[{text:'18 个苹果',type:'total'},{text:'吃掉 3 个',type:'remove'},{text:'平均放进 5 个盘子',type:'groups'}] },
+            { id:'p2', kind:'div-add', scene:'candy', total:20, groups:4, sign:'+', delta:2, unit:'颗',
+              story:'20 颗糖平均分给 4 个人，每人再奖励 2 颗。每人最后有几颗？',
+              keywords:[{text:'20 颗糖',type:'total'},{text:'平均分给 4 个人',type:'groups'},{text:'再奖励 2 颗',type:'add'}] },
+
+            // ---- F 连乘：每份本身又是"几个几" ----
+            { id:'f1', kind:'chain', scene:'apple', boxes:3, perBox:4, perItem:5, unit:'个',
+              boxName:'箱', midName:'盒',
+              story:'有 3 箱苹果，每箱 4 盒，每盒 5 个。一共有多少个苹果？',
+              keywords:[{text:'3 箱',type:'groups'},{text:'每箱 4 盒',type:'groups'},{text:'每盒 5 个',type:'each'}] },
+            { id:'f2', kind:'chain', scene:'kid', boxes:2, perBox:3, perItem:6, unit:'人',
+              boxName:'排', midName:'组',
+              story:'操场上站了 2 排，每排 3 组，每组 6 人。一共有多少人？',
+              keywords:[{text:'2 排',type:'groups'},{text:'每排 3 组',type:'groups'},{text:'每组 6 人',type:'each'}] },
+        ];
+
+        // ============================================================
+        // 关键词高亮
+        // ============================================================
+        const KW_STYLE = {
+            each:   'bg-orange-100 text-orange-700 border-orange-300',   // 每份数
+            groups: 'bg-sky-100 text-sky-700 border-sky-300',            // 份数
+            total:  'bg-purple-100 text-purple-700 border-purple-300',   // 总数
+            add:    'bg-green-100 text-green-700 border-green-300',       // 增加的量
+            remove: 'bg-red-100 text-red-700 border-red-300',            // 减少的量
+        };
+        const ROLE_NAME = { each: '每份数', groups: '份数', total: '总数', add: '增加', remove: '减少' };
+
+        const HighlightStory = ({ story, keywords, active }) => {
+            let parts = [{ t: story, kw: null }];
+            keywords.forEach((k) => {
+                const next = [];
+                parts.forEach(p => {
+                    if (p.kw) { next.push(p); return; }
+                    const idx = p.t.indexOf(k.text);
+                    if (idx === -1) { next.push(p); return; }
+                    if (idx > 0) next.push({ t: p.t.slice(0, idx), kw: null });
+                    next.push({ t: k.text, kw: k.type });
+                    if (idx + k.text.length < p.t.length) next.push({ t: p.t.slice(idx + k.text.length), kw: null });
+                });
+                parts = next;
+            });
+            // active=false：关键词显示为普通文字（不画框）；active=true 才框选高亮 + 脉冲
+            return (
+                <p className="text-xl leading-relaxed text-gray-800">
+                    {parts.map((p, i) => (p.kw && active)
+                        ? <span key={i} className={"relative inline-block px-1.5 py-0.5 mx-0.5 rounded border font-semibold smooth " + KW_STYLE[p.kw] + " kw-pulse"}>{p.t}</span>
+                        : <span key={i}>{p.t}</span>
+                    )}
+                </p>
+            );
+        };
+
+        // ============================================================
+        // 图：把"总数"画成 groups 份、每份 each 个物体
+        // mode: 'scene'（贴近场景的小图标）| 'dot'（圆点）| 'block'（方块）
+        // 通过 revealGroups 控制画出几份（用于分步 / 一份份出现）
+        // dim：把超过 known 的部分画虚（表示"还不知道"）
+        // ============================================================
+        const ITEM_SIZE = 30;   // 单个物体显示尺寸
+
+        // accent: undefined/'base' 原有 | 'add' 新增（绿色高亮）| 'remove' 去掉（划掉变灰）
+        const Glyph = ({ mode, scene, dashed, idx, accent }) => {
+            const s = SCENES[scene];
+            const removed = accent === 'remove';
+            const added = accent === 'add';
+            if (mode === 'scene') {
+                return <span className={"pop relative inline-flex items-center justify-center smooth " +
+                            (dashed ? 'opacity-30 ' : '') + (removed ? 'opacity-40 grayscale ' : '') + (added ? 'ring-2 ring-green-400 rounded-md bg-green-50 ' : '')}
+                            style={{ fontSize: ITEM_SIZE * 0.78, width: ITEM_SIZE, height: ITEM_SIZE, animationDelay: (idx*0.03)+'s' }}>
+                            {s.item}
+                            {removed && <span className="absolute inset-0 flex items-center justify-center text-red-500 font-black" style={{fontSize:ITEM_SIZE*0.9}}>╳</span>}
+                        </span>;
+            }
+            const dotColor = added ? 'bg-green-400' : 'bg-sky-400';
+            const shape = mode === 'dot' ? 'rounded-full' : 'rounded-sm';
+            return <span className={"pop relative inline-block shrink-0 smooth " + shape + ' ' +
+                        (dashed ? 'border-2 border-dashed border-gray-300 bg-transparent' :
+                         removed ? 'bg-gray-300 opacity-60' :
+                         (dotColor + ' border border-white/60') + (added ? ' ring-2 ring-green-300' : ''))}
+                        style={{ width: ITEM_SIZE*0.7, height: ITEM_SIZE*0.7, margin: 3, animationDelay:(idx*0.03)+'s' }}>
+                        {removed && <span className="absolute inset-0 flex items-center justify-center text-red-500 font-black" style={{fontSize:ITEM_SIZE*0.55}}>╳</span>}
+                    </span>;
+        };
+
+        // 一份（一个组 / 一个盘子）
+        //   cardAccent: 'add' 整份新增（绿框）| 'remove' 整份去掉（灰/划掉）
+        //   accentFrom: 从第几个物体起标记为 itemAccent（用于"每份各加 / 减几个"）
+        const GroupCard = ({ mode, scene, each, dashed, label, gi, highlightFirst, cardAccent, accentFrom, itemAccent }) => {
+            const s = SCENES[scene];
+            const cardRing = cardAccent === 'add' ? 'ring-2 ring-green-400 bg-green-50/60 '
+                           : cardAccent === 'remove' ? 'ring-2 ring-red-300 bg-red-50/40 '
+                           : highlightFirst ? 'ring-2 ring-orange-400 ' : '';
+            return (
+                <div className={"group-in rounded-xl p-2 flex flex-col items-center smooth " + cardRing +
+                        (dashed ? 'border-2 border-dashed border-gray-300 bg-gray-50/50 ' : 'border border-gray-200 bg-white shadow-sm ')}
+                    style={{ animationDelay: (gi*0.08)+'s' }}>
+                    {mode === 'scene' && <div className="text-2xl leading-none mb-0.5">{s.box}</div>}
+                    <div className="flex flex-wrap items-center justify-center" style={{ maxWidth: Math.ceil(Math.sqrt(Math.max(each,1)))*(ITEM_SIZE+6)+8, minWidth: ITEM_SIZE+8, minHeight: ITEM_SIZE }}>
+                        {Array.from({ length: each }).map((_, i) => {
+                            let acc = cardAccent;                                   // 整份的标记优先
+                            if (acc == null && accentFrom != null && i >= accentFrom) acc = itemAccent;
+                            return <Glyph key={i} mode={mode} scene={scene} dashed={dashed} idx={i} accent={acc} />;
+                        })}
+                    </div>
+                    {label && <div className={"text-xs font-semibold mt-1 " + (dashed ? 'text-gray-400' : 'text-gray-500')}>{label}</div>}
+                </div>
+            );
+        };
+
+        // 整张图：一排 groups 份
+        //   groupSpec: 可选数组，逐份指定 { each, cardAccent, accentFrom, itemAccent, label }，
+        //              用于进阶题（份数增减 / 每份增减 / 两组并排）
+        const GroupsBoard = ({ mode, scene, each, groups, revealGroups, dashFrom, eachLabel, perGroupLabel, groupSpec }) => {
+            if (groupSpec) {
+                return (
+                    <div className="flex flex-wrap items-start gap-3">
+                        {groupSpec.map((g, gi) => (
+                            <GroupCard key={gi} mode={mode} scene={g.scene || scene} each={g.each} gi={gi}
+                                cardAccent={g.cardAccent} accentFrom={g.accentFrom} itemAccent={g.itemAccent} label={g.label} />
+                        ))}
+                    </div>
+                );
+            }
+            return (
+                <div className="flex flex-wrap items-start gap-3">
+                    {Array.from({ length: groups }).map((_, gi) => {
+                        if (gi >= revealGroups) return null;
+                        const dashed = dashFrom != null && gi >= dashFrom;
+                        return <GroupCard key={gi} mode={mode} scene={scene} each={each} dashed={dashed}
+                                    gi={gi} highlightFirst={gi === 0 && perGroupLabel}
+                                    label={perGroupLabel ? (gi===0 ? eachLabel : '') : ''} />;
+                    })}
+                </div>
+            );
+        };
+
+        // 公式条：每份数 × 份数 = 总数，按角色高亮 / 填空
+        const FormulaStrip = ({ each, groups, total, ask, reveal }) => {
+            // reveal: 'each' | 'groups' | 'total' 高亮的目标；ask=未知量
+            const cell = (role, value) => {
+                const known = role !== ask;
+                return (
+                    <span className={"inline-flex flex-col items-center px-3 py-1.5 rounded-lg border-2 mx-1 smooth " + KW_STYLE[role]}>
+                        <span className="text-2xl font-bold">{known ? value : '?'}</span>
+                        <span className="text-[11px] font-semibold opacity-80">{ROLE_NAME[role]}</span>
+                    </span>
+                );
+            };
+            return (
+                <div className="flex items-center justify-center flex-wrap text-gray-500">
+                    {cell('each', each)}
+                    <span className="text-2xl font-bold mx-1">×</span>
+                    {cell('groups', groups)}
+                    <span className="text-2xl font-bold mx-1">=</span>
+                    {cell('total', total)}
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 求解 + 列式文字
+        // ============================================================
+        function solve(q, ask) {
+            const total = q.each * q.groups;
+            const s = SCENES[q.scene];
+            if (ask === 'total') {
+                return {
+                    total, expr: `${q.each} × ${q.groups} = ${total}`,
+                    answer: total,
+                    answerText: `一共有 ${total} ${q.unit}。`,
+                    why: `有 ${q.groups} 个这样的"一份"，每份 ${q.each} ${q.unit}，就是 ${q.groups} 个 ${q.each}，用乘法。`,
+                };
+            }
+            if (ask === 'groups') {
+                return {
+                    total, expr: `${total} ÷ ${q.each} = ${q.groups}`,
+                    answer: q.groups,
+                    answerText: `可以装满 ${q.groups} ${s.boxName}。`,
+                    why: `看 ${total} ${q.unit}里面有几个 ${q.each}，每 ${q.each} 个分一${s.boxName}，分出 ${q.groups} ${s.boxName}——这是"包含分"，用除法。`,
+                };
+            }
+            // each
+            return {
+                total, expr: `${total} ÷ ${q.groups} = ${q.each}`,
+                answer: q.each,
+                answerText: `每${s.boxName}放 ${q.each} ${q.unit}。`,
+                why: `把 ${total} ${q.unit}平均分给 ${q.groups} ${s.boxName}，一个一个轮流放，每${s.boxName}得到 ${q.each} ${q.unit}——这是"平均分"，用除法。`,
+            };
+        }
+
+        // ============================================================
+        // 演示组件（一个题型一个，但共用大部分逻辑）
+        // 步骤：① 读题找三量 ② 画图 ③ 看图列式
+        // ============================================================
+        const STEP_NAMES = ['① 读题，找出三个量', '② 画一画，理解"几个几"', '③ 看图列式计算'];
+
+        const Demo = ({ q, ask, mode, setMode }) => {
+            const [step, setStep] = useState(0);
+            const sol = useMemo(() => solve(q, ask), [q, ask]);
+            const s = SCENES[q.scene];
+            useEffect(() => { setStep(0); }, [q, ask]);
+
+            // 第②步：根据题型决定怎么画
+            //   total  : 已知每份、份数 → 一份份摆出来，数总数
+            //   groups : 已知总数、每份 → 把总数每 each 个圈一份，数出份数
+            //   each   : 已知总数、份数 → 总数平均分到 groups 份，看每份几个
+            const board = () => {
+                if (ask === 'total') {
+                    return (
+                        <div>
+                            <GroupsBoard mode={mode} scene={q.scene} each={q.each} groups={q.groups}
+                                revealGroups={q.groups} perGroupLabel eachLabel={`每${s.boxName} ${q.each} ${q.unit}`} />
+                            <p className="text-sm text-gray-500 mt-3">
+                                每份都是 <b className="text-orange-600">{q.each}</b> {q.unit}，一共 <b className="text-sky-600">{q.groups}</b> 份。
+                                数一数：就是 <b>{q.groups}</b> 个 <b>{q.each}</b>，把它们合起来就是总数。
+                            </p>
+                        </div>
+                    );
+                }
+                if (ask === 'groups') {
+                    return (
+                        <div>
+                            <p className="text-sm text-gray-500 mb-2">先看到 <b className="text-purple-600">{sol.total}</b> {q.unit}（总数），每 <b className="text-orange-600">{q.each}</b> 个分成一{s.boxName} →</p>
+                            <GroupsBoard mode={mode} scene={q.scene} each={q.each} groups={q.groups}
+                                revealGroups={q.groups} />
+                            <p className="text-sm text-gray-500 mt-3">
+                                每 <b className="text-orange-600">{q.each}</b> 个圈成一{s.boxName}，圈了 <b className="text-sky-600">{q.groups}</b> {s.boxName}——
+                                这是在问"{sol.total} 里面有几个 {q.each}"。
+                            </p>
+                        </div>
+                    );
+                }
+                // each：平均分
+                return (
+                    <div>
+                        <p className="text-sm text-gray-500 mb-2">把 <b className="text-purple-600">{sol.total}</b> {q.unit}（总数）平均分到 <b className="text-sky-600">{q.groups}</b> {s.boxName}，一个一个轮流放 →</p>
+                        <GroupsBoard mode={mode} scene={q.scene} each={q.each} groups={q.groups}
+                            revealGroups={q.groups} />
+                        <p className="text-sm text-gray-500 mt-3">
+                            分完后，每{s.boxName}同样多，都是 <b className="text-orange-600">{q.each}</b> {q.unit}——
+                            这是把 {sol.total} 平均分成 {q.groups} 份。
+                        </p>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="fade-in">
+                    {/* 画法切换 */}
+                    <div className="flex items-center justify-end mb-4 gap-1">
+                        <span className="text-sm text-gray-400 mr-1">画法</span>
+                        <button onClick={() => setMode('scene')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='scene'?'bg-purple-500 text-white':'bg-gray-100 text-gray-500')}>实物</button>
+                        <button onClick={() => setMode('dot')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='dot'?'bg-purple-500 text-white':'bg-gray-100 text-gray-500')}>圆点</button>
+                    </div>
+
+                    {/* 题干（第①步起才高亮关键词） */}
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <HighlightStory story={q.story} keywords={q.keywords} active={step >= 1} />
+                    </div>
+
+                    {/* 三量小卡（第①步起出现） */}
+                    {step >= 1 && (
+                        <div className="flex flex-wrap gap-2 mb-4 fade-in">
+                            {q.keywords.map((k, i) => (
+                                <span key={i} className={"px-2.5 py-1 rounded-lg border text-sm font-semibold " + KW_STYLE[k.type]}>
+                                    {ROLE_NAME[k.type]}：{k.text}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* 步骤条 */}
+                    <div className="flex gap-2 mb-5 flex-wrap">
+                        {STEP_NAMES.map((sName, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-purple-500 text-white' : step > i ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400')}>{sName}</div>
+                        ))}
+                    </div>
+
+                    {/* 画图区 */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 180 }}>
+                        {step === 0 && (
+                            <div className="text-gray-500 text-center py-8">
+                                <p className="mb-3">这道题在讲一个关系：</p>
+                                <div className="inline-flex items-center gap-2 text-lg font-bold">
+                                    <span className="px-3 py-1.5 rounded-lg bg-orange-100 text-orange-700 border-2 border-orange-300">每份数</span>
+                                    <span>×</span>
+                                    <span className="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700 border-2 border-sky-300">份数</span>
+                                    <span>=</span>
+                                    <span className="px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700 border-2 border-purple-300">总数</span>
+                                </div>
+                                <p className="mt-4 text-sm">题里已经告诉我们两个，要求的是 <b className="text-purple-600">{ROLE_NAME[ask]}</b>。点"下一步"画图 →</p>
+                            </div>
+                        )}
+                        {step >= 1 && board()}
+                    </div>
+
+                    {/* 列式区 */}
+                    {step >= 2 && (
+                        <div className="bg-purple-50 rounded-xl p-5 mb-5 border border-purple-100 fade-in">
+                            <p className="text-gray-500 mb-3 text-sm">把图和公式对应起来：</p>
+                            <FormulaStrip each={q.each} groups={q.groups} total={sol.total} ask={ask} />
+                            <p className="text-2xl font-bold font-mono text-purple-700 text-center my-4">{sol.expr}</p>
+                            <p className="text-sm text-gray-600 bg-white/60 rounded-lg p-3">💡 {sol.why}</p>
+                            <p className="mt-3 text-lg text-gray-700">答：{sol.answerText}</p>
+                        </div>
+                    )}
+
+                    {/* 步骤按钮 */}
+                    <div className="flex gap-3">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 2 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 2 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">从头再看一遍</button>}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 练习模式：给题 → 选未知量是哪个 → 选运算 → 填得数 → 判分
+        // ============================================================
+        const PRACTICE = [
+            { scene:'apple',  story:'每盘放 4 个苹果，有 5 盘。一共有多少个苹果？', ask:'total',  each:4, groups:5, unit:'个' },
+            { scene:'candy',  story:'有 18 颗糖，每袋装 6 颗，能装几袋？',        ask:'groups', each:6, groups:3, unit:'颗' },
+            { scene:'kid',    story:'15 个小朋友平均坐 3 辆车，每辆车坐几人？',     ask:'each',   each:5, groups:3, unit:'人' },
+            { scene:'flower', story:'每束 3 朵花，扎了 6 束。一共有多少朵？',       ask:'total',  each:3, groups:6, unit:'朵' },
+            { scene:'bread',  story:'有 20 个面包，平均放进 4 个篮子，每篮几个？',  ask:'each',   each:5, groups:4, unit:'个' },
+            { scene:'fish',   story:'有 16 条鱼，每桶放 4 条，需要几个桶？',        ask:'groups', each:4, groups:4, unit:'条' },
+        ];
+
+        const PracticeMode = () => {
+            const [pi, setPi] = useState(0);
+            const [askGuess, setAskGuess] = useState(null);   // 学生选的"未知量"
+            const [op, setOp] = useState(null);
+            const [input, setInput] = useState('');
+            const [checked, setChecked] = useState(false);
+            const p = PRACTICE[pi];
+            const sol = useMemo(() => solve(p, p.ask), [p]);
+
+            const correctOp = p.ask === 'total' ? '×' : '÷';
+            const askOk = askGuess === p.ask;
+            const opOk = op === correctOp;
+            const ansOk = Number(input) === sol.answer;
+            const allOk = checked && askOk && opOk && ansOk;
+
+            const reset = () => { setAskGuess(null); setOp(null); setInput(''); setChecked(false); };
+            const nextQ = () => { setPi((pi + 1) % PRACTICE.length); reset(); };
+
+            return (
+                <div className="fade-in">
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-sm text-gray-400">第 {pi + 1} / {PRACTICE.length} 题</span>
+                        <button onClick={nextQ} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">换一题 ›</button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100">
+                        <p className="text-xl text-gray-800 mb-5">{SCENES[p.scene].item} {p.story}</p>
+
+                        <p className="text-sm text-gray-400 mb-2">① 题目要求的是哪个量？</p>
+                        <div className="flex gap-3 mb-5 flex-wrap">
+                            {['each','groups','total'].map(r => (
+                                <button key={r} onClick={() => { setAskGuess(r); setChecked(false); }}
+                                    className={"px-4 py-2 rounded-xl text-sm font-bold smooth border-2 " +
+                                        (askGuess === r ? (KW_STYLE[r] + ' ring-2 ring-offset-1') : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300')}>
+                                    {ROLE_NAME[r]}
+                                </button>
+                            ))}
+                        </div>
+
+                        <p className="text-sm text-gray-400 mb-2">② 用什么运算？</p>
+                        <div className="flex gap-3 mb-5">
+                            {['×','÷'].map(o => (
+                                <button key={o} onClick={() => { setOp(o); setChecked(false); }}
+                                    className={"w-14 h-14 rounded-xl text-2xl font-bold smooth border-2 " +
+                                        (op === o ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300')}>{o}</button>
+                            ))}
+                        </div>
+
+                        <p className="text-sm text-gray-400 mb-2">③ 把式子填完整：</p>
+                        <div className="flex items-center gap-2 text-2xl font-mono flex-wrap">
+                            <span className="px-3 py-2 bg-gray-100 rounded">{p.ask==='total' ? p.each : sol.total}</span>
+                            <span className="font-bold text-gray-500 w-8 text-center">{op || '?'}</span>
+                            <span className="px-3 py-2 bg-gray-100 rounded">{p.ask==='total' ? p.groups : (p.ask==='groups' ? p.each : p.groups)}</span>
+                            <span className="font-bold">=</span>
+                            <input type="number" value={input} onChange={e => { setInput(e.target.value); setChecked(false); }}
+                                className="w-24 text-center border-2 border-purple-300 rounded p-2" placeholder="?" />
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                        <button onClick={() => setChecked(true)} disabled={!askGuess || !op || input === ''}
+                            className="px-6 py-2.5 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-semibold smooth">判分</button>
+                        {allOk && <button onClick={nextQ} className="px-6 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold smooth">下一题 →</button>}
+                    </div>
+
+                    {checked && (
+                        <div className={"mt-5 rounded-xl p-5 border fade-in " + (allOk ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200')}>
+                            {allOk
+                                ? <div className="text-green-700">
+                                    <p className="text-lg font-bold mb-1">✓ 完全正确！{sol.expr}</p>
+                                    <p className="text-sm">{sol.why}</p>
+                                  </div>
+                                : <div className="text-amber-700 space-y-1">
+                                    {!askOk && <p>先想清楚要求的是哪个量。这里求的是 <b>{ROLE_NAME[p.ask]}</b>。</p>}
+                                    {askOk && !opOk && <p>量找对了！求<b>总数</b>用乘法（×），求<b>份数</b>或<b>每份数</b>都是分东西，用除法（÷）。</p>}
+                                    {askOk && opOk && !ansOk && <p>思路对了！算一算 {sol.expr.split('=')[0]}等于几？</p>}
+                                  </div>}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 进阶：求解（生成两步算式 + 分步推理）
+        // ============================================================
+        function solveAdvanced(q) {
+            const s = SCENES[q.scene];
+            const pm = (a, sign, b) => sign === '+' ? a + b : a - b;
+
+            if (q.kind === 'total-pm') {
+                const base = q.each * q.groups;
+                const ans = pm(base, q.sign, q.delta);
+                const word = q.sign === '+' ? '又增加' : '又去掉';
+                return {
+                    answer: ans, answerText: q.sign === '+' ? `一共有 ${ans} ${q.unit}。` : `还剩 ${ans} ${q.unit}。`,
+                    expr: `${q.each} × ${q.groups} ${q.sign} ${q.delta} = ${ans}`,
+                    steps: [
+                        { text:`先算 ${q.groups} 份一共多少：每份 ${q.each}，${q.groups} 份`, expr:`${q.each} × ${q.groups} = ${base}（${q.unit}）` },
+                        { text:`${word} ${q.delta}：`, expr:`${base} ${q.sign} ${q.delta} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'先把"几个几"乘出来，再处理多出来 / 去掉的那部分。乘法管"整份"，加减管"零头"。',
+                };
+            }
+            if (q.kind === 'groups-pm') {
+                const g2 = pm(q.groups, q.sign, q.delta);
+                const ans = q.each * g2;
+                return {
+                    answer: ans, answerText: `一共 ${ans} ${q.unit}。`,
+                    expr: `${q.each} × (${q.groups} ${q.sign} ${q.delta}) = ${ans}`,
+                    steps: [
+                        { text:`份数变了，先算一共多少份：`, expr:`${q.groups} ${q.sign} ${q.delta} = ${g2}（份）` },
+                        { text:`每份 ${q.each}，共 ${g2} 份：`, expr:`${q.each} × ${g2} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'变化的是"份数"。先把份数算清楚，再乘每份数。注意括号——要先算括号里的份数。',
+                };
+            }
+            if (q.kind === 'each-pm') {
+                const e2 = pm(q.each, q.sign, q.delta);
+                const ans = e2 * q.groups;
+                return {
+                    answer: ans, answerText: `一共 ${ans} ${q.unit}。`,
+                    expr: `(${q.each} ${q.sign} ${q.delta}) × ${q.groups} = ${ans}`,
+                    steps: [
+                        { text:`每份变了，先算每份现在多少：`, expr:`${q.each} ${q.sign} ${q.delta} = ${e2}（${q.unit}）` },
+                        { text:`每份 ${e2}，共 ${q.groups} 份：`, expr:`${e2} × ${q.groups} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'变化的是"每份数"，而且每一份都一样变。先算出"新的每份数"，再乘份数。',
+                };
+            }
+            if (q.kind === 'two-group') {
+                const tA = q.eachA * q.groupsA, tB = q.eachB * q.groupsB, ans = tA + tB;
+                return {
+                    answer: ans, answerText: `两种一共 ${ans} ${q.unit}。`,
+                    expr: `${q.eachA} × ${q.groupsA} + ${q.eachB} × ${q.groupsB} = ${ans}`,
+                    steps: [
+                        { text:`第一种各算各的：`, expr:`${q.eachA} × ${q.groupsA} = ${tA}（${q.unit}）` },
+                        { text:`第二种各算各的：`, expr:`${q.eachB} × ${q.groupsB} = ${tB}（${q.unit}）` },
+                        { text:`再把两部分合起来：`, expr:`${tA} + ${tB} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'两种"份"大小不同，不能直接相加。各算各的总数，最后再相加。',
+                };
+            }
+            if (q.kind === 'div-pm') {
+                const left = pm(q.sub, q.sign, q.delta), ans = left / q.groups;
+                const word = q.sign === '-' ? '先去掉' : '先加上';
+                return {
+                    answer: ans, answerText: `每份 ${ans} ${q.unit}。`,
+                    expr: `(${q.sub} ${q.sign} ${q.delta}) ÷ ${q.groups} = ${ans}`,
+                    steps: [
+                        { text:`${word} ${q.delta}，先算要分的总数：`, expr:`${q.sub} ${q.sign} ${q.delta} = ${left}（${q.unit}）` },
+                        { text:`把剩下的平均分成 ${q.groups} 份：`, expr:`${left} ÷ ${q.groups} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'要分的是"剩下的"，不是一开始的总数。先处理加减，算出真正要平均分的数，再除。',
+                };
+            }
+            if (q.kind === 'div-add') {
+                const each0 = q.total / q.groups, ans = pm(each0, q.sign, q.delta);
+                return {
+                    answer: ans, answerText: `每份最后 ${ans} ${q.unit}。`,
+                    expr: `${q.total} ÷ ${q.groups} ${q.sign} ${q.delta} = ${ans}`,
+                    steps: [
+                        { text:`先平均分，算出每份多少：`, expr:`${q.total} ÷ ${q.groups} = ${each0}（${q.unit}）` },
+                        { text:`每份再${q.sign==='+'?'加上':'减去'} ${q.delta}：`, expr:`${each0} ${q.sign} ${q.delta} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'先平均分得到"每份数"，再在每份上加减。除法管平分，加减管之后的零头。',
+                };
+            }
+            if (q.kind === 'chain') {
+                const mid = q.boxes * q.perBox, ans = mid * q.perItem;
+                return {
+                    answer: ans, answerText: `一共 ${ans} ${q.unit}。`,
+                    expr: `${q.boxes} × ${q.perBox} × ${q.perItem} = ${ans}`,
+                    steps: [
+                        { text:`先算一共有多少${q.midName}：${q.boxes} ${q.boxName}，每${q.boxName} ${q.perBox} ${q.midName}`, expr:`${q.boxes} × ${q.perBox} = ${mid}（${q.midName}）` },
+                        { text:`每${q.midName} ${q.perItem} ${q.unit}，共 ${mid} ${q.midName}：`, expr:`${mid} × ${q.perItem} = ${ans}（${q.unit}）` },
+                    ],
+                    tip:'"每份"里面还藏着"几个几"。先把小份数乘出来，再乘每份里的个数——连乘两步。',
+                };
+            }
+        }
+
+        // 进阶演示组件：① 读题找量 ② 画基础图 ③ 高亮变化 ④ 列两步式
+        const ADV_STEPS = ['① 读题，理清两步', '② 画出原来的样子', '③ 看清变化', '④ 列式计算'];
+
+        const AdvancedDemo = ({ q, mode, setMode }) => {
+            const [step, setStep] = useState(0);
+            const sol = useMemo(() => solveAdvanced(q), [q]);
+            useEffect(() => { setStep(0); }, [q]);
+
+            // 画图：stage 由 step 推得（step2=变化前, step>=3=变化后/高亮）
+            const showChange = step >= 3;
+            const s = SCENES[q.scene];
+
+            const board = () => {
+                // total-pm：画 groups 份基础图；变化时追加 / 划掉 delta 个（单独一份示意）
+                if (q.kind === 'total-pm') {
+                    const spec = Array.from({ length: q.groups }).map(() => ({ each: q.each }));
+                    if (showChange) {
+                        if (q.sign === '+') spec.push({ each: q.delta, cardAccent:'add', label:`新增 ${q.delta} ${q.unit}` });
+                        else spec[spec.length-1] = { each: q.each, accentFrom: Math.max(0, q.each - q.delta), itemAccent:'remove', label:`去掉 ${q.delta} ${q.unit}` };
+                    }
+                    return <GroupsBoard mode={mode} scene={q.scene} groupSpec={spec} />;
+                }
+                // groups-pm：基础 groups 份；加→追加 delta 整份(绿)，减→后 delta 份划掉(红)
+                if (q.kind === 'groups-pm') {
+                    let spec = Array.from({ length: q.groups }).map(() => ({ each: q.each }));
+                    if (showChange) {
+                        if (q.sign === '+') {
+                            for (let k=0;k<q.delta;k++) spec.push({ each:q.each, cardAccent:'add' });
+                        } else {
+                            spec = spec.map((g,i) => i >= q.groups - q.delta ? { each:q.each, cardAccent:'remove' } : g);
+                        }
+                    }
+                    return <GroupsBoard mode={mode} scene={q.scene} groupSpec={spec} />;
+                }
+                // each-pm：每份基础 each 个；变化时每份从 each 起加/划掉 delta
+                if (q.kind === 'each-pm') {
+                    const spec = Array.from({ length: q.groups }).map(() => {
+                        if (!showChange) return { each: q.each };
+                        if (q.sign === '+') return { each: q.each + q.delta, accentFrom: q.each, itemAccent:'add' };
+                        return { each: q.each, accentFrom: q.each - q.delta, itemAccent:'remove' };
+                    });
+                    return <GroupsBoard mode={mode} scene={q.scene} groupSpec={spec} />;
+                }
+                // two-group：两组并排，中间分隔
+                if (q.kind === 'two-group') {
+                    const specA = Array.from({ length: q.groupsA }).map(() => ({ each: q.eachA, scene:q.scene }));
+                    const specB = Array.from({ length: q.groupsB }).map(() => ({ each: q.eachB, scene:q.sceneB }));
+                    return (
+                        <div className="flex flex-wrap items-start gap-4">
+                            <div>
+                                <div className="text-xs font-bold text-orange-600 mb-1">第一种：{q.eachA} × {q.groupsA}</div>
+                                <GroupsBoard mode={mode} scene={q.scene} groupSpec={specA} />
+                            </div>
+                            <div className="self-stretch flex items-center text-2xl text-gray-300 font-bold">+</div>
+                            <div>
+                                <div className="text-xs font-bold text-sky-600 mb-1">第二种：{q.eachB} × {q.groupsB}</div>
+                                <GroupsBoard mode={mode} scene={q.sceneB} groupSpec={specB} />
+                            </div>
+                        </div>
+                    );
+                }
+                // div-pm：先画 sub 个（散放），变化时划掉 delta，再示意平均分
+                if (q.kind === 'div-pm') {
+                    const cut = q.sign === '-' ? q.delta : 0;
+                    const ans = sol.answer;
+                    if (!showChange) {
+                        return <div><div className="text-xs font-bold text-purple-600 mb-1">一开始：{q.sub} {q.unit}</div>
+                            <GroupsBoard mode={mode} scene={q.scene} groupSpec={[{ each:q.sub }]} /></div>;
+                    }
+                    // 平均分后的样子
+                    const spec = Array.from({ length: q.groups }).map(() => ({ each: ans }));
+                    return (
+                        <div className="space-y-3">
+                            <div><div className="text-xs font-bold text-red-600 mb-1">先去掉 {cut} {q.unit}：</div>
+                                <GroupsBoard mode={mode} scene={q.scene} groupSpec={[{ each:q.sub, accentFrom:q.sub-cut, itemAccent:'remove' }]} /></div>
+                            <div><div className="text-xs font-bold text-sky-600 mb-1">剩下的平均分成 {q.groups} 份：</div>
+                                <GroupsBoard mode={mode} scene={q.scene} groupSpec={spec} /></div>
+                        </div>
+                    );
+                }
+                // div-add：平均分成 groups 份，变化时每份加 delta
+                if (q.kind === 'div-add') {
+                    const each0 = q.total / q.groups;
+                    const spec = Array.from({ length: q.groups }).map(() => {
+                        if (!showChange) return { each: each0 };
+                        return { each: each0 + q.delta, accentFrom: each0, itemAccent:'add' };
+                    });
+                    return <div><div className="text-xs font-bold text-sky-600 mb-1">{q.total} {q.unit}平均分成 {q.groups} 份{showChange?`，每份再加 ${q.delta}`:''}：</div>
+                        <GroupsBoard mode={mode} scene={q.scene} groupSpec={spec} /></div>;
+                }
+                // chain：boxes 个大份，每个大份里有 perBox 个中份；变化时点开一个中份显示 perItem 个
+                if (q.kind === 'chain') {
+                    return (
+                        <div className="space-y-3">
+                            <div className="text-xs font-bold text-sky-600">{q.boxes} {q.boxName} × 每{q.boxName} {q.perBox} {q.midName} = {q.boxes*q.perBox} {q.midName}</div>
+                            <div className="flex flex-wrap gap-3">
+                                {Array.from({ length: q.boxes }).map((_, bi) => (
+                                    <div key={bi} className="group-in border-2 border-dashed border-sky-300 rounded-xl p-2 bg-sky-50/40" style={{animationDelay:(bi*0.1)+'s'}}>
+                                        <div className="text-[11px] text-sky-500 font-bold mb-1 text-center">第 {bi+1} {q.boxName}</div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {Array.from({ length: q.perBox }).map((_, mi) => (
+                                                <GroupCard key={mi} mode={mode} scene={q.scene} gi={mi}
+                                                    each={showChange ? q.perItem : 1}
+                                                    label={showChange && bi===0 && mi===0 ? `每${q.midName} ${q.perItem} ${q.unit}` : ''}
+                                                    highlightFirst={showChange && bi===0 && mi===0} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {showChange && <p className="text-sm text-gray-500">把每个{q.midName}里的 {q.perItem} {q.unit}都画出来：{q.boxes*q.perBox} 个{q.midName}，每{q.midName} {q.perItem} {q.unit}。</p>}
+                        </div>
+                    );
+                }
+                return null;
+            };
+
+            return (
+                <div className="fade-in">
+                    <div className="flex items-center justify-end mb-4 gap-1">
+                        <span className="text-sm text-gray-400 mr-1">画法</span>
+                        <button onClick={() => setMode('scene')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='scene'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500')}>实物</button>
+                        <button onClick={() => setMode('dot')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='dot'?'bg-pink-500 text-white':'bg-gray-100 text-gray-500')}>圆点</button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <HighlightStory story={q.story} keywords={q.keywords} active={step >= 1} />
+                    </div>
+
+                    {step >= 1 && (
+                        <div className="flex flex-wrap gap-2 mb-4 fade-in">
+                            {q.keywords.map((k, i) => (
+                                <span key={i} className={"px-2.5 py-1 rounded-lg border text-sm font-semibold " + KW_STYLE[k.type]}>
+                                    {ROLE_NAME[k.type]}：{k.text}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 mb-5 flex-wrap">
+                        {ADV_STEPS.map((sName, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-pink-500 text-white' : step > i ? 'bg-pink-100 text-pink-600' : 'bg-gray-100 text-gray-400')}>{sName}</div>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 180 }}>
+                        {step === 0 && (
+                            <div className="text-gray-500 text-center py-8">
+                                <p className="mb-2">这是一道<b className="text-pink-600">两步</b>题：要先算一步，再算一步。</p>
+                                <p className="text-sm">先想清楚哪一步在前。点"下一步"画出原来的样子 →</p>
+                            </div>
+                        )}
+                        {step >= 1 && board()}
+                        {step >= 1 && step < 3 && q.kind !== 'two-group' && q.kind !== 'chain' &&
+                            <p className="text-sm text-gray-400 mt-3">这是题目里"原来"的样子。下一步看看发生了什么变化 →</p>}
+                    </div>
+
+                    {step >= 3 && (
+                        <div className="bg-pink-50 rounded-xl p-5 mb-5 border border-pink-100 fade-in">
+                            <p className="text-gray-500 mb-3 text-sm">一步一步算：</p>
+                            {sol.steps.map((st, i) => (
+                                <div key={i} className="mb-2">
+                                    <p className="text-sm text-gray-600"><span className="inline-block w-5 font-bold text-pink-400">{i+1}.</span>{st.text}</p>
+                                    <p className="font-mono text-lg text-pink-700 ml-5">{st.expr}</p>
+                                </div>
+                            ))}
+                            <div className="mt-3 pt-3 border-t border-pink-200">
+                                <p className="text-sm text-gray-500 mb-1">合起来写成一个算式：</p>
+                                <p className="text-2xl font-bold font-mono text-pink-700">{sol.expr}</p>
+                            </div>
+                            <p className="text-sm text-gray-600 bg-white/60 rounded-lg p-3 mt-3">💡 {sol.tip}</p>
+                            <p className="mt-3 text-lg text-gray-700">答：{sol.answerText}</p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-3">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 3 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 3 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">从头再看一遍</button>}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 顶层
+        // ============================================================
+        const SideItem = ({ active, color, children, onClick }) => (
+            <button onClick={onClick}
+                className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth mb-1 flex items-center gap-2 " +
+                    (active ? color + ' text-white font-semibold' : 'text-gray-600 hover:bg-gray-100')}>
+                <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (active ? 'bg-white' : 'bg-gray-300')}></span>
+                {children}
+            </button>
+        );
+
+        // 进阶题在侧栏的分组（按方向）
+        const ADV_GROUPS = [
+            { title:'A 总量加减 · 乘加乘减', hint:'每份数 × 份数 ± 几', kinds:['total-pm'] },
+            { title:'B 份数加减',           hint:'每份数 × (份数 ± 几)', kinds:['groups-pm'] },
+            { title:'C 每份数加减',         hint:'(每份数 ± 几) × 份数', kinds:['each-pm'] },
+            { title:'D 两组合并',           hint:'a×b + c×d（分配律雏形）', kinds:['two-group'] },
+            { title:'E 除法两步',           hint:'先减后除 / 先除后加', kinds:['div-pm','div-add'] },
+            { title:'F 连乘',               hint:'每份里还有几个几 · a×b×c', kinds:['chain'] },
+        ];
+
+        const App = () => {
+            const [module, setModule] = useState('basic');   // 'basic' | 'advanced'
+            // 基础侧：sel = { kind:'total'|'groups'|'each'|'practice', i }
+            const [sel, setSel] = useState({ kind:'total', i:0 });
+            // 进阶侧：当前题在 ADVANCED 中的下标，或 'practice'
+            const [advSel, setAdvSel] = useState(0);
+            const [mode, setMode] = useState('scene');
+
+            const LISTS = { total: TOTAL_Q, groups: GROUPS_Q, each: EACH_Q };
+            const q = (module==='basic' && sel.kind !== 'practice') ? LISTS[sel.kind][sel.i] : null;
+            const advQ = (module==='advanced' && advSel !== 'practice') ? ADVANCED[advSel] : null;
+
+            const groupDef = [
+                { kind:'total',  title:'求总数 · 用乘法',   color:'bg-purple-500', hint:'每份数 × 份数 = ?' },
+                { kind:'groups', title:'求份数 · 用除法',   color:'bg-sky-500',    hint:'总数 ÷ 每份数 = ?（里面有几个几）' },
+                { kind:'each',   title:'求每份数 · 用除法', color:'bg-orange-500', hint:'总数 ÷ 份数 = ?（平均分）' },
+            ];
+
+            const ModuleTab = ({ id, label, hint, color }) => (
+                <button onClick={() => setModule(id)}
+                    className={"px-5 py-2 rounded-xl text-sm font-bold smooth border-2 " +
+                        (module===id ? color+' text-white border-transparent shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300')}>
+                    {label}<span className={"block text-[11px] font-normal " + (module===id?'text-white/80':'text-gray-400')}>{hint}</span>
+                </button>
+            );
+
+            return (
+                <div className="max-w-5xl mx-auto px-4 py-8">
+                    <header className="text-center mb-5">
+                        <h1 className="text-3xl font-bold text-gray-800">每份数 × 份数 = 总数</h1>
+                        <p className="text-gray-500 mt-2">读懂乘法 / 除法应用题：把"几个几"画成图，再列出算式</p>
+                        <div className="inline-flex items-center gap-2 mt-4 text-base font-bold">
+                            <span className="px-3 py-1.5 rounded-lg bg-orange-100 text-orange-700">每份数</span>
+                            <span className="text-gray-400">×</span>
+                            <span className="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700">份数</span>
+                            <span className="text-gray-400">=</span>
+                            <span className="px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700">总数</span>
+                        </div>
+                    </header>
+
+                    {/* 基础 / 进阶 模块切换 */}
+                    <div className="flex justify-center gap-3 mb-7">
+                        <ModuleTab id="basic"    label="基础"  hint="知二求一 · 一步" color="bg-purple-500" />
+                        <ModuleTab id="advanced" label="进阶"  hint="两步 · 加减乘除混合" color="bg-pink-500" />
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                        {/* 左侧题目列表 */}
+                        <aside className="w-full md:w-60 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:sticky md:top-6">
+                            {module === 'basic' && <>
+                                {groupDef.map(g => (
+                                    <div key={g.kind}>
+                                        <div className="px-2 pt-2 pb-1 text-xs font-bold text-gray-700 tracking-wide">{g.title}</div>
+                                        <div className="px-2 pb-1 text-[11px] text-gray-400">{g.hint}</div>
+                                        {LISTS[g.kind].map((qq, i) => (
+                                            <SideItem key={qq.id} color={g.color} active={sel.kind===g.kind && sel.i===i}
+                                                onClick={() => setSel({ kind:g.kind, i })}>
+                                                {SCENES[qq.scene].item} {qq.story.length > 16 ? qq.story.slice(0,15)+'…' : qq.story}
+                                            </SideItem>
+                                        ))}
+                                    </div>
+                                ))}
+                                <div className="px-2 pt-3 pb-2 text-xs font-bold text-green-600 tracking-wide">练习</div>
+                                <button onClick={() => setSel({ kind:'practice' })}
+                                    className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth flex items-center gap-2 " +
+                                        (sel.kind === 'practice' ? 'bg-green-500 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100')}>
+                                    <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (sel.kind === 'practice' ? 'bg-white' : 'bg-green-400')}></span>
+                                    我来试试 · 判分
+                                </button>
+                            </>}
+
+                            {module === 'advanced' && <>
+                                {ADV_GROUPS.map(g => (
+                                    <div key={g.title}>
+                                        <div className="px-2 pt-2 pb-1 text-xs font-bold text-gray-700 tracking-wide">{g.title}</div>
+                                        <div className="px-2 pb-1 text-[11px] text-gray-400">{g.hint}</div>
+                                        {ADVANCED.map((qq, i) => g.kinds.includes(qq.kind) ? (
+                                            <SideItem key={qq.id} color="bg-pink-500" active={advSel === i}
+                                                onClick={() => setAdvSel(i)}>
+                                                {SCENES[qq.scene].item} {qq.story.length > 16 ? qq.story.slice(0,15)+'…' : qq.story}
+                                            </SideItem>
+                                        ) : null)}
+                                    </div>
+                                ))}
+                            </>}
+                        </aside>
+
+                        {/* 右侧主区 */}
+                        <main className="flex-1 min-w-0 w-full">
+                            {module === 'basic'
+                                ? (sel.kind === 'practice'
+                                    ? <PracticeMode />
+                                    : <Demo q={q} ask={sel.kind} mode={mode} setMode={setMode} />)
+                                : <AdvancedDemo q={advQ} mode={mode} setMode={setMode} />}
+                        </main>
+                    </div>
+
+                    <footer className="text-center text-gray-400 text-sm mt-10">
+                        Math101 · 乘法结构可视化 · 适用人教版二 / 三年级（表内乘除法 · 两步解决问题）
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

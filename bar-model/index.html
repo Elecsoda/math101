@@ -176,6 +176,278 @@
         ];
 
         // ============================================================
+        // 终极挑战题库（每题自带：关键词高亮 / 分步解法 / 专属画图）
+        // kind 统一为 'ultimate'，用 id 区分画图样式
+        // ============================================================
+        const ULTIMATE = [
+            {
+                id: 'chalk', label: '终极①·粉笔总价', unit: '元',
+                story: '学校买了 6 箱白粉笔和 3 箱彩色粉笔，共用去 630 元。已知每箱彩色粉笔比每箱白粉笔贵 30 元。每箱彩色粉笔和每箱白粉笔各多少元？',
+                keywords: [ {text:'6 箱白粉笔', type:'num'}, {text:'3 箱彩色粉笔', type:'num'}, {text:'共用去 630 元', type:'total'}, {text:'贵 30 元', type:'more'} ],
+                steps: [
+                    '把 3 箱彩色粉笔都换成白粉笔，价钱要各减 30 元，一共减少 3 × 30 = 90（元）。',
+                    '这时 9 箱全是白粉笔，总价变成 630 − 90 = 540（元）。',
+                    '每箱白粉笔：540 ÷ 9 = 60（元）。',
+                    '每箱彩色粉笔：60 + 30 = 90（元）。',
+                ],
+                answer: '每箱白粉笔 60 元，每箱彩色粉笔 90 元。',
+            },
+            {
+                id: 'shelf', label: '终极②·书架转移', unit: '本',
+                story: '有两个书架，甲书架比乙书架多 40 本书。如果从甲书架拿 5 本放入乙书架，此时甲书架的书是乙书架的 3 倍。原来甲、乙两个书架各有多少本书？',
+                keywords: [ {text:'多 40 本', type:'more'}, {text:'拿 5 本放入乙', type:'less'}, {text:'是乙书架的 3 倍', type:'times'} ],
+                steps: [
+                    '甲拿 5 本给乙后，甲少了 5、乙多了 5，两者相差变成 40 − 5 − 5 = 30（本）。',
+                    '这时甲是乙的 3 倍，相差的 30 本正好是 3 − 1 = 2 份。',
+                    '现在的乙：30 ÷ 2 = 15（本）；现在的甲：15 × 3 = 45（本）。',
+                    '原来的乙：15 − 5 = 10（本）；原来的甲：45 + 5 = 50（本）。',
+                ],
+                answer: '原来甲书架 50 本，乙书架 10 本。',
+            },
+            {
+                id: 'money', label: '终极③·你给我给', unit: '元',
+                story: '小通和小虎各有一笔钱。如果小通拿 80 元给小虎，两人的钱就同样多；如果小虎给小通 70 元，小通的钱就是小虎的 3 倍。请问他们原来各有多少钱？',
+                keywords: [ {text:'拿 80 元给小虎', type:'less'}, {text:'同样多', type:'total'}, {text:'给小通 70 元', type:'more'}, {text:'是小虎的 3 倍', type:'times'} ],
+                steps: [
+                    '小通给小虎 80 元后两人一样多，说明原来小通比小虎多 80 + 80 = 160（元）。',
+                    '小虎给小通 70 元后，小通比小虎多了 160 + 70 + 70 = 300（元）。',
+                    '这时小通是小虎的 3 倍，多出的 300 元正好是 3 − 1 = 2 份。',
+                    '此时小虎：300 ÷ 2 = 150（元），小通：150 × 3 = 450（元）。',
+                    '原来小虎：150 + 70 = 220（元）；原来小通：450 − 70 = 380（元）。',
+                ],
+                answer: '原来小通 380 元，小虎 220 元。',
+            },
+            {
+                id: 'class', label: '终极④·三班调人', unit: '人',
+                story: '三年级有甲、乙、丙三个班，一共 162 人。如果从甲班转 2 人到乙班，则甲、乙两班人数相同；如果再从丙班转 3 人到乙班，则乙、丙两班人数相同。甲班原来有多少人？',
+                keywords: [ {text:'一共 162 人', type:'total'}, {text:'转 2 人到乙班', type:'less'}, {text:'甲、乙两班人数相同', type:'morewh'}, {text:'转 3 人到乙班', type:'less'}, {text:'乙、丙两班人数相同', type:'morewh'} ],
+                steps: [
+                    '甲转 2 人给乙后两班相等，说明甲比乙多 2 + 2 = 4（人）。',
+                    '再从丙转 3 人给乙后乙、丙相等。把乙看作基准：甲 = 乙 + 4，丙 = 乙 + 8（人）。',
+                    '三班合起来：乙 + 4 + 乙 + 乙 + 8 = 162，即 3 个乙 + 12 = 162。',
+                    '乙班：(162 − 12) ÷ 3 = 50（人）。',
+                    '甲班：50 + 4 = 54（人）。',
+                ],
+                answer: '甲班原来有 54 人。（乙班 50 人，丙班 58 人）',
+            },
+            {
+                id: 'subtract', label: '终极⑤·减法三数', unit: '',
+                story: '一个减法算式，被减数、减数与差的和等于 120，减数是差的 3 倍，那么差是多少？',
+                keywords: [ {text:'被减数、减数与差的和等于 120', type:'total'}, {text:'减数是差的 3 倍', type:'times'} ],
+                steps: [
+                    '减法里：被减数 = 减数 + 差，所以被减数刚好等于"减数 + 差"。',
+                    '三个数相加 = (减数 + 差) + 减数 + 差 = 2 个被减数 = 120，被减数 = 60。',
+                    '减数 + 差 = 60，又知减数是差的 3 倍，于是差 + 3 个差 = 4 份 = 60。',
+                    '差：60 ÷ 4 = 15。（减数 = 45，被减数 = 60）',
+                ],
+                answer: '差是 15。',
+            },
+            {
+                id: 'pieces', label: '终极⑥·棋子搬家', unit: '个',
+                story: '有两堆棋子，第一堆有 87 个，第二堆有 69 个。从第一堆拿多少个棋子到第二堆，就能使第二堆棋子数是第一堆的 3 倍？',
+                keywords: [ {text:'第一堆有 87 个', type:'num'}, {text:'第二堆有 69 个', type:'num'}, {text:'第二堆棋子数是第一堆的 3 倍', type:'times'} ],
+                steps: [
+                    '搬来搬去，两堆的总数不变：87 + 69 = 156（个）。',
+                    '搬完后第二堆是第一堆的 3 倍，总数正好是 1 + 3 = 4 份。',
+                    '搬完后第一堆：156 ÷ 4 = 39（个）；第二堆：39 × 3 = 117（个）。',
+                    '要从第一堆拿走：87 − 39 = 48（个）。',
+                ],
+                answer: '从第一堆拿 48 个到第二堆。',
+            },
+        ];
+
+        // ============================================================
+        // 年龄问题题库（同样：关键词高亮 / 分步解法 / 专属画图）
+        // 关键：两人年龄差永远不变！这是解年龄题的"法宝"。
+        // ============================================================
+        const AGE = [
+            {
+                id: 'mother', label: '年龄①·母子年龄', unit: '岁',
+                story: '6 年前，母亲的年龄是儿子的 5 倍。5 年后，母子年龄和是 76 岁。母亲今年多少岁？',
+                keywords: [ {text:'6 年前', type:'less'}, {text:'是儿子的 5 倍', type:'times'}, {text:'5 年后', type:'more'}, {text:'年龄和是 76 岁', type:'total'} ],
+                steps: [
+                    '把时间倒回到 6 年前来想：那时母亲是儿子的 5 倍。',
+                    '5 年后两人年龄和是 76 岁，每人都长了 5 岁，倒回到今年要各减 5 岁：今年和 = 76 − 5 − 5 = 66（岁）。',
+                    '再倒回 6 年前，每人各减 6 岁：那时的年龄和 = 66 − 6 − 6 = 54（岁）。',
+                    '6 年前母是子的 5 倍，和正好是 5 + 1 = 6 份：儿子(6 年前) = 54 ÷ 6 = 9（岁）。',
+                    '母亲(6 年前) = 9 × 5 = 45（岁）；母亲今年 = 45 + 6 = 51（岁）。',
+                ],
+                answer: '母亲今年 51 岁。',
+            },
+            {
+                id: 'wangli', label: '年龄②·错时年龄', unit: '岁',
+                story: '王燕 3 年前的年龄等于李龙 3 年后的年龄。王燕 4 年前和李龙 5 年后的年龄和是 41 岁。王燕和李龙今年各多少岁？',
+                keywords: [ {text:'王燕 3 年前', type:'less'}, {text:'等于李龙 3 年后', type:'morewh'}, {text:'王燕 4 年前', type:'less'}, {text:'李龙 5 年后', type:'more'}, {text:'和是 41 岁', type:'total'} ],
+                steps: [
+                    '王燕 3 年前 = 李龙 3 年后，说明王燕比李龙大 3 + 3 = 6（岁）。这个差永远不变。',
+                    '把"王燕 4 年前"和"李龙 5 年后"都换回今年：41 = (王燕 − 4) + (李龙 + 5) = 王燕 + 李龙 + 1。',
+                    '所以王燕 + 李龙(今年) = 41 − 1 = 40（岁）。',
+                    '已知王燕比李龙大 6 岁：李龙 = (40 − 6) ÷ 2 = 17（岁）。',
+                    '王燕 = 17 + 6 = 23（岁）。',
+                ],
+                answer: '王燕今年 23 岁，李龙今年 17 岁。',
+            },
+            {
+                id: 'brothers', label: '年龄③·哥弟年龄', unit: '岁',
+                story: '兄弟俩今年的年龄和是 30 岁。当哥哥像弟弟现在这样大时，弟弟的年龄恰好是哥哥年龄的一半。哥哥今年多少岁？',
+                keywords: [ {text:'年龄和是 30 岁', type:'total'}, {text:'当哥哥像弟弟现在这样大时', type:'less'}, {text:'是哥哥年龄的一半', type:'times'} ],
+                steps: [
+                    '"当哥哥像弟弟现在这样大时"，就是把时间倒回 (哥 − 弟) 年。那时哥哥 = 弟弟现在的年龄。',
+                    '年龄差不变。那时弟弟是哥哥的一半，也就是弟弟(那时) = 弟弟现在 ÷ 2，少掉的正好是一个年龄差。',
+                    '所以"年龄差"= 弟弟现在年龄的一半，即弟弟现在 = 2 个年龄差。',
+                    '于是哥哥 = 弟弟 + 差 = 3 个差，弟弟 = 2 个差，两人和 = 5 个差 = 30，差 = 6（岁）。',
+                    '哥哥今年 = 3 × 6 = 18（岁）。（弟弟 12 岁）',
+                ],
+                answer: '哥哥今年 18 岁。',
+            },
+        ];
+
+        // ============================================================
+        // 归一问题题库（先求"一份/单位量"，再按需要倍数）
+        // ============================================================
+        const NORM = [
+            {
+                id: 'flag', label: '归一①·制作彩旗', unit: '人',
+                story: '3 个同学 2 小时可以制作 120 面彩旗。如果要在 2.5 小时内制作 500 面彩旗，需要安排多少个同学？',
+                keywords: [ {text:'3 个同学 2 小时', type:'num'}, {text:'120 面彩旗', type:'num'}, {text:'2.5 小时', type:'num'}, {text:'500 面彩旗', type:'total'} ],
+                steps: [
+                    '先求"1 个同学 1 小时"做几面（这就是归一的"一份"）：120 ÷ 3 ÷ 2 = 20（面）。',
+                    '2.5 小时里，1 个同学能做：20 × 2.5 = 50（面）。',
+                    '要做 500 面，需要的同学数：500 ÷ 50 = 10（人）。',
+                ],
+                answer: '需要安排 10 个同学。',
+            },
+            {
+                id: 'save', label: '归一②·攒钱买书架', unit: '个月',
+                story: '聪聪如果每月攒 66 元，攒一年的钱正好可以买一个书架。如果每月攒 99 元，可以少攒几个月？',
+                keywords: [ {text:'每月攒 66 元', type:'num'}, {text:'攒一年', type:'num'}, {text:'每月攒 99 元', type:'num'}, {text:'少攒几个月', type:'morewh'} ],
+                steps: [
+                    '先求"总价"（这就是不变的总量）：66 × 12 = 792（元）。',
+                    '每月攒 99 元，需要的月数：792 ÷ 99 = 8（个月）。',
+                    '可以少攒：12 − 8 = 4（个月）。',
+                ],
+                answer: '可以少攒 4 个月。',
+            },
+            {
+                id: 'banana', label: '归一③·猩猩吃香蕉', unit: '个',
+                story: '6 只猩猩 8 天吃 24 个香蕉，按这样的速度，9 只猩猩 10 天吃多少个香蕉？',
+                keywords: [ {text:'6 只猩猩 8 天', type:'num'}, {text:'24 个香蕉', type:'num'}, {text:'9 只猩猩 10 天', type:'num'} ],
+                steps: [
+                    '先求"1 只猩猩 1 天"吃几个（一份）：24 ÷ 6 ÷ 8 = 0.5（个）。',
+                    '9 只猩猩 1 天吃：0.5 × 9 = 4.5（个）。',
+                    '9 只猩猩 10 天吃：4.5 × 10 = 45（个）。',
+                ],
+                answer: '9 只猩猩 10 天吃 45 个香蕉。',
+            },
+            {
+                id: 'walk', label: '归一④·上学路程', unit: '分钟',
+                story: '赵老师从家到学校，平时每分钟走 72 米，12 分钟可以到学校。有一天他比平时每分钟多走 24 米，这次多长时间就能到学校？',
+                keywords: [ {text:'每分钟走 72 米', type:'num'}, {text:'12 分钟', type:'num'}, {text:'多走 24 米', type:'more'} ],
+                steps: [
+                    '先求不变的"总路程"：72 × 12 = 864（米）。',
+                    '这次的速度：72 + 24 = 96（米/分）。',
+                    '这次用的时间：864 ÷ 96 = 9（分钟）。',
+                ],
+                answer: '这次 9 分钟就能到学校。',
+            },
+        ];
+
+        // ============================================================
+        // 间隔问题题库（植树 / 排队 / 方阵 / 爬楼梯）
+        // ============================================================
+        const GAP = [
+            {
+                id: 'lamp', label: '间隔①·路灯位置', unit: '个',
+                story: '一条长 2400 米的公路一旁安装路灯（两头都装），原来每 6 米装一个，灯位已预留好。现在改为每 8 米装一个，共有多少个路灯的预留位置不需要重新预留？',
+                keywords: [ {text:'长 2400 米', type:'num'}, {text:'两头都装', type:'morewh'}, {text:'每 6 米', type:'num'}, {text:'每 8 米', type:'num'} ],
+                steps: [
+                    '"不需要重新预留"的位置，就是原来 6 米一个、改后 8 米一个都正好落上的位置。',
+                    '这种位置到起点的距离，既是 6 的倍数，又是 8 的倍数，也就是 6 和 8 的最小公倍数 24 的倍数。',
+                    '从 0 米到 2400 米，每 24 米一个：2400 ÷ 24 = 100（段）。',
+                    '两头都装（含起点 0 米），位置个数 = 段数 + 1 = 100 + 1 = 101（个）。',
+                ],
+                answer: '有 101 个预留位置不需要重新预留。',
+            },
+            {
+                id: 'ringflag', label: '间隔②·环形彩旗', unit: '米',
+                story: '400 米环形跑道边每隔 16 米插一杆彩旗，共插 25 杆。后来增加彩旗、缩短间隔，起点的彩旗不动，重新插完后有 5 杆彩旗没动。现在相邻两杆彩旗的间隔是多少米？',
+                keywords: [ {text:'400 米环形', type:'num'}, {text:'每隔 16 米', type:'num'}, {text:'缩短间隔', type:'less'}, {text:'5 杆彩旗没动', type:'morewh'} ],
+                steps: [
+                    '环形上，没动的彩旗是新旧两次都插中的位置，它们沿跑道均匀分布。',
+                    '5 杆没动，说明这些位置把 400 米平均分成 5 段：400 ÷ 5 = 80（米）一段。',
+                    '所以 80 米既是旧间隔 16 的倍数（80 ÷ 16 = 5），又是新间隔的倍数。',
+                    '新间隔要比 16 小、又要能整除 80 和 400，且让彩旗变多——10 米正合适（400 ÷ 10 = 40 杆，比原来 25 杆多）。',
+                ],
+                answer: '现在相邻两杆彩旗的间隔是 10 米。',
+            },
+            {
+                id: 'square', label: '间隔③·表演方阵', unit: '人',
+                story: '四年级同学组成 4 个表演方阵，每个方阵排成 6 行、每行 6 人，最外面一圈是男生，其余是女生。四年级参加表演的男生有多少人？女生呢？',
+                keywords: [ {text:'4 个表演方阵', type:'num'}, {text:'6 行、每行 6 人', type:'num'}, {text:'最外面一圈是男生', type:'morewh'} ],
+                steps: [
+                    '一个方阵共 6 × 6 = 36（人）。',
+                    '最外一圈人数 = 每边 6 人 × 4 边 − 4 个重复数的角 = 6 × 4 − 4 = 20（男）。',
+                    '里面的女生 = 36 − 20 = 16（女）。也可看作里面是 4 × 4 的方阵：4 × 4 = 16。',
+                    '4 个方阵：男生 20 × 4 = 80（人），女生 16 × 4 = 64（人）。',
+                ],
+                answer: '男生 80 人，女生 64 人。',
+            },
+            {
+                id: 'stairs', label: '间隔④·爬楼梯', unit: '层',
+                story: '甲、乙两人比赛爬楼梯，甲跑到 4 层时，乙恰好跑到 3 层。照这样计算，甲跑到 16 层时，乙跑到多少层？',
+                keywords: [ {text:'甲跑到 4 层', type:'num'}, {text:'乙恰好跑到 3 层', type:'num'}, {text:'甲跑到 16 层', type:'num'} ],
+                steps: [
+                    '关键：爬到几层，爬的是"层数 − 1"段楼梯。甲到 4 层爬了 3 段，乙到 3 层爬了 2 段。',
+                    '同样的时间里，甲爬 3 段、乙爬 2 段，速度比是 3 : 2。',
+                    '甲到 16 层时爬了 16 − 1 = 15（段）。',
+                    '乙爬的段数：15 ÷ 3 × 2 = 10（段），所以乙在第 10 + 1 = 11（层）。',
+                ],
+                answer: '甲跑到 16 层时，乙跑到 11 层。',
+            },
+        ];
+
+        // ============================================================
+        // 移多补少 / 平均数题库（把"多的"匀给"少的"）
+        // ============================================================
+        const MOVE = [
+            {
+                id: 'candy', label: '移多补少①·分糖果', unit: '次',
+                story: '妈妈分给哥哥 40 块糖果，分给弟弟 16 块。哥哥每次给弟弟 4 块，多少次后两人的糖果同样多？',
+                keywords: [ {text:'哥哥 40 块', type:'num'}, {text:'弟弟 16 块', type:'num'}, {text:'每次给弟弟 4 块', type:'less'}, {text:'同样多', type:'morewh'} ],
+                steps: [
+                    '一开始相差：40 − 16 = 24（块）。',
+                    '哥哥每给出 4 块，自己少 4、弟弟多 4，差就缩小 4 + 4 = 8（块）。',
+                    '要把 24 块的差全部抹平：24 ÷ 8 = 3（次）。',
+                    '验证：3 次后哥哥 40 − 12 = 28，弟弟 16 + 12 = 28，一样多。',
+                ],
+                answer: '3 次后两人的糖果同样多。',
+            },
+            {
+                id: 'bag', label: '移多补少②·两袋糖', unit: '次',
+                story: '有两袋糖，第一袋比第二袋多 16 块。每次从第一袋拿 4 块放入第二袋，需要拿多少次才能使两袋一样多？',
+                keywords: [ {text:'多 16 块', type:'more'}, {text:'拿 4 块放入第二袋', type:'less'}, {text:'一样多', type:'morewh'} ],
+                steps: [
+                    '两袋相差 16 块。',
+                    '每拿 4 块过去，第一袋少 4、第二袋多 4，差缩小 4 + 4 = 8（块）。',
+                    '抹平 16 块的差：16 ÷ 8 = 2（次）。',
+                ],
+                answer: '需要拿 2 次。',
+            },
+            {
+                id: 'average', label: '移多补少③·平均成绩', unit: '次',
+                story: '明明前几次自测的平均成绩是 84 分，这次只有达到 100 分，才能把平均成绩提高到 86 分。这是他第几次自测？',
+                keywords: [ {text:'平均成绩是 84 分', type:'num'}, {text:'这次只有达到 100 分', type:'num'}, {text:'提高到 86 分', type:'total'} ],
+                steps: [
+                    '这次考 100 分，比新平均 86 分高出 100 − 86 = 14（分），这 14 分要"补"给前面几次。',
+                    '前面每一次都从 84 提到 86，每次需要补 86 − 84 = 2（分）。',
+                    '前面的次数：14 ÷ 2 = 7（次）。',
+                    '算上这一次：7 + 1 = 8（次）。',
+                ],
+                answer: '这是他第 8 次自测。',
+            },
+        ];
+
+        // ============================================================
         // 关键词高亮：把题干中的关键短语标注颜色
         // ============================================================
         const KW_STYLE = {
@@ -619,6 +891,385 @@
         }
 
         // ============================================================
+        // 终极挑战：每题分步讲解 + 专属"分份/转移"示意图
+        // ============================================================
+        // 一行"分份条"：n 份，每份 part 个方块（line 模式用一整条）
+        const PartBar = ({ name, nameColor, n, part, color, mode, tail }) => (
+            <div className="flex items-center gap-3 mb-3">
+                <div className={"w-16 text-right font-bold shrink-0 " + nameColor}>{name}</div>
+                <div className="flex items-center">
+                    {Array.from({ length: n }).map((_, i) => (
+                        <div key={i} className="flex items-center">
+                            {mode === 'line'
+                                ? <div className={"h-2 rounded " + color} style={{ width: part * UNIT }}></div>
+                                : Array.from({ length: part }).map((_, ci) => <ColorCell key={ci} color={color} />)}
+                            {i < n - 1 && <span className="mx-1 text-gray-300 font-bold">|</span>}
+                        </div>
+                    ))}
+                    {tail}
+                </div>
+            </div>
+        );
+
+        // 每道终极题的"最后状态"示意图（以倍数关系画分份；part 取较易看的小份数）
+        function buildUltimateBars(q, step, mode) {
+            const cA = COLORS.A, cB = COLORS.B;
+            const small = 4; // 统一用 4 个方块代表"1 份"，保证画面整齐
+            const tag = (text, color) => <span className={"ml-2 text-sm font-semibold " + color}>{text}</span>;
+
+            if (q.id === 'chalk') {
+                // 9 箱白粉笔 + 3 个"贵 30 元"，凑成同样的"每箱白粉笔"
+                return (
+                    <div>
+                        <PartBar name="白粉笔" nameColor={cA.text} n={6} part={small} color={cA.bar} mode={mode}
+                            tail={tag('6 箱', cA.text)} />
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={"w-16 text-right font-bold shrink-0 " + cB.text}>彩色</div>
+                            <div className="flex items-center">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="flex items-center">
+                                        {mode === 'line'
+                                            ? <div className={"h-2 rounded " + cB.bar} style={{ width: small * UNIT }}></div>
+                                            : Array.from({ length: small }).map((_, ci) => <ColorCell key={ci} color={cB.bar} />)}
+                                        {step >= 2 && <span className="ml-0.5 mr-0.5"><Cell dashed /></span>}
+                                        {i < 2 && <span className="mx-1 text-gray-300 font-bold">|</span>}
+                                    </div>
+                                ))}
+                                {tag('3 箱', cB.text)}
+                            </div>
+                        </div>
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">虚线格 = 彩色比白色每箱贵的 30 元。把 3 个虚线去掉（−90 元），9 箱就都是白粉笔了。</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'pieces' || q.id === 'shelf' || q.id === 'money') {
+                // 倍数关系图：小数 1 份、大数 3 份；差/和用括号标注
+                const map = {
+                    pieces: { sName: '第一堆', bName: '第二堆', brace: '一共 156 个 = 4 份', braceColor: 'text-green-600', kind: 'sum' },
+                    shelf:  { sName: '乙(现)', bName: '甲(现)', brace: '相差 30 本 = 2 份', braceColor: 'text-amber-600', kind: 'diff' },
+                    money:  { sName: '小虎(现)', bName: '小通(现)', brace: '相差 300 元 = 2 份', braceColor: 'text-amber-600', kind: 'diff' },
+                };
+                const m = map[q.id];
+                return (
+                    <div>
+                        <PartBar name={m.sName} nameColor={cB.text} n={1} part={small} color={cB.bar} mode={mode}
+                            tail={step >= 2 ? tag('1 份', 'text-rose-500') : null} />
+                        <PartBar name={m.bName} nameColor={cA.text} n={3} part={small} color={cA.bar} mode={mode}
+                            tail={step >= 2 ? tag('3 份', 'text-blue-500') : null} />
+                        {step >= 2 && (m.kind === 'sum'
+                            ? <Brace widthUnits={4 * small} label={m.brace} color={m.braceColor} />
+                            : <Brace widthUnits={2 * small} offsetUnits={small} label={m.brace} color={m.braceColor} />)}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">{q.id === 'pieces'
+                            ? '搬完后两堆总数没变，正好分成 4 份，第一堆 1 份、第二堆 3 份。'
+                            : '变化后大数是小数的 3 倍，两者相差正好是 3 − 1 = 2 份。'}</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'class') {
+                // 以乙为基准：乙 / 甲=乙+4 / 丙=乙+8
+                const baseN = small;
+                const row = (name, color, nameColor, extra, extraLabel) => (
+                    <BarRow name={name} nameColor={nameColor} mode={mode}
+                        segments={extra > 0
+                            ? [{ value: baseN, color }, { value: extra, color, dashed: step >= 2, label: step >= 2 ? extraLabel : '' }]
+                            : [{ value: baseN, color, label: step >= 2 ? '乙(基准)' : '' }]} />
+                );
+                return (
+                    <div>
+                        {row('乙班', cB.bar, cB.text, 0)}
+                        {row('甲班', cA.bar, cA.text, 1, '多 4 人')}
+                        {row('丙班', COLORS.diff.bar, COLORS.diff.text, 2, '多 8 人')}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">把乙班看作 1 段：甲班比乙多 4 人，丙班比乙多 8 人。三段合起来 = 162 人。</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'subtract') {
+                // 被减数 = 减数 + 差；减数 = 3 份、差 = 1 份
+                return (
+                    <div>
+                        <BarRow name="差" nameColor={cB.text} mode={mode}
+                            segments={[{ value: small, color: cB.bar, label: step >= 2 ? '1 份' : '' }]} />
+                        <PartBar name="减数" nameColor={cA.text} n={3} part={small} color={cA.bar} mode={mode}
+                            tail={step >= 2 ? tag('3 份', 'text-blue-500') : null} />
+                        <BarRow name="被减数" nameColor={COLORS.diff.text} mode={mode}
+                            segments={[{ value: 3 * small, color: COLORS.diff.bar }, { value: small, color: COLORS.diff.bar, label: step >= 2 ? '= 减数 + 差' : '' }]} />
+                        {step >= 2 && <Brace widthUnits={4 * small} label="减数 + 差 = 被减数 = 60" color="text-green-600" />}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">被减数 = 减数 + 差，所以三数之和 = 2 个被减数 = 120。减数(3 份) + 差(1 份) = 4 份。</p>}
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        // 年龄问题的专属示意图（核心：年龄差不变）
+        function buildAgeBars(q, step, mode) {
+            const cA = COLORS.A, cB = COLORS.B;
+            const small = 4;
+            const tag = (text, color) => <span className={"ml-2 text-sm font-semibold " + color}>{text}</span>;
+
+            if (q.id === 'mother') {
+                // 6 年前：母 5 份、子 1 份，和 = 6 份
+                return (
+                    <div>
+                        <p className="text-sm text-gray-500 mb-3 font-semibold">↩ 倒回到 6 年前来看：</p>
+                        <PartBar name="儿子" nameColor={cB.text} n={1} part={small} color={cB.bar} mode={mode}
+                            tail={step >= 2 ? tag('1 份', 'text-rose-500') : null} />
+                        <PartBar name="母亲" nameColor={cA.text} n={5} part={small} color={cA.bar} mode={mode}
+                            tail={step >= 2 ? tag('5 份', 'text-blue-500') : null} />
+                        {step >= 2 && <Brace widthUnits={6 * small} label="6 年前年龄和 54 岁 = 6 份" color="text-green-600" />}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">先把 76 岁倒回今年(−10)、再倒回 6 年前(−12)得 54 岁，那时母是子的 5 倍，和 = 6 份。</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'wangli') {
+                // 王燕比李龙大 6 岁（差不变）：和差问题
+                return (
+                    <div>
+                        <BarRow name="李龙" nameColor={cB.text} mode={mode}
+                            segments={[{ value: small, color: cB.bar, label: step >= 2 ? '小' : '' }]} />
+                        <BarRow name="王燕" nameColor={cA.text} mode={mode}
+                            segments={[{ value: small, color: cA.bar }, { value: 1, color: cA.bar, dashed: step >= 2, label: step >= 2 ? '大 6 岁' : '' }]} />
+                        {step >= 2 && <Brace widthUnits={2 * small + 1} label="今年两人年龄和 40 岁" color="text-green-600" />}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">年龄差永远是 6 岁；把题里的年龄都换回今年，和 = 40 岁。这就是和差问题。</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'brothers') {
+                // 哥 = 3 份、弟 = 2 份，差 = 1 份；和 = 5 份
+                return (
+                    <div>
+                        <PartBar name="弟弟" nameColor={cB.text} n={2} part={small} color={cB.bar} mode={mode}
+                            tail={step >= 2 ? tag('2 份', 'text-rose-500') : null} />
+                        <PartBar name="哥哥" nameColor={cA.text} n={3} part={small} color={cA.bar} mode={mode}
+                            tail={step >= 2 ? tag('3 份', 'text-blue-500') : null} />
+                        {step >= 2 && <Brace widthUnits={5 * small} label="年龄和 30 岁 = 5 份" color="text-green-600" />}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">年龄差 = 弟弟的一半，把一份差当 1 段：弟弟 = 2 份、哥哥 = 3 份，合起来 5 份 = 30 岁。</p>}
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        // 归一问题示意图：突出"先求一份"
+        function buildNormBars(q, step, mode) {
+            const cA = COLORS.A, cB = COLORS.B;
+            const data = {
+                flag:   { whole: '3 个同学 · 2 小时 → 120 面', one: '1 人 · 1 小时 → 20 面', want: '10 人 · 2.5 小时 → 500 面' },
+                save:   { whole: '每月 66 元 × 12 月 → 792 元', one: '总价 792 元（不变）', want: '792 ÷ 99 = 8 个月，少 4 个月' },
+                banana: { whole: '6 只 · 8 天 → 24 个', one: '1 只 · 1 天 → 0.5 个', want: '9 只 · 10 天 → 45 个' },
+                walk:   { whole: '72 米/分 × 12 分 → 864 米', one: '总路程 864 米（不变）', want: '864 ÷ 96 = 9 分钟' },
+            }[q.id];
+            const line = (label, text, color) => (
+                <div className="flex items-center gap-3 mb-3">
+                    <div className={"w-20 text-right font-bold shrink-0 text-sm " + color}>{label}</div>
+                    <div className={"px-3 py-2 rounded-lg text-base font-mono " + (color === 'text-gray-400' ? 'bg-gray-50 text-gray-500' : 'bg-white border')}>{text}</div>
+                </div>
+            );
+            return (
+                <div>
+                    {line('已知', data.whole, cA.text)}
+                    {step >= 2 && line('归一·一份', data.one, 'text-amber-600')}
+                    {step >= 3 && line('求', data.want, cB.text)}
+                    {step >= 2 && <p className="text-sm text-gray-400 mt-1">归一问题的关键：先算出"一份"（每人每小时 / 总价 / 每只每天 / 总路程），再用它去求要的答案。</p>}
+                </div>
+            );
+        }
+
+        // 间隔问题示意图：植树两头都装 / 方阵外圈 / 爬楼梯段数
+        function buildGapBars(q, step, mode) {
+            const cA = COLORS.A;
+            if (q.id === 'lamp' || q.id === 'ringflag') {
+                // 用一排点表示"间隔点"，强调点数 = 段数(±1)
+                const dots = 7;
+                return (
+                    <div>
+                        <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            {Array.from({ length: dots }).map((_, i) => (
+                                <div key={i} className="flex items-center">
+                                    <div className={"w-4 h-4 rounded-full " + cA.bar}></div>
+                                    {i < dots - 1 && <div className="w-8 h-0.5 bg-gray-300 mx-1"></div>}
+                                </div>
+                            ))}
+                        </div>
+                        {step >= 2 && <p className="text-sm text-gray-600">{q.id === 'lamp'
+                            ? '一条路两头都装：点数 = 段数 + 1。能"共用"的位置在 6 与 8 的公倍数（24 米）处。'
+                            : '环形一圈：点数 = 段数。没动的彩旗把 400 米平均分成 5 段，每段 80 米。'}</p>}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">{q.id === 'lamp'
+                            ? '2400 ÷ 24 = 100 段，两头都装 → 100 + 1 = 101 个位置。'
+                            : '80 米既是 16 的倍数、又要被新间隔整除，且彩旗更多 → 新间隔 10 米。'}</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'square') {
+                // 6x6 方阵：外圈红(男)、内部蓝(女)
+                const N = 6;
+                return (
+                    <div>
+                        <div className="inline-block">
+                            {Array.from({ length: N }).map((_, r) => (
+                                <div key={r} className="flex">
+                                    {Array.from({ length: N }).map((_, c) => {
+                                        const edge = r === 0 || r === N - 1 || c === 0 || c === N - 1;
+                                        return <div key={c} className={"rounded-sm border border-white/60 " + (edge ? COLORS.B.bar : COLORS.A.bar)}
+                                            style={{ width: 22, height: 22, margin: 2 }}></div>;
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                        {step >= 2 && <p className="text-sm text-gray-600 mt-2">
+                            <span className="inline-block w-3 h-3 rounded-sm align-middle mr-1" style={{ background: '#f43f5e' }}></span>外圈男生 = 6×4 − 4 = 20 人
+                            <span className="inline-block w-3 h-3 rounded-sm align-middle mr-1 ml-3" style={{ background: '#3b82f6' }}></span>里面女生 = 4×4 = 16 人</p>}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">这是一个方阵；4 个方阵：男 20×4 = 80 人，女 16×4 = 64 人。</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'stairs') {
+                // 楼层数 vs 段数
+                const floors = (n, color, name) => (
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className={"w-12 text-right font-bold shrink-0 " + color}>{name}</div>
+                        <div className="flex items-end">
+                            {Array.from({ length: n }).map((_, i) => (
+                                <div key={i} className={"border border-white/60 " + (color.includes('blue') ? COLORS.A.bar : COLORS.B.bar)}
+                                    style={{ width: 14, height: 12 + i * 6 }}></div>
+                            ))}
+                            <span className="ml-2 text-sm text-gray-500">爬了 {n - 1} 段</span>
+                        </div>
+                    </div>
+                );
+                return (
+                    <div>
+                        {floors(4, COLORS.A.text, '甲')}
+                        {floors(3, COLORS.B.text, '乙')}
+                        {step >= 2 && <p className="text-sm text-gray-600 mt-1">到几层 → 爬"层数 − 1"段。甲 3 段、乙 2 段，速度比 3 : 2。</p>}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">甲到 16 层爬 15 段，乙爬 15 ÷ 3 × 2 = 10 段 → 第 11 层。</p>}
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        // 移多补少示意图：两条对比，差缩小 / 平均数
+        function buildMoveBars(q, step, mode) {
+            const cA = COLORS.A, cB = COLORS.B;
+            if (q.id === 'candy' || q.id === 'bag') {
+                const big = q.id === 'candy' ? 10 : 8;   // 用方块比例示意（非真实数量）
+                const small = q.id === 'candy' ? 4 : 4;
+                const diffUnits = big - small;
+                return (
+                    <div>
+                        <BarRow name={q.id === 'candy' ? '哥哥' : '第一袋'} nameColor={cA.text} mode={mode}
+                            segments={[{ value: small, color: cA.bar }, { value: diffUnits, color: cA.bar, dashed: step >= 2, label: step >= 2 ? (q.id === 'candy' ? '多 24 块' : '多 16 块') : '' }]} />
+                        <BarRow name={q.id === 'candy' ? '弟弟' : '第二袋'} nameColor={cB.text} mode={mode}
+                            segments={[{ value: small, color: cB.bar }]} />
+                        {step >= 2 && <p className="text-sm text-gray-600 mt-1">想让两条一样长，要把多出来的那段（虚线）平分给两边。</p>}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">每移 4 块，差就缩小 4 + 4 = 8 块。{q.id === 'candy' ? '24 ÷ 8 = 3 次。' : '16 ÷ 8 = 2 次。'}</p>}
+                    </div>
+                );
+            }
+            if (q.id === 'average') {
+                return (
+                    <div>
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className={"w-16 text-right font-bold shrink-0 " + cB.text}>这次</div>
+                            <div className={"px-3 py-2 rounded-lg font-mono " + cB.light + " " + cB.text}>100 分</div>
+                            {step >= 2 && <span className="text-sm text-amber-600 font-semibold">比新平均 86 高出 14 分 →</span>}
+                        </div>
+                        {step >= 2 && (
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className={"w-16 text-right font-bold shrink-0 " + cA.text}>前几次</div>
+                                <div className={"px-3 py-2 rounded-lg font-mono " + cA.light + " " + cA.text}>每次 84 分</div>
+                                <span className="text-sm text-gray-500">每次要补 86 − 84 = 2 分</span>
+                            </div>
+                        )}
+                        {step >= 2 && <p className="text-sm text-gray-400 mt-1">把多出的 14 分匀给前面：14 ÷ 2 = 7 次，再加上这一次 → 第 8 次。</p>}
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        // 主题配色（用完整类名，避免 Tailwind CDN 拼接类名扫描不到）
+        const THEME = {
+            rose: { on: 'bg-rose-500 text-white', soft: 'bg-rose-100 text-rose-600', panel: 'bg-rose-50 border-rose-100',
+                    btn: 'bg-rose-500 hover:bg-rose-600', num: 'text-rose-400', ans: 'text-rose-600' },
+            teal: { on: 'bg-teal-500 text-white', soft: 'bg-teal-100 text-teal-600', panel: 'bg-teal-50 border-teal-100',
+                    btn: 'bg-teal-500 hover:bg-teal-600', num: 'text-teal-400', ans: 'text-teal-600' },
+            indigo: { on: 'bg-indigo-500 text-white', soft: 'bg-indigo-100 text-indigo-600', panel: 'bg-indigo-50 border-indigo-100',
+                    btn: 'bg-indigo-500 hover:bg-indigo-600', num: 'text-indigo-400', ans: 'text-indigo-600' },
+            emerald: { on: 'bg-emerald-500 text-white', soft: 'bg-emerald-100 text-emerald-600', panel: 'bg-emerald-50 border-emerald-100',
+                    btn: 'bg-emerald-500 hover:bg-emerald-600', num: 'text-emerald-400', ans: 'text-emerald-600' },
+            orange: { on: 'bg-orange-500 text-white', soft: 'bg-orange-100 text-orange-600', panel: 'bg-orange-50 border-orange-100',
+                    btn: 'bg-orange-500 hover:bg-orange-600', num: 'text-orange-400', ans: 'text-orange-600' },
+        };
+
+        // 通用"读题—画图—列式"演示组件（终极挑战 / 年龄问题共用）
+        // theme: THEME 里的键名（'rose' / 'teal'）；buildBars: 专属画图函数
+        const StoryMode = ({ data, qi, setQi, theme, buildBars }) => {
+            const [step, setStep] = useState(0);
+            const [mode, setMode] = useState('block');
+            const q = data[qi];
+            const t = THEME[theme];
+
+            useEffect(() => { setStep(0); }, [qi, data]);
+            const next = () => setQi((qi + 1) % data.length);
+            const prev = () => setQi((qi - 1 + data.length) % data.length);
+
+            const stepNames = ['① 读题，找关键词', '② 画出已知的量', '③ 画出数量关系', '④ 列式计算'];
+
+            return (
+                <div className="fade-in">
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <div className="flex gap-2">
+                            <button onClick={prev} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">‹ 上一题</button>
+                            <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">下一题 ›</button>
+                        </div>
+                        <div className="flex gap-1 items-center">
+                            <span className="text-sm text-gray-400 mr-1">画法</span>
+                            <button onClick={() => setMode('block')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='block'?t.on:'bg-gray-100 text-gray-500')}>方块</button>
+                            <button onClick={() => setMode('line')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='line'?t.on:'bg-gray-100 text-gray-500')}>线段</button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-5 border border-gray-100">
+                        <HighlightStory story={q.story} keywords={q.keywords} active={step >= 1} />
+                    </div>
+
+                    <div className="flex gap-2 mb-5 flex-wrap">
+                        {stepNames.map((s, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? t.on : step > i ? t.soft : 'bg-gray-100 text-gray-400')}>{s}</div>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 160 }}>
+                        {step === 0 && <p className="text-gray-400 text-center py-12">先读题，把关键词找出来，再点"下一步"开始画图 →</p>}
+                        {step >= 1 && buildBars(q, step, mode)}
+                        {step === 1 && <p className="text-sm text-gray-400 mt-2">先照着题意把各个量画出来。下一步再标出它们之间的关系 →</p>}
+                    </div>
+
+                    {step >= 3 && (
+                        <div className={"rounded-xl p-5 mb-5 border fade-in " + t.panel}>
+                            <p className="text-gray-500 mb-2 text-sm">一步一步把它解出来：</p>
+                            {q.steps.map((s, i) => (
+                                <p key={i} className="text-lg mb-2 text-gray-700">
+                                    <span className={"inline-block w-6 font-mono " + t.num}>{i + 1}.</span>{s}
+                                </p>
+                            ))}
+                            <p className="mt-3 text-lg text-gray-700">答：<span className={"font-bold " + t.ans}>{q.answer}</span></p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-3">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 3 && <button onClick={() => setStep(step + 1)} className={"px-6 py-2.5 text-white rounded-lg font-semibold smooth " + t.btn}>下一步 →</button>}
+                        {step === 3 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">从头再看一遍</button>}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
         // 互动练习模式：给题，学生选关系类型 + 填式子 + 判分
         // ============================================================
         const PRACTICE = [
@@ -694,66 +1345,119 @@
         };
 
         // ============================================================
-        // 顶层：三个标签页
+        // 顶层：模块标签页（基础 / 和差倍 / 年龄 / 归一 / 间隔 / 移多补少 / 练习）
         // ============================================================
+        // 各模块的配色（完整类名，避免 Tailwind CDN 拼接扫描不到）
+        const MOD_STYLE = {
+            blue:    { tab: 'bg-blue-500 text-white',    dot: 'bg-blue-400',    head: 'text-blue-500',    on: 'bg-blue-500 text-white font-semibold' },
+            purple:  { tab: 'bg-purple-500 text-white',  dot: 'bg-purple-400',  head: 'text-purple-500',  on: 'bg-purple-500 text-white font-semibold' },
+            teal:    { tab: 'bg-teal-500 text-white',    dot: 'bg-teal-400',    head: 'text-teal-500',    on: 'bg-teal-500 text-white font-semibold' },
+            indigo:  { tab: 'bg-indigo-500 text-white',  dot: 'bg-indigo-400',  head: 'text-indigo-500',  on: 'bg-indigo-500 text-white font-semibold' },
+            emerald: { tab: 'bg-emerald-500 text-white', dot: 'bg-emerald-400', head: 'text-emerald-500', on: 'bg-emerald-500 text-white font-semibold' },
+            orange:  { tab: 'bg-orange-500 text-white',  dot: 'bg-orange-400',  head: 'text-orange-500',  on: 'bg-orange-500 text-white font-semibold' },
+            green:   { tab: 'bg-green-500 text-white',   dot: 'bg-green-400',   head: 'text-green-500',   on: 'bg-green-500 text-white font-semibold' },
+        };
+
         // 左侧题目列表项
         const SideItem = ({ active, color, children, onClick }) => (
             <button onClick={onClick}
                 className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth mb-1 flex items-center gap-2 " +
-                    (active
-                        ? (color === 'blue' ? 'bg-blue-500 text-white font-semibold' : 'bg-purple-500 text-white font-semibold')
-                        : 'text-gray-600 hover:bg-gray-100')}>
-                <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (active ? 'bg-white' : color === 'blue' ? 'bg-blue-400' : 'bg-purple-400')}></span>
+                    (active ? MOD_STYLE[color].on : 'text-gray-600 hover:bg-gray-100')}>
+                <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (active ? 'bg-white' : MOD_STYLE[color].dot)}></span>
                 {children}
             </button>
         );
 
-        const App = () => {
-            const [tab, setTab] = useState('basic');       // basic | advanced | practice
-            const [basicQi, setBasicQi] = useState(0);
-            const [advQi, setAdvQi] = useState(0);
+        // 模块配置：id / 标签 / 配色 / 包含的题目分组（每组指定数据与渲染方式）
+        const MODULES = [
+            { id: 'basic',   label: '基础问题',   color: 'blue',
+              groups: [ { title: '基础版 · 单步', data: BASIC, render: 'basic' } ] },
+            { id: 'sumdiff', label: '和差倍问题', color: 'purple',
+              groups: [ { title: '基础 · 和倍/差倍/和差', data: ADVANCED, render: 'advanced' },
+                        { title: '终极挑战', data: ULTIMATE, render: 'story', theme: 'rose', bars: 'ultimate' } ] },
+            { id: 'age',     label: '年龄问题',   color: 'teal',
+              groups: [ { title: '年龄问题', data: AGE, render: 'story', theme: 'teal', bars: 'age' } ] },
+            { id: 'norm',    label: '归一问题',   color: 'indigo',
+              groups: [ { title: '归一问题', data: NORM, render: 'story', theme: 'indigo', bars: 'norm' } ] },
+            { id: 'gap',     label: '间隔问题',   color: 'emerald',
+              groups: [ { title: '植树 / 排队 / 方阵 / 爬楼', data: GAP, render: 'story', theme: 'emerald', bars: 'gap' } ] },
+            { id: 'move',    label: '移多补少',   color: 'orange',
+              groups: [ { title: '移多补少 / 平均数', data: MOVE, render: 'story', theme: 'orange', bars: 'move' } ] },
+            { id: 'practice',label: '我来试试',   color: 'green',
+              groups: [ { title: '选运算 · 填式判分', render: 'practice' } ] },
+        ];
 
-            const go = (t, i) => { setTab(t); if (t === 'basic') setBasicQi(i); if (t === 'advanced') setAdvQi(i); };
+        // 画图函数 / 模式组件 的查表
+        const BARS = { ultimate: buildUltimateBars, age: buildAgeBars, norm: buildNormBars, gap: buildGapBars, move: buildMoveBars };
+
+        const App = () => {
+            const [modId, setModId] = useState('basic');
+            // 每个数据组各自记住当前选中的题号：用 "moduleId/groupIndex" 作 key
+            const [sel, setSel] = useState({});
+            // 每个模块当前"激活"的分组（多分组模块如和差倍，主区只显示激活的那组）
+            const [activeGroup, setActiveGroup] = useState({});
+            const mod = MODULES.find(m => m.id === modId);
+            const getSel = (key) => sel[key] || 0;
+            const setSelFor = (key) => (i) => setSel(s => ({ ...s, [key]: typeof i === 'function' ? i(s[key] || 0) : i }));
+            const curGroup = activeGroup[modId] || 0;
 
             return (
                 <div className="max-w-5xl mx-auto px-4 py-8">
-                    <header className="text-center mb-6">
+                    <header className="text-center mb-5">
                         <h1 className="text-3xl font-bold text-gray-800">读题 · 画图 · 列式</h1>
-                        <p className="text-gray-500 mt-2">把文字、图和式子对应起来，理解最基本的数量关系</p>
+                        <p className="text-gray-500 mt-2">把文字、图和式子对应起来，分类突破各种应用题</p>
                     </header>
 
-                    <div className="flex flex-col md:flex-row gap-6 items-start">
-                        {/* 左侧：分类题目列表 */}
-                        <aside className="w-full md:w-56 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:sticky md:top-6">
-                            <div className="px-2 pt-1 pb-2 text-xs font-bold text-blue-500 tracking-wide">基础版 · 单步</div>
-                            {BASIC.map((q, i) => (
-                                <SideItem key={i} color="blue" active={tab === 'basic' && basicQi === i} onClick={() => go('basic', i)}>{q.label}</SideItem>
-                            ))}
-
-                            <div className="px-2 pt-3 pb-2 text-xs font-bold text-purple-500 tracking-wide">复杂版 · 和差倍</div>
-                            {ADVANCED.map((q, i) => (
-                                <SideItem key={i} color="purple" active={tab === 'advanced' && advQi === i} onClick={() => go('advanced', i)}>{q.label}</SideItem>
-                            ))}
-
-                            <div className="px-2 pt-3 pb-2 text-xs font-bold text-green-500 tracking-wide">练习</div>
-                            <button onClick={() => setTab('practice')}
-                                className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth flex items-center gap-2 " +
-                                    (tab === 'practice' ? 'bg-green-500 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100')}>
-                                <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (tab === 'practice' ? 'bg-white' : 'bg-green-400')}></span>
-                                我来试试 · 判分
+                    {/* 顶部模块标签 */}
+                    <div className="flex flex-wrap gap-2 justify-center mb-6">
+                        {MODULES.map(m => (
+                            <button key={m.id} onClick={() => setModId(m.id)}
+                                className={"px-4 py-2 rounded-full text-sm font-semibold smooth border " +
+                                    (modId === m.id ? MOD_STYLE[m.color].tab + ' border-transparent shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300')}>
+                                {m.label}
                             </button>
-                        </aside>
+                        ))}
+                    </div>
 
-                        {/* 右侧：主演示区 */}
+                    <div className="flex flex-col md:flex-row gap-6 items-start">
+                        {/* 左侧：当前模块的题目列表 */}
+                        {mod.id !== 'practice' && (
+                            <aside className="w-full md:w-56 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:sticky md:top-6">
+                                {mod.groups.map((g, gi) => {
+                                    const key = mod.id + '/' + gi;
+                                    return (
+                                        <div key={gi}>
+                                            <div className={"px-2 pb-2 text-xs font-bold tracking-wide " + (gi > 0 ? 'pt-3 ' : 'pt-1 ') + MOD_STYLE[mod.color].head}>{g.title}</div>
+                                            {g.data.map((q, i) => (
+                                                <SideItem key={i} color={mod.color} active={curGroup === gi && getSel(key) === i}
+                                                    onClick={() => { setActiveGroup(s => ({ ...s, [mod.id]: gi })); setSelFor(key)(i); }}>
+                                                    {q.label}
+                                                </SideItem>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </aside>
+                        )}
+
+                        {/* 右侧：主演示区（只显示当前激活的分组） */}
                         <main className="flex-1 min-w-0 w-full">
-                            {tab === 'basic' && <BasicMode qi={basicQi} setQi={setBasicQi} />}
-                            {tab === 'advanced' && <AdvancedMode qi={advQi} setQi={setAdvQi} />}
-                            {tab === 'practice' && <PracticeMode />}
+                            {(() => {
+                                const gi = Math.min(curGroup, mod.groups.length - 1);
+                                const g = mod.groups[gi];
+                                const key = mod.id + '/' + gi;
+                                const qi = getSel(key), setQi = setSelFor(key);
+                                if (g.render === 'practice') return <PracticeMode />;
+                                if (g.render === 'basic')    return <BasicMode qi={qi} setQi={setQi} />;
+                                if (g.render === 'advanced') return <AdvancedMode qi={qi} setQi={setQi} />;
+                                if (g.render === 'story')    return <StoryMode data={g.data} qi={qi} setQi={setQi} theme={g.theme} buildBars={BARS[g.bars]} />;
+                                return null;
+                            })()}
                         </main>
                     </div>
 
                     <footer className="text-center text-gray-400 text-sm mt-10">
-                        Math101 · 数量关系可视化 · 适用人教版一二年级
+                        Math101 · 数量关系可视化 · 小学应用题分类突破
                     </footer>
                 </div>
             );

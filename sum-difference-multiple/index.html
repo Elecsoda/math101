@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>和差倍问题工具 | Math101</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #fff;
+            --text: #202938;
+            --muted: #667085;
+            --line: #e4e7ec;
+            --blue: #2563eb;
+            --green: #16a34a;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --red: #dc2626;
+            --shadow: 0 18px 42px rgba(16, 24, 40, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .14), transparent 26rem),
+                radial-gradient(circle at 90% 10%, rgba(124, 58, 237, .12), transparent 26rem),
+                var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button { font: inherit; cursor: pointer; }
+        a { color: inherit; text-decoration: none; }
+        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .icon {
+            width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff;
+            font-weight: 950; box-shadow: 0 14px 28px rgba(37, 99, 235, .24);
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        h2 { margin: 0 0 12px; }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .tools { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .btn {
+            border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text);
+            padding: 10px 14px; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 24, 40, .06);
+        }
+        .btn:hover { color: var(--blue); border-color: #bfdbfe; }
+        .btn.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+        .grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 18px; align-items: start; }
+        .card {
+            background: rgba(255,255,255,.95); border: 1px solid rgba(228,231,236,.95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .pad { padding: 20px; }
+        .problem-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .problem-head h2 { font-size: 21px; }
+        .badge {
+            display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 10px;
+            font-size: 12px; font-weight: 900; background: #eef2ff; color: var(--blue); white-space: nowrap;
+        }
+        .story { font-size: 18px; line-height: 1.75; color: #344054; font-weight: 650; margin: 12px 0 0; }
+        .hint { margin-top: 12px; display: inline-block; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: 9px 12px; font-weight: 800; font-size: 13px; }
+        .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+        .step { border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 12px; padding: 10px 6px; font-weight: 900; font-size: 12px; }
+        .step.active { color: var(--blue); border-color: #93c5fd; background: #eff6ff; }
+        .content { min-height: 430px; animation: show .24s ease; }
+        @keyframes show { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        .chip { border-radius: 999px; background: #f2f4f7; padding: 8px 10px; color: #344054; font-weight: 800; }
+        .formula {
+            font-family: "Cambria Math", "Times New Roman", serif;
+            font-size: clamp(24px, 4vw, 38px); font-weight: 950; text-align: center;
+            color: #1e3a8a; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; padding: 18px;
+        }
+        .relation { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+        .rel { border: 1px solid var(--line); background: #fff; border-radius: 16px; padding: 16px; }
+        .rel small { display: block; color: var(--muted); font-weight: 800; margin-bottom: 6px; }
+        .rel strong { font-size: 22px; color: var(--blue); }
+        .diagram { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: #f8fafc; }
+        .row { display: grid; grid-template-columns: 86px 1fr 90px; gap: 10px; align-items: center; margin: 16px 0; font-weight: 900; }
+        .barline { display: flex; align-items: stretch; gap: 4px; min-width: 0; }
+        .unit { min-width: 28px; height: 30px; border-radius: 7px; background: #60a5fa; border: 1px solid #fff; }
+        .unit.big { background: #a78bfa; }
+        .offset { min-width: 52px; height: 30px; border-radius: 7px; display: grid; place-items: center; background: #fde68a; color: #92400e; font-size: 12px; }
+        .offset.neg { background: transparent; border: 2px dashed #f59e0b; color: #92400e; }
+        .note { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-weight: 850; }
+        .answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+        .answers div { text-align: center; border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 16px; }
+        .answers strong { display: block; color: var(--green); font-size: 26px; }
+        .list { overflow: hidden; }
+        .list-head { padding: 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+        .list-head h3 { margin: 0; }
+        .items { max-height: calc(100vh - 190px); overflow: auto; padding: 10px; }
+        .item { width: 100%; border: 1px solid transparent; background: #fff; border-radius: 12px; text-align: left; padding: 12px; margin-bottom: 8px; }
+        .item:hover { border-color: #bfdbfe; }
+        .item.active { background: #eff6ff; border-color: #60a5fa; }
+        .item b { display: block; margin-bottom: 4px; }
+        .item span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nav { margin-top: 16px; display: flex; justify-content: space-between; gap: 10px; }
+        @media (max-width: 900px) {
+            .page { padding: 16px; }
+            .top, .grid { display: block; }
+            .tools { margin-top: 14px; justify-content: flex-start; }
+            .steps, .relation, .answers { grid-template-columns: repeat(2, 1fr); }
+            .list { margin-top: 18px; }
+            .row { grid-template-columns: 72px 1fr; }
+            .row em { grid-column: 2; }
+        }
+        @media (max-width: 540px) {
+            .steps, .relation, .answers { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="top">
+            <div class="brand">
+                <div class="icon">数</div>
+                <div>
+                    <h1>和差倍问题助手</h1>
+                    <p class="sub">纯本地运行：无 Tailwind、无 React、无在线 Babel</p>
+                </div>
+            </div>
+            <div class="tools">
+                <button class="btn" id="randomBtn">随机一题</button>
+                <a class="btn" href="../">返回首页</a>
+            </div>
+        </header>
+
+        <div class="grid">
+            <section>
+                <div class="card pad" id="problem"></div>
+                <div class="steps" id="steps"></div>
+                <div class="card pad content" id="content"></div>
+                <div class="nav">
+                    <button class="btn" id="prevBtn">上一步</button>
+                    <button class="btn primary" id="nextBtn">下一步</button>
+                </div>
+            </section>
+            <aside class="card list">
+                <div class="list-head"><h3>题库</h3><span class="badge" id="badge"></span></div>
+                <div class="items" id="list"></div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        const DATA = [
+            {type:"sum",t:"1. 绳子长度 (基础和倍)",q:"甲、乙两根绳子一共长 28 米，乙的长度是甲长度的 3 倍。两根绳子各长多少米？",u:"甲",b:"乙",n:3,total:28,diff:false,o:0,e:"x + 3x = 28",steps:["4x = 28","x = 7"],ans:["甲 = 7 米","乙 = 21 米"]},
+            {type:"sum",t:"2. 师徒加工 (和倍)",q:"师徒两人一共加工了 120 个零件，师傅加工的个数是徒弟的 2 倍。师徒各加工了多少个？",u:"徒弟",b:"师傅",n:2,total:120,diff:false,o:0,e:"x + 2x = 120",steps:["3x = 120","x = 40"],ans:["徒弟 = 40 个","师傅 = 80 个"]},
+            {type:"sum",t:"3. 科技小组 (和倍)",q:"学校科技组和美术组一共有 80 人，科技组的人数是美术组的 4 倍。两个小组各有多少人？",u:"美术组",b:"科技组",n:4,total:80,diff:false,o:0,e:"x + 4x = 80",steps:["5x = 80","x = 16"],ans:["美术组 = 16 人","科技组 = 64 人"]},
+            {type:"sum",t:"4. 果园果树 (和倍)",q:"果园里桃树和梨树一共有 360 棵，桃树的棵数是梨树的 3 倍。两种树各有多少棵？",u:"梨树",b:"桃树",n:3,total:360,diff:false,o:0,e:"x + 3x = 360",steps:["4x = 360","x = 90"],ans:["梨树 = 90 棵","桃树 = 270 棵"]},
+            {type:"sum",t:"5. 长方形周长 (几何和倍)",q:"一个长方形的周长是 48 厘米，长是宽的 2 倍。这个长方形的长和宽各是多少？",h:"周长是 (长+宽)×2，所以 长+宽 = 48÷2 = 24。",u:"宽",b:"长",n:2,total:24,diff:false,o:0,e:"x + 2x = 24",steps:["3x = 24","x = 8"],ans:["宽 = 8 cm","长 = 16 cm"]},
+            {type:"diff",t:"6. 父子年龄 (差倍)",q:"爸爸今年比小明大 24 岁，爸爸的年龄是小明的 3 倍。两人今年各多少岁？",u:"小明",b:"爸爸",n:3,total:24,diff:true,o:0,e:"3x - x = 24",steps:["2x = 24","x = 12"],ans:["小明 = 12 岁","爸爸 = 36 岁"]},
+            {type:"diff",t:"7. 养殖场 (差倍)",q:"养鸡场的公鸡比母鸡少 300 只，母鸡的数量是公鸡的 4 倍。公鸡和母鸡各有多少只？",u:"公鸡",b:"母鸡",n:4,total:300,diff:true,o:0,e:"4x - x = 300",steps:["3x = 300","x = 100"],ans:["公鸡 = 100 只","母鸡 = 400 只"]},
+            {type:"diff",t:"8. 储蓄比较 (差倍)",q:"小华的存款比小丽多 450 元，小华的存款是小丽的 4 倍。两人各有多少存款？",u:"小丽",b:"小华",n:4,total:450,diff:true,o:0,e:"4x - x = 450",steps:["3x = 450","x = 150"],ans:["小丽 = 150 元","小华 = 600 元"]},
+            {type:"diff",t:"9. 汽车追及 (行程差倍)",q:"轿车的速度比卡车快 40 千米/小时，轿车的速度是卡车的 2 倍。两车的速度各是多少？",u:"卡车",b:"轿车",n:2,total:40,diff:true,o:0,e:"2x - x = 40",steps:["x = 40"],ans:["卡车 = 40 km/h","轿车 = 80 km/h"]},
+            {type:"diff",t:"10. 买家电 (差倍)",q:"一台电脑比一台打印机贵 3000 元，电脑的价格是打印机的 4 倍。电脑和打印机各多少钱？",u:"打印机",b:"电脑",n:4,total:3000,diff:true,o:0,e:"4x - x = 3000",steps:["3x = 3000","x = 1000"],ans:["打印机 = 1000 元","电脑 = 4000 元"]},
+            {type:"sum",t:"11. 动物园体重 (和倍多)",q:"一头大象和一头牛共重 1500 千克，大象的体重比牛的 4 倍还多 100 千克。大象和牛各重多少？",u:"牛",b:"大象",n:4,total:1500,diff:false,o:100,e:"x + (4x + 100) = 1500",steps:["5x + 100 = 1500","5x = 1400","x = 280"],ans:["牛 = 280 kg","大象 = 1220 kg"]},
+            {type:"sum",t:"12. 两个班人数 (和倍少)",q:"甲乙两个班一共有 95 人，甲班人数比乙班的 2 倍少 10 人。两个班各有多少人？",u:"乙班",b:"甲班",n:2,total:95,diff:false,o:-10,e:"x + (2x - 10) = 95",steps:["3x - 10 = 95","3x = 105","x = 35"],ans:["乙班 = 35 人","甲班 = 60 人"]},
+            {type:"sum",t:"13. 植树活动 (和倍多)",q:"三年级和四年级一共植树 220 棵，四年级植的棵数比三年级的 3 倍多 20 棵。各植树多少棵？",u:"三年级",b:"四年级",n:3,total:220,diff:false,o:20,e:"x + (3x + 20) = 220",steps:["4x = 200","x = 50"],ans:["三年级 = 50 棵","四年级 = 170 棵"]},
+            {type:"sum",t:"14. 篮球足球 (和倍少)",q:"学校买了篮球和足球共 50 个，篮球比足球的 2 倍少 4 个。两种球各买了多少个？",u:"足球",b:"篮球",n:2,total:50,diff:false,o:-4,e:"x + (2x - 4) = 50",steps:["3x - 4 = 50","3x = 54","x = 18"],ans:["足球 = 18 个","篮球 = 32 个"]},
+            {type:"sum",t:"15. 水果重量 (和倍多)",q:"两筐水果共重 80 千克，第一筐比第二筐的 2 倍多 5 千克。两筐水果各重多少？",u:"第二筐",b:"第一筐",n:2,total:80,diff:false,o:5,e:"x + (2x + 5) = 80",steps:["3x = 75","x = 25"],ans:["第二筐 = 25 kg","第一筐 = 55 kg"]},
+            {type:"diff",t:"16. 课外书 (差倍多)",q:"小明的课外书比小红多 25 本，小明的书比小红的 3 倍多 5 本。两人各有多少本书？",u:"小红",b:"小明",n:3,total:25,diff:true,o:5,e:"(3x + 5) - x = 25",steps:["2x + 5 = 25","2x = 20","x = 10"],ans:["小红 = 10 本","小明 = 35 本"]},
+            {type:"diff",t:"17. 收集邮票 (差倍少)",q:"甲的邮票比乙多 35 张，甲的邮票数比乙的 3 倍少 5 张。两人各有多少张？",u:"乙",b:"甲",n:3,total:35,diff:true,o:-5,e:"(3x - 5) - x = 35",steps:["2x - 5 = 35","2x = 40","x = 20"],ans:["乙 = 20 张","甲 = 55 张"]},
+            {type:"diff",t:"18. 工厂生产 (差倍多)",q:"一车间比二车间多生产 120 个零件，一车间生产的是二车间的 2 倍还多 40 个。各生产多少？",u:"二车间",b:"一车间",n:2,total:120,diff:true,o:40,e:"(2x + 40) - x = 120",steps:["x + 40 = 120","x = 80"],ans:["二车间 = 80 个","一车间 = 200 个"]},
+            {type:"diff",t:"19. 采摘苹果 (差倍少)",q:"小华摘的苹果比小明多 20 个，小华摘的比小明的 2 倍少 10 个。两人各摘多少？",u:"小明",b:"小华",n:2,total:20,diff:true,o:-10,e:"(2x - 10) - x = 20",steps:["x - 10 = 20","x = 30"],ans:["小明 = 30 个","小华 = 50 个"]},
+            {type:"diff",t:"20. 跑步距离 (差倍多)",q:"小刚跑的距离比小强多 800 米，小刚跑的是小强的 3 倍多 200 米。两人各跑多少？",u:"小强",b:"小刚",n:3,total:800,diff:true,o:200,e:"(3x + 200) - x = 800",steps:["2x + 200 = 800","2x = 600","x = 300"],ans:["小强 = 300 米","小刚 = 1100 米"]},
+            {type:"transfer",t:"21. 图书借阅 (移多补少)",q:"甲班有图书 120 本，乙班有 30 本。甲班给乙班多少本后，甲班图书是乙班的 2 倍？",h:"不管书怎么给，两班总数不变，总数为 120+30=150。",u:"乙班(后)",b:"甲班(后)",n:2,total:150,diff:false,o:0,e:"x + 2x = 150",steps:["3x = 150","x = 50 (乙现在的)","原来乙有30"],ans:["甲给乙的数量 = 50 - 30 = 20 本"]},
+            {type:"transfer",t:"22. 金鱼换缸 (移多补少)",q:"甲缸有鱼 80 条，乙缸有 40 条。从甲缸拿出多少条放入乙缸，乙缸的数量是甲缸的 2 倍？",u:"甲缸(后)",b:"乙缸(后)",n:2,total:120,diff:false,o:0,e:"x + 2x = 120",steps:["3x = 120","x = 40 (甲现在的)","原来甲有80"],ans:["移动数量 = 80 - 40 = 40 条"]},
+            {type:"transfer",t:"23. 粮食调运 (移多补少)",q:"甲仓库存粮 200 吨，乙仓库存粮 120 吨。从乙仓库运多少吨到甲仓库，甲的存粮是乙的 3 倍？",u:"乙(后)",b:"甲(后)",n:3,total:320,diff:false,o:0,e:"x + 3x = 320",steps:["4x = 320","x = 80 (乙现在的)","原来乙有120"],ans:["运出数量 = 120 - 80 = 40 吨"]},
+            {type:"transfer",t:"24. 兄弟分糖 (移多补少)",q:"哥哥有 45 颗糖，弟弟有 15 颗。哥哥给弟弟多少颗后，两人糖果一样多？",h:"一样多就是 1 倍关系，也可以用总数除以 2。",u:"弟弟(后)",b:"哥哥(后)",n:1,total:60,diff:false,o:0,e:"x + x = 60",steps:["2x = 60","x = 30 (现在的)","弟弟原来15"],ans:["哥哥给弟弟 = 30 - 15 = 15 颗"]},
+            {type:"transfer",t:"25. 倒油问题 (移多补少)",q:"甲桶油 60 千克，乙桶油 40 千克。从甲桶倒多少油给乙桶，乙桶的油是甲桶的 3 倍？",u:"甲(后)",b:"乙(后)",n:3,total:100,diff:false,o:0,e:"x + 3x = 100",steps:["4x = 100","x = 25 (甲现在的)","原来甲有60"],ans:["倒出数量 = 60 - 25 = 35 kg"]},
+            {type:"complex",t:"26. 买笔本子 (隐含差)",q:"小林买的笔和本子，如果笔再多买 3 支就和本子一样多，如果本子再多买 7 本就是笔的 2 倍。笔和本子各多少？",h:"笔再多3支=本子，说明本子比笔多 3 支。",u:"笔",b:"本子+7",n:2,total:10,diff:true,o:0,e:"(x + 3) + 7 = 2x",steps:["x + 10 = 2x","x = 10"],ans:["笔 = 10 支","本子 = 13 支"]},
+            {type:"complex",t:"27. 姐姐妹妹 (隐含差)",q:"姐姐的零花钱给妹妹 5 元后，两人一样多。原来姐姐是妹妹的 3 倍。两人各有多少钱？",h:"给5元后一样多，说明姐姐比妹妹多 5×2=10 元。",u:"妹妹",b:"姐姐",n:3,total:10,diff:true,o:0,e:"3x - x = 10",steps:["2x = 10","x = 5"],ans:["妹妹 = 5 元","姐姐 = 15 元"]},
+            {type:"complex",t:"28. 植树问题 (隐含差)",q:"四年级植树棵数是三年级的 2 倍。如果四年级少植 20 棵，三年级多植 20 棵，两年级就一样多。各植多少？",h:"一少一多，差距缩小了 20+20=40。",u:"三年级",b:"四年级",n:2,total:40,diff:true,o:0,e:"2x - x = 40",steps:["x = 40"],ans:["三年级 = 40 棵","四年级 = 80 棵"]},
+            {type:"complex",t:"29. 笼中鸡兔 (假设法/和倍)",q:"笼子里有鸡和兔共 30 只，兔子的数量是鸡的 4 倍。求鸡和兔各有多少只？（不要管脚的数量）",u:"鸡",b:"兔",n:4,total:30,diff:false,o:0,e:"x + 4x = 30",steps:["5x = 30","x = 6"],ans:["鸡 = 6 只","兔 = 24 只"]},
+            {type:"complex",t:"30. 绳子剪断 (差倍)",q:"两根同样长的绳子，第一根剪去 10 米，第二根剪去 40 米，剩下的长度第一根是第二根的 4 倍。原绳长多少？",h:"同样长，剪去的少剩下的就多。第一根比第二根多剩 40-10=30 米。",u:"第二根剩",b:"第一根剩",n:4,total:30,diff:true,o:0,e:"4x - x = 30",steps:["3x = 30","x = 10 (第二根剩下的)"],ans:["原长 = 10 + 40 = 50 米"]}
+        ];
+
+        const state = { idx: 0, step: 1 };
+        const stepNames = ["读题找关系", "画线段图", "列方程", "解答检验"];
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[m]));
+        const cur = () => DATA[state.idx];
+
+        function tag(p) {
+            if (p.type === "sum") return p.diff ? "差倍" : "和倍";
+            if (p.type === "diff") return "差倍";
+            if (p.type === "transfer") return "移多补少";
+            return "综合";
+        }
+        function relationText(p) {
+            const offset = p.o === 0 ? "" : (p.o > 0 ? ` + ${p.o}` : ` - ${Math.abs(p.o)}`);
+            return `${p.b} = ${p.n} × ${p.u}${offset}`;
+        }
+        function units(count, cls) {
+            return Array.from({ length: Math.max(1, count) }, () => `<span class="unit ${cls || ""}"></span>`).join("");
+        }
+        function diagram(p) {
+            const offset = p.o === 0 ? "" : `<span class="offset ${p.o < 0 ? "neg" : ""}">${p.o > 0 ? "+" : "-"}${Math.abs(p.o)}</span>`;
+            return `
+                <div class="diagram">
+                    <div class="row"><b>${esc(p.u)}</b><div class="barline">${units(1, "")}</div><em>1份 x</em></div>
+                    <div class="row"><b>${esc(p.b)}</b><div class="barline">${units(p.n, "big")}${offset}</div><em>${esc(relationText(p))}</em></div>
+                    <p class="note">${p.diff ? `两条线段相差 ${p.total}` : `两条线段合起来是 ${p.total}`}。先把复杂条件画成“几份 + 或 - 一个固定数”，再列式。</p>
+                </div>
+            `;
+        }
+        function renderProblem() {
+            const p = cur();
+            $("problem").innerHTML = `
+                <div class="problem-head">
+                    <h2>${esc(p.t)}</h2>
+                    <span class="badge">${tag(p)} · ${state.idx + 1}/${DATA.length}</span>
+                </div>
+                <p class="story">${esc(p.q)}</p>
+                ${p.h ? `<div class="hint">提示：${esc(p.h)}</div>` : ""}
+                <div class="chips">
+                    <span class="chip">1倍量：${esc(p.u)}</span>
+                    <span class="chip">多倍量：${esc(p.b)}</span>
+                    <span class="chip">${p.diff ? "差" : "和"}：${p.total}</span>
+                </div>
+            `;
+        }
+        function renderContent() {
+            const p = cur();
+            if (state.step === 1) {
+                $("content").innerHTML = `
+                    <h2>把文字条件翻译成数量关系</h2>
+                    <div class="relation">
+                        <div class="rel"><small>倍数关系</small><strong>${esc(relationText(p))}</strong></div>
+                        <div class="rel"><small>${p.diff ? "差的关系" : "和的关系"}</small><strong>${esc(p.diff ? `${p.b} - ${p.u} = ${p.total}` : `${p.u} + ${p.b} = ${p.total}`)}</strong></div>
+                    </div>
+                    <p class="note">通常把较小或被比较的量设为 x，也就是这里的“${esc(p.u)}”。</p>
+                `;
+            } else if (state.step === 2) {
+                $("content").innerHTML = `<h2>线段图</h2>${diagram(p)}`;
+            } else if (state.step === 3) {
+                $("content").innerHTML = `
+                    <h2>根据线段图列方程</h2>
+                    <div class="formula">${esc(p.e)}</div>
+                    <p class="note">线段图中的每一份都是 x。${p.diff ? "差倍题用“多的 - 少的 = 差”。" : "和倍题用“两个量相加 = 和”。"}</p>
+                `;
+            } else {
+                $("content").innerHTML = `
+                    <h2>分步解答</h2>
+                    <div class="formula">${esc(p.e)}</div>
+                    <div class="relation">
+                        ${p.steps.map((s, i) => `<div class="rel"><small>第 ${i + 1} 步</small><strong>${esc(s)}</strong></div>`).join("")}
+                    </div>
+                    <div class="answers">${p.ans.map(a => `<div><span>答案</span><strong>${esc(a)}</strong></div>`).join("")}</div>
+                `;
+            }
+        }
+        function render() {
+            renderProblem();
+            $("steps").innerHTML = stepNames.map((name, i) => `<button class="step ${state.step === i + 1 ? "active" : ""}" data-step="${i + 1}">${i + 1}. ${name}</button>`).join("");
+            renderContent();
+            $("badge").textContent = `${DATA.length} 题`;
+            $("list").innerHTML = DATA.map((p, i) => `<button class="item ${i === state.idx ? "active" : ""}" data-index="${i}"><b>${esc(p.t)}</b><span>${esc(p.q)}</span></button>`).join("");
+            $("prevBtn").disabled = state.step === 1;
+            $("nextBtn").textContent = state.step === 4 ? "下一题" : "下一步";
+            bind();
+        }
+        function bind() {
+            document.querySelectorAll(".step").forEach(btn => btn.addEventListener("click", () => { state.step = Number(btn.dataset.step); render(); }));
+            document.querySelectorAll(".item").forEach(btn => btn.addEventListener("click", () => { state.idx = Number(btn.dataset.index); state.step = 1; render(); }));
+        }
+        $("prevBtn").addEventListener("click", () => { state.step = Math.max(1, state.step - 1); render(); });
+        $("nextBtn").addEventListener("click", () => {
+            if (state.step < 4) state.step += 1;
+            else { state.idx = (state.idx + 1) % DATA.length; state.step = 1; }
+            render();
+        });
+        $("randomBtn").addEventListener("click", () => {
+            let next = state.idx;
+            while (next === state.idx && DATA.length > 1) next = Math.floor(Math.random() * DATA.length);
+            state.idx = next; state.step = 1; render();
+        });
+        render();
+    </script>
+</body>
+</html>

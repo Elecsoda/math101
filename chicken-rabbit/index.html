@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鸡兔同笼可视化教学工具 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #dbeafe 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .25); font-size: 24px;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 700;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.ghost { box-shadow: none; background: #f8fafc; }
+        .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+        .card {
+            background: rgba(255,255,255,.94); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 20px; }
+        .problem-title { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .problem-title h2 { margin: 0; font-size: 21px; }
+        .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 800; background: #eef2ff; color: var(--indigo); white-space: nowrap; }
+        .story { margin: 14px 0 0; font-size: 18px; line-height: 1.75; color: #334155; font-weight: 650; }
+        .hint { margin-top: 12px; display: inline-flex; gap: 8px; align-items: center; padding: 9px 12px; border: 1px solid #fde68a; border-radius: 12px; background: #fffbeb; color: #92400e; font-weight: 700; font-size: 13px; }
+        .tabs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 16px 0; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+        .tab { border: 0; border-radius: 10px; padding: 12px; color: var(--muted); background: transparent; font-weight: 900; }
+        .tab.active.assumption { background: var(--indigo); color: #fff; }
+        .tab.active.equation { background: var(--purple); color: #fff; }
+        .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+        .step { border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 10px 6px; color: var(--muted); font-size: 12px; font-weight: 800; }
+        .step.active { background: #eef2ff; color: var(--indigo); border-color: #a5b4fc; }
+        .section { min-height: 360px; animation: fade .25s ease; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .big { font-size: clamp(28px, 5vw, 48px); font-weight: 950; color: var(--indigo); }
+        .formula { font-family: "Cambria Math", "Times New Roman", serif; font-size: clamp(24px, 4vw, 38px); font-weight: 900; color: #312e81; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 16px; padding: 18px; text-align: center; }
+        .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .stat { border: 1px solid var(--line); border-radius: 16px; padding: 16px; background: #fff; }
+        .stat small { display: block; color: var(--muted); font-weight: 800; margin-bottom: 6px; }
+        .stat strong { font-size: 28px; color: var(--indigo); }
+        .barbox { margin-top: 16px; padding: 16px; border-radius: 16px; background: #f8fafc; border: 1px solid var(--line); }
+        .barrow { display: grid; grid-template-columns: 70px 1fr 72px; gap: 10px; align-items: center; margin: 12px 0; font-weight: 800; }
+        .bar { height: 28px; border-radius: 999px; min-width: 8px; transition: width .25s ease; }
+        .bar.small { background: #93c5fd; }
+        .bar.bigbar { background: #fbbf24; }
+        .bar.diff { background: #a7f3d0; }
+        .experiment { border: 1px solid #c7d2fe; border-radius: 18px; padding: 16px; background: #eef2ff; }
+        .control { display: grid; grid-template-columns: 44px 1fr 44px; gap: 10px; align-items: center; }
+        .round { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 22px; font-weight: 900; color: var(--indigo); }
+        input[type=range] { width: 100%; accent-color: var(--indigo); }
+        .items { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; max-height: 210px; overflow: auto; padding: 4px; }
+        .dot { width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 900; }
+        .dot.small { background: #dbeafe; color: #2563eb; }
+        .dot.big { background: #fcd34d; color: #92400e; transform: scale(1.05); }
+        .notice { padding: 12px 14px; border-radius: 14px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-weight: 850; }
+        .footer-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+        .list { overflow: hidden; }
+        .list-head { padding: 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+        .list-head h3 { margin: 0; }
+        .problem-list { max-height: calc(100vh - 190px); overflow: auto; padding: 10px; }
+        .item { width: 100%; text-align: left; border: 1px solid transparent; background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+        .item:hover { border-color: #c7d2fe; }
+        .item.active { background: #eef2ff; border-color: #818cf8; }
+        .item b { display: block; margin-bottom: 4px; }
+        .item span { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+        .chip { padding: 8px 10px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 800; }
+        .answer { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+        .answer div { padding: 16px; border-radius: 16px; background: #fff; border: 1px solid var(--line); text-align: center; }
+        .answer strong { display: block; color: var(--green); font-size: 30px; }
+        @media (max-width: 900px) {
+            .page { padding: 16px; }
+            .topbar, .layout { display: block; }
+            .actions { justify-content: flex-start; margin-top: 14px; }
+            .list { margin-top: 18px; }
+            .grid2, .answer { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">笼</div>
+                <div>
+                    <h1>鸡兔同笼求解器</h1>
+                    <p class="sub">纯本地运行：无 Tailwind、无 React、无在线 Babel</p>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn" id="randomBtn">随机一题</button>
+                <a class="btn ghost" href="../">返回首页</a>
+            </div>
+        </header>
+
+        <div class="layout">
+            <section>
+                <div class="card panel" id="problemCard"></div>
+                <div class="tabs">
+                    <button class="tab assumption active" data-method="assumption">假设替换法</button>
+                    <button class="tab equation" data-method="equation">方程法</button>
+                </div>
+                <div class="steps" id="steps"></div>
+                <div class="card panel section" id="content"></div>
+                <div class="footer-nav">
+                    <button class="btn" id="prevBtn">上一步</button>
+                    <button class="btn primary" id="nextBtn">下一步</button>
+                </div>
+            </section>
+            <aside class="card list">
+                <div class="list-head">
+                    <h3>题库</h3>
+                    <span class="badge" id="countBadge"></span>
+                </div>
+                <div class="problem-list" id="problemList"></div>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        const PROBLEMS = [
+            { type: "classic", title: "1. 农场里的鸡和兔", text: "笼子里有鸡和兔子共 35 个头，一共有 94 只脚。请问鸡和兔子各有多少只？", labels: { small: "鸡", big: "兔", countUnit: "只", valUnit: "脚" }, values: { small: 2, big: 4, count: 35, total: 94 }, hint: "假设全是鸡(2只脚)，总脚数会比94少多少？" },
+            { type: "classic", title: "2. 蜘蛛与蜻蜓", text: "盒子里的蜘蛛(8条腿)和蜻蜓(6条腿)一共有 18 只，数一数腿一共有 118 条。蜘蛛和蜻蜓各几只？", labels: { small: "蜻蜓", big: "蜘蛛", countUnit: "只", valUnit: "条腿" }, values: { small: 6, big: 8, count: 18, total: 118 }, hint: "蜻蜓腿少(6)，蜘蛛腿多(8)。" },
+            { type: "classic", title: "3. 乌龟和鹤", text: "乌龟和鹤一共有 40 只，龟的脚和鹤的脚一共有 112 只。乌龟和鹤各有多少只？", labels: { small: "鹤", big: "乌龟", countUnit: "只", valUnit: "只脚" }, values: { small: 2, big: 4, count: 40, total: 112 }, hint: "鹤有2脚，龟有4脚。" },
+            { type: "money", title: "4. 存钱罐的硬币", text: "存钱罐里有 1 元和 5 角(0.5元)的硬币共 40 枚，总价值 35 元。两种硬币各有多少枚？", labels: { small: "5角", big: "1元", countUnit: "枚", valUnit: "角" }, values: { small: 5, big: 10, count: 40, total: 350 }, hint: "建议单位换算：35元 = 350角。" },
+            { type: "money", title: "5. 购买邮票", text: "小明买了 80 分和 1.2 元(120分)的邮票共 20 张，一共花了 19 元(1900分)。两种邮票各买了几张？", labels: { small: "80分", big: "1.2元", countUnit: "张", valUnit: "分" }, values: { small: 80, big: 120, count: 20, total: 1900 }, hint: "单位换算：1.2元=120分，19元=1900分。" },
+            { type: "money", title: "6. 景区门票", text: "成人票每张 50 元，儿童票每张 30 元。旅行团 30 人共花了 1300 元。成人和儿童各多少人？", labels: { small: "儿童", big: "成人", countUnit: "人", valUnit: "元" }, values: { small: 30, big: 50, count: 30, total: 1300 }, hint: "假设全是30元的儿童票。" },
+            { type: "vehicle", title: "7. 停车场", text: "停车场停着小轿车(4轮)和摩托车(2轮)共 22 辆，一共有 76 个轮子。两种车各有多少辆？", labels: { small: "摩托车", big: "小轿车", countUnit: "辆", valUnit: "轮子" }, values: { small: 2, big: 4, count: 22, total: 76 }, hint: "摩托车少2个轮子。" },
+            { type: "vehicle", title: "8. 运输车队", text: "大卡车有 6 个轮子，小货车有 4 个轮子。车队共 15 辆车，有 70 个轮子。大卡车小货车各多少？", labels: { small: "小货车", big: "大卡车", countUnit: "辆", valUnit: "轮子" }, values: { small: 4, big: 6, count: 15, total: 70 }, hint: "每辆大卡车比小货车多2个轮子。" },
+            { type: "vehicle", title: "9. 自行车与三轮车", text: "车棚里停着自行车和三轮车共 30 辆，总共有 72 个轮子。自行车和三轮车各有多少辆？", labels: { small: "自行车", big: "三轮车", countUnit: "辆", valUnit: "轮子" }, values: { small: 2, big: 3, count: 30, total: 72 }, hint: "两者只差1个轮子。" },
+            { type: "score", title: "10. 数学竞赛 (得失分)", text: "数学竞赛共 20 道题。做对一题得 5 分，做错或不做倒扣 2 分。小华得了 79 分，他做对了几道？", labels: { small: "错题", big: "对题", countUnit: "道", valUnit: "分" }, values: { small: -2, big: 5, count: 20, total: 79 }, hint: "注意：做对和做错的差距是 5 - (-2) = 7 分。" },
+            { type: "score", title: "11. 射击比赛", text: "射击运动员射靶 10 次，打中一枪得 10 环，脱靶一枪扣 2 环。他最终得到 76 环。打中几次？", labels: { small: "脱靶", big: "打中", countUnit: "次", valUnit: "环" }, values: { small: -2, big: 10, count: 10, total: 76 }, hint: "里外里一共差了 12 环。" },
+            { type: "transport", title: "12. 运送玻璃 (损耗)", text: "运送 100 块玻璃，完好一块得运费 3 元，损坏一块倒赔 5 元。最后收到运费 260 元。损坏了几块？", labels: { small: "损坏", big: "完好", countUnit: "块", valUnit: "元" }, values: { small: -5, big: 3, count: 100, total: 260 }, hint: "坏一块比好一块少赚 3+5=8 元。" },
+            { type: "mix", title: "13. 租船问题", text: "50 名同学去划船，大船每条坐 6 人，小船每条坐 4 人。一共租了 10 条船，正好坐满。大船小船各几条？", labels: { small: "小船", big: "大船", countUnit: "条", valUnit: "人" }, values: { small: 4, big: 6, count: 10, total: 50 }, hint: "假设全是小船，只能坐 40 人。" },
+            { type: "mix", title: "14. 搬运货物", text: "大箱子装 20 千克，小箱子装 12 千克。共有 15 个箱子，装了 260 千克货物。大箱小箱各几个？", labels: { small: "小箱", big: "大箱", countUnit: "个", valUnit: "kg" }, values: { small: 12, big: 20, count: 15, total: 260 }, hint: "假设全是小箱子。" },
+            { type: "mix", title: "15. 植树劳动", text: "男生每人栽 3 棵树，女生每人栽 2 棵树。全班 45 人一共栽了 115 棵树。男生女生各多少人？", labels: { small: "女生", big: "男生", countUnit: "人", valUnit: "棵" }, values: { small: 2, big: 3, count: 45, total: 115 }, hint: "假如大家都是女生..." },
+            { type: "mix", title: "16. 饼干包装", text: "大包饼干每包 18 块，小包饼干每包 10 块。一共 25 包，共 370 块饼干。大小包各多少？", labels: { small: "小包", big: "大包", countUnit: "包", valUnit: "块" }, values: { small: 10, big: 18, count: 25, total: 370 }, hint: "每换成一包大包，增加 8 块。" },
+            { type: "mix", title: "17. 混合糖果", text: "甲种糖每千克 20 元，乙种糖每千克 12 元。混合后共 10 千克，价值 168 元。甲乙糖各多少千克？", labels: { small: "乙糖", big: "甲糖", countUnit: "kg", valUnit: "元" }, values: { small: 12, big: 20, count: 10, total: 168 }, hint: "假设全是乙糖。" },
+            { type: "mix", title: "18. 篮球与排球", text: "学校买篮球和排球共 12 个，篮球每个 80 元，排球每个 50 元。共花 780 元。各买了几个？", labels: { small: "排球", big: "篮球", countUnit: "个", valUnit: "元" }, values: { small: 50, big: 80, count: 12, total: 780 }, hint: "假设全是排球。" },
+            { type: "mix", title: "19. 奇怪的昆虫", text: "生物实验室有 6 足昆虫和 10 足昆虫共 8 只，总共有 68 只脚。各有多少只？", labels: { small: "6足虫", big: "10足虫", countUnit: "只", valUnit: "脚" }, values: { small: 6, big: 10, count: 8, total: 68 }, hint: "每只多4只脚。" },
+            { type: "mix", title: "20. 抢答积分", text: "答对得 5 分，答错扣 1 分。共抢答 10 次，最后得 32 分。答对答错各几次？", labels: { small: "答错", big: "答对", countUnit: "次", valUnit: "分" }, values: { small: -1, big: 5, count: 10, total: 32 }, hint: "一进一出差 6 分。" }
+        ];
+
+        const state = { idx: 0, method: "assumption", step: 1, replaced: 0 };
+        const labelsByMethod = {
+            assumption: ["读题", "先假设", "替换实验", "列式答案"],
+            equation: ["设未知数", "列方程", "解方程", "检验"]
+        };
+        const $ = (id) => document.getElementById(id);
+        const esc = (text) => String(text).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+        const current = () => PROBLEMS[state.idx];
+        const solve = (p) => {
+            const { small, big, count, total } = p.values;
+            const bigCount = (total - small * count) / (big - small);
+            const smallCount = count - bigCount;
+            return {
+                assumed: small * count,
+                diff: big - small,
+                gap: total - small * count,
+                bigCount,
+                smallCount
+            };
+        };
+
+        function render() {
+            const p = current();
+            const s = solve(p);
+            if (state.replaced > p.values.count) state.replaced = 0;
+            $("problemCard").innerHTML = `
+                <div class="problem-title">
+                    <h2>${esc(p.title)}</h2>
+                    <span class="badge">${state.idx + 1}/${PROBLEMS.length}</span>
+                </div>
+                <p class="story">${esc(p.text)}</p>
+                ${p.hint ? `<div class="hint">提示：${esc(p.hint)}</div>` : ""}
+                <div class="chips">
+                    <span class="chip">${esc(p.labels.small)}：${p.values.small} ${esc(p.labels.valUnit)}</span>
+                    <span class="chip">${esc(p.labels.big)}：${p.values.big} ${esc(p.labels.valUnit)}</span>
+                    <span class="chip">总数量：${p.values.count} ${esc(p.labels.countUnit)}</span>
+                    <span class="chip">总值：${p.values.total} ${esc(p.labels.valUnit)}</span>
+                </div>
+            `;
+            document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.dataset.method === state.method));
+            $("steps").innerHTML = labelsByMethod[state.method].map((name, i) => `<button class="step ${state.step === i + 1 ? "active" : ""}" data-step="${i + 1}">${i + 1}. ${name}</button>`).join("");
+            $("content").innerHTML = state.method === "assumption" ? renderAssumption(p, s) : renderEquation(p, s);
+            $("prevBtn").disabled = state.step === 1;
+            $("nextBtn").textContent = state.step === 4 ? "下一题" : "下一步";
+            $("countBadge").textContent = `${PROBLEMS.length} 题`;
+            $("problemList").innerHTML = PROBLEMS.map((item, i) => `
+                <button class="item ${i === state.idx ? "active" : ""}" data-index="${i}">
+                    <b>${esc(item.title)}</b>
+                    <span>${esc(item.text)}</span>
+                </button>
+            `).join("");
+            bindDynamicEvents();
+        }
+
+        function renderAssumption(p, s) {
+            const { small, big, count, total } = p.values;
+            const { small: smallLabel, big: bigLabel, countUnit, valUnit } = p.labels;
+            if (state.step === 1) {
+                return `
+                    <h2>先抓住两个总量</h2>
+                    <div class="grid2">
+                        <div class="stat"><small>一共有</small><strong>${count}</strong>${esc(countUnit)}</div>
+                        <div class="stat"><small>总共有</small><strong>${total}</strong>${esc(valUnit)}</div>
+                    </div>
+                    <div class="barbox">
+                        <p>这类题有两个对象：<b>${esc(smallLabel)}</b> 每个是 ${small} ${esc(valUnit)}，<b>${esc(bigLabel)}</b> 每个是 ${big} ${esc(valUnit)}。</p>
+                        <p>关键是把“数量总数”和“脚/钱/分数总数”同时满足。</p>
+                    </div>
+                `;
+            }
+            if (state.step === 2) {
+                return `
+                    <h2>假设全是 ${esc(smallLabel)}</h2>
+                    <div class="formula">${small} × ${count} = ${s.assumed}</div>
+                    <div class="barbox">
+                        <div class="barrow"><span>目标</span><div class="bar bigbar" style="width:100%"></div><b>${total}</b></div>
+                        <div class="barrow"><span>假设</span><div class="bar small" style="width:${Math.max(5, Math.abs(s.assumed / total * 100))}%"></div><b>${s.assumed}</b></div>
+                        <div class="barrow"><span>相差</span><div class="bar diff" style="width:${Math.max(5, Math.abs(s.gap / total * 100))}%"></div><b>${s.gap}</b></div>
+                    </div>
+                    <p class="notice">每把 1 个 ${esc(smallLabel)} 换成 ${esc(bigLabel)}，总值会增加 ${s.diff} ${esc(valUnit)}。</p>
+                `;
+            }
+            if (state.step === 3) {
+                const now = s.assumed + state.replaced * s.diff;
+                const ok = now === total;
+                const dots = Array.from({ length: count }, (_, i) => `<span class="dot ${i < state.replaced ? "big" : "small"}">${esc((i < state.replaced ? bigLabel : smallLabel).charAt(0))}</span>`).join("");
+                return `
+                    <h2>动手替换</h2>
+                    <div class="experiment">
+                        <p><b>已替换：</b>${state.replaced} ${esc(countUnit)}，当前总值：<span class="big">${now}</span> / 目标 ${total}</p>
+                        <div class="control">
+                            <button class="round" id="minusBtn">-</button>
+                            <input id="replaceRange" type="range" min="0" max="${count}" value="${state.replaced}">
+                            <button class="round" id="plusBtn">+</button>
+                        </div>
+                        <p>${ok ? "刚好相等，替换的数量就是 " + esc(bigLabel) + " 的数量。" : "还差 " + (total - now) + " " + esc(valUnit)}</p>
+                        <div class="items">${dots}</div>
+                    </div>
+                `;
+            }
+            return `
+                <h2>列式并得到答案</h2>
+                <div class="formula">(${total} - ${small} × ${count}) ÷ (${big} - ${small}) = ${s.bigCount}</div>
+                <div class="answer">
+                    <div><span>${esc(bigLabel)}</span><strong>${s.bigCount}</strong>${esc(countUnit)}</div>
+                    <div><span>${esc(smallLabel)}</span><strong>${s.smallCount}</strong>${esc(countUnit)}</div>
+                </div>
+                <p class="notice">检验：${s.smallCount} × ${small} + ${s.bigCount} × ${big} = ${total}</p>
+            `;
+        }
+
+        function renderEquation(p, s) {
+            const { small, big, count, total } = p.values;
+            const { small: smallLabel, big: bigLabel, countUnit, valUnit } = p.labels;
+            if (state.step === 1) {
+                return `<h2>设 ${esc(bigLabel)} 有 x ${esc(countUnit)}</h2><div class="formula">${esc(smallLabel)} = ${count} - x</div><p class="notice">先设“单位值较大”的对象，后面列式更直观。</p>`;
+            }
+            if (state.step === 2) {
+                return `<h2>根据总值列方程</h2><div class="formula">${big}x + ${small}(${count} - x) = ${total}</div><p>左边表示所有 ${esc(bigLabel)} 和 ${esc(smallLabel)} 的总值，右边是题目给出的总值。</p>`;
+            }
+            if (state.step === 3) {
+                return `<h2>解方程</h2><div class="formula">(${big} - ${small})x = ${total} - ${small} × ${count}</div><div class="formula" style="margin-top:12px">x = ${s.bigCount}</div>`;
+            }
+            return `<h2>答案与检验</h2><div class="answer"><div><span>${esc(bigLabel)}</span><strong>${s.bigCount}</strong>${esc(countUnit)}</div><div><span>${esc(smallLabel)}</span><strong>${s.smallCount}</strong>${esc(countUnit)}</div></div><p class="notice">数量检验：${s.bigCount} + ${s.smallCount} = ${count}；总值检验：${s.bigCount} × ${big} + ${s.smallCount} × ${small} = ${total}。</p>`;
+        }
+
+        function bindDynamicEvents() {
+            document.querySelectorAll(".step").forEach(btn => btn.addEventListener("click", () => { state.step = Number(btn.dataset.step); render(); }));
+            document.querySelectorAll(".item").forEach(btn => btn.addEventListener("click", () => { state.idx = Number(btn.dataset.index); state.step = 1; state.replaced = 0; render(); }));
+            const range = $("replaceRange");
+            if (range) range.addEventListener("input", () => { state.replaced = Number(range.value); render(); });
+            const minus = $("minusBtn");
+            if (minus) minus.addEventListener("click", () => { state.replaced = Math.max(0, state.replaced - 1); render(); });
+            const plus = $("plusBtn");
+            if (plus) plus.addEventListener("click", () => { state.replaced = Math.min(current().values.count, state.replaced + 1); render(); });
+        }
+
+        document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => { state.method = btn.dataset.method; state.step = 1; render(); }));
+        $("prevBtn").addEventListener("click", () => { state.step = Math.max(1, state.step - 1); render(); });
+        $("nextBtn").addEventListener("click", () => {
+            if (state.step < 4) state.step += 1;
+            else { state.idx = (state.idx + 1) % PROBLEMS.length; state.step = 1; state.replaced = 0; }
+            render();
+        });
+        $("randomBtn").addEventListener("click", () => {
+            let next = state.idx;
+            while (next === state.idx && PROBLEMS.length > 1) next = Math.floor(Math.random() * PROBLEMS.length);
+            state.idx = next; state.step = 1; state.replaced = 0; render();
+        });
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析·平均数中位数众数 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bar-grow { transition: height 0.5s cubic-bezier(0.34, 1.2, 0.64, 1), y 0.5s cubic-bezier(0.34, 1.2, 0.64, 1); }
+        .nosel { user-select: none; -webkit-user-select: none; touch-action: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+        // ============================================================
+        // 公共小工具
+        // ============================================================
+        const sum = (a) => a.reduce((s, x) => s + x, 0);
+        const mean = (a) => a.length ? sum(a) / a.length : 0;
+        // 保留一位小数（去掉多余的 .0）
+        const fmt = (x) => {
+            const r = Math.round(x * 100) / 100;
+            return Number.isInteger(r) ? String(r) : String(r);
+        };
+        const sortedCopy = (a) => [...a].sort((x, y) => x - y);
+        const median = (a) => {
+            if (!a.length) return 0;
+            const s = sortedCopy(a);
+            const n = s.length;
+            return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+        };
+        // 众数：可能没有、一个或多个。返回 { modes: [...], maxCount }
+        const modeInfo = (a) => {
+            const cnt = {};
+            a.forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
+            let maxCount = 0;
+            Object.values(cnt).forEach(c => { if (c > maxCount) maxCount = c; });
+            const modes = Object.keys(cnt)
+                .filter(k => cnt[k] === maxCount)
+                .map(Number).sort((x, y) => x - y);
+            // 每个数都只出现一次 → 没有众数
+            const hasMode = maxCount > 1 && modes.length < new Set(a).size ? true : (maxCount > 1);
+            return { modes, maxCount, cnt, hasMode: maxCount > 1 };
+        };
+
+        const PALETTE = ['#60a5fa', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb923c', '#22d3ee', '#f87171'];
+
+        // 通用条形图：data 为数值数组，可高亮某些下标、画一条参考横线
+        const BarChart = ({ data, labels, highlight = [], lineValue = null, lineColor = '#ef4444',
+            lineLabel = '', unit = '', colorBy = null, height = 260, maxOverride = null }) => {
+            const W = Math.max(360, data.length * 70 + 60);
+            const H = height;
+            const padB = 46, padT = 28, padL = 40, padR = 16;
+            const maxV = maxOverride != null ? maxOverride : Math.max(1, ...data, lineValue || 0);
+            const niceMax = Math.ceil(maxV / 5) * 5 || 5;
+            const innerH = H - padB - padT;
+            const innerW = W - padL - padR;
+            const bw = innerW / data.length * 0.6;
+            const gap = innerW / data.length;
+            const yOf = (v) => padT + innerH - (v / niceMax) * innerH;
+            const ticks = [];
+            for (let i = 0; i <= 5; i++) ticks.push(Math.round(niceMax / 5 * i));
+            return (
+                <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: H }}>
+                    {/* 纵轴刻度与网格 */}
+                    {ticks.map((t, i) => (
+                        <g key={i}>
+                            <line x1={padL} y1={yOf(t)} x2={W - padR} y2={yOf(t)} stroke="#e5e7eb" strokeWidth="1" />
+                            <text x={padL - 6} y={yOf(t) + 4} textAnchor="end" fontSize="11" fill="#9ca3af">{t}</text>
+                        </g>
+                    ))}
+                    {/* 条形 */}
+                    {data.map((v, i) => {
+                        const x = padL + gap * i + (gap - bw) / 2;
+                        const on = highlight.includes(i);
+                        const fill = colorBy ? colorBy(i, v) : (on ? '#2563eb' : PALETTE[i % PALETTE.length]);
+                        return (
+                            <g key={i}>
+                                <rect className="bar-grow" x={x} y={yOf(v)} width={bw} height={Math.max(0, padT + innerH - yOf(v))}
+                                    rx="4" fill={fill} opacity={on ? 1 : 0.92} />
+                                <text x={x + bw / 2} y={yOf(v) - 6} textAnchor="middle" fontSize="13"
+                                    fontWeight={on ? 700 : 600} fill={on ? '#1d4ed8' : '#374151'}>{fmt(v)}{unit}</text>
+                                {labels && <text x={x + bw / 2} y={H - padB + 18} textAnchor="middle" fontSize="12"
+                                    fill="#4b5563">{labels[i]}</text>}
+                            </g>
+                        );
+                    })}
+                    {/* 参考线（如平均数线） */}
+                    {lineValue != null && (
+                        <g>
+                            <line x1={padL} y1={yOf(lineValue)} x2={W - padR} y2={yOf(lineValue)}
+                                stroke={lineColor} strokeWidth="2" strokeDasharray="7 5" />
+                            <text x={W - padR} y={yOf(lineValue) - 6} textAnchor="end" fontSize="12"
+                                fontWeight="700" fill={lineColor}>{lineLabel} {fmt(lineValue)}{unit}</text>
+                        </g>
+                    )}
+                </svg>
+            );
+        };
+
+        // 可编辑的数据条：点 +/- 或拖动滑块改值，可增删
+        const DataEditor = ({ data, setData, labels, min = 0, max = 20, unit = '', minLen = 2, maxLen = 8 }) => {
+            const set = (i, v) => {
+                const nd = [...data]; nd[i] = Math.max(min, Math.min(max, v)); setData(nd);
+            };
+            return (
+                <div className="flex flex-wrap gap-3 justify-center">
+                    {data.map((v, i) => (
+                        <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-200 px-3 py-2 flex flex-col items-center gap-1">
+                            <span className="text-xs text-slate-400">{labels ? labels[i] : '第' + (i + 1) + '个'}</span>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => set(i, v - 1)} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold smooth">−</button>
+                                <span className="w-9 text-center text-lg font-bold text-slate-700">{v}</span>
+                                <button onClick={() => set(i, v + 1)} className="w-7 h-7 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 font-bold smooth">+</button>
+                            </div>
+                            {data.length > minLen && (
+                                <button onClick={() => setData(data.filter((_, k) => k !== i))}
+                                    className="text-[11px] text-rose-400 hover:text-rose-600">删除</button>
+                            )}
+                        </div>
+                    ))}
+                    {data.length < maxLen && (
+                        <button onClick={() => setData([...data, Math.round((min + max) / 4)])}
+                            className="self-center w-10 h-10 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-600 text-2xl font-bold smooth">+</button>
+                    )}
+                </div>
+            );
+        };
+
+        const SectionCard = ({ children, className = '' }) =>
+            <div className={"bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6 " + className}>{children}</div>;
+
+        // ============================================================
+        // 模块一：平均数 —— "移多补少" 把高的匀给低的，匀平后的高度
+        // ============================================================
+        const MeanTab = () => {
+            const [data, setData] = useState([8, 3, 6, 11, 2]);
+            const [leveled, setLeveled] = useState(false);
+            const labels = ['小明', '小红', '小刚', '小丽', '小华'].slice(0, data.length);
+            const m = mean(data);
+            const display = leveled ? data.map(() => m) : data;
+
+            return (
+                <div className="space-y-5 fade-in">
+                    <SectionCard>
+                        <h2 className="text-lg font-bold text-slate-800 mb-1">什么是平均数？</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                            平均数表示一组数据的<b className="text-blue-600">总体水平</b>。把所有数据
+                            <b>"匀一匀"</b>，多的补给少的，使每份一样多，<b>匀平后每份的数</b>就是平均数。
+                        </p>
+                        <div className="mt-3 bg-blue-50 rounded-xl px-4 py-3 text-sm text-blue-800 leading-relaxed">
+                            平均数 = <b>总和 ÷ 个数</b> = {sum(data)} ÷ {data.length} =
+                            <b className="text-blue-700 text-base"> {fmt(m)}</b>
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard>
+                        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                            <h3 className="font-bold text-slate-700">动手试一试</h3>
+                            <button onClick={() => setLeveled(l => !l)}
+                                className={"px-4 py-2 rounded-full text-sm font-semibold smooth " +
+                                    (leveled ? "bg-amber-500 text-white shadow" : "bg-amber-100 text-amber-700 hover:bg-amber-200")}>
+                                {leveled ? '↩ 看原始数据' : '⚖ 匀一匀（移多补少）'}
+                            </button>
+                        </div>
+                        <BarChart data={display} labels={labels} lineValue={m} lineLabel="平均数" />
+                        <p className="text-center text-xs text-slate-400 mt-1">
+                            {leveled ? '匀平后每根一样高，正好等于平均数（红色虚线）' : '红色虚线就是平均数：在它上方的"多出来"刚好填满下方"缺少的"'}
+                        </p>
+                        <div className="mt-4">
+                            <DataEditor data={data} setData={(d) => { setData(d); setLeveled(false); }} labels={labels} max={15} />
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard className="bg-amber-50 border-amber-100">
+                        <h3 className="font-bold text-amber-800 mb-1">💡 想一想</h3>
+                        <p className="text-amber-800 text-sm leading-relaxed">
+                            平均数<b>不一定是数据里真有的数</b>（比如这里的 {fmt(m)} 可能没人正好是这个数）。
+                            而且它容易被<b>特别大或特别小</b>的数据"拉走"——试着把某一根拖到很高，看平均数怎么变。
+                        </p>
+                    </SectionCard>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块二：中位数 —— 排队后站中间的那个（或中间两个的平均）
+        // ============================================================
+        const MedianTab = () => {
+            const [data, setData] = useState([5, 12, 3, 9, 7]);
+            const sorted = sortedCopy(data);
+            const n = sorted.length;
+            const odd = n % 2 === 1;
+            const midIdx = odd ? [(n - 1) / 2] : [n / 2 - 1, n / 2];
+            const med = median(data);
+
+            return (
+                <div className="space-y-5 fade-in">
+                    <SectionCard>
+                        <h2 className="text-lg font-bold text-slate-800 mb-1">什么是中位数？</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                            把数据<b className="text-emerald-600">从小到大排好队</b>，正中间的那个数就是中位数。
+                            数据有奇数个时取<b>正中间一个</b>；有偶数个时取<b>中间两个的平均数</b>。
+                        </p>
+                    </SectionCard>
+
+                    <SectionCard>
+                        <h3 className="font-bold text-slate-700 mb-3">第一步：原始数据</h3>
+                        <div className="flex flex-wrap gap-2 justify-center mb-5">
+                            {data.map((v, i) => (
+                                <div key={i} className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 font-bold text-lg flex items-center justify-center">{v}</div>
+                            ))}
+                        </div>
+                        <h3 className="font-bold text-slate-700 mb-3">第二步：从小到大排队 →</h3>
+                        <div className="flex flex-wrap gap-2 justify-center items-end mb-2">
+                            {sorted.map((v, i) => {
+                                const on = midIdx.includes(i);
+                                return (
+                                    <div key={i} className="flex flex-col items-center smooth">
+                                        <div className={"w-12 h-12 rounded-xl font-bold text-lg flex items-center justify-center smooth " +
+                                            (on ? "bg-emerald-500 text-white shadow-lg scale-110" : "bg-emerald-50 text-emerald-700")}>{v}</div>
+                                        {on && <span className="text-[11px] text-emerald-600 mt-1">中间</span>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="mt-4 bg-emerald-50 rounded-xl px-4 py-3 text-sm text-emerald-800 text-center">
+                            {odd
+                                ? <>共 {n} 个（奇数），正中间是第 {(n + 1) / 2} 个 → 中位数 = <b className="text-base">{fmt(med)}</b></>
+                                : <>共 {n} 个（偶数），中间两个是 {sorted[n / 2 - 1]} 和 {sorted[n / 2]} →（{sorted[n / 2 - 1]}+{sorted[n / 2]}）÷2 = <b className="text-base">{fmt(med)}</b></>}
+                        </div>
+                        <div className="mt-4">
+                            <DataEditor data={data} setData={setData} max={15} />
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard className="bg-emerald-50 border-emerald-100">
+                        <h3 className="font-bold text-emerald-800 mb-1">💡 中位数的好处</h3>
+                        <p className="text-emerald-800 text-sm leading-relaxed">
+                            中位数<b>不怕极端值</b>。比如一个班大多数同学零花钱差不多，但有一人特别多，
+                            这时<b>平均数会偏高</b>，而中位数更能代表"大多数人的一般水平"。试着加一个很大的数看看两者的差别。
+                        </p>
+                        <p className="text-emerald-700 text-xs mt-2">当前：平均数 = {fmt(mean(data))}，中位数 = {fmt(med)}</p>
+                    </SectionCard>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块三：众数 —— 出现次数最多的数
+        // ============================================================
+        const ModeTab = () => {
+            const [data, setData] = useState([3, 5, 3, 7, 3, 5, 8]);
+            const { modes, maxCount, cnt, hasMode } = modeInfo(data);
+            const uniq = sortedCopy([...new Set(data)]);
+            const counts = uniq.map(v => cnt[v]);
+
+            return (
+                <div className="space-y-5 fade-in">
+                    <SectionCard>
+                        <h2 className="text-lg font-bold text-slate-800 mb-1">什么是众数？</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                            一组数据里<b className="text-violet-600">出现次数最多</b>的那个数，就是众数。
+                            众数可以有<b>一个、好几个</b>，如果每个数出现次数都一样，就<b>没有众数</b>。
+                        </p>
+                    </SectionCard>
+
+                    <SectionCard>
+                        <h3 className="font-bold text-slate-700 mb-3">数一数每个数出现了几次</h3>
+                        <BarChart data={counts} labels={uniq.map(String)} unit=" 次"
+                            maxOverride={Math.max(...counts, 1)}
+                            colorBy={(i) => counts[i] === maxCount && hasMode ? '#7c3aed' : '#c4b5fd'} />
+                        <p className="text-center text-xs text-slate-400 -mt-1">横轴是"数据的值"，纵轴是"它出现的次数"</p>
+
+                        <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                            {data.map((v, i) => (
+                                <div key={i} className={"w-11 h-11 rounded-xl font-bold flex items-center justify-center smooth " +
+                                    (hasMode && modes.includes(v) ? "bg-violet-500 text-white shadow" : "bg-slate-100 text-slate-600")}>{v}</div>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 bg-violet-50 rounded-xl px-4 py-3 text-sm text-violet-800 text-center">
+                            {hasMode
+                                ? <>出现最多的是 <b className="text-base">{modes.join(' 和 ')}</b>（各 {maxCount} 次）→ 众数 = <b className="text-base">{modes.join('、')}</b></>
+                                : <>每个数都只出现 1 次 → <b>这组数据没有众数</b></>}
+                        </div>
+                        <div className="mt-4">
+                            <DataEditor data={data} setData={setData} max={9} />
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard className="bg-violet-50 border-violet-100">
+                        <h3 className="font-bold text-violet-800 mb-1">💡 什么时候用众数？</h3>
+                        <p className="text-violet-800 text-sm leading-relaxed">
+                            想知道"<b>哪种最受欢迎 / 最常见</b>"时用众数最合适。比如卖鞋时最该多进哪个<b>码数</b>、
+                            班里同学最爱哪种<b>颜色</b>，看的就是众数，而不是平均数。
+                        </p>
+                    </SectionCard>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块四：三者对比 —— 同一组数据，三个量各代表什么
+        // ============================================================
+        const CompareTab = () => {
+            const [data, setData] = useState([2, 4, 4, 5, 5, 5, 30]);
+            const m = mean(data), md = median(data);
+            const { modes, hasMode } = modeInfo(data);
+            const sorted = sortedCopy(data);
+
+            return (
+                <div className="space-y-5 fade-in">
+                    <SectionCard>
+                        <h2 className="text-lg font-bold text-slate-800 mb-1">平均数 · 中位数 · 众数，到底用哪个？</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed">
+                            它们都叫<b>"代表数"</b>，都用一个数代表一组数据，但角度不同。
+                            下面这组数据里有一个<b>特别大的数（30）</b>，看看三者差别有多大。
+                        </p>
+                    </SectionCard>
+
+                    <SectionCard>
+                        <BarChart data={sorted} labels={sorted.map(String)} lineValue={m} lineLabel="平均数" />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                            <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-3 text-center">
+                                <div className="text-xs text-blue-500 font-semibold">平均数</div>
+                                <div className="text-2xl font-bold text-blue-700">{fmt(m)}</div>
+                                <div className="text-[11px] text-blue-500 mt-1">被 30 拉高了</div>
+                            </div>
+                            <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-3 text-center">
+                                <div className="text-xs text-emerald-500 font-semibold">中位数</div>
+                                <div className="text-2xl font-bold text-emerald-700">{fmt(md)}</div>
+                                <div className="text-[11px] text-emerald-500 mt-1">不受 30 影响</div>
+                            </div>
+                            <div className="rounded-xl border-2 border-violet-200 bg-violet-50 p-3 text-center">
+                                <div className="text-xs text-violet-500 font-semibold">众数</div>
+                                <div className="text-2xl font-bold text-violet-700">{hasMode ? modes.join('、') : '无'}</div>
+                                <div className="text-[11px] text-violet-500 mt-1">出现最多的值</div>
+                            </div>
+                        </div>
+                        <div className="mt-4">
+                            <DataEditor data={data} setData={setData} max={30} />
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard className="bg-slate-50">
+                        <h3 className="font-bold text-slate-700 mb-2">一句话记住</h3>
+                        <ul className="text-sm text-slate-600 space-y-1.5 list-disc pl-5">
+                            <li><b className="text-blue-600">平均数</b>：把数据匀平，看总体水平；但<b>怕极端值</b>。</li>
+                            <li><b className="text-emerald-600">中位数</b>：排队站中间，看一般水平；<b>不怕极端值</b>。</li>
+                            <li><b className="text-violet-600">众数</b>：出现最多，看最常见 / 最受欢迎。</li>
+                        </ul>
+                    </SectionCard>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块五：闯关练习 —— 判分
+        // ============================================================
+        const randData = () => {
+            const n = 5 + Math.floor(Math.random() * 3); // 5~7 个
+            return Array.from({ length: n }, () => 1 + Math.floor(Math.random() * 9));
+        };
+        const PracticeTab = () => {
+            const KINDS = ['mean', 'median', 'mode'];
+            const KNAME = { mean: '平均数', median: '中位数', mode: '众数' };
+            const newQ = () => {
+                let d, kind, answer, modes, hasMode;
+                // 反复抽，保证众数题确实有唯一众数
+                do {
+                    d = randData();
+                    kind = KINDS[Math.floor(Math.random() * KINDS.length)];
+                    const info = modeInfo(d); modes = info.modes; hasMode = info.hasMode;
+                } while (kind === 'mode' && (!hasMode || modes.length !== 1));
+                if (kind === 'mean') answer = Math.round(mean(d) * 100) / 100;
+                else if (kind === 'median') answer = median(d);
+                else answer = modes[0];
+                return { d, kind, answer };
+            };
+            const [q, setQ] = useState(newQ);
+            const [input, setInput] = useState('');
+            const [result, setResult] = useState(null); // null | 'ok' | 'no'
+            const [score, setScore] = useState({ ok: 0, total: 0 });
+
+            const check = () => {
+                if (input.trim() === '' || result) return;
+                const val = parseFloat(input);
+                const correct = Math.abs(val - q.answer) < 1e-6;
+                setResult(correct ? 'ok' : 'no');
+                setScore(s => ({ ok: s.ok + (correct ? 1 : 0), total: s.total + 1 }));
+            };
+            const next = () => { setQ(newQ()); setInput(''); setResult(null); };
+
+            return (
+                <div className="space-y-5 fade-in">
+                    <SectionCard>
+                        <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+                            <h2 className="text-lg font-bold text-slate-800">闯关练习</h2>
+                            <span className="text-sm text-slate-500">得分 <b className="text-blue-600">{score.ok}</b> / {score.total}</span>
+                        </div>
+                        <p className="text-slate-600 text-sm mb-4">
+                            求下面这组数据的 <b className="text-rose-600 text-base">{KNAME[q.kind]}</b>：
+                        </p>
+                        <div className="flex flex-wrap gap-2 justify-center mb-5">
+                            {q.d.map((v, i) => (
+                                <div key={i} className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 font-bold text-lg flex items-center justify-center">{v}</div>
+                            ))}
+                        </div>
+                        <div className="flex justify-center items-center gap-2 mb-4">
+                            <input value={input} onChange={e => setInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && check()}
+                                inputMode="decimal" disabled={!!result}
+                                placeholder="输入答案"
+                                className="w-36 text-center text-lg font-bold border-2 border-slate-200 rounded-xl py-2 focus:border-blue-400 outline-none disabled:bg-slate-50" />
+                            {!result
+                                ? <button onClick={check} className="px-5 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold smooth">检查</button>
+                                : <button onClick={next} className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold smooth">下一题 →</button>}
+                        </div>
+                        {result === 'ok' && (
+                            <div className="text-center bg-emerald-50 text-emerald-700 rounded-xl py-3 font-semibold fade-in">✓ 答对啦！</div>
+                        )}
+                        {result === 'no' && (
+                            <div className="text-center bg-rose-50 text-rose-700 rounded-xl py-3 fade-in">
+                                ✗ 正确答案是 <b className="text-base">{fmt(q.answer)}</b>
+                                <div className="text-xs text-rose-500 mt-1">
+                                    {q.kind === 'mean' && <>总和 {sum(q.d)} ÷ {q.d.length} 个 = {fmt(q.answer)}</>}
+                                    {q.kind === 'median' && <>排好队取中间：{sortedCopy(q.d).join('，')}</>}
+                                    {q.kind === 'mode' && <>出现次数最多的数</>}
+                                </div>
+                            </div>
+                        )}
+                    </SectionCard>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 应用外壳
+        // ============================================================
+        const App = () => {
+            const [tab, setTab] = useState('mean');
+            const tabs = [
+                ['mean', '平均数', 'blue'],
+                ['median', '中位数', 'emerald'],
+                ['mode', '众数', 'violet'],
+                ['compare', '三者对比', 'amber'],
+                ['practice', '闯关练习', 'rose'],
+            ];
+            const colorMap = { blue: 'bg-blue-500', emerald: 'bg-emerald-500', violet: 'bg-violet-500', amber: 'bg-amber-500', rose: 'bg-rose-500' };
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-3xl mx-auto text-center mb-7 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">数据分析</h1>
+                        <p className="text-slate-500 mt-1">认识平均数 · 中位数 · 众数，学会用一个数代表一组数据</p>
+                    </header>
+
+                    <div className="flex justify-center gap-2 sm:gap-3 mb-7 flex-wrap">
+                        {tabs.map(([key, label, color]) => (
+                            <button key={key} onClick={() => setTab(key)}
+                                className={"px-4 sm:px-5 py-2 rounded-full font-semibold text-sm smooth " +
+                                    (tab === key ? colorMap[color] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="max-w-3xl mx-auto">
+                        {tab === 'mean' && <MeanTab />}
+                        {tab === 'median' && <MedianTab />}
+                        {tab === 'mode' && <ModeTab />}
+                        {tab === 'compare' && <CompareTab />}
+                        {tab === 'practice' && <PracticeTab />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平移·旋转·对称 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tf-svg { touch-action: none; user-select: none; -webkit-user-select: none; }
+        .grab { cursor: grab; }
+        .grab:active { cursor: grabbing; }
+        /* 变换后图形平滑移动/旋转的动画交给 SVG transform 过渡 */
+        .moving { transition: transform 0.7s cubic-bezier(0.34, 1.2, 0.64, 1); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+        // ============================================================
+        // 公共常量与小工具
+        // 网格坐标：以"格"为单位。col 向右增大，row 向下增大（屏幕习惯）。
+        // 像素坐标：px = ORIGIN_X + col * CELL，py = ORIGIN_Y + row * CELL。
+        // ============================================================
+        const CELL = 38;          // 每格像素大小
+        const COLS = 14;          // 网格列数
+        const ROWS = 12;          // 网格行数
+        const PAD = 24;           // 画布四周留白
+        const GW = COLS * CELL + PAD * 2;
+        const GH = ROWS * CELL + PAD * 2;
+        const px = (c) => PAD + c * CELL;
+        const py = (r) => PAD + r * CELL;
+
+        // 几个由格点连成的图形（顶点用 [col,row]，相对自身参考点）。
+        // 故意做成"不对称"的方向，平移/旋转后方向变化才看得清。
+        const SHAPES = {
+            flag: { name: '小旗', pts: [[0,0],[3,1],[0,2]] },                       // 三角小旗
+            arrow: { name: '箭头', pts: [[0,1],[2,1],[2,0],[4,2],[2,4],[2,3],[0,3]] }, // 向右箭头
+            L: { name: 'L 形', pts: [[0,0],[1,0],[1,2],[3,2],[3,3],[0,3]] },         // L 形块
+            boat: { name: '小船', pts: [[0,0],[3,0],[2,2],[1,2]] },                  // 梯形小船
+        };
+
+        // 把"格顶点"列表转成 SVG polygon 的 points 字符串（带平移偏移）
+        const ptsStr = (pts, dc = 0, dr = 0) =>
+            pts.map(([c, r]) => `${px(c + dc)},${py(r + dr)}`).join(' ');
+
+        // 画背景网格（横竖线 + 圆点格点）
+        const Grid = ({ showDots = true }) => {
+            const lines = [];
+            for (let c = 0; c <= COLS; c++)
+                lines.push(<line key={'v' + c} x1={px(c)} y1={py(0)} x2={px(c)} y2={py(ROWS)}
+                    stroke={c % 5 === 0 ? '#cbd5e1' : '#e8edf3'} strokeWidth={c % 5 === 0 ? 1.2 : 0.8} />);
+            for (let r = 0; r <= ROWS; r++)
+                lines.push(<line key={'h' + r} x1={px(0)} y1={py(r)} x2={px(COLS)} y2={py(r)}
+                    stroke={r % 5 === 0 ? '#cbd5e1' : '#e8edf3'} strokeWidth={r % 5 === 0 ? 1.2 : 0.8} />);
+            const dots = [];
+            if (showDots)
+                for (let c = 0; c <= COLS; c++)
+                    for (let r = 0; r <= ROWS; r++)
+                        dots.push(<circle key={c + '_' + r} cx={px(c)} cy={py(r)} r="1.3" fill="#cbd5e1" />);
+            return <g>{lines}{dots}</g>;
+        };
+
+        // ============================================================
+        // 模块一：平移 —— 把图形按方向平移几格，形状方向都不变
+        // ============================================================
+        const Translate = () => {
+            const [shapeKey, setShapeKey] = useState('flag');
+            const [pos, setPos] = useState({ c: 1, r: 4 });      // 原图参考点
+            const [off, setOff] = useState({ dc: 0, dr: 0 });    // 平移量（格）
+            const [animating, setAnimating] = useState(false);
+            const svgRef = useRef(null);
+            const drag = useRef(null);                            // 'orig' | 'image' | null
+            const shape = SHAPES[shapeKey];
+
+            // 拖动：把指针换算成最接近的格子，移动"原图"或"像"
+            const pointCell = useCallback((cx, cy) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                const x = (cx - rect.left) / rect.width * GW;
+                const y = (cy - rect.top) / rect.height * GH;
+                return { c: Math.round((x - PAD) / CELL), r: Math.round((y - PAD) / CELL) };
+            }, []);
+            const clampPos = (c, r) => {
+                const cs = shape.pts.map(p => p[0]), rs = shape.pts.map(p => p[1]);
+                const w = Math.max(...cs) - Math.min(...cs), h = Math.max(...rs) - Math.min(...rs);
+                return {
+                    c: Math.max(0, Math.min(COLS - w, c)),
+                    r: Math.max(0, Math.min(ROWS - h, r)),
+                };
+            };
+            const onDown = (which) => (e) => { e.preventDefault(); drag.current = which; setAnimating(false); };
+            const onMove = (e) => {
+                if (!drag.current) return;
+                const pt = e.touches ? e.touches[0] : e;
+                const cell = pointCell(pt.clientX, pt.clientY);
+                if (drag.current === 'orig') {
+                    setPos(clampPos(cell.c, cell.r));
+                } else {
+                    // 拖"像"实际改变平移量
+                    const want = clampPos(cell.c, cell.r);
+                    setOff({ dc: want.c - pos.c, dr: want.r - pos.r });
+                }
+            };
+            const onUp = () => { drag.current = null; };
+
+            const imgPos = clampPos(pos.c + off.dc, pos.r + off.dr);
+            const realOff = { dc: imgPos.c - pos.c, dr: imgPos.r - pos.r };
+            const moved = realOff.dc !== 0 || realOff.dr !== 0;
+
+            // 方向文字
+            const dirText = () => {
+                const parts = [];
+                if (realOff.dc > 0) parts.push(`向右 ${realOff.dc} 格`);
+                if (realOff.dc < 0) parts.push(`向左 ${-realOff.dc} 格`);
+                if (realOff.dr > 0) parts.push(`向下 ${realOff.dr} 格`);
+                if (realOff.dr < 0) parts.push(`向上 ${-realOff.dr} 格`);
+                return parts.length ? parts.join('，再') : '还没有移动';
+            };
+
+            const slide = (dc, dr) => { setAnimating(true); setOff(o => ({ dc: o.dc + dc, dr: o.dr + dr })); };
+            const reset = () => { setAnimating(false); setOff({ dc: 0, dr: 0 }); };
+
+            // 连接对应顶点的虚线（看"每个点都移动一样远"）
+            const connectors = moved ? shape.pts.map(([c, r], i) => (
+                <line key={'cn' + i} x1={px(pos.c + c)} y1={py(pos.r + r)}
+                    x2={px(imgPos.c + c)} y2={py(imgPos.r + r)}
+                    stroke="#fbbf24" strokeWidth="1.4" strokeDasharray="4 3" opacity="0.8" />
+            )) : null;
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-8">
+                    <div className="bg-white rounded-2xl shadow p-3">
+                        <svg ref={svgRef} width={GW} height={GH} viewBox={`0 0 ${GW} ${GH}`} className="tf-svg"
+                            onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                            onTouchMove={onMove} onTouchEnd={onUp}>
+                            <Grid />
+                            {connectors}
+                            {/* 原图（灰色虚影） */}
+                            <polygon points={ptsStr(shape.pts, pos.c, pos.r)}
+                                fill="#cbd5e1" opacity="0.45" stroke="#94a3b8" strokeWidth="2"
+                                className="grab" onMouseDown={onDown('orig')} onTouchStart={onDown('orig')} />
+                            {/* 平移后的像（蓝色实体） */}
+                            <polygon points={ptsStr(shape.pts, imgPos.c, imgPos.r)}
+                                fill="#3b82f6" opacity="0.85" stroke="#1d4ed8" strokeWidth="2.5"
+                                className={"grab " + (animating ? 'moving' : '')}
+                                onMouseDown={onDown('image')} onTouchStart={onDown('image')} />
+                            <text x={px(pos.c)} y={py(pos.r) - 8} fontSize="13" fill="#64748b" fontWeight="600">原图</text>
+                            {moved && <text x={px(imgPos.c)} y={py(imgPos.r) - 8} fontSize="13" fill="#1d4ed8" fontWeight="700">平移后</text>}
+                        </svg>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-72">
+                        <div className="bg-white rounded-2xl shadow px-6 py-5 text-center">
+                            <div className="text-sm text-gray-400 mb-1">这次平移</div>
+                            <div className="text-xl font-bold text-blue-600 leading-snug">{dirText()}</div>
+                            <div className="text-xs text-gray-400 mt-3 border-t pt-3 leading-relaxed">
+                                平移只改变<span className="text-blue-600 font-semibold">位置</span>，
+                                图形的<span className="font-semibold">形状、大小、方向都不变</span>。
+                                每个点移动的方向和距离都一样。
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow p-3">
+                            <div className="text-sm font-semibold text-gray-600 mb-2 text-center">用按钮平移（每次 1 格）</div>
+                            <div className="grid grid-cols-3 gap-2 w-44 mx-auto">
+                                <span />
+                                <button onClick={() => slide(0, -1)} className="py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold smooth">↑</button>
+                                <span />
+                                <button onClick={() => slide(-1, 0)} className="py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold smooth">←</button>
+                                <button onClick={reset} className="py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-bold smooth">归位</button>
+                                <button onClick={() => slide(1, 0)} className="py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold smooth">→</button>
+                                <span />
+                                <button onClick={() => slide(0, 1)} className="py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold smooth">↓</button>
+                                <span />
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="text-sm text-gray-500 mb-2">换个图形</div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {Object.entries(SHAPES).map(([k, s]) => (
+                                    <button key={k} onClick={() => { setShapeKey(k); reset(); }}
+                                        className={"px-2 py-2 rounded-lg text-sm font-semibold smooth " +
+                                            (shapeKey === k ? "bg-blue-500 text-white shadow" : "bg-white text-gray-600 hover:bg-blue-50")}>
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            直接拖<span className="text-blue-600 font-semibold">蓝色图形</span>，或点方向按钮，
+                            看它沿直线滑动。拖<span className="text-gray-500 font-semibold">灰色原图</span>可换个起点。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块二：旋转 —— 绕一个中心点旋转 90° / 180° / 270°
+        // 旋转点用格点表示。旋转公式（屏幕坐标，顺时针为正）：
+        //   逆时针 90°： (x,y) -> (y, -x)
+        //   顺时针 90°： (x,y) -> (-y, x)
+        // 这里 x=col, y=row，相对旋转中心。
+        // ============================================================
+        const Rotate = () => {
+            const [shapeKey, setShapeKey] = useState('flag');
+            const [center, setCenter] = useState({ c: 5, r: 6 });
+            const [angle, setAngle] = useState(0);        // 0/90/180/270
+            const [dirCW, setDirCW] = useState(true);     // true=顺时针
+            const svgRef = useRef(null);
+            const drag = useRef(false);
+            const shape = SHAPES[shapeKey];
+            // 原图参考点固定相对中心放置（放在中心右上方一点）
+            const base = { c: center.c + 1, r: center.r - 3 };
+
+            // 把一个格点绕 center 旋转 angle（顺/逆）
+            const rot = (c, r) => {
+                let x = c - center.c, y = r - center.r;
+                let steps = (dirCW ? angle : 360 - angle) / 90;
+                for (let i = 0; i < steps; i++) { const nx = -y, ny = x; x = nx; y = ny; } // 顺时针 90°
+                return [center.c + x, center.r + y];
+            };
+
+            const origPts = shape.pts.map(([c, r]) => [base.c + c, base.r + r]);
+            const rotPts = origPts.map(([c, r]) => rot(c, r));
+
+            const pointCell = useCallback((cx, cy) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                const x = (cx - rect.left) / rect.width * GW;
+                const y = (cy - rect.top) / rect.height * GH;
+                return { c: Math.round((x - PAD) / CELL), r: Math.round((y - PAD) / CELL) };
+            }, []);
+            const onDown = (e) => { e.preventDefault(); drag.current = true; };
+            const onMove = (e) => {
+                if (!drag.current) return;
+                const pt = e.touches ? e.touches[0] : e;
+                const cell = pointCell(pt.clientX, pt.clientY);
+                setCenter({
+                    c: Math.max(2, Math.min(COLS - 2, cell.c)),
+                    r: Math.max(3, Math.min(ROWS - 1, cell.r)),
+                });
+            };
+            const onUp = () => { drag.current = false; };
+
+            // 旋转角度的圆弧指示（围绕中心画一段弧）
+            const turned = angle > 0;
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-8">
+                    <div className="bg-white rounded-2xl shadow p-3">
+                        <svg ref={svgRef} width={GW} height={GH} viewBox={`0 0 ${GW} ${GH}`} className="tf-svg"
+                            onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                            onTouchMove={onMove} onTouchEnd={onUp}>
+                            <Grid />
+                            {/* 原图灰影 */}
+                            <polygon points={origPts.map(([c, r]) => `${px(c)},${py(r)}`).join(' ')}
+                                fill="#cbd5e1" opacity="0.45" stroke="#94a3b8" strokeWidth="2" />
+                            {/* 旋转后的像（用 SVG transform 做旋转动画，绕中心点） */}
+                            <polygon points={origPts.map(([c, r]) => `${px(c)},${py(r)}`).join(' ')}
+                                fill="#8b5cf6" opacity="0.85" stroke="#6d28d9" strokeWidth="2.5"
+                                className="moving"
+                                style={{
+                                    transform: `rotate(${(dirCW ? 1 : -1) * angle}deg)`,
+                                    transformOrigin: `${px(center.c)}px ${py(center.r)}px`,
+                                    transformBox: 'view-box',
+                                }} />
+                            {/* 旋转中心 */}
+                            <circle cx={px(center.c)} cy={py(center.r)} r="9" fill="#ef4444" className="grab"
+                                onMouseDown={onDown} onTouchStart={onDown} />
+                            <circle cx={px(center.c)} cy={py(center.r)} r="3.5" fill="#fff" pointerEvents="none" />
+                            <text x={px(center.c) + 12} y={py(center.r) + 5} fontSize="12" fill="#ef4444" fontWeight="700">中心 O</text>
+                            <text x={px(base.c)} y={py(base.r) - 8} fontSize="13" fill="#64748b" fontWeight="600">原图</text>
+                            {turned && <text x={px(rotPts[0][0])} y={py(rotPts[0][1]) - 8} fontSize="13" fill="#6d28d9" fontWeight="700">旋转后</text>}
+                        </svg>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-72">
+                        <div className="bg-white rounded-2xl shadow px-6 py-5 text-center">
+                            <div className="text-sm text-gray-400 mb-1">绕中心 O 旋转</div>
+                            <div className="text-4xl font-bold text-violet-600">{angle}<span className="text-2xl">°</span></div>
+                            <div className="text-lg font-semibold text-violet-500 mt-1">{dirCW ? '顺时针 ↻' : '逆时针 ↺'}</div>
+                            <div className="text-xs text-gray-400 mt-3 border-t pt-3 leading-relaxed">
+                                旋转要说清三件事：<span className="font-semibold">绕哪个点、转多少度、朝哪个方向</span>。
+                                旋转后形状、大小不变，每个点到中心 O 的距离也不变。
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow p-1.5 flex gap-1.5">
+                            {[[true, '顺时针 ↻'], [false, '逆时针 ↺']].map(([cw, label]) => (
+                                <button key={String(cw)} onClick={() => setDirCW(cw)}
+                                    className={"flex-1 px-2 py-2 rounded-xl text-sm font-semibold smooth " +
+                                        (dirCW === cw ? "bg-violet-500 text-white shadow" : "bg-white text-gray-500 hover:bg-gray-100")}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-2">
+                            {[0, 90, 180, 270].map(a => (
+                                <button key={a} onClick={() => setAngle(a)}
+                                    className={"py-2 rounded-lg text-sm font-bold smooth " +
+                                        (angle === a ? "bg-violet-500 text-white shadow" : "bg-white text-gray-600 hover:bg-violet-50")}>
+                                    {a}°
+                                </button>
+                            ))}
+                        </div>
+
+                        <div>
+                            <div className="text-sm text-gray-500 mb-2">换个图形</div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {Object.entries(SHAPES).map(([k, s]) => (
+                                    <button key={k} onClick={() => setShapeKey(k)}
+                                        className={"px-2 py-2 rounded-lg text-sm font-semibold smooth " +
+                                            (shapeKey === k ? "bg-violet-500 text-white shadow" : "bg-white text-gray-600 hover:bg-violet-50")}>
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            拖<span className="text-red-500 font-semibold">红色中心点 O</span> 换旋转中心，
+                            点角度按钮看<span className="text-violet-600 font-semibold">紫色图形</span>绕着 O 转起来。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块三：轴对称 —— 沿对称轴翻折，画出镜像
+        // 对称轴可选：竖直、水平。镜像 = 关于轴翻折后的点。
+        // ============================================================
+        const Symmetry = () => {
+            const [shapeKey, setShapeKey] = useState('boat');
+            const [axis, setAxis] = useState('v');           // 'v' 竖轴 | 'h' 横轴
+            const [axisPos, setAxisPos] = useState(7);       // 轴所在的格线（竖轴为列号，横轴为行号）
+            const [pos, setPos] = useState({ c: 2, r: 4 });  // 原图参考点
+            const svgRef = useRef(null);
+            const drag = useRef(null);                       // 'axis' | 'shape' | null
+            const shape = SHAPES[shapeKey];
+
+            // 关于轴翻折一个格点
+            const mirror = (c, r) => axis === 'v' ? [2 * axisPos - c, r] : [c, 2 * axisPos - r];
+
+            const origPts = shape.pts.map(([c, r]) => [pos.c + c, pos.r + r]);
+            const mirPts = origPts.map(([c, r]) => mirror(c, r));
+
+            const pointXY = useCallback((cx, cy) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                return {
+                    x: (cx - rect.left) / rect.width * GW,
+                    y: (cy - rect.top) / rect.height * GH,
+                };
+            }, []);
+            const onDown = (which) => (e) => { e.preventDefault(); drag.current = which; };
+            const onMove = (e) => {
+                if (!drag.current) return;
+                const pt = e.touches ? e.touches[0] : e;
+                const p = pointXY(pt.clientX, pt.clientY);
+                if (drag.current === 'axis') {
+                    if (axis === 'v') setAxisPos(Math.max(1, Math.min(COLS - 1, Math.round((p.x - PAD) / CELL))));
+                    else setAxisPos(Math.max(1, Math.min(ROWS - 1, Math.round((p.y - PAD) / CELL))));
+                } else {
+                    const cs = shape.pts.map(q => q[0]), rs = shape.pts.map(q => q[1]);
+                    const w = Math.max(...cs) - Math.min(...cs), h = Math.max(...rs) - Math.min(...rs);
+                    const c = Math.round((p.x - PAD) / CELL), r = Math.round((p.y - PAD) / CELL);
+                    setPos({
+                        c: Math.max(0, Math.min(COLS - w, c)),
+                        r: Math.max(0, Math.min(ROWS - h, r)),
+                    });
+                }
+            };
+            const onUp = () => { drag.current = null; };
+
+            // 对称轴线段端点
+            const axisLine = axis === 'v'
+                ? { x1: px(axisPos), y1: py(0), x2: px(axisPos), y2: py(ROWS) }
+                : { x1: px(0), y1: py(axisPos), x2: px(COLS), y2: py(axisPos) };
+
+            // 对应点连线（垂直于轴、被轴平分）
+            const links = origPts.map(([c, r], i) => {
+                const [mc, mr] = mirPts[i];
+                return <line key={'lk' + i} x1={px(c)} y1={py(r)} x2={px(mc)} y2={py(mr)}
+                    stroke="#34d399" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.7" />;
+            });
+
+            return (
+                <div className="fade-in flex flex-col lg:flex-row items-center justify-center gap-8">
+                    <div className="bg-white rounded-2xl shadow p-3">
+                        <svg ref={svgRef} width={GW} height={GH} viewBox={`0 0 ${GW} ${GH}`} className="tf-svg"
+                            onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                            onTouchMove={onMove} onTouchEnd={onUp}>
+                            <Grid />
+                            {links}
+                            {/* 对称轴 */}
+                            <line {...axisLine} stroke="#059669" strokeWidth="2.5" strokeDasharray="8 5" />
+                            <g className="grab" onMouseDown={onDown('axis')} onTouchStart={onDown('axis')}>
+                                {axis === 'v'
+                                    ? <rect x={px(axisPos) - 7} y={py(0)} width="14" height={py(ROWS) - py(0)} fill="transparent" />
+                                    : <rect x={px(0)} y={py(axisPos) - 7} width={px(COLS) - px(0)} height="14" fill="transparent" />}
+                            </g>
+                            {/* 原图 */}
+                            <polygon points={origPts.map(([c, r]) => `${px(c)},${py(r)}`).join(' ')}
+                                fill="#3b82f6" opacity="0.8" stroke="#1d4ed8" strokeWidth="2.5"
+                                className="grab" onMouseDown={onDown('shape')} onTouchStart={onDown('shape')} />
+                            {/* 镜像 */}
+                            <polygon points={mirPts.map(([c, r]) => `${px(c)},${py(r)}`).join(' ')}
+                                fill="#10b981" opacity="0.8" stroke="#047857" strokeWidth="2.5" />
+                            <text x={px(origPts[0][0])} y={py(origPts[0][1]) - 8} fontSize="13" fill="#1d4ed8" fontWeight="700">原图</text>
+                            <text x={px(mirPts[0][0])} y={py(mirPts[0][1]) - 8} fontSize="13" fill="#047857" fontWeight="700">镜像</text>
+                        </svg>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-72">
+                        <div className="bg-white rounded-2xl shadow px-6 py-5 text-center">
+                            <div className="text-sm text-gray-400 mb-1">沿对称轴翻折</div>
+                            <div className="text-xl font-bold text-emerald-600">{axis === 'v' ? '竖直对称轴' : '水平对称轴'}</div>
+                            <div className="text-xs text-gray-400 mt-3 border-t pt-3 leading-relaxed">
+                                原图和镜像<span className="font-semibold">完全一样大</span>，
+                                每对对应点到对称轴的<span className="text-emerald-600 font-semibold">距离相等</span>，
+                                连线都<span className="font-semibold">垂直被轴平分</span>。沿轴对折，两边正好重合。
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl shadow p-1.5 flex gap-1.5">
+                            {[['v', '竖直轴 ┃'], ['h', '水平轴 ━']].map(([k, label]) => (
+                                <button key={k} onClick={() => { setAxis(k); setAxisPos(k === 'v' ? 7 : 6); }}
+                                    className={"flex-1 px-2 py-2 rounded-xl text-sm font-semibold smooth " +
+                                        (axis === k ? "bg-emerald-500 text-white shadow" : "bg-white text-gray-500 hover:bg-gray-100")}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div>
+                            <div className="text-sm text-gray-500 mb-2">换个图形</div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {Object.entries(SHAPES).map(([k, s]) => (
+                                    <button key={k} onClick={() => setShapeKey(k)}
+                                        className={"px-2 py-2 rounded-lg text-sm font-semibold smooth " +
+                                            (shapeKey === k ? "bg-emerald-500 text-white shadow" : "bg-white text-gray-600 hover:bg-emerald-50")}>
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                            拖<span className="text-emerald-600 font-semibold">绿色虚线对称轴</span>左右/上下移动，
+                            或拖<span className="text-blue-600 font-semibold">蓝色原图</span>，
+                            看<span className="text-emerald-600 font-semibold">绿色镜像</span>跟着翻折。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块四：数对称轴 —— 给一个轴对称图形，数它有几条对称轴
+        // 用规则多边形/常见图形，预先标注对称轴条数。
+        // ============================================================
+        const AxisCount = () => {
+            // 每个图形：画法（中心化的顶点，单位长度 1）+ 对称轴条数 + 各轴角度
+            const FIGS = [
+                { name: '等边三角形', n: 3, draw: (R) => poly(3, R, -90), axes: [90, 210, 330] },
+                { name: '正方形', n: 4, draw: (R) => poly(4, R, -45), axes: [0, 45, 90, 135] },
+                { name: '长方形', n: 2, draw: () => rectPts(2.2, 1.4), axes: [0, 90] },
+                { name: '正五边形', n: 5, draw: (R) => poly(5, R, -90), axes: [90, 90 + 36, 90 + 72, 90 + 108, 90 + 144].map(a => a % 180) },
+                { name: '正六边形', n: 6, draw: (R) => poly(6, R, 0), axes: [0, 30, 60, 90, 120, 150] },
+                { name: '圆形', n: '无数', draw: () => null, axes: [] },
+                { name: '等腰三角形', n: 1, draw: () => [[0, -1.3], [1.1, 1], [-1.1, 1]], axes: [90] },
+                { name: '一般平行四边形', n: 0, draw: () => [[-1.3, -0.8], [0.5, -0.8], [1.3, 0.8], [-0.5, 0.8]], axes: [] },
+            ];
+            // 生成正多边形顶点（单位 R），startDeg 为第一个顶点角度
+            function poly(k, R, startDeg) {
+                const arr = [];
+                for (let i = 0; i < k; i++) {
+                    const a = (startDeg + i * 360 / k) * Math.PI / 180;
+                    arr.push([R * Math.cos(a), R * Math.sin(a)]);
+                }
+                return arr;
+            }
+            function rectPts(w, h) { return [[-w, -h], [w, -h], [w, h], [-w, h]]; }
+
+            const [idx, setIdx] = useState(0);
+            const [picked, setPicked] = useState(null);
+            const [showAxes, setShowAxes] = useState(false);
+            const [score, setScore] = useState({ ok: 0, total: 0 });
+            const fig = FIGS[idx];
+            const W = 320, H = 320, cx = W / 2, cy = H / 2, scale = 78;
+
+            const verts = fig.draw(1);
+            const shapeEl = verts
+                ? <polygon points={verts.map(([x, y]) => `${cx + x * scale},${cy + y * scale}`).join(' ')}
+                    fill="#bfdbfe" stroke="#2563eb" strokeWidth="3" />
+                : <circle cx={cx} cy={cy} r={scale * 1.1} fill="#bfdbfe" stroke="#2563eb" strokeWidth="3" />;
+
+            // 对称轴（穿过中心的长线）
+            const axisEls = showAxes && (fig.name === '圆形'
+                ? [0, 30, 60, 90, 120, 150].map((a, i) => axisLineEl(a, i, cx, cy, scale, true))
+                : fig.axes.map((a, i) => axisLineEl(a, i, cx, cy, scale, false)));
+
+            function axisLineEl(a, i, cx, cy, scale, dashed) {
+                const rad = a * Math.PI / 180, L = scale * 1.5;
+                return <line key={'ax' + i}
+                    x1={cx - L * Math.cos(rad)} y1={cy - L * Math.sin(rad)}
+                    x2={cx + L * Math.cos(rad)} y2={cy + L * Math.sin(rad)}
+                    stroke="#ef4444" strokeWidth="2" strokeDasharray={dashed ? '5 6' : '7 4'} />;
+            }
+
+            const options = useMemo(() => {
+                if (fig.name === '圆形') return ['1', '2', '4', '无数'];
+                const base = [0, 1, 2, 3, 4, 5, 6];
+                const set = new Set([fig.n]);
+                while (set.size < 4) set.add(base[Math.floor(Math.random() * base.length)]);
+                return Array.from(set).sort((a, b) => a - b).map(String);
+            }, [idx]);
+
+            const choose = (opt) => {
+                if (picked) return;
+                setPicked(opt);
+                setShowAxes(true);
+                const ok = opt === String(fig.n);
+                setScore(s => ({ ok: s.ok + (ok ? 1 : 0), total: s.total + 1 }));
+            };
+            const next = () => {
+                setPicked(null); setShowAxes(false);
+                setIdx(i => (i + 1) % FIGS.length);
+            };
+
+            const btnClass = (opt) => {
+                if (!picked) return "bg-white text-gray-700 hover:bg-blue-50 border-2 border-gray-200";
+                if (opt === String(fig.n)) return "bg-emerald-500 text-white border-2 border-emerald-500";
+                if (opt === picked) return "bg-rose-400 text-white border-2 border-rose-400";
+                return "bg-white text-gray-400 border-2 border-gray-100";
+            };
+
+            return (
+                <div className="fade-in flex flex-col items-center gap-6">
+                    <div className="flex flex-col lg:flex-row items-center gap-8">
+                        <div className="bg-white rounded-2xl shadow p-3">
+                            <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="tf-svg">
+                                {shapeEl}
+                                {axisEls}
+                            </svg>
+                            <div className="text-center text-gray-600 font-semibold mt-1">{fig.name}</div>
+                        </div>
+                        <div className="flex flex-col gap-3 w-60">
+                            <div className="text-center text-gray-500 text-sm">它有几条对称轴？</div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {options.map(opt => (
+                                    <button key={opt} onClick={() => choose(opt)}
+                                        className={"px-4 py-3 rounded-xl font-bold text-lg smooth " + btnClass(opt)}>
+                                        {opt} 条
+                                    </button>
+                                ))}
+                            </div>
+                            {picked && (
+                                <div className="text-center mt-1">
+                                    <div className={picked === String(fig.n) ? "text-emerald-600 font-bold" : "text-rose-500 font-bold"}>
+                                        {picked === String(fig.n) ? '✓ 答对了！' : '再数数红色虚线～'}
+                                    </div>
+                                    <div className="text-sm text-gray-500 mt-1">
+                                        {fig.name}有 <span className="font-bold text-red-500">{fig.n}</span> 条对称轴
+                                        {fig.n === 0 && '（不是轴对称图形）'}
+                                    </div>
+                                    <button onClick={next}
+                                        className="mt-3 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold smooth">
+                                        下一个 →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="text-gray-500">
+                        得分：<span className="font-bold text-emerald-600">{score.ok}</span> / {score.total}
+                    </div>
+                    <p className="text-xs text-gray-400 max-w-md text-center leading-relaxed">
+                        对称轴：沿着它对折，两边能<span className="text-blue-600 font-semibold">完全重合</span>的那条直线。
+                        正多边形有几条边，就有<span className="font-semibold">几条</span>对称轴。
+                    </p>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 应用外壳
+        // ============================================================
+        const App = () => {
+            const [tab, setTab] = useState('translate');
+            const tabs = [
+                ['translate', '平移', 'blue'],
+                ['rotate', '旋转', 'violet'],
+                ['symmetry', '轴对称', 'emerald'],
+                ['axiscount', '数对称轴', 'rose'],
+            ];
+            const colorMap = { blue: 'bg-blue-500', violet: 'bg-violet-500', emerald: 'bg-emerald-500', rose: 'bg-rose-500' };
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">平移 · 旋转 · 对称</h1>
+                        <p className="text-slate-500 mt-1">在网格上动手做图形变换，看清"哪些变了，哪些没变"</p>
+                    </header>
+
+                    <div className="flex justify-center gap-3 mb-8 flex-wrap">
+                        {tabs.map(([key, label, color]) => (
+                            <button key={key} onClick={() => setTab(key)}
+                                className={"px-6 py-2.5 rounded-full font-semibold smooth " +
+                                    (tab === key ? colorMap[color] + " text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="max-w-4xl mx-auto">
+                        {tab === 'translate' && <Translate />}
+                        {tab === 'rotate' && <Rotate />}
+                        {tab === 'symmetry' && <Symmetry />}
+                        {tab === 'axiscount' && <AxisCount />}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

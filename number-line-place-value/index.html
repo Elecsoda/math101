@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>万以内数与大数数位表 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #dbeafe 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .25); font-size: 24px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none;
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.primary:hover { color: #fff; }
+        .card {
+            background: rgba(255,255,255,.95); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 20px; }
+        .tabs {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            margin-bottom: 18px; padding: 6px; border: 1px solid var(--line);
+            border-radius: 16px; background: #fff;
+        }
+        .tab {
+            border: 0; border-radius: 12px; padding: 13px 10px; color: var(--muted);
+            background: transparent; font-weight: 950; text-align: center; line-height: 1.25;
+        }
+        .tab small { display: block; font-weight: 750; font-size: 11px; margin-top: 3px; opacity: .82; }
+        .tab.active { background: var(--indigo); color: #fff; box-shadow: 0 8px 18px rgba(79,70,229,.25); }
+        .view { display: none; animation: fade .22s ease; }
+        .view.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+        .controls input[type=text] {
+            flex: 1; min-width: 220px; border: 1px solid var(--line); border-radius: 10px;
+            padding: 10px 12px; font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #312e81;
+        }
+        .controls input[type=text]:focus { outline: none; border-color: #a5b4fc; }
+        .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .chip { padding: 8px 12px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850; border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+
+        .place-table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; table-layout: fixed; }
+        .place-table th, .place-table td { border: 1px solid var(--line); text-align: center; padding: 4px 2px; }
+        .place-table thead .group { font-size: 12px; font-weight: 950; color: #fff; padding: 7px 2px; }
+        .group.zhao { background: #0d9488; }
+        .group.yi  { background: #ef4444; }
+        .group.wan { background: #f59e0b; }
+        .group.ge  { background: #2563eb; }
+        .place-table .pname { font-size: 12px; color: var(--muted); font-weight: 850; padding: 6px 2px; }
+        .place-table .digit { font-size: clamp(20px, 3.5vw, 30px); font-weight: 950; color: #1f2937; height: 52px; }
+        .place-table .digit.lead { color: #dbe4ef; }
+        .place-table td.gcell.zhao { background: #f0fdfa; }
+        .place-table td.gcell.yi  { background: #fef2f2; }
+        .place-table td.gcell.wan { background: #fffbeb; }
+        .place-table td.gcell.ge  { background: #eff6ff; }
+        .place-table td.gstart, .place-table th.gstart { border-left: 3px solid #94a3b8; }
+
+        .read-out {
+            margin-top: 14px; padding: 18px; border-radius: 16px; background: #eef2ff;
+            border: 1px solid #c7d2fe; text-align: center;
+        }
+        .read-out .num { font-size: 14px; color: var(--muted); font-weight: 850; margin-bottom: 6px; }
+        .read-out .chinese { font-size: clamp(24px, 4.5vw, 38px); font-weight: 950; color: #312e81; line-height: 1.5; }
+        .zero-mark { color: #e11d48; background: #ffe4e6; border-radius: 6px; padding: 0 2px; }
+        .seg-zhao { color: #0d9488; }
+        .seg-yi  { color: #dc2626; }
+        .seg-wan { color: #d97706; }
+        .seg-ge  { color: #2563eb; }
+
+        .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+        .explain {
+            border: 1px solid var(--line); border-radius: 14px; background: #f8fafc;
+            padding: 13px 14px; line-height: 1.55; font-size: 14px;
+        }
+        .explain b { color: var(--indigo); }
+
+        .abacus-wrap { overflow-x: auto; padding-bottom: 4px; }
+        .abacus {
+            min-width: 820px; display: grid; grid-template-columns: repeat(12, 1fr);
+            gap: 7px; padding: 14px; border-radius: 16px; background: #f8fafc; border: 1px solid var(--line);
+        }
+        .rod {
+            height: 292px; border-radius: 14px; background: #fff; border: 1px solid #e5e7eb;
+            padding: 9px 6px; display: flex; flex-direction: column; align-items: center;
+        }
+        .rod .pname { color: #475569; font-size: 12px; font-weight: 950; }
+        .rod .unit { color: #94a3b8; font-size: 11px; margin: 2px 0 7px; font-weight: 800; }
+        .rod-line { position: relative; width: 6px; height: 162px; flex: 0 0 162px; border-radius: 999px; background: #cbd5e1; display: flex; flex-direction: column-reverse; justify-content: flex-start; align-items: center; gap: 3px; padding: 7px 0; overflow: visible; }
+        .bead { width: 25px; height: 14px; flex: 0 0 14px; border-radius: 999px; background: linear-gradient(180deg, #fbbf24, #d97706); border: 2px solid #b45309; box-shadow: 0 2px 4px rgba(146, 64, 14, .18); }
+        .rod .digit { margin-top: 8px; min-width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; color: #fff; background: var(--indigo); font-weight: 950; }
+        .rod .value { margin-top: 5px; color: #64748b; font-size: 11px; font-weight: 850; text-align: center; line-height: 1.3; }
+        .place-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; width: 100%; margin-top: 8px; }
+        .place-actions button {
+            border: 1px solid var(--line); border-radius: 8px; min-height: 28px;
+            background: #f8fafc; color: #334155; font-weight: 950; padding: 0;
+        }
+        .place-actions button:hover { border-color: #a5b4fc; color: var(--indigo); background: #eef2ff; }
+        .carry-flash { animation: carryFlash .55s ease; }
+        @keyframes carryFlash {
+            0% { box-shadow: 0 0 0 0 rgba(79,70,229,.0); transform: translateY(0); }
+            45% { box-shadow: 0 0 0 5px rgba(79,70,229,.18); transform: translateY(-2px); }
+            100% { box-shadow: 0 0 0 0 rgba(79,70,229,.0); transform: translateY(0); }
+        }
+
+        .exchange {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch;
+        }
+        .exchange-box { border: 1px solid var(--line); border-radius: 16px; background: #fff; padding: 16px; }
+        .exchange-title { font-weight: 950; margin-bottom: 10px; color: #334155; }
+        .mini-units { display: flex; flex-wrap: wrap; gap: 7px; min-height: 88px; align-items: center; }
+        .mini { width: 18px; height: 18px; border-radius: 50%; background: #60a5fa; border: 2px solid #1d4ed8; }
+        .bundle { display: inline-flex; flex-wrap: wrap; width: 76px; gap: 4px; padding: 6px; border-radius: 12px; border: 2px solid #f59e0b; background: #fffbeb; }
+        .arrow { display: grid; place-items: center; color: var(--indigo); font-weight: 950; font-size: 28px; }
+        .place-power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 18px; }
+        .place-power-card {
+            border: 1px solid var(--line); border-radius: 14px; background: #fff; padding: 13px 14px;
+            text-align: center; cursor: pointer; transition: .15s ease;
+        }
+        .place-power-card:hover, .place-power-card.active { border-color: #a5b4fc; background: #eef2ff; }
+        .place-power-card .name { font-size: 18px; font-weight: 950; color: #334155; }
+        .place-power-card .value { margin-top: 5px; font-size: 20px; font-weight: 950; color: var(--indigo); }
+        .place-power-card .expr { margin-top: 5px; min-height: 17px; color: var(--muted); font-size: 12px; font-weight: 850; }
+        .breakdown-head { margin: 8px 0 10px; font-weight: 950; color: #334155; }
+        .breakdown-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .breakdown-card {
+            border: 1px solid var(--line); border-radius: 14px; background: #fff;
+            padding: 12px 13px; min-height: 122px;
+        }
+        .breakdown-card.zero { opacity: .58; background: #f8fafc; }
+        .breakdown-card .place { color: #475569; font-size: 14px; font-weight: 950; }
+        .breakdown-card .digit { margin-top: 6px; color: var(--indigo); font-size: 24px; font-weight: 950; }
+        .breakdown-card .meaning { margin-top: 4px; color: #334155; font-size: 13px; font-weight: 900; line-height: 1.45; }
+        .breakdown-card .expr { margin-top: 4px; color: #64748b; font-size: 12px; font-weight: 850; line-height: 1.45; }
+        .slider-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 14px 0; }
+        .slider-row input[type=range] { flex: 1; min-width: 220px; }
+        .result-line { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: #eef2ff; color: #312e81; font-weight: 950; line-height: 1.6; }
+
+        @media (max-width: 760px) {
+            .page { padding: 16px; }
+            .topbar { display: block; }
+            .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .tabs { grid-template-columns: 1fr; }
+            .explain-grid, .exchange { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">位</div>
+                <div>
+                    <h1>万以内数与大数数位表</h1>
+                    <p class="sub">依照读大数工具，用数位表和算珠理解十进制位值</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-view="table">数位表<small>四位一级读大数</small></button>
+            <button class="tab" data-view="abacus">算珠表示<small>每位几颗珠</small></button>
+            <button class="tab" data-view="exchange">十进制换位<small>10 个换 1 个</small></button>
+        </div>
+
+        <section class="card panel">
+            <div class="preset-row" id="presets"></div>
+            <div class="controls" id="mainControls">
+                <input type="text" id="numInput" inputmode="numeric" placeholder="输入整数，最多 12 位" value="10080500">
+                <button class="btn" id="randomBtn">随机大数</button>
+            </div>
+
+            <div class="view active" id="view-table">
+                <h2>数位表：每一位都有自己的价值</h2>
+                <p class="lead">同样是数字 8，放在个位表示 8，放在万位表示 8 万。先看数位，再读数。</p>
+                <div style="overflow-x:auto">
+                    <table class="place-table" id="placeTable"></table>
+                </div>
+                <div class="read-out">
+                    <div class="num" id="readDigits"></div>
+                    <div class="chinese" id="readChinese"></div>
+                </div>
+                <div class="explain-grid">
+                    <div class="explain">从<b>个位</b>起，每<b>四位</b>分一级：个级、万级、亿级。</div>
+                    <div class="explain">一个数字的大小由<b>数字本身</b>和<b>所在数位</b>共同决定。</div>
+                    <div class="explain">每级末尾的 0 不读，中间连续几个 0 通常只读<b>一个零</b>。</div>
+                </div>
+            </div>
+
+            <div class="view" id="view-abacus">
+                <h2>算珠表示：一列就是一个数位</h2>
+                <p class="lead">进位模式：点某一位的 + / -。加到 10 颗会自动向左进 1；不够减时，会向左边高一位借 1，换成这一位的 10 颗再减。</p>
+                <div class="abacus-wrap"><div class="abacus" id="abacus"></div></div>
+                <div class="result-line" id="abacusLine"></div>
+            </div>
+
+            <div class="view" id="view-exchange">
+                <h2>十进制换位：每向左一位，单位扩大 10 倍</h2>
+                <p class="lead">上面的随机大数会在这里拆开：看它有几个 1、几个 10、几个 100、几个 1000……再看十、百、千这些单位是怎样由 10 一层一层乘出来的。</p>
+                <div class="place-power-grid" id="placePowerGrid"></div>
+                <div class="breakdown-head" id="breakdownHead"></div>
+                <div class="breakdown-grid" id="placeBreakdownGrid"></div>
+                <div class="result-line" id="breakdownLine"></div>
+                <div class="slider-row">
+                    <label for="unitSelect"><b>低一级单位</b></label>
+                    <select id="unitSelect" class="btn">
+                        <option value="1">一（个位单位）</option>
+                        <option value="10">十</option>
+                        <option value="100">百</option>
+                        <option value="1000">千</option>
+                        <option value="10000">万</option>
+                        <option value="100000">十万</option>
+                    </select>
+                    <input type="range" id="countRange" min="0" max="29" value="17">
+                    <b id="countLabel">17 个</b>
+                </div>
+                <div class="exchange">
+                    <div class="exchange-box">
+                        <div class="exchange-title" id="rawTitle">原来：低一级单位</div>
+                        <div class="mini-units" id="rawUnits"></div>
+                    </div>
+                    <div class="exchange-box">
+                        <div class="exchange-title" id="bundleTitle">换位后：捆成高一级</div>
+                        <div class="mini-units" id="bundledUnits"></div>
+                    </div>
+                </div>
+                <div class="result-line" id="exchangeLine"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const MAX_LEN = 12;
+        const placeNames = ["个","十","百","千","万","十万","百万","千万","亿","十亿","百亿","千亿"];
+        const levelNames = ["", "万", "亿"];
+        const levelClasses = ["ge", "wan", "yi"];
+        const levelLabels = ["个级", "万级", "亿级"];
+        const cnDigits = ["零","一","二","三","四","五","六","七","八","九"];
+        const $ = id => document.getElementById(id);
+        let lastChangedPos = null;
+        let lastActionText = "可以直接点每一位的 + 或 -，观察进位和借位。";
+
+        function cleanNumber(raw) {
+            let s = String(raw || "").replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+            if (s.length > MAX_LEN) s = s.slice(0, MAX_LEN);
+            return s || "0";
+        }
+
+        function groupNumber(s) {
+            s = cleanNumber(s);
+            let out = "";
+            for (let i = 0; i < s.length; i++) {
+                if (i > 0 && (s.length - i) % 4 === 0) out += " ";
+                out += s[i];
+            }
+            return out;
+        }
+
+        function readSegment(segDigits) {
+            const units = ["","十","百","千"];
+            const n = segDigits.length;
+            let out = "";
+            let pendingZero = false;
+            for (let i = 0; i < n; i++) {
+                const d = segDigits[i];
+                const pos = n - 1 - i;
+                if (d === 0) {
+                    pendingZero = true;
+                } else {
+                    if (pendingZero && out !== "") out += "零";
+                    pendingZero = false;
+                    out += cnDigits[d] + units[pos];
+                }
+            }
+            return out;
+        }
+
+        function readNumber(numStr) {
+            const s = cleanNumber(numStr);
+            if (s === "0") return { text: "零", parts: [{ text: "零", level: 0 }] };
+            const digits = s.split("").map(Number);
+            const rem = digits.length % 4;
+            const segs = [];
+            let idx = 0;
+            if (rem > 0) { segs.push(digits.slice(0, rem)); idx = rem; }
+            while (idx < digits.length) { segs.push(digits.slice(idx, idx + 4)); idx += 4; }
+            const parts = [];
+            let out = "";
+            let needZero = false;
+            for (let g = 0; g < segs.length; g++) {
+                const seg = segs[g];
+                const level = segs.length - 1 - g;
+                const allZero = seg.every(d => d === 0);
+                if (allZero) {
+                    if (out) needZero = true;
+                    continue;
+                }
+                let piece = "";
+                if (out && (seg[0] === 0 || needZero)) piece += "零";
+                needZero = false;
+                piece += readSegment(seg) + (levelNames[level] || "");
+                parts.push({ text: piece, level });
+                out += piece;
+            }
+            if (out.startsWith("一十")) {
+                out = out.slice(1);
+                if (parts[0] && parts[0].text.startsWith("一十")) parts[0].text = parts[0].text.slice(1);
+            }
+            return { text: out, parts };
+        }
+
+        function levelClass(pos) {
+            return levelClasses[Math.floor(pos / 4)] || "yi";
+        }
+
+        function digitsByPosition(s, cols) {
+            const digits = cleanNumber(s).split("").map(Number);
+            return Array.from({ length: cols }, (_, pos) => {
+                const idx = digits.length - 1 - pos;
+                return idx >= 0 ? digits[idx] : null;
+            });
+        }
+
+        function numberValue() {
+            return BigInt(cleanNumber($("numInput").value));
+        }
+
+        function setNumberValue(value) {
+            const max = BigInt("9".repeat(MAX_LEN));
+            if (value < 0n) value = 0n;
+            if (value > max) value = max;
+            $("numInput").value = value.toString();
+        }
+
+        function changePlace(pos, delta) {
+            const unit = 10n ** BigInt(pos);
+            const before = numberValue();
+            const target = before + BigInt(delta) * unit;
+            if (target < 0n) {
+                lastActionText = `已经是 0，不能再从${placeNames[pos]}位减少。`;
+                setNumberValue(0n);
+            } else {
+                setNumberValue(target);
+                lastActionText = describePlaceChange(before, numberValue(), pos, delta);
+            }
+            lastChangedPos = pos;
+            refreshAll();
+        }
+
+        function digitAt(value, pos) {
+            return Number((value / (10n ** BigInt(pos))) % 10n);
+        }
+
+        function highestBorrowPos(value, pos) {
+            for (let p = pos + 1; p < MAX_LEN; p++) {
+                if (digitAt(value, p) > 0) return p;
+            }
+            return null;
+        }
+
+        function describePlaceChange(before, after, pos, delta) {
+            const name = placeNames[pos];
+            if (delta > 0) {
+                const oldDigit = digitAt(before, pos);
+                if (oldDigit === 9) {
+                    return `${name}位再加 1，凑成 10 个${name}，自动向左边高一位进 1。现在是 ${groupNumber(after.toString())}。`;
+                }
+                return `${name}位增加 1 个单位。现在是 ${groupNumber(after.toString())}。`;
+            }
+            const oldDigit = digitAt(before, pos);
+            if (oldDigit === 0) {
+                const borrowPos = highestBorrowPos(before, pos);
+                if (borrowPos !== null) {
+                    return `${name}位不够减，向${placeNames[borrowPos]}位借 1；借来的 1 会一路换成低一位的 10 个单位。现在是 ${groupNumber(after.toString())}。`;
+                }
+            }
+            return `${name}位减少 1 个单位。现在是 ${groupNumber(after.toString())}。`;
+        }
+
+        function buildPlaceTable() {
+            const s = cleanNumber($("numInput").value);
+            const cols = Math.min(MAX_LEN, Math.max(8, s.length));
+            const posDigits = digitsByPosition(s, cols);
+            const groups = [];
+            for (let gi = 2; gi >= 0; gi--) {
+                const lo = gi * 4;
+                const hi = Math.min(lo + 3, cols - 1);
+                if (lo > cols - 1) continue;
+                groups.push({ name: levelLabels[gi], cls: levelClasses[gi], span: hi - lo + 1 });
+            }
+            let html = "<thead><tr>";
+            groups.forEach((g, i) => html += `<th class="group ${g.cls}${i ? " gstart" : ""}" colspan="${g.span}">${g.name}</th>`);
+            html += "</tr><tr>";
+            for (let pos = cols - 1; pos >= 0; pos--) {
+                html += `<td class="pname${pos % 4 === 3 && pos !== cols - 1 ? " gstart" : ""}">${placeNames[pos]}</td>`;
+            }
+            html += "</tr></thead><tbody><tr>";
+            for (let pos = cols - 1; pos >= 0; pos--) {
+                const d = posDigits[pos];
+                const start = pos % 4 === 3 && pos !== cols - 1 ? " gstart" : "";
+                html += `<td class="digit gcell ${levelClass(pos)}${start}${d === null ? " lead" : ""}">${d === null ? "·" : d}</td>`;
+            }
+            html += "</tr></tbody>";
+            $("placeTable").innerHTML = html;
+        }
+
+        function renderReadOut() {
+            const s = cleanNumber($("numInput").value);
+            const read = readNumber(s);
+            $("readDigits").textContent = "数字：" + groupNumber(s);
+            $("readChinese").innerHTML = read.parts.map(part =>
+                `<span class="seg-${levelClasses[part.level] || "yi"}">${part.text.replace(/零/g, '<span class="zero-mark">零</span>')}</span>`
+            ).join("");
+        }
+
+        function formatValue(n) {
+            return n.toLocaleString("zh-CN");
+        }
+
+        function renderAbacus() {
+            const s = cleanNumber($("numInput").value);
+            const cols = Math.min(MAX_LEN, Math.max(8, s.length));
+            const posDigits = digitsByPosition(s, cols);
+            let html = "";
+            for (let pos = cols - 1; pos >= 0; pos--) {
+                const d = posDigits[pos] ?? 0;
+                const unit = Math.pow(10, pos);
+                html += `<div class="rod ${lastChangedPos === pos ? "carry-flash" : ""}">
+                    <div class="pname">${placeNames[pos]}</div>
+                    <div class="unit">1珠=${formatValue(unit)}</div>
+                    <div class="rod-line">${Array.from({ length: d }, () => '<span class="bead"></span>').join("")}</div>
+                    <div class="digit">${d}</div>
+                    <div class="value">${d ? `${d}×${formatValue(unit)}=${formatValue(d * unit)}` : "空位表示 0"}</div>
+                    <div class="place-actions">
+                        <button type="button" data-pos="${pos}" data-delta="-1" aria-label="${placeNames[pos]}位减少1">−</button>
+                        <button type="button" data-pos="${pos}" data-delta="1" aria-label="${placeNames[pos]}位增加1">+</button>
+                    </div>
+                </div>`;
+            }
+            $("abacus").style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            $("abacus").innerHTML = html;
+            bindPlaceButtons($("abacus"));
+            $("abacusLine").textContent = `${groupNumber(s)} = ${formatExpanded(s)}。${lastActionText}`;
+        }
+
+        function bindPlaceButtons(root) {
+            root.querySelectorAll("[data-pos][data-delta]").forEach(btn => {
+                btn.addEventListener("click", () => changePlace(Number(btn.dataset.pos), Number(btn.dataset.delta)));
+            });
+        }
+
+        function formatExpanded(s) {
+            const digits = cleanNumber(s).split("").map(Number);
+            const terms = [];
+            digits.forEach((d, i) => {
+                const pos = digits.length - 1 - i;
+                if (d) terms.push(`${formatValue(d * Math.pow(10, pos))}`);
+            });
+            return terms.length ? terms.join(" + ") : "0";
+        }
+
+        function unitName(value) {
+            return placeNames[Math.round(Math.log10(Number(value)))] || "个";
+        }
+
+        function unitWordByPos(pos) {
+            return pos === 0 ? "一" : placeNames[pos];
+        }
+
+        function unitPos(value) {
+            return Math.round(Math.log10(Number(value)));
+        }
+
+        function powerExpression(pos) {
+            if (pos === 0) return "1";
+            return Array.from({ length: pos }, () => "10").join("×");
+        }
+
+        function placeGeneration(pos) {
+            if (pos === 0) return "1";
+            if (pos === 1) return "10 个一 = 10";
+            return `10 个${unitWordByPos(pos - 1)} = ${powerExpression(pos)} = ${formatValue(10 ** pos)}`;
+        }
+
+        function renderPlacePowerGrid() {
+            const selectedPos = unitPos($("unitSelect").value);
+            const cards = [0, 1, 2, 3, 4, 5].map(pos => `
+                <button type="button" class="place-power-card ${pos === selectedPos ? "active" : ""}" data-unit="${10 ** pos}">
+                    <div class="name">${placeNames[pos]}</div>
+                    <div class="value">${formatValue(10 ** pos)}</div>
+                    <div class="expr">${pos === 0 ? "1 个 1" : placeGeneration(pos)}</div>
+                </button>
+            `).join("");
+            $("placePowerGrid").innerHTML = cards;
+            document.querySelectorAll(".place-power-card").forEach(card => {
+                card.addEventListener("click", () => {
+                    $("unitSelect").value = card.dataset.unit;
+                    renderExchange();
+                });
+            });
+        }
+
+        function renderNumberBreakdown() {
+            const s = cleanNumber($("numInput").value);
+            const digits = s.split("").map(Number);
+            $("breakdownHead").textContent = `当前数字：${groupNumber(s)}，逐位看它表示几个单位`;
+            const cards = digits.map((digit, index) => {
+                const pos = digits.length - 1 - index;
+                const unit = 10 ** pos;
+                const unitText = unitWordByPos(pos);
+                const placeText = `${placeNames[pos]}位`;
+                const expr = pos === 0 ? "1 个 1 = 1" : `1 个${unitText} = ${placeGeneration(pos)}`;
+                return `
+                    <div class="breakdown-card ${digit === 0 ? "zero" : ""}">
+                        <div class="place">${placeText}</div>
+                        <div class="digit">${digit}</div>
+                        <div class="meaning">${digit} 个 ${formatValue(unit)}</div>
+                        <div class="expr">${expr}</div>
+                    </div>
+                `;
+            }).join("");
+            const terms = digits.map((digit, index) => {
+                const pos = digits.length - 1 - index;
+                if (digit === 0) return "";
+                return `${digit} 个${formatValue(10 ** pos)}`;
+            }).filter(Boolean);
+            $("placeBreakdownGrid").innerHTML = cards;
+            $("breakdownLine").textContent = `${groupNumber(s)} = ${terms.join(" + ") || "0 个一"}。例如：1 个百 = 10 个十 = 10×10；1 个千 = 10 个百 = 10×10×10。`;
+        }
+
+        function renderExchange() {
+            const unit = Number($("unitSelect").value);
+            const pos = unitPos(unit);
+            const lowName = unitWordByPos(pos);
+            const highName = unitWordByPos(pos + 1);
+            const count = Number($("countRange").value);
+            const bundles = Math.floor(count / 10);
+            const rest = count % 10;
+            $("countLabel").textContent = `${count} 个${lowName}`;
+            $("rawTitle").textContent = `原来：${count} 个${lowName}`;
+            $("bundleTitle").textContent = `换位后：每 10 个${lowName} 捆成 1 个${highName}`;
+            $("rawUnits").innerHTML = Array.from({ length: count }, () => '<span class="mini"></span>').join("");
+            let after = "";
+            for (let i = 0; i < bundles; i++) {
+                after += `<span class="bundle">${Array.from({ length: 10 }, () => '<span class="mini"></span>').join("")}</span>`;
+            }
+            after += Array.from({ length: rest }, () => '<span class="mini"></span>').join("");
+            $("bundledUnits").innerHTML = after || '<span style="color:#94a3b8;font-weight:850">没有单位</span>';
+            $("exchangeLine").textContent = `${count} 个${lowName} = ${bundles} 个${highName} + ${rest} 个${lowName}，数值是 ${formatValue(count * unit)}。1 个${highName} = ${placeGeneration(pos + 1)}。`;
+            renderPlacePowerGrid();
+            renderNumberBreakdown();
+        }
+
+        function refreshAll() {
+            const s = cleanNumber($("numInput").value);
+            $("numInput").value = s;
+            buildPlaceTable();
+            renderReadOut();
+            renderAbacus();
+            renderExchange();
+        }
+
+        function renderPresets() {
+            const presets = [
+                ["万以内：3 205", "3205"],
+                ["整万：50 0000", "500000"],
+                ["中间有零：100 8050", "1008050"],
+                ["连续零：1 0080 0500", "100800500"],
+                ["亿级：2 0508 0000", "205080000"]
+            ];
+            $("presets").innerHTML = presets.map(p => `<button class="chip" data-value="${p[1]}">${p[0]}</button>`).join("");
+            document.querySelectorAll("#presets .chip").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    $("numInput").value = btn.dataset.value;
+                    lastChangedPos = null;
+                    lastActionText = "可以直接点每一位的 + 或 -，观察进位和借位。";
+                    refreshAll();
+                });
+            });
+        }
+
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === btn));
+                document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + btn.dataset.view));
+                if (btn.dataset.view === "exchange") renderExchange();
+            });
+        });
+        $("numInput").addEventListener("input", () => {
+            lastChangedPos = null;
+            lastActionText = "可以直接点每一位的 + 或 -，观察进位和借位。";
+            refreshAll();
+        });
+        $("randomBtn").addEventListener("click", () => {
+            const len = 4 + Math.floor(Math.random() * 8);
+            let s = String(1 + Math.floor(Math.random() * 9));
+            for (let i = 1; i < len; i++) s += Math.random() < .35 ? "0" : String(Math.floor(Math.random() * 10));
+            $("numInput").value = s;
+            lastChangedPos = null;
+            lastActionText = "可以直接点每一位的 + 或 -，观察进位和借位。";
+            refreshAll();
+        });
+        $("unitSelect").addEventListener("change", renderExchange);
+        $("countRange").addEventListener("input", renderExchange);
+
+        renderPresets();
+        refreshAll();
+    </script>
+</body>
+</html>

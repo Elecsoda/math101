@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算练习与测试 | Math101</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #172033;
+            --muted: #667085;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --green: #16a34a;
+            --red: #dc2626;
+            --amber: #b45309;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .page { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 24px 0 30px; }
+        header { position: relative; text-align: center; padding: 0 48px; margin-bottom: 18px; }
+        h1 { margin: 0; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; color: #0f172a; }
+        .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+        .home {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            color: #64748b;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, .06);
+        }
+        .home:hover { color: var(--blue); background: #eff6ff; }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 2px 7px rgba(15, 23, 42, .05);
+            scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab {
+            flex: 0 0 136px;
+            min-height: 58px;
+            border: 0;
+            border-radius: 9px;
+            padding: 9px 10px;
+            background: #f8fafc;
+            color: #475569;
+            text-align: left;
+            cursor: pointer;
+            transition: .18s ease;
+        }
+        .tab:hover { background: #eef2f7; }
+        .tab.active { color: #fff; box-shadow: 0 6px 14px rgba(15, 23, 42, .16); }
+        .tab strong { display: block; font-size: 14px; line-height: 1.2; }
+        .tab span { display: block; margin-top: 4px; font-size: 12px; opacity: .72; }
+
+        .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; margin-top: 14px; }
+        .panel, .side {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--card);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, .05);
+        }
+        .panel { padding: 22px; }
+        .side { padding: 18px; align-self: start; }
+        .topline { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+        .kicker { color: #94a3b8; font-size: 13px; font-weight: 800; }
+        h2, h3 { margin: 0; color: #0f172a; }
+        h2 { margin-top: 4px; font-size: 25px; }
+        h3 { font-size: 18px; }
+        .btn {
+            min-height: 42px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0 14px;
+            background: #fff;
+            color: #475569;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn:hover { background: #f8fafc; }
+        .btn.primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+        .btn.primary:hover { background: #1d4ed8; }
+
+        .question-card {
+            border: 2px solid var(--line);
+            border-radius: 16px;
+            background: #f8fafc;
+            padding: 24px;
+            transition: .18s ease;
+        }
+        .question-card.right { border-color: #86efac; background: #f0fdf4; }
+        .question-card.wrong { border-color: #fda4af; background: #fff1f2; animation: shake .28s; }
+        @keyframes shake { 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-6px); } 75%{ transform: translateX(6px); } }
+        .label { color: #94a3b8; font-size: 13px; font-weight: 900; }
+        .formula {
+            min-height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-break: break-word;
+            margin: 14px 0 8px;
+            font-size: clamp(34px, 6vw, 54px);
+            line-height: 1.16;
+            font-weight: 950;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+        .qmark { color: var(--blue); }
+        .meta { min-height: 20px; text-align: center; color: var(--muted); font-size: 13px; font-weight: 700; }
+        .answer-row { display: flex; gap: 10px; width: min(620px, 100%); margin: 20px auto 0; }
+        input {
+            width: 100%;
+            min-height: 52px;
+            border: 2px solid var(--line);
+            border-radius: 12px;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 900;
+            outline: none;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+        input:focus { border-color: #60a5fa; box-shadow: 0 0 0 4px #dbeafe; }
+        .feedback { min-height: 28px; margin-top: 14px; text-align: center; font-weight: 900; }
+        .feedback.ok { color: var(--green); }
+        .feedback.bad { color: var(--red); }
+        .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+        .hint {
+            display: none;
+            margin-top: 10px;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            background: #fffbeb;
+            color: #78350f;
+            padding: 12px 14px;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+        .hint.show { display: block; }
+        .answer-box {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        .answer-box strong { color: #0f172a; }
+
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+        .stat { border-radius: 12px; padding: 12px 6px; text-align: center; }
+        .stat.ok { background: #ecfdf5; color: #047857; }
+        .stat.bad { background: #fff1f2; color: #be123c; }
+        .stat.rate { background: #eff6ff; color: #1d4ed8; }
+        .stat strong { display: block; font-size: 26px; line-height: 1; }
+        .stat span { display: block; margin-top: 6px; font-size: 12px; font-weight: 900; }
+        .streak { margin-top: 14px; border-radius: 12px; background: #f8fafc; padding: 14px; }
+        .bar { height: 12px; overflow: hidden; border-radius: 999px; background: #e2e8f0; margin: 10px 0 8px; }
+        .bar i { display: block; height: 100%; width: 0; background: var(--blue); transition: .2s ease; }
+        .note { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+        @media (max-width: 860px) {
+            .layout { grid-template-columns: 1fr; }
+            .answer-row, .tools { grid-template-columns: 1fr; flex-direction: column; }
+            .topline { align-items: stretch; flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header>
+        <a href="/" class="home" aria-label="返回主页" title="返回主页">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <path d="M9 22V12h6v10"></path>
+            </svg>
+        </a>
+        <h1>计算练习与测试</h1>
+        <p class="subtitle">按计算能力进阶链随机出题，每个训练项独立统计本轮表现</p>
+    </header>
+
+    <nav class="tabs" id="tabs" aria-label="计算训练选项卡"></nav>
+
+    <main class="layout">
+        <section class="panel">
+            <div class="topline">
+                <div>
+                    <div class="kicker" id="tabMeta"></div>
+                    <h2 id="tabTitle"></h2>
+                </div>
+                <button class="btn" id="nextBtn">换一题</button>
+            </div>
+
+            <div class="question-card" id="questionCard">
+                <div class="label">随机测试题</div>
+                <div class="formula"><span id="formula"></span><span>&nbsp;=&nbsp;</span><span class="qmark">?</span></div>
+                <div class="meta" id="questionMeta"></div>
+                <div class="answer-row">
+                    <input id="answerInput" autocomplete="off" placeholder="输入答案">
+                    <button class="btn primary" id="checkBtn">检查</button>
+                </div>
+                <div class="feedback" id="feedback"></div>
+            </div>
+
+            <div class="tools">
+                <button class="btn" id="hintBtn">提示 / 解析</button>
+                <div class="answer-box">正确答案：<strong id="answerBox">先自己算一算</strong></div>
+            </div>
+            <div class="hint" id="hintBox"></div>
+        </section>
+
+        <aside class="side">
+            <h3>本项测试</h3>
+            <div class="stats">
+                <div class="stat ok"><strong id="rightCount">0</strong><span>正确</span></div>
+                <div class="stat bad"><strong id="wrongCount">0</strong><span>错误</span></div>
+                <div class="stat rate"><strong id="rateCount">0%</strong><span>正确率</span></div>
+            </div>
+            <div class="streak">
+                <strong>连续答对</strong>
+                <div class="bar"><i id="streakBar"></i></div>
+                <div class="meta" id="streakText"></div>
+            </div>
+            <button class="btn" id="resetBtn" style="width:100%; margin-top:14px;">重置本项统计</button>
+            <div class="note">切换选项卡会保留各项统计。分数题可输入等值分数；有余数除法只需写商和余数两个数字。</div>
+        </aside>
+    </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const rand = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
+const pick = arr => arr[rand(0, arr.length - 1)];
+const trimNum = (num, digits = 2) => Number(num.toFixed(digits)).toString();
+
+const gcd = (a, b) => {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b) [a, b] = [b, a % b];
+    return a || 1;
+};
+const frac = (n, d = 1) => {
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcd(n, d);
+    return { n: n / g, d: d / g };
+};
+const addF = (a, b) => frac(a.n * b.d + b.n * a.d, a.d * b.d);
+const subF = (a, b) => frac(a.n * b.d - b.n * a.d, a.d * b.d);
+const mulF = (a, b) => frac(a.n * b.n, a.d * b.d);
+const divF = (a, b) => frac(a.n * b.d, a.d * b.n);
+const fmtF = f => f.d === 1 ? String(f.n) : `${f.n}/${f.d}`;
+const cnNums = ["零","一","二","三","四","五","六","七","八","九"];
+const cnProduct = n => n < 10 ? cnNums[n] : (n % 10 === 0 ? cnNums[Math.floor(n / 10)] + "十" : cnNums[Math.floor(n / 10)] + "十" + cnNums[n % 10]);
+const chant = (a, b) => {
+    const pair = a <= b ? [a, b] : [b, a];
+    return `${cnNums[pair[0]]}${cnNums[pair[1]]}${cnProduct(a * b)}`;
+};
+
+function q(data) {
+    return Object.assign({ format: "integer", meta: "" }, data);
+}
+
+const TABS = [
+    {
+        id: "add-sub-10", name: "10以内加减", grade: "1年级", node: "m-add-sub-10", color: "#0284c7",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(0, 10), b = rand(0, 10 - a);
+                return q({ text: `${a} + ${b}`, answer: a + b, hint: "可以接着数，也可以想数的分与合。", solution: `${a} 加 ${b}，得到 ${a + b}。` });
+            }
+            const a = rand(0, 10), b = rand(0, a);
+            return q({ text: `${a} - ${b}`, answer: a - b, hint: "减法可以想拿走以后还剩多少。", solution: `${a} 减 ${b}，还剩 ${a - b}。` });
+        }
+    },
+    {
+        id: "add-sub-20", name: "20以内进退位", grade: "1年级", node: "m-add-sub-20", color: "#2563eb",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(6, 9), b = rand(11 - a, 9);
+                return q({ text: `${a} + ${b}`, answer: a + b, hint: `先把 ${a} 凑成 10。`, solution: `${a} 需要 ${10 - a} 凑成 10，${b} 拆成 ${10 - a} 和 ${b - (10 - a)}，答案 ${a + b}。` });
+            }
+            const a = rand(11, 18), b = rand(a - 9, 9);
+            return q({ text: `${a} - ${b}`, answer: a - b, hint: "退位减法可以先破十。", solution: `${a}=10+${a - 10}，先算 10-${b}=${10 - b}，再加 ${a - 10}，答案 ${a - b}。` });
+        }
+    },
+    {
+        id: "add-sub-100-oral", name: "100以内口算", grade: "1-2年级", node: "m-add-sub-100-oral", color: "#0891b2",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(12, 89), b = rand(8, 99 - a);
+                return q({ text: `${a} + ${b}`, answer: a + b, hint: "先加整十，再加个位。", solution: `${a}+${b}=${a + Math.floor(b / 10) * 10}+${b % 10}=${a + b}。` });
+            }
+            const a = rand(30, 99), b = rand(8, a - 1);
+            return q({ text: `${a} - ${b}`, answer: a - b, hint: "先减整十，再减个位。", solution: `${a}-${b}=${a - Math.floor(b / 10) * 10}-${b % 10}=${a - b}。` });
+        }
+    },
+    {
+        id: "add-sub-100-col", name: "100以内竖式", grade: "2年级", node: "m-add-sub-100-col", color: "#4f46e5",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(28, 89), b = rand(12, 99 - a);
+                return q({ text: `${a} + ${b}`, answer: a + b, hint: "个位对个位，十位对十位。", solution: `列竖式计算，${a}+${b}=${a + b}。` });
+            }
+            const a = rand(40, 99), b = rand(11, a - 10);
+            return q({ text: `${a} - ${b}`, answer: a - b, hint: "个位不够减时从十位退 1。", solution: `列竖式计算，${a}-${b}=${a - b}。` });
+        }
+    },
+    {
+        id: "mul-table", name: "表内乘法", grade: "2年级", node: "m-mul-table", color: "#7c3aed",
+        make() {
+            const a = rand(2, 9), b = rand(2, 9);
+            return q({ text: `${a} × ${b}`, answer: a * b, hint: `想口诀：${chant(a, b)}。`, solution: `${a}×${b}=${a * b}。` });
+        }
+    },
+    {
+        id: "div-table", name: "表内除法", grade: "2年级", node: "m-div-table", color: "#c026d3",
+        make() {
+            const d = rand(2, 9), a = rand(2, 9), n = d * a;
+            return q({ text: `${n} ÷ ${d}`, answer: a, hint: `想 ${d} × ? = ${n}。`, solution: `${d}×${a}=${n}，所以 ${n}÷${d}=${a}。` });
+        }
+    },
+    {
+        id: "div-remainder", name: "有余数除法", grade: "3年级", node: "m-div-remainder", color: "#9333ea",
+        make() {
+            const d = rand(3, 9), a = rand(4, 16), r = rand(1, d - 1), n = d * a + r;
+            return q({ text: `${n} ÷ ${d}`, answer: { q: a, r }, format: "remainder", meta: "答案格式：商 余数，例如 7 余 2", hint: `找小于 ${n} 且最接近的 ${d} 的倍数。`, solution: `${d}×${a}=${d * a}，${n}-${d * a}=${r}，所以商 ${a} 余 ${r}。` });
+        }
+    },
+    {
+        id: "addsub-10k", name: "万以内加减", grade: "3年级", node: "m-addsub-10k", color: "#e11d48",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(321, 6999), b = rand(258, 9999 - a);
+                return q({ text: `${a} + ${b}`, answer: a + b, hint: "按数位从个位算起，满十进一。", solution: `${a}+${b}=${a + b}。` });
+            }
+            const a = rand(1200, 9999), b = rand(258, a - 100);
+            return q({ text: `${a} - ${b}`, answer: a - b, hint: "按数位从个位算起，不够减就借。", solution: `${a}-${b}=${a - b}。` });
+        }
+    },
+    {
+        id: "mul-multi-by-1", name: "多位数×一位数", grade: "3年级", node: "m-mul-multi-by-1", color: "#dc2626",
+        make() {
+            const a = rand(128, 8999), b = rand(3, 9);
+            return q({ text: `${a} × ${b}`, answer: a * b, hint: "从个位乘起，满几十向前进几。", solution: `${a}×${b}=${a * b}。` });
+        }
+    },
+    {
+        id: "mul-2x2", name: "两位数×两位数", grade: "3年级", node: "m-mul-2x2", color: "#ea580c",
+        make() {
+            const a = rand(12, 98), b = rand(12, 98), tens = Math.floor(b / 10) * 10, ones = b % 10;
+            return q({ text: `${a} × ${b}`, answer: a * b, hint: `把 ${b} 拆成 ${tens}+${ones}。`, solution: `${a}×${b}=${a}×${tens}+${a}×${ones}=${a * b}。` });
+        }
+    },
+    {
+        id: "fast-calc", name: "简算巧算", grade: "3-4年级", node: "m-fast-calc", color: "#d97706",
+        make() {
+            if (Math.random() < .5) {
+                const a = pick([57, 64, 125, 238, 376]), b = 100 - (a % 100), c = rand(20, 89), d = 100 - c;
+                return q({ text: `${a} + ${c} + ${b} + ${d}`, answer: a + b + c + d, hint: "找能凑成整百的朋友。", solution: `${a}+${b}=${a + b}，${c}+${d}=100，答案 ${a + b + c + d}。` });
+            }
+            const a = rand(24, 89), b = pick([99, 101, 199, 201]);
+            return q({ text: `${a} × ${b}`, answer: a * b, hint: `把 ${b} 看成接近的整百数。`, solution: `${a}×${b}=${a * b}。` });
+        }
+    },
+    {
+        id: "mul-3x2", name: "三位数×两位数", grade: "4年级", node: "m-mul-3x2", color: "#ca8a04",
+        make() {
+            const a = rand(112, 998), b = rand(12, 89), tens = Math.floor(b / 10) * 10, ones = b % 10;
+            return q({ text: `${a} × ${b}`, answer: a * b, hint: `把 ${b} 拆成 ${tens}+${ones}。`, solution: `${a}×${b}=${a * tens}+${a * ones}=${a * b}。` });
+        }
+    },
+    {
+        id: "div-by-2digit", name: "两位数除法", grade: "4年级", node: "m-div-by-2digit", color: "#4d7c0f",
+        make() {
+            const d = rand(12, 89), a = rand(12, 99), r = rand(0, d - 1), n = d * a + r;
+            return q({ text: `${n} ÷ ${d}`, answer: { q: a, r }, format: "remainder", meta: "答案格式：商 余数；没有余数写 余 0", hint: `先估 ${d} 接近几十，再试商。`, solution: `${d}×${a}=${d * a}，余数 ${r}，所以商 ${a} 余 ${r}。` });
+        }
+    },
+    {
+        id: "op-order", name: "四则混合运算", grade: "3-4年级", node: "m-op-order", color: "#15803d",
+        make() {
+            const a = rand(8, 40), b = rand(2, 9), c = rand(3, 12), d = rand(4, 30), style = rand(0, 2);
+            if (style === 0) return q({ text: `${a} + ${b} × ${c}`, answer: a + b * c, hint: "先乘除，后加减。", solution: `先算 ${b}×${c}=${b * c}，再算 ${a}+${b * c}=${a + b * c}。` });
+            if (style === 1) {
+                const ans = trimNum((a + d) / b, 2);
+                return q({ text: `(${a} + ${d}) ÷ ${b}`, answer: ans, format: "decimal", hint: "先算括号。", solution: `先算 ${a}+${d}=${a + d}，再除以 ${b}，答案 ${ans}。` });
+            }
+            return q({ text: `${a * b} ÷ ${b} + ${c} × ${d}`, answer: a + c * d, hint: "乘除先算，最后做加法。", solution: `${a * b}÷${b}=${a}，${c}×${d}=${c * d}，答案 ${a + c * d}。` });
+        }
+    },
+    {
+        id: "op-laws", name: "运算定律简算", grade: "4年级", node: "m-op-laws", color: "#047857",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(21, 78), b = rand(21, 78), c = 100 - a, d = 100 - b;
+                return q({ text: `${a} + ${b} + ${c} + ${d}`, answer: 200, hint: "用交换律和结合律凑整。", solution: `(${a}+${c})+(${b}+${d})=100+100=200。` });
+            }
+            const a = rand(12, 78), b = pick([25, 125]), c = b === 25 ? 4 : 8;
+            return q({ text: `${a} × ${b} × ${c}`, answer: a * b * c, hint: `${b} 和 ${c} 是乘法好朋友。`, solution: `${b}×${c}=${b * c}，所以答案 ${a * b * c}。` });
+        }
+    },
+    {
+        id: "decimal-addsub", name: "小数加减", grade: "4年级", node: "m-decimal-addsub", color: "#0f766e",
+        make() {
+            if (Math.random() < .5) {
+                const a = rand(105, 899) / 100, b = rand(25, 999) / 100;
+                return q({ text: `${trimNum(a)} + ${trimNum(b)}`, answer: trimNum(a + b, 2), format: "decimal", hint: "小数点对齐，相同数位相加。", solution: `${trimNum(a)}+${trimNum(b)}=${trimNum(a + b, 2)}。` });
+            }
+            const ai = rand(300, 1500), bi = rand(25, ai - 1), a = ai / 100, b = bi / 100;
+            return q({ text: `${trimNum(a)} - ${trimNum(b)}`, answer: trimNum(a - b, 2), format: "decimal", hint: "小数点对齐，相同数位相减。", solution: `${trimNum(a)}-${trimNum(b)}=${trimNum(a - b, 2)}。` });
+        }
+    },
+    {
+        id: "decimal-mul", name: "小数乘法", grade: "5年级", node: "m-decimal-mul", color: "#334155",
+        make() {
+            const ai = rand(12, 99), bi = rand(12, 99), a = ai / 10, b = bi / 10;
+            return q({ text: `${trimNum(a)} × ${trimNum(b)}`, answer: trimNum(a * b, 2), format: "decimal", hint: "先按整数乘，再数小数位数。", solution: `${ai}×${bi}=${ai * bi}，两个因数共 2 位小数，答案 ${trimNum(a * b, 2)}。` });
+        }
+    },
+    {
+        id: "decimal-div", name: "小数除法", grade: "5年级", node: "m-decimal-div", color: "#3f3f46",
+        make() {
+            const di = rand(12, 90), qi = rand(12, 80), d = di / 10, a = qi / 10, n = d * a;
+            return q({ text: `${trimNum(n, 2)} ÷ ${trimNum(d)}`, answer: trimNum(a, 2), format: "decimal", hint: "把除数变成整数，被除数也移动相同位数。", solution: `${trimNum(n, 2)}÷${trimNum(d)}=${trimNum(a, 2)}。` });
+        }
+    },
+    {
+        id: "frac-addsub", name: "分数加减", grade: "5年级", node: "m-frac-addsub", color: "#57534e",
+        make() {
+            const same = Math.random() < .45, d1 = rand(3, 12), d2 = same ? d1 : rand(3, 12);
+            let a = frac(rand(1, d1 - 1), d1), b = frac(rand(1, d2 - 1), d2);
+            const op = pick(["+", "-"]);
+            if (op === "-" && a.n * b.d < b.n * a.d) [a, b] = [b, a];
+            const ans = op === "+" ? addF(a, b) : subF(a, b);
+            return q({ text: `${fmtF(a)} ${op} ${fmtF(b)}`, answer: ans, format: "fraction", meta: "答案格式：分数写 a/b，可写等值分数", hint: same ? "同分母分数，分母不变，只算分子。" : "先通分，再加减。", solution: `${fmtF(a)} ${op} ${fmtF(b)} = ${fmtF(ans)}。` });
+        }
+    },
+    {
+        id: "frac-muldiv", name: "分数乘除", grade: "6年级", node: "m-frac-muldiv", color: "#262626",
+        make() {
+            const a = frac(rand(1, 8), rand(2, 10)), b = frac(rand(1, 8), rand(2, 10)), op = pick(["×", "÷"]);
+            const ans = op === "×" ? mulF(a, b) : divF(a, b);
+            return q({ text: `${fmtF(a)} ${op} ${fmtF(b)}`, answer: ans, format: "fraction", meta: "答案格式：分数写 a/b，可写等值分数", hint: op === "×" ? "分子乘分子，分母乘分母，能约分先约分。" : "除以一个分数，等于乘这个分数的倒数。", solution: `${fmtF(a)} ${op} ${fmtF(b)} = ${fmtF(ans)}。` });
+        }
+    }
+];
+
+let state = {
+    active: TABS[0].id,
+    question: TABS[0].make(),
+    result: null,
+    showHint: false,
+    stats: Object.fromEntries(TABS.map(t => [t.id, { right: 0, wrong: 0, streak: 0 }]))
+};
+
+function activeTab() { return TABS.find(t => t.id === state.active) || TABS[0]; }
+function parseFraction(raw) {
+    const text = String(raw).trim().replace(/\s+/g, "");
+    if (/^-?\d+$/.test(text)) return frac(Number(text), 1);
+    const m = text.match(/^(-?\d+)\/(-?\d+)$/);
+    return m && Number(m[2]) !== 0 ? frac(Number(m[1]), Number(m[2])) : null;
+}
+function parseRemainder(raw) {
+    const nums = String(raw).match(/-?\d+/g);
+    return nums && nums.length >= 2 ? { q: Number(nums[0]), r: Number(nums[1]) } : null;
+}
+function answerText(question) {
+    if (question.format === "fraction") return fmtF(question.answer);
+    if (question.format === "remainder") return `${question.answer.q} 余 ${question.answer.r}`;
+    return String(question.answer);
+}
+function correct(question, raw) {
+    const text = String(raw).trim();
+    if (!text) return false;
+    if (question.format === "fraction") {
+        const got = parseFraction(text);
+        return got && got.n === question.answer.n && got.d === question.answer.d;
+    }
+    if (question.format === "remainder") {
+        const got = parseRemainder(text);
+        return got && got.q === question.answer.q && got.r === question.answer.r;
+    }
+    if (question.format === "decimal") {
+        const got = Number(text);
+        return Number.isFinite(got) && Math.abs(got - Number(question.answer)) < .005;
+    }
+    return Number(text) === question.answer;
+}
+function nextQuestion() {
+    state.question = activeTab().make();
+    state.result = null;
+    state.showHint = false;
+    $("answerInput").value = "";
+    render();
+    setTimeout(() => $("answerInput").focus(), 20);
+}
+function switchTab(id) {
+    state.active = id;
+    state.question = activeTab().make();
+    state.result = null;
+    state.showHint = false;
+    $("answerInput").value = "";
+    render();
+}
+function checkAnswer() {
+    if (state.result === "right") return;
+    const ok = correct(state.question, $("answerInput").value);
+    state.result = ok ? "right" : "wrong";
+    const s = state.stats[state.active];
+    s.right += ok ? 1 : 0;
+    s.wrong += ok ? 0 : 1;
+    s.streak = ok ? s.streak + 1 : 0;
+    render();
+    if (ok) setTimeout(nextQuestion, 650);
+}
+function resetStats() {
+    state.stats[state.active] = { right: 0, wrong: 0, streak: 0 };
+    render();
+}
+function renderTabs() {
+    $("tabs").innerHTML = TABS.map(tab => `
+        <button class="tab ${tab.id === state.active ? "active" : ""}" data-tab="${tab.id}" style="${tab.id === state.active ? `background:${tab.color}` : ""}">
+            <strong>${tab.name}</strong>
+            <span>${tab.grade}</span>
+        </button>
+    `).join("");
+    document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+}
+function render() {
+    const tab = activeTab();
+    const question = state.question;
+    const stat = state.stats[state.active];
+    const total = stat.right + stat.wrong;
+    const rate = total ? Math.round(stat.right / total * 100) : 0;
+
+    renderTabs();
+    $("tabMeta").textContent = `${tab.grade} · ${tab.node}`;
+    $("tabTitle").textContent = tab.name;
+    $("formula").textContent = question.text;
+    $("questionMeta").textContent = question.meta || "";
+    $("questionCard").className = `question-card ${state.result || ""}`;
+    $("answerInput").placeholder = question.format === "fraction" ? "如 3/4" : question.format === "remainder" ? "如 7 余 2" : "输入答案";
+    $("feedback").className = `feedback ${state.result === "right" ? "ok" : state.result === "wrong" ? "bad" : ""}`;
+    $("feedback").textContent = state.result === "right" ? "答对了，下一题马上来。" : state.result === "wrong" ? "再想想。需要时可以看提示或解析。" : "";
+    $("answerBox").textContent = state.showHint ? answerText(question) : "先自己算一算";
+    $("hintBox").className = `hint ${state.showHint ? "show" : ""}`;
+    $("hintBox").innerHTML = `<strong>提示：</strong>${question.hint}<br><strong>解析：</strong>${question.solution}`;
+    $("rightCount").textContent = stat.right;
+    $("wrongCount").textContent = stat.wrong;
+    $("rateCount").textContent = `${rate}%`;
+    $("streakBar").style.width = `${Math.min(100, stat.streak * 10)}%`;
+    $("streakBar").style.background = tab.color;
+    $("streakText").textContent = `${stat.streak} 题连对，10 题满格。`;
+}
+
+$("nextBtn").addEventListener("click", nextQuestion);
+$("checkBtn").addEventListener("click", checkAnswer);
+$("resetBtn").addEventListener("click", resetStats);
+$("hintBtn").addEventListener("click", () => { state.showHint = !state.showHint; render(); });
+$("answerInput").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
+render();
+</script>
+</body>
+</html>

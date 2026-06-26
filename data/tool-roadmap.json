@@ -1,0 +1,978 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-06-26",
+  "sources": {
+    "knowledgeGraph": "../private-school-management/data/skilltree.json",
+    "textbook": "人教版小学数学教材主线",
+    "curriculum": "义务教育数学课程标准（2022年版）四大领域"
+  },
+  "statusLegend": {
+    "ready": "已有可用工具",
+    "partial": "已有工具覆盖核心概念，但仍需细分或补练习层",
+    "planned": "已预留接口，待开发"
+  },
+  "routeContract": {
+    "base": "/",
+    "fields": [
+      "id",
+      "name",
+      "domain",
+      "grade",
+      "status",
+      "route",
+      "knowledgeNodeIds",
+      "recommendedTools"
+    ],
+    "notes": "新增工具时优先复用 knowledgeNodeIds；route 为空或 status=planned 时，主页展示为占位接口。"
+  },
+  "categories": [
+    {
+      "id": "school-number",
+      "name": "教材知识 · 数与代数",
+      "domain": "数与代数",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "domain-number"
+      ],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "num-20",
+        "num-100",
+        "add-sub-20",
+        "add-sub-100",
+        "mul-table",
+        "div-table",
+        "div-remainder",
+        "times-concept",
+        "frac-intro",
+        "decimal-meaning",
+        "op-laws",
+        "equation"
+      ],
+      "missingNodeIds": [
+        "num-10k",
+        "mul-multi-by-1",
+        "addsub-10k",
+        "mul-2x2",
+        "bignum",
+        "mul-3x2",
+        "div-by-2digit",
+        "decimal-addsub",
+        "factor-multiple",
+        "decimal-mul",
+        "decimal-div",
+        "frac-meaning",
+        "frac-addsub",
+        "frac-mul",
+        "frac-div",
+        "ratio",
+        "percent",
+        "proportion",
+        "negative"
+      ],
+      "recommendedTools": [
+        {
+          "id": "number-line-place-value",
+          "name": "万以内数与大数数位表",
+          "grade": "2-4",
+          "status": "ready",
+          "route": "/number-line-place-value",
+          "knowledgeNodeIds": [
+            "num-10k",
+            "bignum"
+          ]
+        },
+        {
+          "id": "multi-digit-calc-lab",
+          "name": "多位数乘除竖式实验室",
+          "grade": "1-6",
+          "status": "planned",
+          "route": "/multi-digit-calc",
+          "knowledgeNodeIds": [
+            "mul-multi-by-1",
+            "mul-2x2",
+            "mul-3x2",
+            "div-by-2digit"
+          ]
+        },
+        {
+          "id": "mixed-operation-order",
+          "name": "四则混合运算顺序",
+          "grade": "3-4",
+          "status": "planned",
+          "route": "/operation-order",
+          "knowledgeNodeIds": [
+            "op-laws"
+          ]
+        },
+        {
+          "id": "decimal-calc-lab",
+          "name": "小数加减乘除计算器",
+          "grade": "4-5",
+          "status": "planned",
+          "route": "/decimal-calc",
+          "knowledgeNodeIds": [
+            "decimal-addsub",
+            "decimal-mul",
+            "decimal-div"
+          ]
+        },
+        {
+          "id": "factor-multiple-lab",
+          "name": "因数倍数与质合数筛选",
+          "grade": "5",
+          "status": "partial",
+          "route": "/times-as-many",
+          "knowledgeNodeIds": [
+            "factor-multiple"
+          ]
+        },
+        {
+          "id": "fraction-meaning-properties",
+          "name": "分数意义、约分与通分",
+          "grade": "5",
+          "status": "planned",
+          "route": "/fraction-properties",
+          "knowledgeNodeIds": [
+            "frac-meaning",
+            "frac-addsub"
+          ]
+        },
+        {
+          "id": "fraction-mul-div",
+          "name": "分数乘除模型",
+          "grade": "6",
+          "status": "planned",
+          "route": "/fraction-mul-div",
+          "knowledgeNodeIds": [
+            "frac-mul",
+            "frac-div"
+          ]
+        },
+        {
+          "id": "ratio-percent-proportion",
+          "name": "比、百分数与比例",
+          "grade": "6",
+          "status": "planned",
+          "route": "/ratio-percent-proportion",
+          "knowledgeNodeIds": [
+            "ratio",
+            "percent",
+            "proportion"
+          ]
+        },
+        {
+          "id": "negative-number-line",
+          "name": "负数与数轴",
+          "grade": "6",
+          "status": "planned",
+          "route": "/negative-number-line",
+          "knowledgeNodeIds": [
+            "negative"
+          ]
+        },
+        {
+          "id": "simple-equation",
+          "name": "简易方程天平模型",
+          "grade": "5-6",
+          "status": "ready",
+          "route": "/simple-equation",
+          "knowledgeNodeIds": [
+            "equation"
+          ],
+          "tabs": [
+            "天平认识方程",
+            "等式性质",
+            "解方程讲解",
+            "解方程练习"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calc-track",
+      "name": "计算训练 · 三招过关进度链",
+      "domain": "计算能力",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "calcTrack.milestones"
+      ],
+      "coverage": "ready",
+      "coveredNodeIds": [
+        "m-add-sub-10",
+        "m-add-sub-20",
+        "m-add-sub-100-oral",
+        "m-add-sub-100-col",
+        "m-mul-table",
+        "m-div-table",
+        "m-div-remainder",
+        "m-addsub-10k",
+        "m-mul-multi-by-1",
+        "m-mul-2x2",
+        "m-fast-calc",
+        "m-mul-3x2",
+        "m-div-by-2digit",
+        "m-op-order",
+        "m-op-laws",
+        "m-decimal-addsub",
+        "m-decimal-mul",
+        "m-decimal-div",
+        "m-frac-addsub",
+        "m-frac-muldiv"
+      ],
+      "missingNodeIds": [],
+      "recommendedTools": [
+        {
+          "id": "calc-practice-test",
+          "name": "计算练习与测试工具",
+          "grade": "3-4",
+          "status": "ready",
+          "route": "/calc",
+          "knowledgeNodeIds": [
+            "m-add-sub-10",
+            "m-add-sub-20",
+            "m-add-sub-100-oral",
+            "m-add-sub-100-col",
+            "m-mul-table",
+            "m-div-table",
+            "m-div-remainder",
+            "m-addsub-10k",
+            "m-mul-multi-by-1",
+            "m-mul-2x2",
+            "m-fast-calc",
+            "m-mul-3x2",
+            "m-div-by-2digit",
+            "m-op-order",
+            "m-op-laws",
+            "m-decimal-addsub",
+            "m-decimal-mul",
+            "m-decimal-div",
+            "m-frac-addsub",
+            "m-frac-muldiv"
+          ],
+          "tabs": [
+            "10以内加减",
+            "20以内进退位",
+            "100以内口算",
+            "100以内竖式",
+            "表内乘法",
+            "表内除法",
+            "有余数除法",
+            "万以内加减",
+            "多位数×一位数",
+            "两位数×两位数",
+            "简算巧算",
+            "三位数×两位数",
+            "两位数除法",
+            "四则混合运算",
+            "运算定律简算",
+            "小数加减",
+            "小数乘法",
+            "小数除法",
+            "分数加减",
+            "分数乘除"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "school-geometry",
+      "name": "教材知识 · 图形与几何",
+      "domain": "图形与几何",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "domain-geometry",
+        "domain-position"
+      ],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "angle-intro",
+        "length-unit",
+        "symmetry",
+        "translate-rotate"
+      ],
+      "missingNodeIds": [
+        "shape-solid",
+        "shape-plane",
+        "pos-basic",
+        "observe-object",
+        "quad-perimeter",
+        "area",
+        "measure-units",
+        "angle-measure",
+        "parallelogram-trapezoid",
+        "triangle-classify",
+        "polygon-area",
+        "cuboid-cube",
+        "circle",
+        "cylinder-cone",
+        "direction-nesw",
+        "pos-coord",
+        "motion-construct",
+        "direction-distance"
+      ],
+      "recommendedTools": [
+        {
+          "id": "shape-sorter",
+          "name": "平面/立体图形分类器",
+          "grade": "1-2",
+          "status": "planned",
+          "route": "/shape-sorter",
+          "knowledgeNodeIds": [
+            "shape-solid",
+            "shape-plane"
+          ]
+        },
+        {
+          "id": "object-viewer",
+          "name": "观察物体三视图",
+          "grade": "2-4",
+          "status": "planned",
+          "route": "/object-viewer",
+          "knowledgeNodeIds": [
+            "observe-object"
+          ]
+        },
+        {
+          "id": "perimeter-area-lab",
+          "name": "周长与面积实验室",
+          "grade": "3",
+          "status": "planned",
+          "route": "/perimeter-area",
+          "knowledgeNodeIds": [
+            "quad-perimeter",
+            "area"
+          ]
+        },
+        {
+          "id": "measure-unit-converter",
+          "name": "测量单位换算",
+          "grade": "3",
+          "status": "planned",
+          "route": "/measure-units",
+          "knowledgeNodeIds": [
+            "measure-units"
+          ]
+        },
+        {
+          "id": "angle-measure-protractor",
+          "name": "量角器与角度测量",
+          "grade": "4",
+          "status": "planned",
+          "route": "/angle-measure",
+          "knowledgeNodeIds": [
+            "angle-measure"
+          ]
+        },
+        {
+          "id": "polygon-area-lab",
+          "name": "三角形、平行四边形与梯形面积",
+          "grade": "4-5",
+          "status": "planned",
+          "route": "/polygon-area",
+          "knowledgeNodeIds": [
+            "parallelogram-trapezoid",
+            "triangle-classify",
+            "polygon-area"
+          ]
+        },
+        {
+          "id": "solid-volume-lab",
+          "name": "长方体正方体体积与表面积",
+          "grade": "5",
+          "status": "planned",
+          "route": "/solid-volume",
+          "knowledgeNodeIds": [
+            "cuboid-cube"
+          ]
+        },
+        {
+          "id": "circle-cylinder-cone",
+          "name": "圆、圆柱与圆锥",
+          "grade": "6",
+          "status": "planned",
+          "route": "/circle-cylinder-cone",
+          "knowledgeNodeIds": [
+            "circle",
+            "cylinder-cone"
+          ]
+        },
+        {
+          "id": "position-direction-map",
+          "name": "方向、数对与路线图",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/position-direction",
+          "knowledgeNodeIds": [
+            "direction-nesw",
+            "pos-coord",
+            "direction-distance"
+          ]
+        },
+        {
+          "id": "motion-construct",
+          "name": "轴对称与旋转作图",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/motion-construct",
+          "knowledgeNodeIds": [
+            "motion-construct"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "school-stats",
+      "name": "教材知识 · 统计与概率",
+      "domain": "统计与概率",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "domain-stats"
+      ],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "bar-chart",
+        "line-chart",
+        "average"
+      ],
+      "missingNodeIds": [
+        "classify-sort",
+        "data-collect",
+        "pie-chart",
+        "possibility"
+      ],
+      "recommendedTools": [
+        {
+          "id": "classify-data-collect",
+          "name": "分类整理与数据收集",
+          "grade": "1-3",
+          "status": "planned",
+          "route": "/classify-data",
+          "knowledgeNodeIds": [
+            "classify-sort",
+            "data-collect"
+          ]
+        },
+        {
+          "id": "pie-chart-percent",
+          "name": "扇形统计图与百分比",
+          "grade": "6",
+          "status": "planned",
+          "route": "/pie-chart-percent",
+          "knowledgeNodeIds": [
+            "pie-chart",
+            "percent"
+          ]
+        },
+        {
+          "id": "possibility-lab",
+          "name": "可能性实验室",
+          "grade": "5",
+          "status": "planned",
+          "route": "/possibility",
+          "knowledgeNodeIds": [
+            "possibility"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "school-practice",
+      "name": "教材知识 · 综合与实践",
+      "domain": "综合与实践",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "domain-practice"
+      ],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "rmb",
+        "clock-time",
+        "pic-equation"
+      ],
+      "missingNodeIds": [
+        "express-explain",
+        "practice-activity"
+      ],
+      "recommendedTools": [
+        {
+          "id": "math-expression-board",
+          "name": "数学表达与解释记录板",
+          "grade": "1-6",
+          "status": "planned",
+          "route": "/math-expression",
+          "knowledgeNodeIds": [
+            "express-explain"
+          ]
+        },
+        {
+          "id": "practice-project-studio",
+          "name": "综合实践项目工作台",
+          "grade": "1-6",
+          "status": "planned",
+          "route": "/practice-project",
+          "knowledgeNodeIds": [
+            "practice-activity"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-calc-number-theory",
+      "name": "进阶知识 · 计算与数论",
+      "domain": "进阶计算 / 数论",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "adv-calc",
+        "adv-numtheory"
+      ],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "fast-calc",
+        "factor-multiple"
+      ],
+      "missingNodeIds": [
+        "int-calc-skill",
+        "frac-dec-mixed",
+        "repeat-decimal",
+        "compare-estimate",
+        "formula-calc",
+        "divisibility",
+        "gcd-lcm",
+        "prime-composite",
+        "remainder-numtheory",
+        "perfect-square",
+        "base-placevalue",
+        "odd-even"
+      ],
+      "recommendedTools": [
+        {
+          "id": "integer-skill-drill",
+          "name": "整数巧算分型训练",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/integer-skill-drill",
+          "knowledgeNodeIds": [
+            "int-calc-skill",
+            "compare-estimate",
+            "formula-calc"
+          ]
+        },
+        {
+          "id": "fraction-decimal-mix",
+          "name": "分数小数混合与循环小数",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/fraction-decimal-mix",
+          "knowledgeNodeIds": [
+            "frac-dec-mixed",
+            "repeat-decimal"
+          ]
+        },
+        {
+          "id": "divisibility-sieve",
+          "name": "整除、质数与最大公因数",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/divisibility-sieve",
+          "knowledgeNodeIds": [
+            "divisibility",
+            "gcd-lcm",
+            "prime-composite"
+          ]
+        },
+        {
+          "id": "remainder-parity-lab",
+          "name": "余数、奇偶与平方数",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/remainder-parity",
+          "knowledgeNodeIds": [
+            "remainder-numtheory",
+            "odd-even",
+            "perfect-square"
+          ]
+        },
+        {
+          "id": "base-placevalue-lab",
+          "name": "进制与位值",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/base-placevalue",
+          "knowledgeNodeIds": [
+            "base-placevalue"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-geometry",
+      "name": "进阶知识 · 几何体系",
+      "domain": "进阶几何",
+      "moduleKind": "new",
+      "sourceGroupIds": [
+        "adv-geometry"
+      ],
+      "coverage": "planned",
+      "coveredNodeIds": [],
+      "missingNodeIds": [
+        "line-geometry",
+        "curve-geometry",
+        "solid-geometry",
+        "geo-transform",
+        "pythagorean"
+      ],
+      "recommendedTools": [
+        {
+          "id": "line-geometry-lab",
+          "name": "直线型几何辅助线",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/line-geometry",
+          "knowledgeNodeIds": [
+            "line-geometry"
+          ]
+        },
+        {
+          "id": "curve-geometry-lab",
+          "name": "曲线型几何与圆面积",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/curve-geometry",
+          "knowledgeNodeIds": [
+            "curve-geometry"
+          ]
+        },
+        {
+          "id": "advanced-solid-geometry",
+          "name": "立体几何展开与截面",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/advanced-solid-geometry",
+          "knowledgeNodeIds": [
+            "solid-geometry"
+          ]
+        },
+        {
+          "id": "geo-transform-lab",
+          "name": "几何变换与面积不变",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/geo-transform",
+          "knowledgeNodeIds": [
+            "geo-transform"
+          ]
+        },
+        {
+          "id": "pythagorean-lab",
+          "name": "勾股定理拼图验证",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/pythagorean",
+          "knowledgeNodeIds": [
+            "pythagorean"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-word",
+      "name": "进阶知识 · 应用题体系",
+      "domain": "应用题",
+      "moduleKind": "current",
+      "sourceGroupIds": [
+        "adv-word"
+      ],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "sum-diff-times",
+        "chicken-rabbit"
+      ],
+      "missingNodeIds": [
+        "age-problem",
+        "tree-planting",
+        "profit-loss",
+        "square-array",
+        "average-problem",
+        "unit-normalize",
+        "economy-problem",
+        "concentration",
+        "engineering",
+        "cow-grass",
+        "frac-percent-app"
+      ],
+      "recommendedTools": [
+        {
+          "id": "age-planting-profit",
+          "name": "年龄、植树、盈亏模型",
+          "grade": "3-4",
+          "status": "planned",
+          "route": "/age-planting-profit",
+          "knowledgeNodeIds": [
+            "age-problem",
+            "tree-planting",
+            "profit-loss"
+          ]
+        },
+        {
+          "id": "array-average-unit",
+          "name": "方阵、平均数、归一归总",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/array-average-unit",
+          "knowledgeNodeIds": [
+            "square-array",
+            "average-problem",
+            "unit-normalize"
+          ]
+        },
+        {
+          "id": "percent-economy-concentration",
+          "name": "经济、浓度、分百应用",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/percent-applications",
+          "knowledgeNodeIds": [
+            "economy-problem",
+            "concentration",
+            "frac-percent-app"
+          ]
+        },
+        {
+          "id": "engineering-cow-grass",
+          "name": "工程与牛吃草",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/engineering-cow-grass",
+          "knowledgeNodeIds": [
+            "engineering",
+            "cow-grass"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-travel",
+      "name": "进阶知识 · 行程体系",
+      "domain": "行程问题",
+      "moduleKind": "new",
+      "sourceGroupIds": [
+        "adv-travel"
+      ],
+      "coverage": "planned",
+      "coveredNodeIds": [],
+      "missingNodeIds": [
+        "basic-travel",
+        "ring-track",
+        "boat-stream",
+        "train-bridge",
+        "clock-problem",
+        "multi-meeting",
+        "vary-speed",
+        "travel-by-ratio"
+      ],
+      "recommendedTools": [
+        {
+          "id": "basic-travel-diagram",
+          "name": "路程速度时间线段图",
+          "grade": "3-4",
+          "status": "planned",
+          "route": "/basic-travel",
+          "knowledgeNodeIds": [
+            "basic-travel"
+          ]
+        },
+        {
+          "id": "meeting-chasing-lab",
+          "name": "相遇追及与环形跑道",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/meeting-chasing",
+          "knowledgeNodeIds": [
+            "ring-track",
+            "multi-meeting",
+            "vary-speed"
+          ]
+        },
+        {
+          "id": "boat-train-clock-travel",
+          "name": "流水行船、火车过桥、时钟行程",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/boat-train-clock",
+          "knowledgeNodeIds": [
+            "boat-stream",
+            "train-bridge",
+            "clock-problem"
+          ]
+        },
+        {
+          "id": "travel-by-ratio",
+          "name": "比例法解行程",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/travel-by-ratio",
+          "knowledgeNodeIds": [
+            "travel-by-ratio"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-count",
+      "name": "进阶知识 · 计数体系",
+      "domain": "计数",
+      "moduleKind": "new",
+      "sourceGroupIds": [
+        "adv-count"
+      ],
+      "coverage": "planned",
+      "coveredNodeIds": [],
+      "missingNodeIds": [
+        "enumeration",
+        "addition-principle",
+        "multiplication-principle",
+        "permutation-combination",
+        "inclusion-exclusion",
+        "pigeonhole",
+        "geo-counting",
+        "recursion",
+        "probability-intro"
+      ],
+      "recommendedTools": [
+        {
+          "id": "enumeration-tree",
+          "name": "枚举树与列表法",
+          "grade": "2-4",
+          "status": "planned",
+          "route": "/enumeration-tree",
+          "knowledgeNodeIds": [
+            "enumeration"
+          ]
+        },
+        {
+          "id": "counting-principles",
+          "name": "加法原理与乘法原理",
+          "grade": "3-5",
+          "status": "planned",
+          "route": "/counting-principles",
+          "knowledgeNodeIds": [
+            "addition-principle",
+            "multiplication-principle"
+          ]
+        },
+        {
+          "id": "permutation-inclusion",
+          "name": "排列组合与容斥",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/permutation-inclusion",
+          "knowledgeNodeIds": [
+            "permutation-combination",
+            "inclusion-exclusion"
+          ]
+        },
+        {
+          "id": "pigeonhole-geo-counting",
+          "name": "抽屉原理与几何计数",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/pigeonhole-geo-counting",
+          "knowledgeNodeIds": [
+            "pigeonhole",
+            "geo-counting"
+          ]
+        },
+        {
+          "id": "recursion-probability",
+          "name": "递推归纳与概率初步",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/recursion-probability",
+          "knowledgeNodeIds": [
+            "recursion",
+            "probability-intro"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced-combinatorics",
+      "name": "进阶知识 · 组合与逻辑",
+      "domain": "组合 / 逻辑 / 策略",
+      "moduleKind": "new",
+      "sourceGroupIds": [
+        "adv-comb"
+      ],
+      "coverage": "planned",
+      "coveredNodeIds": [],
+      "missingNodeIds": [
+        "digit-puzzle",
+        "number-array",
+        "logic-reasoning",
+        "operation-strategy",
+        "scheduling",
+        "extremal",
+        "indeterminate-equation",
+        "clever-puzzle",
+        "yanghui-triangle"
+      ],
+      "recommendedTools": [
+        {
+          "id": "digit-number-array",
+          "name": "数字谜与数阵图",
+          "grade": "2-6",
+          "status": "planned",
+          "route": "/digit-number-array",
+          "knowledgeNodeIds": [
+            "digit-puzzle",
+            "number-array"
+          ]
+        },
+        {
+          "id": "logic-strategy-maze",
+          "name": "逻辑推理与策略迷宫",
+          "grade": "2-6",
+          "status": "planned",
+          "route": "/logic-strategy-maze",
+          "knowledgeNodeIds": [
+            "logic-reasoning",
+            "operation-strategy"
+          ]
+        },
+        {
+          "id": "scheduling-extremal",
+          "name": "统筹优化与最值问题",
+          "grade": "4-6",
+          "status": "planned",
+          "route": "/scheduling-extremal",
+          "knowledgeNodeIds": [
+            "scheduling",
+            "extremal"
+          ]
+        },
+        {
+          "id": "indeterminate-equation",
+          "name": "不定方程枚举求解",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/indeterminate-equation",
+          "knowledgeNodeIds": [
+            "indeterminate-equation"
+          ]
+        },
+        {
+          "id": "clever-puzzle-yanghui",
+          "name": "智巧趣题与杨辉三角",
+          "grade": "2-6",
+          "status": "planned",
+          "route": "/clever-puzzle-yanghui",
+          "knowledgeNodeIds": [
+            "clever-puzzle",
+            "yanghui-triangle"
+          ]
+        }
+      ]
+    }
+  ]
+}

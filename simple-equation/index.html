@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简易方程·天平模型 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #ede9fe 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { max-width: 1080px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .25); font-size: 22px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none; white-space: nowrap;
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.primary:hover { color: #fff; }
+        .btn.small { padding: 7px 11px; font-size: 13px; }
+        .card {
+            background: rgba(255,255,255,.96); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 22px; }
+        .tabs {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            margin-bottom: 18px; padding: 6px; border: 1px solid var(--line);
+            border-radius: 16px; background: #fff;
+        }
+        .tab {
+            border: 0; border-radius: 12px; padding: 12px 8px; color: var(--muted);
+            background: transparent; font-weight: 950; text-align: center; line-height: 1.25; font-size: 14px;
+        }
+        .tab small { display: block; font-weight: 750; font-size: 11px; margin-top: 3px; opacity: .82; }
+        .tab.active { background: var(--indigo); color: #fff; box-shadow: 0 8px 18px rgba(79,70,229,.25); }
+        .view { display: none; animation: fade .22s ease; }
+        .view.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 16px; line-height: 1.6; }
+        .lead b { color: var(--indigo); }
+        code { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-weight: 850; }
+
+        .level-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .level-row .lbl { font-size: 13px; color: var(--muted); font-weight: 800; margin-right: 2px; }
+        .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+        .seg button { border: 0; background: #fff; padding: 8px 14px; font-weight: 850; color: var(--muted); font-size: 13px; }
+        .seg button.active { background: var(--indigo); color: #fff; }
+
+        /* =========================================================
+           Tab 1 · 天平
+           ========================================================= */
+        .scale-area {
+            position: relative; height: 340px; margin: 6px 0 4px;
+            border-radius: 16px; background: linear-gradient(180deg, #fdfdff, #eef1fb);
+            border: 1px solid var(--line); overflow: hidden;
+        }
+        .fulcrum { position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%);
+            width: 0; height: 0; border-left: 30px solid transparent; border-right: 30px solid transparent;
+            border-bottom: 120px solid #8b94a7; z-index: 1; }
+        .fulcrum::after { content: ""; position: absolute; left: -46px; bottom: -130px; width: 92px; height: 14px;
+            background: #5b6478; border-radius: 7px; }
+        .beam {
+            position: absolute; left: 50%; bottom: 150px; width: 520px; height: 12px;
+            background: linear-gradient(90deg,#6366f1,#a855f7); border-radius: 7px;
+            transform: translateX(-50%) rotate(0deg); transform-origin: center;
+            transition: transform .55s cubic-bezier(.34,1.25,.5,1); z-index: 3;
+            box-shadow: 0 3px 8px rgba(99,102,241,.35);
+        }
+        .beam::after { content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 18px;
+            background: #4f46e5; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 0 4px rgba(79,70,229,.2); }
+        .pan {
+            position: absolute; bottom: 150px; width: 196px;
+            transition: transform .55s cubic-bezier(.34,1.25,.5,1); z-index: 4;
+        }
+        .pan.left  { left: calc(50% - 250px); }
+        .pan.right { left: calc(50% + 54px); }
+        .pan .rope { height: 44px; margin: 0 30px; border-left: 2px solid #9aa3b2; border-right: 2px solid #9aa3b2; }
+        /* 天平底盘下方的「加砝码」按钮，左右各一 */
+        .add-row { display: flex; justify-content: center; gap: clamp(40px, 30vw, 360px); margin: 14px 0 2px; flex-wrap: wrap; }
+        .add-weight {
+            display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px 9px 12px; border-radius: 999px;
+            border: 0; background: linear-gradient(135deg, #34d399, #10b981); color: #fff;
+            font-size: 14px; font-weight: 900; box-shadow: 0 4px 10px rgba(16,185,129,.35);
+            transition: transform .12s, filter .12s;
+        }
+        .add-weight span { font-size: 20px; line-height: 1; }
+        .add-weight:hover { filter: brightness(1.07); transform: translateY(-2px); }
+        .add-weight:active { transform: translateY(0) scale(.96); }
+        .dish {
+            min-height: 96px; border: 3px solid #818cf8; border-top: 0;
+            border-radius: 0 0 110px 110px / 0 0 40px 40px;
+            background: rgba(199,210,254,.28);
+            display: flex; flex-wrap: wrap-reverse; align-content: flex-start; justify-content: center;
+            gap: 5px; padding: 8px 10px 12px;
+        }
+        .dish.balanced { border-color: var(--green); background: rgba(167,243,208,.30); }
+        /* 实物砝码：梯形金属块 */
+        .weight {
+            position: relative; width: 38px; height: 34px; cursor: pointer; user-select: none;
+            background: linear-gradient(180deg, #cbd2dc, #8d97a8);
+            border: 1px solid #6b7280;
+            clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%);
+            display: flex; align-items: flex-end; justify-content: center;
+            box-shadow: 0 3px 5px rgba(0,0,0,.22); transition: transform .12s, filter .12s;
+        }
+        .weight::before { content: ""; position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+            width: 16px; height: 9px; border: 2px solid #6b7280; border-bottom: 0; border-radius: 8px 8px 0 0; background: transparent; }
+        .weight span { font-size: 12px; font-weight: 950; color: #1f2937; padding-bottom: 3px; }
+        .weight:hover { filter: brightness(1.08); transform: translateY(-2px); }
+        .weight.removing { animation: flyoff .4s ease forwards; }
+        @keyframes flyoff { to { transform: translateY(-60px) scale(.4); opacity: 0; } }
+        /* 苹果（未知重量 x） */
+        .apple {
+            position: relative; width: 46px; height: 46px; user-select: none;
+            background: radial-gradient(circle at 32% 30%, #ff7a7a, #d62828 70%);
+            border-radius: 50% 50% 48% 48%; box-shadow: 0 3px 6px rgba(0,0,0,.22);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .apple::before { content: ""; position: absolute; top: -6px; left: 52%; width: 3px; height: 9px; background: #7c4a23; border-radius: 2px; transform: rotate(12deg); }
+        .apple::after { content: ""; position: absolute; top: -4px; left: 60%; width: 9px; height: 6px; background: #3f9b46; border-radius: 0 70% 0 70%; transform: rotate(20deg); }
+        .apple b { color: #fff; font-size: 17px; font-weight: 950; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+
+        .scale-eqn { text-align: center; font-size: clamp(20px,3.2vw,26px); font-weight: 950; color: #312e81;
+            margin: 6px 0 4px; letter-spacing: 1px; }
+        .scale-state { text-align: center; font-weight: 950; font-size: 15px; min-height: 22px; }
+        .scale-state.bal { color: var(--green); }
+        .scale-state.unbal { color: var(--red); }
+        .scale-hint { text-align: center; color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.55; }
+        .scale-hint b { color: var(--blue); }
+
+        /* =========================================================
+           Tab 2 · 等式性质（按钮 + 飞入动画）
+           ========================================================= */
+        .prop-eqn-board {
+            display: grid; grid-template-columns: 1fr 40px 1fr; align-items: center; gap: 8px;
+            margin: 8px 0 4px; padding: 22px 12px; border-radius: 16px;
+            background: linear-gradient(180deg,#fdfdff,#f1f3fc); border: 1px solid var(--line);
+            min-height: 150px;
+        }
+        .prop-cell { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .prop-expr { font-size: clamp(24px,4.4vw,38px); font-weight: 950; color: #312e81; letter-spacing: 1px;
+            transition: color .2s; }
+        .prop-expr.flash { animation: cellflash .55s ease; }
+        @keyframes cellflash { 0%{ background: transparent;} 35%{ background: #fde68a; } 100%{ background: transparent; } }
+        .prop-eq-sign { text-align: center; font-size: 34px; font-weight: 950; color: var(--indigo); }
+        .prop-eq-sign.unbal { color: var(--red); }
+        /* 飞入的“+3 / −3 / ×2 …”标签 */
+        .fly-tag {
+            position: absolute; top: -6px; left: 50%; transform: translate(-50%, 24px);
+            padding: 5px 12px; border-radius: 999px; font-weight: 950; font-size: 16px; white-space: nowrap;
+            opacity: 0; z-index: 5; box-shadow: 0 6px 14px rgba(0,0,0,.18);
+        }
+        .fly-tag.show { animation: flyin 1.5s cubic-bezier(.2,.9,.3,1) forwards; }
+        @keyframes flyin {
+            0%   { opacity: 0; transform: translate(-50%, -34px) scale(.6); }
+            20%  { opacity: 1; transform: translate(-50%, 4px) scale(1.1); }
+            55%  { opacity: 1; transform: translate(-50%, 4px) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, 18px) scale(.9); }
+        }
+        .fly-tag.add { background: #dcfce7; color: #166534; }
+        .fly-tag.sub { background: #fee2e2; color: #991b1b; }
+        .fly-tag.mul { background: #dbeafe; color: #1e40af; }
+        .fly-tag.div { background: #ede9fe; color: #5b21b6; }
+
+        .op-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 6px; }
+        .op-group { border: 1px solid var(--line); border-radius: 14px; padding: 10px; background: #f8fafc; }
+        .op-group .op-title { font-size: 12px; font-weight: 900; color: var(--muted); text-align: center; margin-bottom: 8px; }
+        .op-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .op-btn {
+            border: 1px solid var(--line); background: #fff; border-radius: 9px; padding: 8px 0;
+            font-weight: 950; font-size: 14px; color: #312e81; box-shadow: 0 2px 5px rgba(0,0,0,.06);
+        }
+        .op-btn:hover { border-color: #a5b4fc; background: #eef2ff; }
+        .op-btn.add { color: #166534; } .op-btn.sub { color: #991b1b; }
+        .op-btn.mul { color: #1e40af; } .op-btn.div { color: #5b21b6; }
+
+        .prop-base-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .base-chip { padding: 8px 13px; border-radius: 999px; background: #f1f5f9; color: #334155;
+            font-weight: 900; border: 1px solid transparent; font-size: 15px; }
+        .base-chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .base-chip.active { background: var(--indigo); color: #fff; }
+
+        .prop-log { border: 1px solid #c7d2fe; background: #eef2ff; border-radius: 14px; padding: 12px 16px;
+            line-height: 1.7; font-size: 14px; margin-top: 12px; min-height: 50px; }
+        .prop-log b { color: var(--indigo); }
+        .prop-log .win { color: var(--green); font-weight: 950; }
+
+        /* =========================================================
+           Tab 3 · 解方程讲解（双行对齐 + 运算行）
+           ========================================================= */
+        .solver-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+        .chip { padding: 8px 12px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850;
+            border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .chip.active { background: var(--indigo); color: #fff; }
+        .eqn-input { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 18px;
+            font-weight: 900; color: #312e81; min-width: 180px; flex: 1; }
+
+        .sstep { margin-bottom: 14px; animation: fade .25s ease; }
+        .sstep .why { font-size: 13px; color: var(--muted); font-weight: 800; margin-bottom: 6px; line-height: 1.5; }
+        .sstep .why b { color: var(--indigo); }
+        /* 三列等式：左 | = | 右 */
+        .eqrow { display: grid; grid-template-columns: 1fr 28px 1fr; align-items: center;
+            font-size: clamp(17px,3vw,21px); font-weight: 950; color: #1e293b; letter-spacing: .5px; }
+        .eqrow .lhs { text-align: right; padding-right: 8px; }
+        .eqrow .rhs { text-align: left; padding-left: 8px; }
+        .eqrow .eqs { text-align: center; color: var(--indigo); }
+        /* 运算行：两边同时 ±a，淡红/淡绿小字 */
+        .eqrow.op { font-size: clamp(14px,2.4vw,16px); font-weight: 900; margin: 2px 0; }
+        .eqrow.op .opmark { display: inline-block; padding: 1px 8px; border-radius: 999px; }
+        .opmark.add { background: #dcfce7; color: #166534; }
+        .opmark.sub { background: #fee2e2; color: #991b1b; }
+        .opmark.mul { background: #dbeafe; color: #1e40af; }
+        .opmark.div { background: #ede9fe; color: #5b21b6; }
+        .sstep.result .eqrow { color: #047857; }
+        .sstep.result { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 12px; padding: 12px 14px; }
+        .sstep.box { background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+        .check-box { border: 1px dashed #94a3b8; border-radius: 12px; padding: 12px 16px; margin-top: 8px;
+            font-size: 14px; line-height: 1.7; color: #334155; }
+        .check-box b { color: var(--green); }
+
+        /* =========================================================
+           Tab 4 · 练习
+           ========================================================= */
+        .quiz-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .quiz-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+        .stat { background: #f1f5f9; border-radius: 10px; padding: 6px 12px; font-weight: 850; font-size: 13px; color: #334155; }
+        .stat b { color: var(--indigo); font-size: 16px; }
+        .quiz-card { border: 1px solid var(--line); border-radius: 16px; padding: 22px; background: #f8fafc; text-align: center; }
+        .quiz-q { font-size: clamp(26px,5vw,38px); font-weight: 950; color: #312e81; letter-spacing: 1px; margin: 4px 0 18px; }
+        .quiz-answer { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .quiz-answer .xlabel { font-size: 26px; font-weight: 950; color: var(--indigo); }
+        .quiz-answer input {
+            width: 130px; border: 2px solid var(--line); border-radius: 12px; padding: 10px; font-size: 24px;
+            font-weight: 950; text-align: center; color: #312e81;
+        }
+        .quiz-answer input:focus { outline: none; border-color: #a5b4fc; }
+        .feedback { min-height: 28px; font-weight: 950; font-size: 16px; margin-top: 14px; }
+        .feedback.ok { color: var(--green); }
+        .feedback.no { color: var(--red); }
+        .quiz-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+        .work-steps { text-align: left; margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+
+        @media (max-width: 720px) {
+            .tabs { grid-template-columns: repeat(2, 1fr); }
+            .topbar { display: block; }
+            .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .beam { width: 360px; }
+            .pan { width: 150px; }
+            .pan.left  { left: calc(50% - 188px); }
+            .pan.right { left: calc(50% + 40px); }
+            .op-pad { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">x</div>
+                <div>
+                    <h1>简易方程·天平模型</h1>
+                    <p class="sub">从天平到等式性质，再到解方程与练习（人教五上 · 含奥数初步）</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-view="balance">天平认识方程<small>拿走砝码求未知</small></button>
+            <button class="tab" data-view="property">等式性质<small>点按钮加减乘除</small></button>
+            <button class="tab" data-view="solver">解方程讲解<small>两边同步运算</small></button>
+            <button class="tab" data-view="quiz">解方程练习<small>简单/进阶</small></button>
+        </div>
+
+        <!-- ============ Tab1 天平 ============ -->
+        <section class="card view active" id="view-balance">
+            <div class="panel">
+                <h2>1 · 用天平理解方程</h2>
+                <p class="lead">左盘有 <b>苹果</b>（重量未知，记作 <b>x</b> 克）和几块砝码，右盘是一堆砝码，天平正好<b>平衡</b>——这就是一个方程。想求出一个苹果有多重？<b>两边同时拿走一样多的砝码</b>，保持平衡，直到左盘只剩苹果。点砝码可<b>拿走</b>，点天平下方的 <b style="color:#10b981">＋ 加砝码</b> 可<b>添加</b>砝码。</p>
+
+                <div class="scale-area" id="scaleArea">
+                    <div class="beam" id="beam"></div>
+                    <div class="fulcrum"></div>
+                    <div class="pan left" id="panLeft">
+                        <div class="rope"></div>
+                        <div class="dish" id="dishLeft"></div>
+                    </div>
+                    <div class="pan right" id="panRight">
+                        <div class="rope"></div>
+                        <div class="dish" id="dishRight"></div>
+                    </div>
+                </div>
+
+                <div class="add-row">
+                    <button class="add-weight" id="addLeft" title="给左盘加 1 块砝码"><span>＋</span> 左盘加砝码</button>
+                    <button class="add-weight" id="addRight" title="给右盘加 1 块砝码"><span>＋</span> 右盘加砝码</button>
+                </div>
+
+                <div class="scale-eqn" id="scaleEqn"></div>
+                <div class="scale-state" id="scaleState"></div>
+                <div class="scale-hint" id="scaleHint"></div>
+
+                <div class="level-row" style="margin-top:14px; justify-content:center">
+                    <span class="lbl">换一道题：</span>
+                    <div class="seg" id="scalePresetSeg"></div>
+                    <button class="btn small" id="scaleReset">重摆本题</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab2 等式性质 ============ -->
+        <section class="card view" id="view-property">
+            <div class="panel">
+                <h2>2 · 等式两边的秘密</h2>
+                <p class="lead">天平平衡时，<b>两边同时做同样的事</b>——同时加、同时减、同时乘、同时除以同一个数（除数不为 0）——天平依然平衡。先选一个起始等式，再点下面的按钮，看看两边<b>同时变化</b>的过程。</p>
+
+                <div class="prop-base-row" id="propBaseRow"></div>
+
+                <div class="prop-eqn-board">
+                    <div class="prop-cell">
+                        <div class="prop-expr" id="propLeft">x + 4</div>
+                        <div class="fly-tag" id="flyLeft"></div>
+                    </div>
+                    <div class="prop-eq-sign" id="propSign">=</div>
+                    <div class="prop-cell">
+                        <div class="prop-expr" id="propRight">10</div>
+                        <div class="fly-tag" id="flyRight"></div>
+                    </div>
+                </div>
+
+                <div class="op-pad">
+                    <div class="op-group">
+                        <div class="op-title">两边同时 +</div>
+                        <div class="op-btns" data-op="+"></div>
+                    </div>
+                    <div class="op-group">
+                        <div class="op-title">两边同时 −</div>
+                        <div class="op-btns" data-op="-"></div>
+                    </div>
+                    <div class="op-group">
+                        <div class="op-title">两边同时 ×</div>
+                        <div class="op-btns" data-op="*"></div>
+                    </div>
+                    <div class="op-group">
+                        <div class="op-title">两边同时 ÷</div>
+                        <div class="op-btns" data-op="/"></div>
+                    </div>
+                </div>
+
+                <div style="text-align:center;margin-top:4px">
+                    <button class="btn small" id="propReset">复原起始等式</button>
+                </div>
+
+                <div class="prop-log" id="propLog"></div>
+            </div>
+        </section>
+
+        <!-- ============ Tab3 解方程讲解 ============ -->
+        <section class="card view" id="view-solver">
+            <div class="panel">
+                <h2>3 · 解方程，看清两边同时运算</h2>
+                <p class="lead">选一个方程，或自己输入（未知数写 <code>x</code>，例如 <b>3x+5=20</b> 或 <b>2(x-1)=10</b>）。每一步都先写出<b>两边同时加 / 减 / 乘 / 除</b>，再合并计算，最后<b>检验</b>。</p>
+
+                <div class="solver-controls">
+                    <input type="text" class="eqn-input" id="solverInput" value="3x + 5 = 20" autocomplete="off">
+                    <button class="btn small primary" id="solverGo">解一解</button>
+                </div>
+                <div class="preset-row" id="solverPresets"></div>
+
+                <div id="solverSteps"></div>
+            </div>
+        </section>
+
+        <!-- ============ Tab4 练习 ============ -->
+        <section class="card view" id="view-quiz">
+            <div class="panel">
+                <h2>4 · 解方程练习</h2>
+                <p class="lead">求出 x 的值。算完直接填数（可以是分数，如 <code>3/2</code>）。做错可以看分步讲解。</p>
+
+                <div class="level-row">
+                    <span class="lbl">难度：</span>
+                    <div class="seg" id="quizLevelSeg">
+                        <button data-level="easy" class="active">简单版</button>
+                        <button data-level="hard">进阶版</button>
+                    </div>
+                    <span class="scale-hint" id="levelDesc" style="margin:0"></span>
+                </div>
+
+                <div class="quiz-head">
+                    <div class="quiz-stats">
+                        <span class="stat">已做 <b id="qDone">0</b></span>
+                        <span class="stat">答对 <b id="qRight">0</b></span>
+                        <span class="stat">连对 <b id="qStreak">0</b></span>
+                    </div>
+                    <button class="btn small" id="quizNew">换一题</button>
+                </div>
+
+                <div class="quiz-card">
+                    <div class="quiz-q" id="quizQuestion">x + 5 = 12</div>
+                    <div class="quiz-answer">
+                        <span class="xlabel">x =</span>
+                        <input type="text" id="quizInput" inputmode="text" autocomplete="off" placeholder="?">
+                    </div>
+                    <div class="feedback" id="quizFeedback"></div>
+                    <div class="quiz-actions">
+                        <button class="btn primary" id="quizCheck">检查</button>
+                        <button class="btn" id="quizShow">看讲解</button>
+                    </div>
+                    <div class="work-steps" id="quizWork" style="display:none"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    const $ = id => document.getElementById(id);
+
+    /* ============================================================
+       有理数（分数）运算：[分子, 分母]，分母恒正
+       ============================================================ */
+    function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+    function frac(n, d = 1) {
+        if (d === 0) return [NaN, 1];
+        if (d < 0) { n = -n; d = -d; }
+        const g = gcd(n, d);
+        return [n / g, d / g];
+    }
+    function fAdd(a, b) { return frac(a[0] * b[1] + b[0] * a[1], a[1] * b[1]); }
+    function fSub(a, b) { return frac(a[0] * b[1] - b[0] * a[1], a[1] * b[1]); }
+    function fMul(a, b) { return frac(a[0] * b[0], a[1] * b[1]); }
+    function fDiv(a, b) { return frac(a[0] * b[1], a[1] * b[0]); }
+    function fEq(a, b) { return a[0] * b[1] === b[0] * a[1]; }
+    function fNum(a) { return a[0] / a[1]; }
+    function fStr(a) { return a[1] === 1 ? String(a[0]) : a[0] + "/" + a[1]; }
+    function fAbsStr(a) { return fStr(frac(Math.abs(a[0]), a[1])); }
+    function parseFracInput(s) {
+        s = (s || "").trim().replace(/\s+/g, "");
+        if (s === "") return null;
+        if (s.includes("/")) {
+            const [n, d] = s.split("/");
+            const ni = parseInt(n, 10), di = parseInt(d, 10);
+            if (Number.isNaN(ni) || Number.isNaN(di) || di === 0) return null;
+            return frac(ni, di);
+        }
+        const v = Number(s);
+        if (Number.isNaN(v)) return null;
+        if (Number.isInteger(v)) return frac(v, 1);
+        const decimals = (s.split(".")[1] || "").length;
+        const den = Math.pow(10, decimals);
+        return frac(Math.round(v * den), den);
+    }
+
+    /* ============================================================
+       标签切换
+       ============================================================ */
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === btn));
+            document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + btn.dataset.view));
+        });
+    });
+
+    /* ============================================================
+       Tab 1 · 天平：左 = a 个苹果 + 砝码L，右 = 砝码R，平衡
+       预设题：x 为正整数，砝码均为正
+       ============================================================ */
+    // 题目：{ apples:a, leftW:b, rightW:c, x }，满足 a*x + b = c（平衡）
+    const scalePresets = [
+        { apples: 1, leftW: 3, rightW: 8 },   // x + 3 = 8  -> x=5
+        { apples: 1, leftW: 5, rightW: 12 },  // x + 5 = 12 -> x=7
+        { apples: 2, leftW: 4, rightW: 14 },  // 2x + 4 = 14 -> x=5
+        { apples: 2, leftW: 1, rightW: 13 },  // 2x + 1 = 13 -> x=6
+        { apples: 3, leftW: 2, rightW: 20 },  // 3x + 2 = 20 -> x=6
+    ];
+    scalePresets.forEach(p => p.x = (p.rightW - p.leftW) / p.apples);
+    let curPreset = 0;
+    // 当前盘面（砝码可被拿走；苹果不动）
+    let scale = null;
+
+    function loadPreset(i) {
+        curPreset = i;
+        const p = scalePresets[i];
+        scale = { apples: p.apples, leftW: p.leftW, rightW: p.rightW, x: p.x, init: p };
+        $("scalePresetSeg").querySelectorAll("button").forEach((b, idx) => b.classList.toggle("active", idx === i));
+        renderScale();
+    }
+
+    function makeWeight() {
+        const w = document.createElement("div");
+        w.className = "weight";
+        w.innerHTML = "<span>1克</span>";
+        return w;
+    }
+    function makeApple() {
+        const a = document.createElement("div");
+        a.className = "apple";
+        a.innerHTML = "<b>x</b>";
+        a.title = "未知重量的苹果";
+        return a;
+    }
+
+    function renderScale() {
+        const dl = $("dishLeft"), dr = $("dishRight");
+        dl.innerHTML = ""; dr.innerHTML = "";
+        for (let i = 0; i < scale.apples; i++) dl.appendChild(makeApple());
+        for (let i = 0; i < scale.leftW; i++) {
+            const w = makeWeight();
+            w.addEventListener("click", () => removeWeight("left", w));
+            dl.appendChild(w);
+        }
+        for (let i = 0; i < scale.rightW; i++) {
+            const w = makeWeight();
+            w.addEventListener("click", () => removeWeight("right", w));
+            dr.appendChild(w);
+        }
+        updateScale();
+    }
+
+    function leftWeightVal() { return scale.apples * scale.x + scale.leftW; }
+    function rightWeightVal() { return scale.rightW; }
+
+    function leftExpr() {
+        const parts = [];
+        if (scale.apples > 0) parts.push(scale.apples === 1 ? "x" : scale.apples + "x");
+        if (scale.leftW > 0) parts.push(String(scale.leftW));
+        return parts.join(" + ") || "0";
+    }
+
+    function updateScale() {
+        const lv = leftWeightVal(), rv = rightWeightVal();
+        const diff = lv - rv; // >0 左重
+        // 左重(diff>0)：左盘下沉(off>0 下移)，横梁左端低 => 顺时针为正角度时左端抬高，
+        // 故左端下降需用「负角度」(逆时针)。统一以横梁角度为准，pan 跟随。
+        const off = Math.max(-26, Math.min(26, diff * 5));   // 左盘竖直位移，下沉为正
+        const ang = Math.max(-10, Math.min(10, -diff * 1.6)); // 横梁角度：左重时左端下降(逆时针,负)
+        $("beam").style.transform = `translateX(-50%) rotate(${ang}deg)`;
+        $("panLeft").style.transform = `translateY(${off}px)`;
+        $("panRight").style.transform = `translateY(${-off}px)`;
+
+        $("scaleEqn").textContent = leftExpr() + " = " + rv;
+        const st = $("scaleState"), dl = $("dishLeft"), dr = $("dishRight");
+        dl.classList.toggle("balanced", diff === 0);
+        dr.classList.toggle("balanced", diff === 0);
+
+        const solved = scale.apples === 1 && scale.leftW === 0 && diff === 0;
+        if (solved) {
+            st.textContent = "🎉 左盘只剩 1 个苹果，平衡！所以 x = " + rv + " 克";
+            st.className = "scale-state bal";
+            $("scaleHint").innerHTML = "你用<b>两边同时拿走砝码</b>解出了方程。换一道题再试试。";
+        } else if (diff === 0) {
+            st.textContent = "⚖ 平衡：左右一样重";
+            st.className = "scale-state bal";
+            $("scaleHint").innerHTML = scale.leftW > 0
+                ? "现在<b>两边各拿走 " + scale.leftW + " 块砝码</b>（点砝码），把左盘的砝码清空。"
+                : (scale.apples > 1
+                    ? "左盘是 " + scale.apples + " 个苹果 = " + rv + " 克，每个苹果 = " + rv + " ÷ " + scale.apples + " = <b>" + scale.x + "</b> 克。"
+                    : "继续。");
+        } else {
+            const heavy = diff > 0 ? "左" : "右";
+            st.textContent = "✗ 不平衡了：" + heavy + "边更重。要保持平衡，必须两边变化一样多。";
+            st.className = "scale-state unbal";
+            $("scaleHint").innerHTML = "提示：<b>两边同时拿走（或同时添加）一样多的砝码</b>才能保持平衡。点「重摆本题」可复原。";
+        }
+    }
+
+    function removeWeight(side, el) {
+        if (el.classList.contains("removing")) return;
+        el.classList.add("removing");
+        setTimeout(() => {
+            if (side === "left") scale.leftW = Math.max(0, scale.leftW - 1);
+            else scale.rightW = Math.max(0, scale.rightW - 1);
+            renderScale();
+        }, 320);
+    }
+
+    (function buildScalePresetSeg() {
+        const seg = $("scalePresetSeg");
+        scalePresets.forEach((p, i) => {
+            const b = document.createElement("button");
+            const expr = (p.apples === 1 ? "x" : p.apples + "x") + " + " + p.leftW + " = " + p.rightW;
+            b.textContent = expr;
+            b.addEventListener("click", () => loadPreset(i));
+            seg.appendChild(b);
+        });
+    })();
+    function addWeight(side) {
+        if (side === "left") scale.leftW++; else scale.rightW++;
+        renderScale();
+    }
+    $("addLeft").addEventListener("click", () => addWeight("left"));
+    $("addRight").addEventListener("click", () => addWeight("right"));
+    $("scaleReset").addEventListener("click", () => loadPreset(curPreset));
+    loadPreset(0);
+
+    /* ============================================================
+       Tab 2 · 等式性质：状态为 左=coef·x+konst，右=数；按钮触发飞入动画
+       ============================================================ */
+    // coef/konst/right 用分数 [n,d] 表示，支持 ÷ 1~10 产生分数也能干净显示
+    const propBases = [
+        { label: "x + 4 = 10", coef: frac(1), konst: frac(4), right: frac(10) },
+        { label: "x − 5 = 3",  coef: frac(1), konst: frac(-5), right: frac(3) },
+        { label: "2x = 12",     coef: frac(2), konst: frac(0), right: frac(12) },
+        { label: "3x = 9",      coef: frac(3), konst: frac(0), right: frac(9) },
+        { label: "2x + 3 = 11", coef: frac(2), konst: frac(3), right: frac(11) },
+        { label: "3x − 2 = 10", coef: frac(3), konst: frac(-2), right: frac(10) },
+        { label: "x ÷ 2 = 4",   coef: frac(1, 2), konst: frac(0), right: frac(4), divForm: 2 },
+    ];
+    let prop = null;
+    let propBusy = false;
+
+    function propLeftStr(s) {
+        const parts = [];
+        if (s.divForm) return "x ÷ " + s.divForm;
+        if (s.coef[0] !== 0) {
+            if (fEq(s.coef, frac(1))) parts.push("x");
+            else if (fEq(s.coef, frac(-1))) parts.push("−x");
+            else parts.push((s.coef[1] === 1 ? fStr(s.coef) : "(" + fStr(s.coef) + ")") + "x");
+        }
+        if (fNum(s.konst) > 0) parts.push("+ " + fAbsStr(s.konst));
+        else if (fNum(s.konst) < 0) parts.push("− " + fAbsStr(s.konst));
+        return parts.join(" ") || "0";
+    }
+    function propRightStr(s) { return fStr(s.right); }
+
+    function renderProp() {
+        $("propLeft").textContent = propLeftStr(prop);
+        $("propRight").textContent = propRightStr(prop);
+        $("propSign").classList.remove("unbal");
+    }
+
+    function loadBase(i) {
+        const b = propBases[i];
+        prop = { coef: b.coef, konst: b.konst, right: b.right, divForm: b.divForm || null };
+        $("propBaseRow").querySelectorAll(".base-chip").forEach((c, idx) => c.classList.toggle("active", idx === i));
+        $("propLog").innerHTML = "选好起始等式了。点下面的按钮，对<b>两边同时</b>做运算，观察飞入的标签和数字变化。";
+        renderProp();
+    }
+
+    function flyAnimate(op, val) {
+        const cls = { "+": "add", "-": "sub", "*": "mul", "/": "div" }[op];
+        const sym = { "+": "+ ", "-": "− ", "*": "× ", "/": "÷ " }[op];
+        [["flyLeft"], ["flyRight"]].forEach(([id]) => {
+            const t = $(id);
+            t.className = "fly-tag " + cls;
+            t.textContent = sym + val;
+            void t.offsetWidth; // reflow 重启动画
+            t.classList.add("show");
+        });
+    }
+
+    function applyOp(op, val) {
+        if (propBusy) return;
+        if (op === "/" && val === 0) return;
+        // 含 x÷n 形式时，先转成系数形式以便统一运算
+        if (prop.divForm) { prop.coef = frac(1, prop.divForm); prop.divForm = null; }
+        const before = { coef: prop.coef, konst: prop.konst, right: prop.right };
+        const fv = frac(val);
+        propBusy = true;
+        flyAnimate(op, val);
+
+        // 飞入动画进行中，0.85s 后更新数字并高亮
+        setTimeout(() => {
+            if (op === "+") { prop.konst = fAdd(prop.konst, fv); prop.right = fAdd(prop.right, fv); }
+            else if (op === "-") { prop.konst = fSub(prop.konst, fv); prop.right = fSub(prop.right, fv); }
+            else if (op === "*") { prop.coef = fMul(prop.coef, fv); prop.konst = fMul(prop.konst, fv); prop.right = fMul(prop.right, fv); }
+            else if (op === "/") { prop.coef = fDiv(prop.coef, fv); prop.konst = fDiv(prop.konst, fv); prop.right = fDiv(prop.right, fv); }
+            renderProp();
+            $("propLeft").classList.remove("flash"); $("propRight").classList.remove("flash");
+            void $("propLeft").offsetWidth;
+            $("propLeft").classList.add("flash"); $("propRight").classList.add("flash");
+            writePropLog(op, val, before);
+        }, 850);
+
+        setTimeout(() => { propBusy = false; }, 1500);
+    }
+
+    function writePropLog(op, val, before) {
+        const opName = { "+": "加上", "-": "减去", "*": "乘以", "/": "除以" }[op];
+        const beforeStr = propLeftStr(before) + " = " + fStr(before.right);
+        const afterStr = propLeftStr(prop) + " = " + fStr(prop.right);
+        const fv = frac(val);
+        let tip = "";
+        // 给出“这一步有什么用”
+        if (op === "-" && fEq(before.konst, fv) && before.coef[0] !== 0) tip = " 左边的常数被消成 0，更接近解。";
+        else if (op === "+" && fEq(before.konst, fMul(fv, frac(-1)))) tip = " 左边的 −" + val + " 被抵消成 0，更接近解。";
+        else if (op === "/" && fEq(before.coef, fv) && before.konst[0] === 0) tip = " 左边只剩一个 x，方程解出来了！";
+        else if (op === "*" && before.coef[0] !== 0 && fEq(fMul(before.coef, fv), frac(1))) tip = " 把 x 的系数变成 1，解出来了！";
+        const solved = fEq(prop.coef, frac(1)) && prop.konst[0] === 0;
+        $("propLog").innerHTML =
+            "两边同时" + opName + " <b>" + val + "</b>：<br>" +
+            "<code>" + beforeStr + "</code> &nbsp;⟶&nbsp; <code>" + afterStr + "</code>。天平依然平衡。" +
+            (tip ? "<br>👉" + tip : "") +
+            (solved ? "<br><span class='win'>✓ 现在 x = " + fStr(prop.right) + "，方程解完了！</span>" : "");
+    }
+
+    (function buildProp() {
+        // 起始等式 chips
+        propBases.forEach((b, i) => {
+            const c = document.createElement("button");
+            c.className = "base-chip";
+            c.textContent = b.label;
+            c.addEventListener("click", () => loadBase(i));
+            $("propBaseRow").appendChild(c);
+        });
+        // 运算按钮：加减乘除都提供 1~10
+        document.querySelectorAll(".op-btns").forEach(box => {
+            const op = box.dataset.op;
+            const cls = { "+": "add", "-": "sub", "*": "mul", "/": "div" }[op];
+            for (let v = 1; v <= 10; v++) {
+                const b = document.createElement("button");
+                b.className = "op-btn " + cls;
+                b.textContent = ({ "+": "+", "-": "−", "*": "×", "/": "÷" }[op]) + v;
+                b.addEventListener("click", () => applyOp(op, v));
+                box.appendChild(b);
+            }
+        });
+    })();
+    $("propReset").addEventListener("click", () => loadBase(propBases.findIndex(b => b.label === $("propBaseRow").querySelector(".base-chip.active")?.textContent) >= 0
+        ? propBases.findIndex(b => b.label === $("propBaseRow").querySelector(".base-chip.active").textContent) : 0));
+    loadBase(0);
+
+    /* ============================================================
+       一元一次方程解析器：线性式 {a:[n,d], b:[n,d]} 表 a·x + b
+       ============================================================ */
+    function parseLinear(expr) {
+        expr = expr.replace(/\s+/g, "").replace(/−/g, "-").replace(/×/g, "*").replace(/÷/g, "/");
+        let i = 0;
+        const peek = () => expr[i];
+        const eof = () => i >= expr.length;
+
+        function parseExpr() {
+            let node = parseTerm();
+            while (!eof() && (peek() === "+" || peek() === "-")) {
+                const op = expr[i++];
+                const rhs = parseTerm();
+                node = op === "+" ? addLin(node, rhs) : addLin(node, mulLinByScalar(rhs, frac(-1)));
+            }
+            return node;
+        }
+        function parseTerm() {
+            let node = parseFactor();
+            while (!eof() && (peek() === "*" || peek() === "/")) {
+                const op = expr[i++];
+                const rhs = parseFactor();
+                node = op === "*" ? mulLin(node, rhs) : divLin(node, rhs);
+            }
+            return node;
+        }
+        function parseFactor() {
+            let sign = frac(1);
+            while (!eof() && (peek() === "+" || peek() === "-")) { if (expr[i] === "-") sign = fMul(sign, frac(-1)); i++; }
+            return mulLinByScalar(parseAtom(), sign);
+        }
+        function parseAtom() {
+            if (peek() === "(") { i++; const inner = parseExpr(); if (peek() === ")") i++; return inner; }
+            if (peek() === "x") { i++; return { a: frac(1), b: frac(0) }; }
+            let num = "";
+            while (!eof() && /[0-9.]/.test(peek())) num += expr[i++];
+            const val = num === "" ? frac(1) : parseFracInput(num);
+            if (!eof() && peek() === "x") { i++; return { a: val, b: frac(0) }; }
+            if (!eof() && peek() === "(") { i++; const inner = parseExpr(); if (peek() === ")") i++; return mulLinByScalar(inner, val); }
+            return { a: frac(0), b: val };
+        }
+        const result = parseExpr();
+        if (!eof()) throw new Error("无法解析：剩余 " + expr.slice(i));
+        return result;
+    }
+    function addLin(p, q) { return { a: fAdd(p.a, q.a), b: fAdd(p.b, q.b) }; }
+    function mulLinByScalar(p, k) { return { a: fMul(p.a, k), b: fMul(p.b, k) }; }
+    function mulLin(p, q) {
+        if (p.a[0] === 0) return mulLinByScalar(q, p.b);
+        if (q.a[0] === 0) return mulLinByScalar(p, q.b);
+        throw new Error("出现 x·x，超出一元一次方程范围");
+    }
+    function divLin(p, q) {
+        if (q.a[0] !== 0) throw new Error("不能除以含 x 的式子");
+        return mulLinByScalar(p, fDiv(frac(1), q.b));
+    }
+
+    /* 线性式转字符串（用于讲解显示） */
+    function linStr(lin) {
+        const parts = [];
+        if (lin.a[0] !== 0) {
+            const c = lin.a;
+            if (fEq(c, frac(1))) parts.push("x");
+            else if (fEq(c, frac(-1))) parts.push("−x");
+            else parts.push((c[1] === 1 ? fStr(c) : "(" + fStr(c) + ")") + "x");
+        }
+        if (lin.b[0] !== 0 || lin.a[0] === 0) {
+            const v = lin.b;
+            if (parts.length === 0) parts.push(fStr(v));
+            else parts.push((fNum(v) >= 0 ? "+ " : "− ") + fAbsStr(v));
+        }
+        return parts.join(" ") || "0";
+    }
+    // 含 x 的项显示：系数 1 -> "x"，否则 "ax"（用于「同时 − ax」这类文字）
+    function xTermStr(coef) {
+        if (fEq(coef, frac(1))) return "x";
+        return fAbsStr(coef) + "x";
+    }
+
+    /* ============================================================
+       解方程：产出“双行对齐 + 运算行”的结构化步骤
+       每个 step: { why, left, right, op? }
+         op: { text, cls }  运算行（两边同时 ±a 等）
+       ============================================================ */
+    function solveSteps(input) {
+        const sides = input.split("=");
+        if (sides.length !== 2) throw new Error("方程需要一个等号");
+        let L = parseLinear(sides[0]);
+        let R = parseLinear(sides[1]);
+        const steps = [];
+
+        const hadBracket = /[()]/.test(input);
+        // 原方程：展示用户输入的原样（保留括号），统一减号
+        const rawLeft = sides[0].trim().replace(/\s+/g, " ").replace(/-/g, "−") || "0";
+        const rawRight = sides[1].trim().replace(/\s+/g, " ").replace(/-/g, "−") || "0";
+        steps.push({ why: "原方程", left: rawLeft, right: rawRight });
+        if (hadBracket) {
+            // 解析时已展开，这里展示展开后的式子
+            steps.push({ why: "<b>去括号</b>：用乘法分配律展开", left: linStr(L), right: linStr(R) });
+        }
+
+        // 1) x 移到左边
+        if (R.a[0] !== 0) {
+            const term = R.a;
+            const tStr = xTermStr(term);
+            const opSym = fNum(term) > 0 ? "−" : "+";
+            const cls = fNum(term) > 0 ? "sub" : "add";
+            const Lb = linStr(L), Rb = linStr(R);
+            L = { a: fSub(L.a, term), b: L.b };
+            R = { a: frac(0), b: R.b };
+            steps.push({
+                why: "<b>移项</b>：两边同时" + (fNum(term)>0?"减去":"加上") + " " + tStr + "，把含 x 的项移到左边",
+                op: { text: "两边同时 " + opSym + " " + tStr, cls },
+                preLeft: Lb + " " + opSym + " " + tStr,
+                preRight: Rb + " " + opSym + " " + tStr,
+                left: linStr(L), right: linStr(R)
+            });
+        }
+        // 2) 常数移到右边
+        if (L.b[0] !== 0) {
+            const c = L.b;
+            const opSym = fNum(c) > 0 ? "−" : "+";
+            const cls = fNum(c) > 0 ? "sub" : "add";
+            const Lb = linStr(L), Rb = linStr(R);
+            R = { a: frac(0), b: fSub(R.b, c) };
+            L = { a: L.a, b: frac(0) };
+            steps.push({
+                why: "<b>移项</b>：两边同时" + (fNum(c)>0?"减去":"加上") + " " + fAbsStr(c) + "，使左边只剩含 x 的项",
+                op: { text: "两边同时 " + opSym + " " + fAbsStr(c), cls },
+                preLeft: Lb + " " + opSym + " " + fAbsStr(c),
+                preRight: Rb + " " + opSym + " " + fAbsStr(c),
+                left: linStr(L), right: linStr(R)
+            });
+        }
+        // 3) 系数化 1
+        if (L.a[0] === 0) {
+            if (R.b[0] === 0) throw new Error("x 可取任意值（恒等式）");
+            throw new Error("无解（矛盾方程）");
+        }
+        let xv;
+        if (!fEq(L.a, frac(1))) {
+            const coef = L.a;
+            const Lb = linStr(L), Rb = linStr(R);
+            xv = fDiv(R.b, coef);
+            steps.push({
+                why: "<b>系数化 1</b>：两边同时除以系数 " + fStr(coef) + "，求出 x",
+                op: { text: "两边同时 ÷ " + fStr(coef), cls: "div" },
+                preLeft: Lb + " ÷ " + fStr(coef),
+                preRight: Rb + " ÷ " + fStr(coef),
+                left: "x", right: fStr(xv),
+                result: true
+            });
+        } else {
+            xv = R.b;
+            steps[steps.length - 1].result = true; // 最后一步即结果
+        }
+        return { x: xv, steps };
+    }
+
+    function evalAtX(expr, xv) {
+        const lin = parseLinear(expr);
+        return fAdd(fMul(lin.a, xv), lin.b);
+    }
+
+    /* ============================================================
+       Tab 3 · 渲染双行对齐步骤
+       ============================================================ */
+    const solverPresets = [
+        "x + 8 = 15", "x − 6 = 9", "3x = 18", "x ÷ 4 = 5",
+        "2x + 5 = 17", "5x − 3 = 12", "3x + 7 = x + 19", "2(x + 3) = 16",
+        "4(x − 1) = 2x + 10", "x/2 + 3 = 8"
+    ];
+    function buildSolverPresets() {
+        const row = $("solverPresets");
+        solverPresets.forEach(p => {
+            const b = document.createElement("button");
+            b.className = "chip";
+            b.textContent = p;
+            b.addEventListener("click", () => { $("solverInput").value = p; runSolver(); markChip(b); });
+            row.appendChild(b);
+        });
+    }
+    function markChip(active) {
+        $("solverPresets").querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === active));
+    }
+
+    function eqRowHtml(left, right, cls) {
+        return `<div class="eqrow ${cls || ""}"><div class="lhs">${left}</div><div class="eqs">=</div><div class="rhs">${right}</div></div>`;
+    }
+    function renderSteps(container, res) {
+        container.innerHTML = "";
+        res.steps.forEach(s => {
+            const div = document.createElement("div");
+            div.className = "sstep" + (s.result ? " result" : " box");
+            let html = `<div class="why">${s.why}</div>`;
+            if (s.op) {
+                // 运算行：左 ±a = 右 ±a（带高亮标记）
+                const mark = `<span class="opmark ${s.op.cls}">${s.op.text}</span>`;
+                html += `<div class="eqrow op"><div class="lhs">${s.preLeft}</div><div class="eqs"></div><div class="rhs">${s.preRight}</div></div>`;
+                html += `<div style="text-align:center;margin:4px 0">${mark}</div>`;
+            }
+            html += eqRowHtml(s.left, s.right);
+            div.innerHTML = html;
+            container.appendChild(div);
+        });
+    }
+
+    function runSolver() {
+        const out = $("solverSteps");
+        let res;
+        try { res = solveSteps($("solverInput").value); }
+        catch (e) {
+            out.innerHTML = `<div class="sstep box"><div class="eqrow"><div class="lhs" style="color:#dc2626;text-align:center;grid-column:1/4">无法求解：${e.message}</div></div><div class="why" style="text-align:center">只支持一元一次方程，例如 <b>3x+5=20</b>、<b>2(x−1)=10</b>。</div></div>`;
+            return;
+        }
+        renderSteps(out, res);
+        // 检验
+        const xv = res.x;
+        const parts = $("solverInput").value.split("=");
+        const check = document.createElement("div");
+        check.className = "check-box";
+        try {
+            const Lv = evalAtX(parts[0], xv), Rv = evalAtX(parts[1], xv);
+            check.innerHTML = `<b>检验</b>：把 x = ${fStr(xv)} 代回原方程 —— 左边 = ${fStr(Lv)}，右边 = ${fStr(Rv)}，` +
+                (fEq(Lv, Rv) ? "左右相等 ✓，解正确。" : "<span style='color:#dc2626'>不相等，请检查。</span>");
+        } catch (e) { check.innerHTML = `<b>解：</b> x = ${fStr(xv)}`; }
+        out.appendChild(check);
+    }
+    $("solverGo").addEventListener("click", () => { runSolver(); markChip(null); });
+    $("solverInput").addEventListener("keydown", e => { if (e.key === "Enter") { runSolver(); markChip(null); } });
+    buildSolverPresets();
+    runSolver();
+
+    /* ============================================================
+       Tab 4 · 练习
+       ============================================================ */
+    let quiz = { level: "easy", answer: null, done: 0, right: 0, streak: 0, equation: "" };
+    const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const levelDescText = {
+        easy: "简单版：x±a=b、ax=b、x÷a=b、ax±b=c（人教五上简易方程）。",
+        hard: "进阶版：x 在两边、带括号、两步移项、简单分数系数（奥数初步）。"
+    };
+
+    function genEasy() {
+        const type = pick(["addsub", "mul", "div", "axb"]);
+        if (type === "addsub") {
+            const a = rnd(1, 30);
+            if (Math.random() < .5) { const x = rnd(1, 20); return { eq: `x + ${a} = ${x + a}`, x: frac(x) }; }
+            const x2 = rnd(a + 1, a + 20); return { eq: `x − ${a} = ${x2 - a}`, x: frac(x2) };
+        }
+        if (type === "mul") { const a = rnd(2, 9), x = rnd(2, 12); return { eq: `${a}x = ${a * x}`, x: frac(x) }; }
+        if (type === "div") { const a = rnd(2, 6), x = rnd(2, 9); return { eq: `x ÷ ${a} = ${x}`, x: frac(a * x) }; }
+        const a = rnd(2, 6), x = rnd(2, 10);
+        if (Math.random() < .5) { const b = rnd(1, 15); return { eq: `${a}x + ${b} = ${a * x + b}`, x: frac(x) }; }
+        const b = rnd(1, a * x - 1); return { eq: `${a}x − ${b} = ${a * x - b}`, x: frac(x) };
+    }
+    function genHard() {
+        const type = pick(["bothsides", "bracket", "bracket2", "frac"]);
+        if (type === "bothsides") {
+            const x = rnd(2, 10), a = rnd(3, 7), c = rnd(1, a - 1), b = rnd(1, 12);
+            const d = (a - c) * x + b;
+            return { eq: `${a}x + ${b} = ${c}x + ${d}`, x: frac(x) };
+        }
+        if (type === "bracket") {
+            const a = rnd(2, 5), x = rnd(2, 9), b = rnd(1, 6);
+            return { eq: `${a}(x + ${b}) = ${a * (x + b)}`, x: frac(x) };
+        }
+        if (type === "bracket2") {
+            const x = rnd(3, 10), a = rnd(3, 6), b = rnd(1, 4), c = rnd(1, a - 1);
+            const d = a * (x - b) - c * x;
+            return { eq: `${a}(x − ${b}) = ${c}x ${d >= 0 ? "+ " + d : "− " + Math.abs(d)}`, x: frac(x) };
+        }
+        const a = rnd(2, 5), q = rnd(1, 6), b = rnd(1, 8), x = a * q;
+        return { eq: `x/${a} + ${b} = ${q + b}`, x: frac(x) };
+    }
+
+    function newQuestion() {
+        const data = quiz.level === "easy" ? genEasy() : genHard();
+        quiz.equation = data.eq; quiz.answer = data.x;
+        $("quizQuestion").textContent = data.eq;
+        $("quizInput").value = "";
+        $("quizFeedback").textContent = ""; $("quizFeedback").className = "feedback";
+        $("quizWork").style.display = "none"; $("quizWork").innerHTML = "";
+        $("quizInput").focus();
+    }
+    function checkQuiz() {
+        const val = parseFracInput($("quizInput").value);
+        const fb = $("quizFeedback");
+        if (val === null) { fb.textContent = "请填一个数（可以是分数，如 3/2）"; fb.className = "feedback no"; return; }
+        quiz.done++;
+        if (fEq(val, quiz.answer)) {
+            quiz.right++; quiz.streak++;
+            fb.textContent = "✓ 答对了！x = " + fStr(quiz.answer); fb.className = "feedback ok";
+            setTimeout(newQuestion, 900);
+        } else {
+            quiz.streak = 0;
+            fb.textContent = "✗ 再想想，可以点「看讲解」。"; fb.className = "feedback no";
+        }
+        updateStats();
+    }
+    function showWork() {
+        const wrap = $("quizWork");
+        wrap.style.display = "block";
+        try { renderSteps(wrap, solveSteps(quiz.equation.replace(/÷/g, "/"))); }
+        catch (e) { wrap.innerHTML = `<div class="sstep result">${eqRowHtml("x", fStr(quiz.answer))}</div>`; }
+    }
+    function updateStats() {
+        $("qDone").textContent = quiz.done;
+        $("qRight").textContent = quiz.right;
+        $("qStreak").textContent = quiz.streak;
+    }
+    $("quizLevelSeg").querySelectorAll("button").forEach(b => {
+        b.addEventListener("click", () => {
+            $("quizLevelSeg").querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+            quiz.level = b.dataset.level; $("levelDesc").textContent = levelDescText[quiz.level]; newQuestion();
+        });
+    });
+    $("quizNew").addEventListener("click", newQuestion);
+    $("quizCheck").addEventListener("click", checkQuiz);
+    $("quizShow").addEventListener("click", showWork);
+    $("quizInput").addEventListener("keydown", e => { if (e.key === "Enter") checkQuiz(); });
+    $("levelDesc").textContent = levelDescText.easy;
+    newQuestion();
+    updateStats();
+    </script>
+</body>
+</html>

@@ -136,6 +136,64 @@
         .tool-card.todo:hover { transform: none; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
         .tool-card.todo .status-badge { background: #eceff1; color: #90a4ae; }
 
+        .tool-card.todo.interface {
+            opacity: 0.82;
+            min-height: 104px;
+            padding: 10px 12px;
+            border-top-color: #cbd5e1;
+            background: #fbfcfe;
+        }
+
+        .tool-card.todo.interface .url-tag {
+            display: none;
+        }
+
+        .tool-card.todo.interface .interface-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .tool-card.todo.interface .category-label {
+            width: auto;
+            max-width: 100%;
+            min-width: 46px;
+            height: 19px;
+            padding: 0 10px;
+            background: #eef2f7;
+            color: #64748b;
+        }
+
+        .tool-card.todo.interface h2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            margin: 0 0 4px;
+            overflow: hidden;
+            color: #475569;
+        }
+
+        .tool-card.todo.interface p {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            color: #7a8797;
+            font-size: 0.72rem;
+            line-height: 1.25;
+            margin: 0;
+            flex-grow: 0;
+        }
+
+        .tool-card.todo.interface .status-badge {
+            margin-top: 0;
+            flex-shrink: 0;
+            padding: 2px 8px;
+            background: #eef2f7;
+            color: #94a3b8;
+        }
+
         /* 分区标题 */
         .section-title {
             width: 94%;
@@ -155,6 +213,20 @@
             font-size: 0.78rem;
             color: #888;
             margin: 3px 0 0 14px;
+        }
+
+        .section-title.sub-title {
+            margin-top: 10px;
+        }
+
+        .section-title.sub-title h3 {
+            font-size: 0.92rem;
+            border-left-width: 3px;
+            color: #425466;
+        }
+
+        .section-title.sub-title p {
+            font-size: 0.72rem;
         }
 
         .category-label {
@@ -207,9 +279,52 @@
     <!-- ============ 教材知识：数与代数 ============ -->
     <div class="section-title">
         <h3>教材知识 · 数与代数</h3>
-        <p>数感、四则运算、乘除模型、小数、分数与运算规律。</p>
+        <p>数感、整数运算、乘除模型、小数、分数、比与方程。</p>
     </div>
-    <div class="container">
+
+    <div class="section-title sub-title">
+        <h3>数的认识与数感</h3>
+        <p>数位、大小、倍数、小数意义和数轴。</p>
+    </div>
+    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="negative-number-line">
+        <a href="/place-value" class="tool-card math-op">
+            <div class="url-tag">/place-value</div>
+            <span class="category-label">数的认识</span>
+            <h2>数位与数感·读大数 <span class="update-tag">NEW</span></h2>
+            <p>用数位表规范读大数，练数感与生活数量规模。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/number-line-place-value" class="tool-card math-op">
+            <div class="url-tag">/number-line-place-value</div>
+            <span class="category-label">位值与十进制</span>
+            <h2>万以内数与大数数位表 <span class="update-tag">NEW</span></h2>
+            <p>用数位表、算珠和结绳理解十进制位值。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/decimal-1" class="tool-card math-op">
+            <div class="url-tag">/decimal-1</div>
+            <span class="category-label">小数意义</span>
+            <h2>小数显示工具</h2>
+            <p>用数轴和数位表建立小数数感。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/times-as-many" class="tool-card math-op">
+            <div class="url-tag">/times-as-many</div>
+            <span class="category-label">倍与因数</span>
+            <h2>倍的认识 <span class="update-tag">NEW</span></h2>
+            <p>从几倍到倍数、因数、质数与公倍数。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+    </div>
+
+    <div class="section-title sub-title">
+        <h3>整数运算与乘除模型</h3>
+        <p>加减法、表内乘除、有余数除法和多位数运算。</p>
+    </div>
+    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="multi-digit-calc-lab mixed-operation-order">
         <a href="/make-ten" class="tool-card math-op">
             <div class="url-tag">/make-ten</div>
             <span class="category-label">20以内加减法</span>
@@ -223,14 +338,6 @@
             <span class="category-label">竖式与数位</span>
             <h2>竖式进位与退位 <span class="update-tag">NEW</span></h2>
             <p>用数位小棒演示满十进一、借一当十。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/place-value" class="tool-card math-op">
-            <div class="url-tag">/place-value</div>
-            <span class="category-label">数的认识</span>
-            <h2>数位与数感·读大数 <span class="update-tag">NEW</span></h2>
-            <p>用数位表规范读大数，练数感与生活数量规模。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -273,12 +380,18 @@
             <p>把应用题画成每份数、份数、总数。</p>
             <span class="status-badge">进入工具</span>
         </a>
+    </div>
 
-        <a href="/times-as-many" class="tool-card math-op">
-            <div class="url-tag">/times-as-many</div>
-            <span class="category-label">倍的认识</span>
-            <h2>倍的认识 <span class="update-tag">NEW</span></h2>
-            <p>从几倍到倍数、因数、质数与公倍数。</p>
+    <div class="section-title sub-title">
+        <h3>小数、分数、比与比例</h3>
+        <p>小数运算、分数意义、分数计算、比、百分数和比例。</p>
+    </div>
+    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="decimal-calc-lab fraction-meaning-properties fraction-mul-div ratio-percent-proportion">
+        <a href="/decimal-2" class="tool-card math-op">
+            <div class="url-tag">/decimal-2</div>
+            <span class="category-label">小数运算</span>
+            <h2>小数点移位工具</h2>
+            <p>演示小数点移动和乘除关系。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -297,20 +410,18 @@
             <p>用长条演示同分母分数加减。</p>
             <span class="status-badge">进入工具</span>
         </a>
+    </div>
 
-        <a href="/decimal-1" class="tool-card math-op">
-            <div class="url-tag">/decimal-1</div>
-            <span class="category-label">小数意义</span>
-            <h2>小数显示工具</h2>
-            <p>用数轴和数位表建立小数数感。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/decimal-2" class="tool-card math-op">
-            <div class="url-tag">/decimal-2</div>
-            <span class="category-label">小数运算</span>
-            <h2>小数点移位工具</h2>
-            <p>演示小数点移动和乘除关系。</p>
+    <div class="section-title sub-title">
+        <h3>方程与代数初步</h3>
+        <p>用天平模型和数量关系进入方程思想。</p>
+    </div>
+    <div class="container" data-interface-categories="school-number">
+        <a href="/simple-equation" class="tool-card math-op">
+            <div class="url-tag">/simple-equation</div>
+            <span class="category-label">方程与等式性质</span>
+            <h2>简易方程·天平模型 <span class="update-tag">NEW</span></h2>
+            <p>从天平到等式性质，再到解方程讲解与练习。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>
@@ -320,7 +431,7 @@
         <h3>教材知识 · 图形与几何</h3>
         <p>量感、角、平移、旋转与对称。</p>
     </div>
-    <div class="container">
+    <div class="container" data-interface-categories="school-geometry">
         <a href="/length" class="tool-card geometry">
             <div class="url-tag">/length</div>
             <span class="category-label">长度单位</span>
@@ -351,7 +462,7 @@
         <h3>教材知识 · 统计与概率</h3>
         <p>数据整理、图表表达和平均数。</p>
     </div>
-    <div class="container">
+    <div class="container" data-interface-categories="school-stats">
         <a href="/statistics" class="tool-card data">
             <div class="url-tag">/statistics</div>
             <span class="category-label">平均数与数据代表</span>
@@ -374,7 +485,7 @@
         <h3>教材知识 · 综合与实践</h3>
         <p>时间、货币与购物场景。</p>
     </div>
-    <div class="container">
+    <div class="container" data-interface-categories="school-practice">
         <a href="/clock" class="tool-card applied">
             <div class="url-tag">/clock</div>
             <span class="category-label">时间与经过时间</span>
@@ -413,7 +524,7 @@
         <h3>进阶知识 · 应用题体系</h3>
         <p>和差倍、鸡兔、年龄、盈亏、工程与经济模型。</p>
     </div>
-    <div class="container">
+    <div class="container" data-interface-categories="advanced-word">
         <a href="/bar-model" class="tool-card applied">
             <div class="url-tag">/bar-model</div>
             <span class="category-label">线段图与模型</span>
@@ -444,12 +555,20 @@
         <h3>进阶知识 · 计算体系</h3>
         <p>巧算、估算、运算律和等差求和。</p>
     </div>
-    <div class="container">
+    <div class="container" data-interface-categories="calc-track advanced-calc-number-theory">
         <a href="/fast-calc" class="tool-card math-law">
             <div class="url-tag">/fast-calc</div>
             <span class="category-label">速算与巧算</span>
             <h2>速算原理演示 <span class="update-tag">NEW</span></h2>
             <p>演示凑整、拆分、基准数和等差求和。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/calc" class="tool-card math-law">
+            <div class="url-tag">/calc</div>
+            <span class="category-label">计算训练</span>
+            <h2>计算练习与测试 <span class="update-tag">NEW</span></h2>
+            <p>20个进阶训练选项卡，随机出题并统计正确率。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -462,24 +581,98 @@
         </a>
     </div>
 
-    <!-- ============ 后续扩展：math102 ============ -->
-    <div class="section-title">
-        <h3>后续扩展 · math102 预留分类</h3>
-        <p>预留奥数工具包入口。</p>
-    </div>
-    <div class="container">
-        <div class="tool-card todo">
-            <div class="url-tag">/math102</div>
-            <span class="category-label">工具包预留</span>
-            <h2>奥数工具包分类入口</h2>
-            <p>后续按奥数分类接入 math102 工具。</p>
-            <span class="status-badge">开发中</span>
-        </div>
-    </div>
+    <div id="new-interface-sections"></div>
 
     <footer>
         math101.yumath.com &copy; 2026 | 持续更新中
     </footer>
+
+    <script>
+        const interfaceStatusText = {
+            planned: "预留接口",
+            partial: "部分覆盖",
+            ready: "已上线"
+        };
+
+        function escapeHtml(value) {
+            return String(value || "").replace(/[&<>"']/g, char => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            }[char]));
+        }
+
+        function plannedTools(category) {
+            return (category.recommendedTools || []).filter(tool => tool.status === "planned");
+        }
+
+        function renderInterfaceCard(tool) {
+            const nodes = (tool.knowledgeNodeIds || []).join(" / ");
+            return `
+                <div class="tool-card todo interface">
+                    <div class="interface-top">
+                        <span class="category-label">${escapeHtml(tool.grade)}</span>
+                        <span class="status-badge">${escapeHtml(interfaceStatusText[tool.status] || tool.status)}</span>
+                    </div>
+                    <h2>${escapeHtml(tool.name)}</h2>
+                    <p>${nodes ? `知识点：${escapeHtml(nodes)}` : "后续补充互动工具。"}${tool.route ? ` · ${escapeHtml(tool.route)}` : ""}</p>
+                </div>
+            `;
+        }
+
+        function appendExistingModuleInterfaces(categories) {
+            document.querySelectorAll("[data-interface-categories]").forEach(container => {
+                const ids = container.dataset.interfaceCategories.split(/\s+/).filter(Boolean);
+                const allowedToolIds = (container.dataset.interfaceToolIds || "").split(/\s+/).filter(Boolean);
+                const cards = ids.flatMap(id => {
+                    const category = categories.find(item => item.id === id);
+                    if (!category) return [];
+                    const tools = allowedToolIds.length
+                        ? plannedTools(category).filter(tool => allowedToolIds.includes(tool.id))
+                        : plannedTools(category);
+                    return tools.map(renderInterfaceCard);
+                });
+                if (cards.length) container.insertAdjacentHTML("beforeend", cards.join(""));
+            });
+        }
+
+        function renderNewModuleInterfaces(categories) {
+            const holder = document.getElementById("new-interface-sections");
+            const sections = categories
+                .filter(category => category.moduleKind === "new")
+                .map(category => {
+                    const cards = plannedTools(category).map(renderInterfaceCard);
+                    if (!cards.length) return "";
+                    return `
+                        <div class="section-title">
+                            <h3>${escapeHtml(category.name)}</h3>
+                            <p>${escapeHtml(category.domain)} · 后续按此体系补充子工具。</p>
+                        </div>
+                        <div class="container">
+                            ${cards.join("")}
+                        </div>
+                    `;
+                })
+                .join("");
+            holder.innerHTML = sections;
+        }
+
+        fetch("/data/tool-roadmap.json")
+            .then(response => {
+                if (!response.ok) throw new Error("tool data not found");
+                return response.json();
+            })
+            .then(data => {
+                const categories = data.categories || [];
+                appendExistingModuleInterfaces(categories);
+                renderNewModuleInterfaces(categories);
+            })
+            .catch(() => {
+                // 本地直接打开 HTML 时可能无法 fetch JSON；主工具入口保持可用。
+            });
+    </script>
 
 </body>
 </html>

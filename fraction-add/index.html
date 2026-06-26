@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分数的加减·初步认识 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .piece-in { animation: pieceIn 0.3s ease backwards; }
+        @keyframes pieceIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /* 一份"滑入合并"的动画（加法把第二个分数的份并到第一个里） */
+        .slide-in { animation: slideIn 0.5s ease backwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // ============================================================
+        // 分数的加减·初步认识（同分母）
+        //   核心直观：分母 = 每一份的"大小"，加减时份的大小不变，
+        //   只是把"取的份数"（分子）加起来或减下去。
+        //          a/n ± b/n = (a±b)/n   —— 分母不变，分子相加减
+        //   ① 同分母加法 —— 两块拼起来，数一共多少份
+        //   ② 同分母减法 —— 从整块里去掉几份，数还剩多少份
+        //   ③ 1 减几分之几 —— 把整体看成 n/n，再减
+        //   ④ 为什么分母不变 —— 反例：份大小不同不能直接加
+        //   练习 —— 看图填同分母加减
+        // 用长条（巧克力）当整体，最利于"拼接 / 去掉"的直观。
+        // ============================================================
+
+        const FILL_A = '#f59e0b';      // 第一个加数 amber-500
+        const FILL_B = '#fb7185';      // 第二个加数 rose-400（便于区分两块来源）
+        const FILL_SUM = '#f59e0b';
+        const EMPTY = '#f9fafb';
+        const REMOVED = '#e5e7eb';     // 被减掉的份（灰）
+        const STROKE = '#9ca3af';
+
+        // 通用长条：平均分成 n 段，按 segColors[i] 给每段上色（null=空白）
+        const Bar = ({ n, segColors, width = 360, height = 56, animKey, removedMark = [] }) => {
+            const seg = width / n;
+            return (
+                <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="max-w-full">
+                    {Array.from({ length: n }).map((_, i) => (
+                        <g key={animKey + '-' + i}>
+                            <rect className="piece-in" style={{ animationDelay: (i * 0.04) + 's' }}
+                                x={i * seg} y={2} width={seg} height={height - 4}
+                                fill={segColors[i] || EMPTY} stroke={STROKE} strokeWidth="2" />
+                            {removedMark[i] && (
+                                <line x1={i * seg + 4} y1={6} x2={(i + 1) * seg - 4} y2={height - 6} stroke="#ef4444" strokeWidth="2.5" />
+                            )}
+                        </g>
+                    ))}
+                    <rect x={1} y={1} width={width - 2} height={height - 2} fill="none" stroke="#6b7280" strokeWidth="3" />
+                </svg>
+            );
+        };
+
+        // 分数竖排
+        const Fraction = ({ num, den, color = 'text-amber-600', size = 'text-3xl' }) => (
+            <span className={"inline-flex flex-col items-center leading-none " + color + " " + size + " font-bold align-middle mx-1"}>
+                <span>{num}</span>
+                <span className="w-full border-t-2 border-current my-0.5" style={{ minWidth: '1.1em' }}></span>
+                <span>{den}</span>
+            </span>
+        );
+
+        // ============================================================
+        // 模块一：同分母加法  a/n + b/n = (a+b)/n
+        // 分步：① 画第一块 a 份  ② 画第二块 b 份  ③ 拼起来数一共多少份
+        // ============================================================
+        const ADD_CASES = [
+            { a: 1, b: 2, n: 5 },
+            { a: 2, b: 3, n: 6 },
+            { a: 3, b: 4, n: 8 },
+            { a: 1, b: 1, n: 4 },
+            { a: 4, b: 5, n: 10 },
+        ];
+        const ADD_STEPS = ['① 第一个分数', '② 第二个分数', '③ 拼起来 · 数一共几份'];
+
+        const AddDemo = () => {
+            const [ci, setCi] = useState(0);
+            const [step, setStep] = useState(0);
+            const c = ADD_CASES[ci];
+            const sum = c.a + c.b;
+            useEffect(() => { setStep(0); }, [ci]);
+
+            // 第①步只画第一块；第②步并排画两块；第③步拼成一条
+            const board = () => {
+                if (step === 0) {
+                    const cols = Array.from({ length: c.n }, (_, i) => i < c.a ? FILL_A : null);
+                    return (
+                        <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-2">先吃了 / 拿了 <Fraction num={c.a} den={c.n} color="text-amber-600" size="text-xl" />（涂橙色的 {c.a} 份）</p>
+                            <Bar n={c.n} segColors={cols} animKey={'a0' + ci} />
+                        </div>
+                    );
+                }
+                if (step === 1) {
+                    const colsA = Array.from({ length: c.n }, (_, i) => i < c.a ? FILL_A : null);
+                    const colsB = Array.from({ length: c.n }, (_, i) => i < c.b ? FILL_B : null);
+                    return (
+                        <div className="text-center space-y-3">
+                            <div>
+                                <p className="text-sm text-amber-600 mb-1">第一个：<Fraction num={c.a} den={c.n} color="text-amber-600" size="text-lg" /></p>
+                                <Bar n={c.n} segColors={colsA} animKey={'a1a' + ci} />
+                            </div>
+                            <div className="text-2xl text-gray-400 font-bold">＋</div>
+                            <div>
+                                <p className="text-sm text-rose-500 mb-1">第二个：<Fraction num={c.b} den={c.n} color="text-rose-500" size="text-lg" /></p>
+                                <Bar n={c.n} segColors={colsB} animKey={'a1b' + ci} />
+                            </div>
+                            <p className="text-sm text-gray-500">两块都是把整体平均分成 <b className="text-sky-600">{c.n}</b> 份，<b>每一份一样大</b> → 可以直接拼。</p>
+                        </div>
+                    );
+                }
+                // step 2：三条对齐 —— 加数1、加数2、和。和 = 前 a 份橙、接着 b 份玫红
+                const colsA = Array.from({ length: c.n }, (_, i) => i < c.a ? FILL_A : null);
+                const colsB = Array.from({ length: c.n }, (_, i) => i < c.b ? FILL_B : null);
+                const colsSum = Array.from({ length: c.n }, (_, i) => i < c.a ? FILL_A : (i < sum ? FILL_B : null));
+                const labelW = 64;
+                const row = (label, color, cols, key) => (
+                    <div className="flex items-center gap-3">
+                        <div className="text-right shrink-0" style={{ width: labelW }}>{label}</div>
+                        <Bar n={c.n} segColors={cols} animKey={key} width={340} />
+                    </div>
+                );
+                return (
+                    <div>
+                        <p className="text-sm text-gray-500 mb-3 text-center">三条对齐着看：把上面两条<b>叠加</b>，正好是最下面的"和"。每条都分成 {c.n} 份，<b>每份一样大</b>。</p>
+                        <div className="space-y-2 inline-block">
+                            {row(<Fraction num={c.a} den={c.n} color="text-amber-600" size="text-xl" />, FILL_A, colsA, 'a2a' + ci)}
+                            <div className="flex items-center gap-3"><div className="text-right text-xl text-gray-400 font-bold" style={{ width: labelW }}>＋</div><div style={{ width: 340 }}></div></div>
+                            {row(<Fraction num={c.b} den={c.n} color="text-rose-500" size="text-xl" />, FILL_B, colsB, 'a2b' + ci)}
+                            <div className="flex items-center gap-3"><div className="text-right text-xl text-gray-400 font-bold" style={{ width: labelW }}>＝</div><div className="border-t-2 border-gray-200" style={{ width: 340 }}></div></div>
+                            {row(<Fraction num={sum} den={c.n} color="text-amber-600" size="text-xl" />, FILL_SUM, colsSum, 'a2s' + ci)}
+                        </div>
+                        <p className="mt-4 text-gray-600 text-center">
+                            <b className="text-amber-600">{c.a}</b> 份 加 <b className="text-rose-500">{c.b}</b> 份，一共 <b className="text-amber-600">{sum}</b> 份，每份还是 <Fraction num={1} den={c.n} size="text-lg" />，
+                            所以是 <Fraction num={sum} den={c.n} size="text-xl" />。
+                        </p>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100 text-center">
+                        <p className="text-2xl text-gray-800 flex items-center justify-center flex-wrap">
+                            <Fraction num={c.a} den={c.n} color="text-amber-600" /> ＋ <Fraction num={c.b} den={c.n} color="text-rose-500" /> ＝
+                            {step >= 2 ? <Fraction num={sum} den={c.n} color="text-amber-600" /> : <span className="text-gray-300 mx-2">?</span>}
+                        </p>
+                    </div>
+
+                    {/* 步骤条 */}
+                    <div className="flex gap-2 mb-5 flex-wrap justify-center">
+                        {ADD_STEPS.map((s, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-amber-500 text-white' : step > i ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400')}>{s}</div>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100" style={{ minHeight: 180 }}>
+                        {board()}
+                    </div>
+
+                    {step >= 2 && (
+                        <div className="bg-amber-50 rounded-xl p-5 mb-5 border border-amber-100 fade-in text-center">
+                            <p className="text-3xl font-bold font-mono text-amber-700 flex items-center justify-center flex-wrap">
+                                <Fraction num={c.a} den={c.n} size="text-2xl" /> ＋ <Fraction num={c.b} den={c.n} size="text-2xl" color="text-rose-500" /> ＝ <Fraction num={sum} den={c.n} size="text-2xl" />
+                            </p>
+                            <p className="text-sm text-gray-600 bg-white/60 rounded-lg p-3 mt-3">
+                                💡 <b>分母不变</b>（每份大小没变，还是 {c.n} 分之一），<b>分子相加</b>（{c.a} + {c.b} = {sum} 份）。
+                            </p>
+                        </div>
+                    )}
+
+                    {/* 步骤按钮 */}
+                    <div className="flex gap-3 mb-5">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 2 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 2 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">再看一遍</button>}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {ADD_CASES.map((cc, i) => (
+                            <button key={i} onClick={() => setCi(i)}
+                                className={"px-3 py-2 rounded-lg text-sm font-semibold smooth border-2 flex items-center " +
+                                    (ci === i ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-200 bg-white text-gray-500 hover:border-amber-200')}>
+                                <Fraction num={cc.a} den={cc.n} size="text-base" color="inherit" />＋<Fraction num={cc.b} den={cc.n} size="text-base" color="inherit" />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块二：同分母减法  a/n − b/n = (a−b)/n
+        // 分步：① 画原来的 a 份  ② 划掉 b 份  ③ 数还剩多少份
+        // ============================================================
+        const SUB_CASES = [
+            { a: 4, b: 1, n: 5 },
+            { a: 5, b: 2, n: 6 },
+            { a: 7, b: 3, n: 8 },
+            { a: 3, b: 2, n: 4 },
+            { a: 9, b: 4, n: 10 },
+        ];
+        const SUB_STEPS = ['① 原来有这么多', '② 去掉几份', '③ 数还剩几份'];
+
+        const SubDemo = () => {
+            const [ci, setCi] = useState(0);
+            const [step, setStep] = useState(0);
+            const c = SUB_CASES[ci];
+            const rest = c.a - c.b;
+            useEffect(() => { setStep(0); }, [ci]);
+
+            const board = () => {
+                if (step === 0) {
+                    const cols = Array.from({ length: c.n }, (_, i) => i < c.a ? FILL_A : null);
+                    return (
+                        <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-2">原来有 <Fraction num={c.a} den={c.n} color="text-amber-600" size="text-xl" />（涂了 {c.a} 份）</p>
+                            <Bar n={c.n} segColors={cols} animKey={'s0' + ci} />
+                        </div>
+                    );
+                }
+                if (step === 1) {
+                    // 后 b 个涂色份标记为"被减掉"（灰 + 红叉）
+                    const cols = Array.from({ length: c.n }, (_, i) => {
+                        if (i >= rest && i < c.a) return REMOVED;     // 被去掉的份
+                        if (i < rest) return FILL_A;
+                        return null;
+                    });
+                    const marks = Array.from({ length: c.n }, (_, i) => i >= rest && i < c.a);
+                    return (
+                        <div className="text-center">
+                            <p className="text-sm text-rose-500 mb-2">去掉（划掉）其中 <Fraction num={c.b} den={c.n} color="text-rose-500" size="text-xl" />：</p>
+                            <Bar n={c.n} segColors={cols} animKey={'s1' + ci} removedMark={marks} />
+                        </div>
+                    );
+                }
+                const cols = Array.from({ length: c.n }, (_, i) => i < rest ? FILL_A : null);
+                return (
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-2">划掉的不算，数一数还剩几份：</p>
+                        <Bar n={c.n} segColors={cols} animKey={'s2' + ci} />
+                        <p className="mt-3 text-gray-600">
+                            原来 <b className="text-amber-600">{c.a}</b> 份去掉 <b className="text-rose-500">{c.b}</b> 份，还剩 <b className="text-amber-600">{rest}</b> 份，
+                            就是 <Fraction num={rest} den={c.n} size="text-xl" />。
+                        </p>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100 text-center">
+                        <p className="text-2xl text-gray-800 flex items-center justify-center flex-wrap">
+                            <Fraction num={c.a} den={c.n} color="text-amber-600" /> － <Fraction num={c.b} den={c.n} color="text-rose-500" /> ＝
+                            {step >= 2 ? <Fraction num={rest} den={c.n} color="text-amber-600" /> : <span className="text-gray-300 mx-2">?</span>}
+                        </p>
+                    </div>
+
+                    <div className="flex gap-2 mb-5 flex-wrap justify-center">
+                        {SUB_STEPS.map((s, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-sky-500 text-white' : step > i ? 'bg-sky-100 text-sky-600' : 'bg-gray-100 text-gray-400')}>{s}</div>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100" style={{ minHeight: 180 }}>
+                        {board()}
+                    </div>
+
+                    {step >= 2 && (
+                        <div className="bg-sky-50 rounded-xl p-5 mb-5 border border-sky-100 fade-in text-center">
+                            <p className="text-3xl font-bold font-mono text-sky-700 flex items-center justify-center flex-wrap">
+                                <Fraction num={c.a} den={c.n} size="text-2xl" /> － <Fraction num={c.b} den={c.n} size="text-2xl" color="text-rose-500" /> ＝ <Fraction num={rest} den={c.n} size="text-2xl" />
+                            </p>
+                            <p className="text-sm text-gray-600 bg-white/60 rounded-lg p-3 mt-3">
+                                💡 <b>分母不变</b>，<b>分子相减</b>（{c.a} − {c.b} = {rest} 份）。每份大小一样，所以只看份数多少。
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-3 mb-5">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 2 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 2 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">再看一遍</button>}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {SUB_CASES.map((cc, i) => (
+                            <button key={i} onClick={() => setCi(i)}
+                                className={"px-3 py-2 rounded-lg text-sm font-semibold smooth border-2 flex items-center " +
+                                    (ci === i ? 'border-sky-400 bg-sky-50 text-sky-700' : 'border-gray-200 bg-white text-gray-500 hover:border-sky-200')}>
+                                <Fraction num={cc.a} den={cc.n} size="text-base" color="inherit" />－<Fraction num={cc.b} den={cc.n} size="text-base" color="inherit" />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块三：1 − 几分之几  （把整体 1 看成 n/n）
+        // ============================================================
+        const ONE_CASES = [
+            { b: 2, n: 5 },
+            { b: 3, n: 7 },
+            { b: 1, n: 4 },
+            { b: 5, n: 8 },
+        ];
+        const ONE_STEPS = ['① 整体 1 = 几分之几', '② 去掉几份', '③ 还剩几份'];
+
+        const OneMinusDemo = () => {
+            const [ci, setCi] = useState(0);
+            const [step, setStep] = useState(0);
+            const c = ONE_CASES[ci];
+            const rest = c.n - c.b;
+            useEffect(() => { setStep(0); }, [ci]);
+
+            const board = () => {
+                if (step === 0) {
+                    const cols = Array.from({ length: c.n }, () => FILL_A);
+                    return (
+                        <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-2">一整条就是 <b>1</b>。把它平均分成 {c.n} 份，整条就是 <Fraction num={c.n} den={c.n} size="text-xl" />：</p>
+                            <Bar n={c.n} segColors={cols} animKey={'o0' + ci} />
+                            <p className="mt-2 text-sm text-green-600 font-semibold">1 = {c.n}/{c.n}（满了，就是一个整体）</p>
+                        </div>
+                    );
+                }
+                if (step === 1) {
+                    const cols = Array.from({ length: c.n }, (_, i) => i >= rest ? REMOVED : FILL_A);
+                    const marks = Array.from({ length: c.n }, (_, i) => i >= rest);
+                    return (
+                        <div className="text-center">
+                            <p className="text-sm text-rose-500 mb-2">去掉 <Fraction num={c.b} den={c.n} color="text-rose-500" size="text-xl" />：</p>
+                            <Bar n={c.n} segColors={cols} animKey={'o1' + ci} removedMark={marks} />
+                        </div>
+                    );
+                }
+                const cols = Array.from({ length: c.n }, (_, i) => i < rest ? FILL_A : null);
+                return (
+                    <div className="text-center">
+                        <p className="text-sm text-gray-500 mb-2">还剩几份：</p>
+                        <Bar n={c.n} segColors={cols} animKey={'o2' + ci} />
+                        <p className="mt-3 text-gray-600"><b className="text-amber-600">{c.n}</b> 份去掉 <b className="text-rose-500">{c.b}</b> 份，剩 <b className="text-amber-600">{rest}</b> 份 = <Fraction num={rest} den={c.n} size="text-xl" /></p>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100 text-center">
+                        <p className="text-2xl text-gray-800 flex items-center justify-center flex-wrap">
+                            <b className="mx-2">1</b> － <Fraction num={c.b} den={c.n} color="text-rose-500" /> ＝
+                            {step >= 2 ? <Fraction num={rest} den={c.n} color="text-amber-600" /> : <span className="text-gray-300 mx-2">?</span>}
+                        </p>
+                    </div>
+
+                    <div className="flex gap-2 mb-5 flex-wrap justify-center">
+                        {ONE_STEPS.map((s, i) => (
+                            <div key={i} className={"px-3 py-1.5 rounded-full text-sm font-semibold smooth " +
+                                (step === i ? 'bg-purple-500 text-white' : step > i ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400')}>{s}</div>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100" style={{ minHeight: 180 }}>
+                        {board()}
+                    </div>
+
+                    {step >= 2 && (
+                        <div className="bg-purple-50 rounded-xl p-5 mb-5 border border-purple-100 fade-in text-center">
+                            <p className="text-2xl font-bold font-mono text-purple-700 flex items-center justify-center flex-wrap">
+                                1 ＝ <Fraction num={c.n} den={c.n} size="text-xl" /> ，所以 1 － <Fraction num={c.b} den={c.n} size="text-xl" color="text-rose-500" /> ＝ <Fraction num={c.n} den={c.n} size="text-xl" /> － <Fraction num={c.b} den={c.n} size="text-xl" color="text-rose-500" /> ＝ <Fraction num={rest} den={c.n} size="text-xl" />
+                            </p>
+                            <p className="text-sm text-gray-600 bg-white/60 rounded-lg p-3 mt-3">
+                                💡 遇到 <b>1 减几分之几</b>，先把 1 写成分母相同的 <b>{c.n}/{c.n}</b>，就变成了同分母减法。
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="flex gap-3 mb-5">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        {step < 2 && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold smooth">下一步 →</button>}
+                        {step === 2 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">再看一遍</button>}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {ONE_CASES.map((cc, i) => (
+                            <button key={i} onClick={() => setCi(i)}
+                                className={"px-3 py-2 rounded-lg text-sm font-semibold smooth border-2 flex items-center " +
+                                    (ci === i ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-gray-200 bg-white text-gray-500 hover:border-purple-200')}>
+                                1－<Fraction num={cc.b} den={cc.n} size="text-base" color="inherit" />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块四：为什么分母不变？（反例：份大小不同不能直接加）
+        // 对比 1/2 + 1/4：画两条等长长条，看出 1/2 = 2/4，份大小要一样才能数在一起。
+        // ============================================================
+        const WhyDemo = () => {
+            const [show, setShow] = useState(false);
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <p className="text-xl text-gray-800 leading-relaxed">
+                            为什么加减时<b className="text-rose-600">分母不变</b>、只加减分子？因为<b>分母代表每一份的大小</b>。
+                            只有每份一样大，才能把份数直接数在一起。看 <Fraction num={1} den={2} size="text-xl" /> 和 <Fraction num={1} den={4} size="text-xl" />：
+                        </p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 space-y-5">
+                        <div>
+                            <p className="text-sm text-amber-600 mb-1 font-semibold"><Fraction num={1} den={2} size="text-lg" color="text-amber-600" />：一份很大（半条）</p>
+                            <Bar n={2} segColors={[FILL_A, null]} animKey="why-half" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-rose-500 mb-1 font-semibold"><Fraction num={1} den={4} size="text-lg" color="text-rose-500" />：一份较小（四分之一条）</p>
+                            <Bar n={4} segColors={[FILL_B, null, null, null]} animKey="why-quarter" />
+                        </div>
+                        <p className="text-center text-gray-500 text-sm">两种"份"<b>大小不同</b>，1 + 1 = 2 份？可这两份不一样大，<b>不能直接说成 2/?</b>。</p>
+
+                        {!show ? (
+                            <div className="text-center">
+                                <button onClick={() => setShow(true)} className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-semibold smooth">那怎么办？把份切成一样大 →</button>
+                            </div>
+                        ) : (
+                            <div className="fade-in space-y-4 pt-2 border-t border-gray-100">
+                                <p className="text-center text-gray-600 text-sm">把上面那条也<b>平均分成 4 份</b>：半条正好是 <b>2 份</b>，也就是 <Fraction num={1} den={2} size="text-base" /> = <Fraction num={2} den={4} size="text-base" />。</p>
+                                <div>
+                                    <p className="text-sm text-amber-600 mb-1"><Fraction num={1} den={2} size="text-base" color="text-amber-600" /> = <Fraction num={2} den={4} size="text-base" color="text-amber-600" /></p>
+                                    <Bar n={4} segColors={[FILL_A, FILL_A, null, null]} animKey="why-2of4" />
+                                </div>
+                                <p className="text-center text-gray-700">现在每份都是 <Fraction num={1} den={4} size="text-base" />，可以数在一起了：
+                                    <Fraction num={2} den={4} size="text-lg" /> ＋ <Fraction num={1} den={4} size="text-lg" color="text-rose-500" /> ＝ <Fraction num={3} den={4} size="text-lg" /></p>
+                                <Bar n={4} segColors={[FILL_A, FILL_A, FILL_B, null]} animKey="why-sum" />
+                                <p className="text-sm text-gray-600 bg-rose-50 rounded-lg p-3 border border-rose-100 text-center">
+                                    💡 所以同分母才能直接加减。分母不同时，要先把份<b>切成一样大</b>（通分）——这是以后会专门学的内容。
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 练习：看图填同分母加 / 减
+        // ============================================================
+        function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+        function makeQ() {
+            const op = Math.random() < 0.5 ? '+' : '-';
+            const n = randInt(4, 9);
+            if (op === '+') {
+                const a = randInt(1, n - 2);
+                const b = randInt(1, n - a);
+                return { op, a, b, n, ans: a + b };
+            }
+            const a = randInt(2, n);
+            const b = randInt(1, a - 1);
+            return { op, a, b, n, ans: a - b };
+        }
+
+        const PracticeMode = () => {
+            const [q, setQ] = useState(makeQ);
+            const [num, setNum] = useState('');
+            const [den, setDen] = useState('');
+            const [checked, setChecked] = useState(false);
+
+            const numOk = Number(num) === q.ans;
+            const denOk = Number(den) === q.n;
+            const allOk = checked && numOk && denOk;
+            const next = () => { setQ(makeQ()); setNum(''); setDen(''); setChecked(false); };
+
+            // 图示：加法 → 前 a 橙、再 b 玫红；减法 → 原 a 橙、后 b 划掉
+            const cols = q.op === '+'
+                ? Array.from({ length: q.n }, (_, i) => i < q.a ? FILL_A : (i < q.a + q.b ? FILL_B : null))
+                : Array.from({ length: q.n }, (_, i) => (i >= q.ans && i < q.a) ? REMOVED : (i < q.ans ? FILL_A : null));
+            const marks = q.op === '-' ? Array.from({ length: q.n }, (_, i) => i >= q.ans && i < q.a) : [];
+
+            return (
+                <div className="fade-in">
+                    <div className="flex justify-end mb-4">
+                        <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">换一题 ›</button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 text-center">
+                        <p className="text-3xl font-bold text-gray-800 mb-5 flex items-center justify-center flex-wrap">
+                            <Fraction num={q.a} den={q.n} color="text-amber-600" />
+                            <span className="mx-2">{q.op === '+' ? '＋' : '－'}</span>
+                            <Fraction num={q.b} den={q.n} color="text-rose-500" />
+                            <span className="mx-2">＝</span>
+                            <span className="inline-flex flex-col items-center">
+                                <input type="number" value={num} onChange={e => { setNum(e.target.value); setChecked(false); }}
+                                    className="w-16 text-center text-2xl border-2 border-amber-300 rounded p-1" placeholder="?" />
+                                <span className="w-16 border-t-2 border-gray-600 my-1"></span>
+                                <input type="number" value={den} onChange={e => { setDen(e.target.value); setChecked(false); }}
+                                    className="w-16 text-center text-2xl border-2 border-sky-300 rounded p-1" placeholder="?" />
+                            </span>
+                        </p>
+                        <p className="text-sm text-gray-400 mb-2">看图帮你想：</p>
+                        <Bar n={q.n} segColors={cols} animKey={'pq' + q.a + q.b + q.n + q.op} removedMark={marks} />
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                        <button onClick={() => setChecked(true)} disabled={num === '' || den === ''}
+                            className="px-6 py-2.5 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-semibold smooth">判分</button>
+                        {allOk && <button onClick={next} className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold smooth">下一题 →</button>}
+                    </div>
+
+                    {checked && (
+                        <div className={"mt-5 rounded-xl p-5 border fade-in " + (allOk ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200')}>
+                            {allOk ? (
+                                <p className="text-green-700 text-lg font-bold flex items-center gap-2 flex-wrap">✓ 正确！
+                                    <Fraction num={q.a} den={q.n} size="text-xl" color="text-green-600" />{q.op === '+' ? '＋' : '－'}<Fraction num={q.b} den={q.n} size="text-xl" color="text-green-600" />＝<Fraction num={q.ans} den={q.n} size="text-xl" color="text-green-600" /></p>
+                            ) : (
+                                <div className="text-amber-700 space-y-1">
+                                    {!denOk && <p>分母<b>不变</b>，还是 <b>{q.n}</b>（每份大小没变）。</p>}
+                                    {denOk && !numOk && <p>分子要把份数{q.op === '+' ? '相加' : '相减'}：{q.a} {q.op} {q.b} = <b>{q.ans}</b> 份。</p>}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 顶层
+        // ============================================================
+        const TABS = [
+            { id: 'add', title: '① 同分母加法', hint: '分母不变 · 分子相加', color: 'bg-amber-500' },
+            { id: 'sub', title: '② 同分母减法', hint: '分母不变 · 分子相减', color: 'bg-sky-500' },
+            { id: 'one', title: '③ 1 减几分之几', hint: '先把 1 看成 n/n', color: 'bg-purple-500' },
+            { id: 'why', title: '④ 为什么分母不变', hint: '份一样大才能相加', color: 'bg-rose-500' },
+            { id: 'practice', title: '✏️ 我来试试', hint: '看图填加减 · 判分', color: 'bg-green-500' },
+        ];
+
+        const App = () => {
+            const [tab, setTab] = useState('add');
+            return (
+                <div className="max-w-4xl mx-auto px-4 py-8">
+                    <header className="text-center mb-5">
+                        <h1 className="text-3xl font-bold text-gray-800">分数的加减 · 初步认识</h1>
+                        <p className="text-gray-500 mt-2">同分母分数相加减：<b>每份大小不变</b>，只把<b>取的份数</b>加起来或减下去</p>
+                        <div className="inline-flex items-center gap-2 mt-4 text-base font-bold flex-wrap justify-center">
+                            <Fraction num={'a'} den={'n'} size="text-2xl" color="text-amber-600" />
+                            <span className="text-gray-400">±</span>
+                            <Fraction num={'b'} den={'n'} size="text-2xl" color="text-rose-500" />
+                            <span className="text-gray-400">=</span>
+                            <Fraction num={'a±b'} den={'n'} size="text-2xl" color="text-gray-700" />
+                            <span className="text-gray-400 text-sm ml-2">分母不变，分子加减</span>
+                        </div>
+                    </header>
+
+                    <div className="flex flex-wrap justify-center gap-2 mb-6">
+                        {TABS.map(t => (
+                            <button key={t.id} onClick={() => setTab(t.id)}
+                                className={"px-4 py-2 rounded-xl text-sm font-bold smooth border-2 text-left " +
+                                    (tab === t.id ? t.color + ' text-white border-transparent shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300')}>
+                                {t.title}
+                                <span className={"block text-[11px] font-normal " + (tab === t.id ? 'text-white/80' : 'text-gray-400')}>{t.hint}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div>
+                        {tab === 'add' && <AddDemo />}
+                        {tab === 'sub' && <SubDemo />}
+                        {tab === 'one' && <OneMinusDemo />}
+                        {tab === 'why' && <WhyDemo />}
+                        {tab === 'practice' && <PracticeMode />}
+                    </div>
+
+                    <footer className="text-center text-gray-400 text-sm mt-10">
+                        Math101 · 分数加减可视化 · 适用人教版三年级上册《分数的简单计算》
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

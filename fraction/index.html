@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分数的初步认识 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 一份被涂色时的轻微弹入 */
+        .piece-in { animation: pieceIn 0.3s ease backwards; }
+        @keyframes pieceIn { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /* 分数线"切一刀"动画 */
+        .cut { animation: cut 0.4s ease; }
+        @keyframes cut { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // ============================================================
+        // 分数的初步认识
+        //   核心：把一个整体"平均分成"几份，取其中的几份，就是"几分之几"。
+        //   ① 平均分 —— 看清"平均"两个字（每份一样大才能用分数）
+        //   ② 几分之一 —— 分母是分成的份数，分子是 1
+        //   ③ 几分之几 —— 分子是取的份数
+        //   ④ 比大小 —— 同分子 / 同分母直观比较
+        //   练习 —— 看图写分数 / 判断是否平均分
+        // 两种"整体"：圆（披萨）、长条（巧克力），都用同一套涂色逻辑。
+        // ============================================================
+
+        // 直观调色板：取到的份数用暖色，没取到的留白
+        const FILL = '#f59e0b';        // amber-500 取到的份
+        const FILL_SOFT = '#fde68a';   // amber-200
+        const EMPTY = '#f9fafb';       // 没取到
+        const STROKE = '#9ca3af';      // 分割线
+
+        // ---------- 圆形（披萨）：平均分成 n 份，前 k 份涂色 ----------
+        const PieShape = ({ n, k, size = 200, animKey }) => {
+            const r = size / 2 - 6, cx = size / 2, cy = size / 2;
+            const wedge = (i) => {
+                const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
+                const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+                const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+                const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+                const large = (a1 - a0) > Math.PI ? 1 : 0;
+                if (n === 1) return null; // 整圆单独画
+                return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`;
+            };
+            return (
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    {n === 1 ? (
+                        <circle cx={cx} cy={cy} r={r} fill={k >= 1 ? FILL : EMPTY} stroke={STROKE} strokeWidth="2" />
+                    ) : (
+                        Array.from({ length: n }).map((_, i) => (
+                            <path key={animKey + '-' + i} className="piece-in" style={{ animationDelay: (i * 0.05) + 's' }}
+                                d={wedge(i)} fill={i < k ? FILL : EMPTY} stroke={STROKE} strokeWidth="2" />
+                        ))
+                    )}
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#6b7280" strokeWidth="3" />
+                </svg>
+            );
+        };
+
+        // ---------- 长条（巧克力）：横向平均分成 n 段，前 k 段涂色 ----------
+        const BarShape = ({ n, k, width = 300, height = 70, animKey }) => {
+            const seg = width / n;
+            return (
+                <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+                    {Array.from({ length: n }).map((_, i) => (
+                        <rect key={animKey + '-' + i} className="piece-in" style={{ animationDelay: (i * 0.05) + 's' }}
+                            x={i * seg} y={2} width={seg} height={height - 4}
+                            fill={i < k ? FILL : EMPTY} stroke={STROKE} strokeWidth="2" />
+                    ))}
+                    <rect x={1} y={1} width={width - 2} height={height - 2} fill="none" stroke="#6b7280" strokeWidth="3" />
+                </svg>
+            );
+        };
+
+        const Shape = ({ kind, n, k, animKey, big }) => {
+            if (kind === 'pie') return <PieShape n={n} k={k} animKey={animKey} size={big ? 220 : 180} />;
+            return <BarShape n={n} k={k} animKey={animKey} width={big ? 360 : 300} />;
+        };
+
+        // ---------- 故意"不平均"分成 n 份：用不等的切点，和上面同形对比 ----------
+        // 切点用一组固定的"乱"比例，保证看上去明显大小不一。
+        const UNEVEN_FRACS = [0.16, 0.28, 0.16, 0.25, 0.15]; // 归一化后作为各份占比（取前 n 个）
+        function unevenSizes(n) {
+            const raw = Array.from({ length: n }, (_, i) => UNEVEN_FRACS[i % UNEVEN_FRACS.length] * (1 + (i % 3) * 0.35));
+            const sum = raw.reduce((a, b) => a + b, 0);
+            return raw.map(v => v / sum);
+        }
+        const UnevenBar = ({ n, size = 360, animKey }) => {
+            const h = 70, sizes = unevenSizes(n);
+            let x = 0;
+            return (
+                <svg width={size} height={h} viewBox={`0 0 ${size} ${h}`}>
+                    {sizes.map((s, i) => {
+                        const w = s * size, rect = <rect key={animKey + '-' + i} className="piece-in" style={{ animationDelay: (i * 0.05) + 's' }}
+                            x={x} y={2} width={w} height={h - 4} fill={EMPTY} stroke={STROKE} strokeWidth="2" />;
+                        x += w;
+                        return rect;
+                    })}
+                    <rect x={1} y={1} width={size - 2} height={h - 2} fill="none" stroke="#6b7280" strokeWidth="3" />
+                </svg>
+            );
+        };
+        const UnevenPie = ({ n, size = 220, animKey }) => {
+            const r = size / 2 - 6, cx = size / 2, cy = size / 2;
+            const sizes = unevenSizes(n);
+            let acc = -Math.PI / 2;
+            return (
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    {sizes.map((s, i) => {
+                        const a0 = acc, a1 = acc + s * 2 * Math.PI; acc = a1;
+                        const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+                        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+                        const large = (a1 - a0) > Math.PI ? 1 : 0;
+                        return <path key={animKey + '-' + i} className="piece-in" style={{ animationDelay: (i * 0.05) + 's' }}
+                            d={`M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`}
+                            fill={EMPTY} stroke={STROKE} strokeWidth="2" />;
+                    })}
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#6b7280" strokeWidth="3" />
+                </svg>
+            );
+        };
+        const UnevenShape = ({ kind, n, animKey }) =>
+            kind === 'pie' ? <UnevenPie n={n} animKey={animKey} /> : <UnevenBar n={n} animKey={animKey} />;
+
+        // 漂亮的分数排版（竖式：分子 / 横线 / 分母）
+        const Fraction = ({ num, den, color = 'text-amber-600', size = 'text-4xl' }) => (
+            <span className={"inline-flex flex-col items-center leading-none " + color + " " + size + " font-bold align-middle mx-1"}>
+                <span>{num}</span>
+                <span className="w-full border-t-2 border-current my-0.5" style={{ minWidth: '1.2em' }}></span>
+                <span>{den}</span>
+            </span>
+        );
+
+        const SHAPE_TABS = [
+            { id: 'pie', name: '🍕 披萨', },
+            { id: 'bar', name: '🍫 巧克力', },
+        ];
+
+        // ============================================================
+        // 模块一：平均分（看清"平均"二字）
+        // 给出两组图：一组平均分、一组不平均分，强调只有平均分才能记作分数。
+        // ============================================================
+        const EqualPartDemo = ({ shapeKind }) => {
+            const [n, setN] = useState(4);
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <p className="text-xl text-gray-800 leading-relaxed">
+                            要用分数，先要<b className="text-rose-600">平均分</b>——把一个整体分成<b>每份一样大</b>的几份。
+                            拖动滑块，把它平均分成不同的份数看看：
+                        </p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100">
+                        <p className="text-center text-sm text-gray-400 mb-4">同样一个整体，都分成 {n} 份 —— 但只有左边是"平均分"</p>
+                        <div className="flex flex-col sm:flex-row gap-8 items-stretch justify-center">
+                            <div className="flex-1 text-center rounded-xl border-2 border-green-200 bg-green-50/40 p-4">
+                                <div className="inline-block"><Shape kind={shapeKind} n={n} k={0} animKey={'eq' + n} big /></div>
+                                <p className="mt-3 text-green-600 font-bold">✓ 平均分成 {n} 份</p>
+                                <p className="text-sm text-gray-500">每份都一样大，每份就是它的 <Fraction num={1} den={n} size="text-2xl" color="text-green-600" /></p>
+                            </div>
+                            <div className="flex-1 text-center rounded-xl border-2 border-rose-200 bg-rose-50/40 p-4">
+                                <div className="inline-block"><UnevenShape kind={shapeKind} n={n} animKey={'uneq' + n} /></div>
+                                <p className="mt-3 text-rose-600 font-bold">✗ 不是平均分</p>
+                                <p className="text-sm text-gray-500">虽然也是 {n} 份，但每份大小不一样，<b>不能</b>用 <Fraction num={1} den={n} size="text-base" color="text-rose-500" /> 表示</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-rose-50 rounded-xl p-5 border border-rose-100 flex flex-col sm:flex-row items-center gap-4">
+                        <input type="range" min="2" max="12" value={n} onChange={e => setN(Number(e.target.value))}
+                            className="flex-1 accent-rose-500" />
+                        <span className="text-gray-600">分成 <b className="text-rose-600 text-xl">{n}</b> 份</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-4 bg-white/70 rounded-lg p-3 border border-gray-100">
+                        💡 关键词是"<b className="text-rose-600">平均</b>"。只有把整体分成每份一样大的几份，才能用分数来表示其中的份数。
+                    </p>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块二：几分之一（分母 = 平均分的份数，分子 = 1）
+        // 拖动改变份数 n，始终取 1 份，读作"n 分之一"。
+        // ============================================================
+        const UnitFractionDemo = ({ shapeKind }) => {
+            const [n, setN] = useState(2);
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <p className="text-xl text-gray-800 leading-relaxed">
+                            把一个整体平均分成 <b className="text-sky-600">{n}</b> 份，取其中的 <b className="text-amber-600">1</b> 份，
+                            就是它的 <Fraction num={1} den={n} />。
+                        </p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 text-center">
+                        <Shape kind={shapeKind} n={n} k={1} animKey={'uf' + n} big />
+                        <div className="mt-5 flex items-center justify-center gap-6 flex-wrap">
+                            <div className="flex flex-col items-center">
+                                <Fraction num={1} den={n} size="text-5xl" />
+                                <span className="text-sm text-gray-400 mt-1">读作：{n} 分之一</span>
+                            </div>
+                            <div className="text-left text-sm text-gray-600 bg-amber-50 rounded-lg p-3 border border-amber-100">
+                                <p><b className="text-sky-600">分母 {n}</b>：平均分成了几份</p>
+                                <p className="border-t border-amber-200 my-1"></p>
+                                <p><b className="text-amber-600">分子 1</b>：取了其中 1 份</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-sky-50 rounded-xl p-5 border border-sky-100 flex flex-col sm:flex-row items-center gap-4">
+                        <input type="range" min="2" max="12" value={n} onChange={e => setN(Number(e.target.value))}
+                            className="flex-1 accent-sky-500" />
+                        <span className="text-gray-600">分母 = <b className="text-sky-600 text-xl">{n}</b></span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-4 bg-white/70 rounded-lg p-3 border border-gray-100">
+                        💡 平均分的份数越多，每一份就<b>越小</b>。分母越大，<Fraction num={1} den={'n'} size="text-xl" /> 反而越小。
+                    </p>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块三：几分之几（分子 = 取的份数 k，分母 = 总份数 n）
+        // 两个滑块：n 决定平均分几份，k 决定取几份（涂色）。
+        // ============================================================
+        const FractionDemo = ({ shapeKind }) => {
+            const [n, setN] = useState(4);
+            const [k, setK] = useState(3);
+            const realK = Math.min(k, n);
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <p className="text-xl text-gray-800 leading-relaxed">
+                            平均分成 <b className="text-sky-600">{n}</b> 份，取了其中的 <b className="text-amber-600">{realK}</b> 份，
+                            就是 <Fraction num={realK} den={n} />。涂色的部分就是这个分数。
+                        </p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 text-center">
+                        <Shape kind={shapeKind} n={n} k={realK} animKey={'fr' + n + '-' + realK} big />
+                        <div className="mt-5 flex items-center justify-center gap-6 flex-wrap">
+                            <Fraction num={realK} den={n} size="text-5xl" />
+                            <div className="text-left text-sm text-gray-600 bg-amber-50 rounded-lg p-3 border border-amber-100">
+                                <p><b className="text-amber-600">分子 {realK}</b>：取（涂色）了 {realK} 份</p>
+                                <p className="border-t border-amber-200 my-1"></p>
+                                <p><b className="text-sky-600">分母 {n}</b>：一共平均分成 {n} 份</p>
+                            </div>
+                        </div>
+                        {realK === n && <p className="mt-4 text-green-600 font-semibold">全部取完，{n} 份里取 {n} 份，正好是一个整体 1 = {n}/{n} 😀</p>}
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 space-y-4">
+                        <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-28 shrink-0 text-sm">平均分几份（分母）</span>
+                            <input type="range" min="2" max="12" value={n} onChange={e => { const v = Number(e.target.value); setN(v); if (k > v) setK(v); }} className="flex-1 accent-sky-500" />
+                            <b className="text-sky-600 text-xl w-6 text-center">{n}</b>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-gray-500 w-28 shrink-0 text-sm">取几份（分子）</span>
+                            <input type="range" min="0" max={n} value={realK} onChange={e => setK(Number(e.target.value))} className="flex-1 accent-amber-500" />
+                            <b className="text-amber-600 text-xl w-6 text-center">{realK}</b>
+                        </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-4 bg-white/70 rounded-lg p-3 border border-gray-100">
+                        💡 <Fraction num={realK} den={n} size="text-xl" /> 表示"把整体平均分成 {n} 份，这样的 {realK} 份"。分母不变，取得越多分子越大，分数也越大。
+                    </p>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 模块四：比大小（同分母 / 同分子，直观对比两条长条）
+        // ============================================================
+        const COMPARE_CASES = [
+            { a: [1, 2], b: [1, 4], type: 'same-num', tip: '分子都是 1，分母小的反而大：平均分的份数越少，每一份越大。' },
+            { a: [1, 3], b: [1, 6], type: 'same-num', tip: '分子相同，比分母：分母小 → 每份大 → 分数大。' },
+            { a: [3, 8], b: [5, 8], type: 'same-den', tip: '分母相同，比分子：取得多的那个大。' },
+            { a: [2, 5], b: [4, 5], type: 'same-den', tip: '分母都是 5，每份一样大，谁取的份数多谁就大。' },
+        ];
+
+        const CompareDemo = () => {
+            const [ci, setCi] = useState(0);
+            const [reveal, setReveal] = useState(false);
+            const c = COMPARE_CASES[ci];
+            useEffect(() => { setReveal(false); }, [ci]);
+            const va = c.a[0] / c.a[1], vb = c.b[0] / c.b[1];
+            const sign = va > vb ? '>' : va < vb ? '<' : '=';
+
+            const Row = ({ f, hl }) => (
+                <div className="flex items-center gap-4">
+                    <div className="w-16 text-center"><Fraction num={f[0]} den={f[1]} size="text-3xl" color={hl ? 'text-amber-600' : 'text-gray-400'} /></div>
+                    <div className="flex-1"><BarShape n={f[1]} k={f[0]} width={320} height={48} animKey={'c' + ci + '-' + f.join('')} /></div>
+                </div>
+            );
+
+            return (
+                <div className="fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
+                        <p className="text-xl text-gray-800">把两个分数画成<b>一样长</b>的长条，涂色多的那个就大。比一比：</p>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 space-y-5">
+                        <Row f={c.a} hl={reveal && va >= vb} />
+                        <Row f={c.b} hl={reveal && vb >= va} />
+                        <div className="text-center pt-2">
+                            {!reveal ? (
+                                <button onClick={() => setReveal(true)} className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold smooth">看谁大 →</button>
+                            ) : (
+                                <div className="fade-in inline-flex items-center gap-3 text-3xl font-bold">
+                                    <Fraction num={c.a[0]} den={c.a[1]} size="text-3xl" color={va >= vb ? 'text-amber-600' : 'text-gray-400'} />
+                                    <span className="text-rose-500">{sign}</span>
+                                    <Fraction num={c.b[0]} den={c.b[1]} size="text-3xl" color={vb >= va ? 'text-amber-600' : 'text-gray-400'} />
+                                </div>
+                            )}
+                        </div>
+                        {reveal && <p className="fade-in text-sm text-gray-600 bg-amber-50 rounded-lg p-3 border border-amber-100 text-center">💡 {c.tip}</p>}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {COMPARE_CASES.map((cc, i) => (
+                            <button key={i} onClick={() => setCi(i)}
+                                className={"px-3 py-2 rounded-lg text-sm font-semibold smooth border-2 flex items-center " +
+                                    (ci === i ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-gray-200 bg-white text-gray-500 hover:border-amber-200')}>
+                                <Fraction num={cc.a[0]} den={cc.a[1]} size="text-lg" color="inherit" /> 与 <Fraction num={cc.b[0]} den={cc.b[1]} size="text-lg" color="inherit" />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 练习：看图写分数（填分子 / 分母）+ 判断是否平均分
+        // ============================================================
+        function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+        function makeReadQ() {
+            const kinds = ['pie', 'bar'];
+            const n = randInt(2, 12);
+            const k = randInt(1, n);
+            return { kind: kinds[randInt(0, 1)], n, k };
+        }
+
+        const PracticeMode = () => {
+            const [q, setQ] = useState(makeReadQ);
+            const [num, setNum] = useState('');
+            const [den, setDen] = useState('');
+            const [checked, setChecked] = useState(false);
+
+            const numOk = Number(num) === q.k;
+            const denOk = Number(den) === q.n;
+            const allOk = checked && numOk && denOk;
+
+            const next = () => { setQ(makeReadQ()); setNum(''); setDen(''); setChecked(false); };
+
+            return (
+                <div className="fade-in">
+                    <div className="flex justify-end mb-4">
+                        <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">换一题 ›</button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 text-center">
+                        <p className="text-gray-500 mb-4">看图：涂色部分是整个图形的几分之几？</p>
+                        <Shape kind={q.kind} n={q.n} k={q.k} animKey={'pr' + q.n + q.k + q.kind} big />
+
+                        <div className="mt-6 flex items-center justify-center gap-3">
+                            <span className="text-gray-500">涂色部分 =</span>
+                            <span className="inline-flex flex-col items-center">
+                                <input type="number" value={num} onChange={e => { setNum(e.target.value); setChecked(false); }}
+                                    className="w-16 text-center text-2xl border-2 border-amber-300 rounded p-1" placeholder="?" />
+                                <span className="w-16 border-t-2 border-gray-600 my-1"></span>
+                                <input type="number" value={den} onChange={e => { setDen(e.target.value); setChecked(false); }}
+                                    className="w-16 text-center text-2xl border-2 border-sky-300 rounded p-1" placeholder="?" />
+                            </span>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-400 flex justify-center gap-8">
+                            <span className="text-amber-500">↑ 分子：取了几份</span>
+                            <span className="text-sky-500">↓ 分母：平均分几份</span>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                        <button onClick={() => setChecked(true)} disabled={num === '' || den === ''}
+                            className="px-6 py-2.5 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-semibold smooth">判分</button>
+                        {allOk && <button onClick={next} className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold smooth">下一题 →</button>}
+                    </div>
+
+                    {checked && (
+                        <div className={"mt-5 rounded-xl p-5 border fade-in " + (allOk ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200')}>
+                            {allOk ? (
+                                <p className="text-green-700 text-lg font-bold flex items-center gap-2">✓ 正确！涂色部分就是 <Fraction num={q.k} den={q.n} size="text-2xl" color="text-green-600" /></p>
+                            ) : (
+                                <div className="text-amber-700 space-y-1">
+                                    {!denOk && <p>分母看<b>一共平均分成几份</b>：这里分成了 <b>{q.n}</b> 份。</p>}
+                                    {denOk && !numOk && <p>分子看<b>涂色（取了）几份</b>：这里涂了 <b>{q.k}</b> 份。</p>}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ============================================================
+        // 顶层
+        // ============================================================
+        const TABS = [
+            { id: 'equal', title: '① 认识平均分', hint: '每份一样大才能用分数', color: 'bg-rose-500', shape: true },
+            { id: 'unit', title: '② 几分之一', hint: '分母是份数，分子是 1', color: 'bg-sky-500', shape: true },
+            { id: 'frac', title: '③ 几分之几', hint: '分子是取的份数', color: 'bg-amber-500', shape: true },
+            { id: 'compare', title: '④ 比大小', hint: '画成等长长条比涂色', color: 'bg-purple-500', shape: false },
+            { id: 'practice', title: '✏️ 我来试试', hint: '看图写分数 · 判分', color: 'bg-green-500', shape: false },
+        ];
+
+        const App = () => {
+            const [tab, setTab] = useState('equal');
+            const [shapeKind, setShapeKind] = useState('pie');
+            const cur = TABS.find(t => t.id === tab);
+
+            return (
+                <div className="max-w-4xl mx-auto px-4 py-8">
+                    <header className="text-center mb-5">
+                        <h1 className="text-3xl font-bold text-gray-800">分数的初步认识</h1>
+                        <p className="text-gray-500 mt-2">把一个整体<b>平均分</b>成几份，取这样的几份，就是"几分之几"</p>
+                        <div className="inline-flex items-center gap-2 mt-4 text-base">
+                            <span className="text-gray-500">例：</span>
+                            <Fraction num={3} den={4} size="text-3xl" />
+                            <span className="text-gray-400 text-sm">= 平均分成 4 份，取其中 3 份</span>
+                        </div>
+                    </header>
+
+                    {/* 模块切换 */}
+                    <div className="flex flex-wrap justify-center gap-2 mb-5">
+                        {TABS.map(t => (
+                            <button key={t.id} onClick={() => setTab(t.id)}
+                                className={"px-4 py-2 rounded-xl text-sm font-bold smooth border-2 text-left " +
+                                    (tab === t.id ? t.color + ' text-white border-transparent shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300')}>
+                                {t.title}
+                                <span className={"block text-[11px] font-normal " + (tab === t.id ? 'text-white/80' : 'text-gray-400')}>{t.hint}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* 整体形状切换（仅前三个模块需要） */}
+                    {cur.shape && (
+                        <div className="flex items-center justify-center gap-2 mb-6">
+                            <span className="text-sm text-gray-400 mr-1">用什么当整体</span>
+                            {SHAPE_TABS.map(s => (
+                                <button key={s.id} onClick={() => setShapeKind(s.id)}
+                                    className={"px-3 py-1.5 rounded-lg text-sm smooth " + (shapeKind === s.id ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200')}>
+                                    {s.name}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    <div>
+                        {tab === 'equal' && <EqualPartDemo shapeKind={shapeKind} />}
+                        {tab === 'unit' && <UnitFractionDemo shapeKind={shapeKind} />}
+                        {tab === 'frac' && <FractionDemo shapeKind={shapeKind} />}
+                        {tab === 'compare' && <CompareDemo />}
+                        {tab === 'practice' && <PracticeMode />}
+                    </div>
+
+                    <footer className="text-center text-gray-400 text-sm mt-10">
+                        Math101 · 分数可视化 · 适用人教版三年级上册《分数的初步认识》
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倍的认识工具 | Math101</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #fff;
+            --text: #202938;
+            --muted: #667085;
+            --line: #e4e7ec;
+            --blue: #2563eb;
+            --green: #16a34a;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --red: #dc2626;
+            --shadow: 0 18px 42px rgba(16, 24, 40, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(37, 99, 235, .14), transparent 26rem),
+                radial-gradient(circle at 90% 10%, rgba(124, 58, 237, .12), transparent 26rem),
+                var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button { font: inherit; cursor: pointer; }
+        a { color: inherit; text-decoration: none; }
+        .page { max-width: 1080px; margin: 0 auto; padding: 24px; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .icon {
+            width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff;
+            font-weight: 950; box-shadow: 0 14px 28px rgba(37, 99, 235, .24);
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+        h2 { margin: 0 0 12px; font-size: 20px; }
+        h3 { margin: 0; }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .tools { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--text);
+            padding: 10px 14px; font-weight: 800; box-shadow: 0 4px 12px rgba(16, 24, 40, .06);
+        }
+        .btn:hover { color: var(--blue); border-color: #bfdbfe; }
+        .btn.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+        .tab {
+            border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--muted);
+            padding: 11px 16px; font-weight: 900; font-size: 14px; box-shadow: 0 4px 12px rgba(16, 24, 40, .05);
+        }
+        .tab:hover { border-color: #bfdbfe; }
+        .tab.active { color: #fff; background: linear-gradient(135deg, var(--blue), var(--purple)); border-color: transparent; }
+
+        .card {
+            background: rgba(255,255,255,.97); border: 1px solid rgba(228,231,236,.95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .pad { padding: 22px; }
+        .panel { animation: show .24s ease; }
+        @keyframes show { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        .lead { font-size: 15px; line-height: 1.7; color: #344054; margin: 0 0 14px; }
+        .note { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-weight: 750; line-height: 1.6; }
+        .hint { padding: 12px 14px; border-radius: 14px; background: #fffbeb; color: #92400e; border: 1px solid #fde68a; font-weight: 750; line-height: 1.6; }
+        .formula {
+            font-family: "Cambria Math", "Times New Roman", serif;
+            font-size: clamp(22px, 4vw, 34px); font-weight: 950; text-align: center;
+            color: #1e3a8a; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; padding: 16px; margin: 14px 0;
+        }
+        .controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin: 8px 0 18px; }
+        .ctl { display: flex; align-items: center; gap: 8px; font-weight: 850; }
+        .ctl label { color: var(--muted); }
+        .ctl input[type=range] { width: 160px; accent-color: var(--blue); }
+        .ctl input[type=number] {
+            width: 70px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-weight: 800;
+        }
+        .val { display: inline-grid; place-items: center; min-width: 34px; height: 30px; padding: 0 8px;
+            border-radius: 8px; background: #eff6ff; color: var(--blue); font-weight: 950; }
+
+        /* ---- bar diagram ---- */
+        .bars { display: grid; gap: 16px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: #f8fafc; }
+        .bar-row { display: grid; grid-template-columns: 78px 1fr; gap: 12px; align-items: center; }
+        .bar-label { font-weight: 950; color: var(--text); }
+        .bar-label small { display: block; color: var(--muted); font-weight: 700; font-size: 12px; }
+        .bar { display: flex; gap: 5px; align-items: stretch; flex-wrap: wrap; }
+        .seg {
+            display: grid; place-items: center; min-width: 42px; height: 38px; border-radius: 9px;
+            background: #60a5fa; color: #fff; font-weight: 900; border: 2px solid #fff;
+            box-shadow: 0 4px 10px rgba(37,99,235,.18);
+        }
+        .seg.unit { background: #34d399; box-shadow: 0 4px 10px rgba(16,163,74,.18); }
+        .seg.purple { background: #a78bfa; }
+
+        /* ---- factor / multiple grids ---- */
+        .numgrid { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; }
+        .nbtn {
+            min-width: 46px; height: 44px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--line);
+            background: #fff; color: var(--text); font-weight: 850; font-size: 15px;
+        }
+        .nbtn:hover { border-color: #bfdbfe; }
+        .nbtn.factor { background: #eff6ff; border-color: #93c5fd; color: var(--blue); }
+        .nbtn.multiple { background: #f5f3ff; border-color: #c4b5fd; color: var(--purple); }
+        .nbtn.both { background: linear-gradient(135deg,#dbeafe,#ede9fe); border-color: #a78bfa; color: #4c1d95; }
+        .nbtn.prime { background: #ecfdf5; border-color: #6ee7b7; color: var(--green); }
+        .nbtn.composite { background: #fef2f2; border-color: #fca5a5; color: var(--red); }
+        .nbtn.dim { opacity: .35; }
+
+        .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 0 4px; font-size: 13px; font-weight: 800; color: var(--muted); }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .dot { width: 14px; height: 14px; border-radius: 5px; display: inline-block; }
+        .dot.f { background: #93c5fd; }
+        .dot.m { background: #c4b5fd; }
+        .dot.b { background: #a78bfa; }
+        .dot.p { background: #6ee7b7; }
+        .dot.c { background: #fca5a5; }
+
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .chip { border-radius: 999px; background: #f2f4f7; padding: 8px 12px; color: #344054; font-weight: 850; font-size: 14px; }
+        .chip.big { font-size: 16px; }
+
+        .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+        .mini { border: 1px solid var(--line); border-radius: 14px; background: #fff; padding: 14px; }
+        .mini small { display: block; color: var(--muted); font-weight: 800; margin-bottom: 6px; }
+        .mini strong { font-size: 20px; color: var(--blue); }
+
+        /* ---- dot-array (点阵) ---- */
+        .arrays { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 6px; }
+        .arr-box { text-align: center; }
+        .arr-box .cap { margin-top: 8px; font-weight: 900; color: #1e3a8a; font-size: 15px; }
+        .arr { display: inline-grid; gap: 5px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #f8fafc; }
+        .dot-c { width: 17px; height: 17px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #93c5fd, #2563eb); }
+
+        /* ---- hundred chart ---- */
+        .hchart { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; max-width: 460px; margin-top: 6px; }
+        .hcell {
+            aspect-ratio: 1; display: grid; place-items: center; border-radius: 7px;
+            background: #fff; border: 1px solid var(--line); font-weight: 800; font-size: 13px; color: #475569;
+        }
+        .hcell.hit { background: #dbeafe; border-color: #60a5fa; color: #1e40af; }
+        .hcell.hit3 { background: #fef3c7; border-color: #fbbf24; color: #92400e; }
+        .hcell.hit5 { background: #ede9fe; border-color: #a78bfa; color: #5b21b6; }
+        .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 0; }
+        .swatch { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 10px;
+            border: 1px solid var(--line); font-weight: 850; font-size: 13px; cursor: pointer; background: #fff; }
+        .swatch.on { box-shadow: inset 0 0 0 2px var(--blue); }
+        .sw { width: 16px; height: 16px; border-radius: 5px; }
+
+        /* ---- factor rectangles ---- */
+        .rects { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+        .rect-box { text-align: center; }
+        .rect-box .cap { margin-top: 6px; font-weight: 850; color: #475569; font-size: 13px; }
+        .rect { display: inline-grid; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+        .cellsq { width: 13px; height: 13px; border-radius: 3px; background: #60a5fa; }
+        .rect-box.prime .cellsq { background: #34d399; }
+
+        /* ---- venn ---- */
+        .venn { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; margin-top: 6px; align-items: stretch; max-width: 560px; }
+        .vcol { border: 2px solid var(--line); padding: 12px; text-align: center; }
+        .vcol:first-child { border-radius: 14px 0 0 14px; border-right: none; background: #eff6ff; }
+        .vcol.mid { background: #f5f3ff; border-color: #a78bfa; }
+        .vcol:last-child { border-radius: 0 14px 14px 0; border-left: none; background: #eff6ff; }
+        .vcol .h { font-weight: 900; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        .vcol .nums { font-weight: 850; color: #334155; line-height: 1.8; }
+        .vcol.mid .nums { color: #5b21b6; font-size: 17px; }
+
+        /* ---- divisibility ---- */
+        .digits { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 14px; }
+        .digit {
+            min-width: 50px; height: 60px; display: grid; place-items: center; border-radius: 12px;
+            border: 2px solid var(--line); background: #fff; font-size: 26px; font-weight: 950;
+        }
+        .digit.tail { border-color: var(--blue); background: #eff6ff; color: var(--blue); }
+        .rules { display: grid; gap: 10px; margin-top: 14px; }
+        .rule { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+            border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; background: #fff; font-weight: 850; }
+        .verdict { padding: 6px 12px; border-radius: 999px; font-weight: 950; font-size: 14px; white-space: nowrap; }
+        .verdict.yes { background: #dcfce7; color: #166534; }
+        .verdict.no { background: #fee2e2; color: #991b1b; }
+        .rule b { color: var(--blue); }
+
+        @media (max-width: 760px) {
+            .page { padding: 16px; }
+            .two { grid-template-columns: 1fr; }
+            .bar-row { grid-template-columns: 64px 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="top">
+            <div class="brand">
+                <div class="icon">倍</div>
+                <div>
+                    <h1>倍的认识</h1>
+                    <p class="sub">从“几倍”直观出发，理解倍数、因数与质数合数的关系</p>
+                </div>
+            </div>
+            <div class="tools">
+                <a class="btn" href="../">返回首页</a>
+            </div>
+        </header>
+
+        <nav class="tabs" id="tabs"></nav>
+        <section class="card pad panel" id="panel"></section>
+    </main>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+        const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+
+        const TABS = [
+            { id: "intro",  name: "倍的直观认识" },
+            { id: "factor", name: "倍数与因数" },
+            { id: "div",    name: "2 / 3 / 5 倍数特征" },
+            { id: "prime",  name: "质数合数·公因数公倍数" },
+        ];
+        const state = {
+            tab: "intro",
+            // intro
+            one: 3, times: 4,
+            // factor
+            target: 24,
+            // divisibility
+            digits: "126", chartDiv: 2,
+            // prime
+            a: 12, b: 18, demo: 12,
+        };
+
+        /* ============================== TAB 1: 倍的直观认识 ============================== */
+        function renderIntro() {
+            const one = state.one, n = state.times;
+            const many = one * n;
+            const unitBar = range(1, one).map(() => `<span class="seg unit">●</span>`).join("");
+            const manyBar = range(1, n).map(() => `<div class="bar" style="gap:5px">${range(1, one).map(() => `<span class="seg">●</span>`).join("")}</div>`).join(`<span style="width:2px"></span>`);
+            return `
+                <h2>倍的直观认识 · 一个量是另一个量的几倍</h2>
+                <p class="lead">把<strong style="color:#16a34a">较小的量（1 倍量）</strong>当成“1 份”，
+                看较大的量里面有<strong style="color:#2563eb">几个这样的份</strong>，就是它的几倍。</p>
+
+                <div class="controls">
+                    <div class="ctl"><label>1 倍量（每份）</label>
+                        <input type="range" id="i_one" min="1" max="8" value="${one}">
+                        <span class="val">${one}</span></div>
+                    <div class="ctl"><label>倍数</label>
+                        <input type="range" id="i_n" min="1" max="6" value="${n}">
+                        <span class="val">${n}</span></div>
+                </div>
+
+                <div class="bars">
+                    <div class="bar-row">
+                        <div class="bar-label">1 倍量<small>1 份</small></div>
+                        <div class="bar">${unitBar}</div>
+                    </div>
+                    <div class="bar-row">
+                        <div class="bar-label">几倍量<small>${n} 份</small></div>
+                        <div class="bar" style="gap:10px">${manyBar}</div>
+                    </div>
+                </div>
+
+                <div class="formula">${many} 是 ${one} 的 ${n} 倍　→　${one} × ${n} = ${many}</div>
+
+                <div class="two">
+                    <div class="mini"><small>求几倍量（已知 1 倍量和倍数）</small>
+                        <strong>${one} × ${n} = ${many}</strong></div>
+                    <div class="mini"><small>求倍数（已知两个量，用除法）</small>
+                        <strong>${many} ÷ ${one} = ${n}</strong></div>
+                </div>
+                <div class="note">数量关系：<b>1 倍量 × 倍数 = 几倍量</b>；
+                反过来 <b>几倍量 ÷ 1 倍量 = 倍数</b>，<b>几倍量 ÷ 倍数 = 1 倍量</b>。三者知二求一。</div>
+                <p class="hint" style="margin-top:14px">读法举例：上图中绿色是 1 份，蓝色一共摆了 ${n} 份，
+                所以“${many} 里面有 ${n} 个 ${one}”，即 ${many} 是 ${one} 的 ${n} 倍。</p>
+            `;
+        }
+        function bindIntro() {
+            $("i_one").oninput = (e) => { state.one = +e.target.value; render(); };
+            $("i_n").oninput = (e) => { state.times = +e.target.value; render(); };
+        }
+
+        /* ============================== TAB 2: 倍数与因数 ============================== */
+        function factorsOf(n) { return range(1, n).filter(d => n % d === 0); }
+        function factorPairs(n) {
+            const out = [];
+            for (let d = 1; d * d <= n; d++) if (n % d === 0) out.push([d, n / d]);
+            return out;
+        }
+        function dotArray(rows, cols) {
+            const dots = range(1, rows * cols).map(() => `<span class="dot-c"></span>`).join("");
+            return `<div class="arr" style="grid-template-columns:repeat(${cols},auto)">${dots}</div>`;
+        }
+        function renderFactor() {
+            const n = state.target;
+            const fs = factorsOf(n);
+            const pairs = factorPairs(n);
+            const grid = range(1, 50).map(k => {
+                const cls = (n % k === 0) ? "factor" : "";
+                return `<button class="nbtn ${cls}" disabled>${k}</button>`;
+            }).join("");
+            const multGrid = range(1, 9).map(k => `<button class="nbtn multiple" disabled>${n * k}</button>`).join("");
+            const arrays = pairs.map(([x, y]) =>
+                `<div class="arr-box">${dotArray(x, y)}<div class="cap">${x} × ${y} = ${n}</div></div>`).join("");
+            return `
+                <h2>倍数与因数 · 同一个乘法算式里的两个身份</h2>
+                <p class="lead">在 <b>a × b = c</b> 里：<strong style="color:#2563eb">a、b 是 c 的因数</strong>，
+                <strong style="color:#7c3aed">c 是 a、b 的倍数</strong>。把 ${n} 个圆点排成整齐的长方形，
+                <b>每一种排法就对应一对因数</b>。</p>
+
+                <div class="controls">
+                    <div class="ctl"><label>把多少个点排成长方形</label>
+                        <input type="number" id="f_n" min="1" max="60" value="${n}">
+                        <input type="range" id="f_r" min="1" max="60" value="${n}">
+                    </div>
+                </div>
+
+                <div class="arrays">${arrays}</div>
+                <p class="hint" style="margin-top:14px">能摆成几种长方形（${pairs.length} 种），就有几对因数。
+                ${pairs.some(([x,y])=>x===y) ? `正方形 ${Math.sqrt(n)}×${Math.sqrt(n)} 里两个因数相同，只数一次。` : ""}</p>
+
+                <div class="two" style="margin-top:16px">
+                    <div class="mini"><small>${n} 的全部因数（共 ${fs.length} 个，有限）</small>
+                        <strong style="color:#2563eb">${fs.join("、")}</strong></div>
+                    <div class="mini"><small>${n} 的倍数（无数个，写不完）</small>
+                        <strong style="color:#7c3aed">${range(1,6).map(k=>n*k).join("、")} …</strong></div>
+                </div>
+
+                <h3 style="margin:18px 0 8px">1~50 里，哪些数是 ${n} 的因数（能整除 ${n}）</h3>
+                <div class="numgrid">${grid}</div>
+
+                <h3 style="margin:18px 0 8px">${n} 的前 9 个倍数（${n} 的几倍）</h3>
+                <div class="numgrid">${multGrid}</div>
+
+                <div class="note">要点：①最小的因数是 <b>1</b>，最大的因数是 <b>它本身</b>，因数个数有限。
+                ②最小的倍数是 <b>它本身</b>，没有最大的倍数，倍数个数无限。
+                ③长方形“横着看”是一个因数，“竖着看”是另一个因数，正好成对。</div>
+            `;
+        }
+        function bindFactor() {
+            const set = (v) => { v = Math.min(100, Math.max(1, Math.round(v||1))); state.target = v; render(); };
+            $("f_n").onchange = (e) => set(+e.target.value);
+            $("f_r").oninput = (e) => set(+e.target.value);
+        }
+
+        /* ============================== TAB 3: 2 / 3 / 5 倍数特征 ============================== */
+        function renderDiv() {
+            const raw = (state.digits || "0").replace(/\D/g, "").slice(0, 6) || "0";
+            const n = parseInt(raw, 10);
+            const last = +raw[raw.length - 1];
+            const dsum = raw.split("").reduce((a, c) => a + (+c), 0);
+            const digitCells = raw.split("").map((d, i) =>
+                `<span class="digit ${i === raw.length - 1 ? "tail" : ""}">${d}</span>`).join("");
+            const verdict = (ok) => ok ? `<span class="verdict yes">是 ✓</span>` : `<span class="verdict no">不是 ✗</span>`;
+            const which = state.chartDiv || 2;
+            const hitClass = which === 3 ? "hit3" : (which === 5 ? "hit5" : "hit");
+            const chart = range(1, 100).map(k => {
+                const hit = k % which === 0;
+                return `<div class="hcell ${hit ? hitClass : ""}">${k}</div>`;
+            }).join("");
+            const sw = (v, label, color) =>
+                `<button class="swatch ${which === v ? "on" : ""}" data-div="${v}">
+                    <span class="sw" style="background:${color}"></span>${label}</button>`;
+            return `
+                <h2>2、3、5 倍数的特征 · 在百数表里看规律</h2>
+                <p class="lead">在 1~100 表里把某个数的倍数涂上颜色，规律一眼就能看见：
+                <b>2 的倍数</b>整整齐齐成两列、<b>5 的倍数</b>排成两竖列、<b>3 的倍数</b>斜着走。</p>
+
+                <div class="swatches">
+                    ${sw(2, "2 的倍数", "#60a5fa")}
+                    ${sw(3, "3 的倍数", "#fbbf24")}
+                    ${sw(5, "5 的倍数", "#a78bfa")}
+                </div>
+                <div class="hchart">${chart}</div>
+                <p class="hint" style="margin-top:12px">
+                    ${which === 2 ? "看末位：个位是 0、2、4、6、8 的都被涂色——这就是偶数。" :
+                      which === 5 ? "只有两列被涂色：个位是 0 和 5 的数。" :
+                      "涂色的格子斜着排列，因为它们的各位数字之和都是 3 的倍数。"}
+                </p>
+
+                <h3 style="margin:20px 0 8px">输入任意一个数，按规则判断</h3>
+                <div class="controls">
+                    <div class="ctl"><label>输入一个数</label>
+                        <input type="number" id="d_in" min="0" max="999999" value="${raw}" style="width:140px">
+                    </div>
+                </div>
+
+                <div class="digits">${digitCells}</div>
+
+                <div class="rules">
+                    <div class="rule">
+                        <span><b>2</b> 的倍数（偶数）：看个位是不是 0、2、4、6、8。
+                        个位是 <b>${last}</b>。</span>
+                        ${verdict(n % 2 === 0)}
+                    </div>
+                    <div class="rule">
+                        <span><b>5</b> 的倍数：看个位是不是 0 或 5。个位是 <b>${last}</b>。</span>
+                        ${verdict(n % 5 === 0)}
+                    </div>
+                    <div class="rule">
+                        <span><b>3</b> 的倍数：各位数字相加，看和是不是 3 的倍数。
+                        ${raw.split("").join(" + ")} = <b>${dsum}</b>。</span>
+                        ${verdict(n % 3 === 0)}
+                    </div>
+                </div>
+
+                <div class="two" style="margin-top:14px">
+                    <div class="mini"><small>同时是 2 和 5 的倍数</small>
+                        <strong>个位是 0　${n % 10 === 0 ? "（符合）" : "（不符合）"}</strong></div>
+                    <div class="mini"><small>同时是 2 和 3 的倍数（即 6 的倍数）</small>
+                        <strong>${n % 6 === 0 ? "是 6 的倍数" : "不是 6 的倍数"}</strong></div>
+                </div>
+
+                <div class="note">小结：判断 <b>2、5</b> 看 <b>个位</b>；判断 <b>3</b>（和 9）看 <b>各位数字之和</b>。
+                只有个位是 0 的数，才同时是 2 和 5 的倍数。</div>
+            `;
+        }
+        function bindDiv() {
+            $("d_in").oninput = (e) => { state.digits = e.target.value || "0"; render(); };
+            document.querySelectorAll(".swatch").forEach(s =>
+                s.addEventListener("click", () => { state.chartDiv = +s.dataset.div; render(); }));
+        }
+
+        /* ============================== TAB 4: 质数合数 / 公因数公倍数 ============================== */
+        function isPrime(n) { if (n < 2) return false; for (let d = 2; d * d <= n; d++) if (n % d === 0) return false; return true; }
+        function gcd(a, b) { while (b) [a, b] = [b, a % b]; return a; }
+        function commonFactors(a, b) { return factorsOf(a).filter(d => b % d === 0); }
+        function commonMultiples(a, b, k) { const l = a * b / gcd(a, b); return range(1, k).map(i => l * i); }
+        function renderPrime() {
+            const a = state.a, b = state.b;
+            const sieve = range(1, 50).map(k => {
+                let cls = "";
+                if (k === 1) cls = "dim";
+                else if (isPrime(k)) cls = "prime";
+                else cls = "composite";
+                return `<button class="nbtn ${cls}" disabled>${k}</button>`;
+            }).join("");
+            const cf = commonFactors(a, b);
+            const g = gcd(a, b);
+            const l = a * b / g;
+            const cm = commonMultiples(a, b, 4);
+            const fa = factorsOf(a), fb = factorsOf(b);
+            const onlyA = fa.filter(x => !cf.includes(x));
+            const onlyB = fb.filter(x => !cf.includes(x));
+            // factor rectangles for a demo number = a
+            const demo = state.demo || 12;
+            const demoPairs = factorPairs(demo);
+            const demoPrime = isPrime(demo);
+            const rects = demoPairs.map(([x, y]) => {
+                const cells = range(1, x * y).map(() => `<span class="cellsq"></span>`).join("");
+                return `<div class="rect-box ${demoPrime ? "prime" : ""}">
+                    <div class="rect" style="grid-template-columns:repeat(${y},auto)">${cells}</div>
+                    <div class="cap">${x} × ${y}</div></div>`;
+            }).join("");
+            return `
+                <h2>质数与合数 · 公因数与公倍数</h2>
+                <p class="lead"><strong style="color:#16a34a">质数</strong>：只能摆成 <b>1 列</b>的长方形（只有 1 和它本身两个因数）；
+                <strong style="color:#dc2626">合数</strong>：还能摆成别的长方形。<b>1 既不是质数也不是合数。</b></p>
+
+                <h3 style="margin:6px 0 8px">用小方块看 ${demo} 能摆几种长方形</h3>
+                <div class="controls">
+                    <div class="ctl"><label>选一个数</label>
+                        <input type="number" id="pr_d" min="2" max="36" value="${demo}">
+                        <input type="range" id="pr_dr" min="2" max="36" value="${demo}"></div>
+                </div>
+                <div class="rects">${rects}</div>
+                <p class="hint" style="margin-top:12px">${demo} 只能摆 ${demoPairs.length} 种，所以它是
+                <b style="color:${demoPrime ? "#16a34a" : "#dc2626"}">${demoPrime ? "质数" : "合数"}</b>。
+                只能摆 1 种（1×它本身）的就是质数。</p>
+
+                <h3 style="margin:20px 0 8px">1~50 的质数（绿）与合数（红）</h3>
+                <div class="legend">
+                    <span><i class="dot p"></i>质数</span>
+                    <span><i class="dot c"></i>合数</span>
+                    <span style="color:#94a3b8">灰：1（特殊）</span>
+                </div>
+                <div class="numgrid">${sieve}</div>
+
+                <h3 style="margin:22px 0 8px">两个数的公因数（看交集）与公倍数</h3>
+                <div class="controls">
+                    <div class="ctl"><label>a</label><input type="number" id="p_a" min="1" max="60" value="${a}"></div>
+                    <div class="ctl"><label>b</label><input type="number" id="p_b" min="1" max="60" value="${b}"></div>
+                </div>
+
+                <div class="venn">
+                    <div class="vcol"><div class="h">只是 ${a} 的因数</div><div class="nums">${onlyA.join("<br>") || "—"}</div></div>
+                    <div class="vcol mid"><div class="h">公因数（交集）</div><div class="nums">${cf.join("<br>")}</div></div>
+                    <div class="vcol"><div class="h">只是 ${b} 的因数</div><div class="nums">${onlyB.join("<br>") || "—"}</div></div>
+                </div>
+                <p class="hint" style="margin-top:12px">两个圈重叠的部分就是公因数，里面<b>最大的</b>是最大公因数
+                (${a},${b}) = <b>${g}</b>。</p>
+
+                <div class="formula" style="color:#5b21b6;background:#f5f3ff;border-color:#c4b5fd;margin-top:16px">
+                    公倍数：${cm.join("、")} …　→　最小公倍数 [${a},${b}] = ${l}</div>
+
+                <div class="note">关系：最大公因数 × 最小公倍数 = 两数之积，即
+                <b>${g} × ${l} = ${a} × ${b} = ${a * b}</b>。
+                ${g === 1 ? `${a} 和 ${b} 的公因数只有 1，叫做<b>互质数</b>，它们的最小公倍数就是两数相乘。` : ""}</div>
+            `;
+        }
+        function bindPrime() {
+            const setA = (v) => { state.a = Math.min(60, Math.max(1, Math.round(v||1))); render(); };
+            const setB = (v) => { state.b = Math.min(60, Math.max(1, Math.round(v||1))); render(); };
+            const setD = (v) => { state.demo = Math.min(36, Math.max(2, Math.round(v||2))); render(); };
+            $("p_a").onchange = (e) => setA(+e.target.value);
+            $("p_b").onchange = (e) => setB(+e.target.value);
+            $("pr_d").onchange = (e) => setD(+e.target.value);
+            $("pr_dr").oninput = (e) => setD(+e.target.value);
+        }
+
+        /* ============================== render ============================== */
+        const RENDERERS = { intro: renderIntro, factor: renderFactor, div: renderDiv, prime: renderPrime };
+        const BINDERS = { intro: bindIntro, factor: bindFactor, div: bindDiv, prime: bindPrime };
+
+        function render() {
+            $("tabs").innerHTML = TABS.map(t =>
+                `<button class="tab ${t.id === state.tab ? "active" : ""}" data-tab="${t.id}">${t.name}</button>`).join("");
+            $("panel").innerHTML = RENDERERS[state.tab]();
+            document.querySelectorAll(".tab").forEach(btn =>
+                btn.addEventListener("click", () => { state.tab = btn.dataset.tab; render(); }));
+            BINDERS[state.tab]();
+        }
+        render();
+    </script>
+</body>
+</html>

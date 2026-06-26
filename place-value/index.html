@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数位与数感·读大数 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #dbeafe 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .25); font-size: 24px;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 700;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06);
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.primary:hover { color: #fff; }
+        .btn.ghost { box-shadow: none; background: #f8fafc; }
+        .card {
+            background: rgba(255,255,255,.94); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 20px; }
+
+        /* 顶层模块切换 */
+        .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; padding: 6px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+        .mode { border: 0; border-radius: 12px; padding: 14px 10px; color: var(--muted); background: transparent; font-weight: 900; text-align: center; line-height: 1.3; }
+        .mode small { display: block; font-weight: 700; font-size: 11px; margin-top: 3px; opacity: .8; }
+        .mode.active { background: var(--indigo); color: #fff; box-shadow: 0 8px 18px rgba(79,70,229,.25); }
+
+        .view { display: none; animation: fade .25s ease; }
+        .view.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        h2.section-h { margin: 0 0 4px; font-size: 20px; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+
+        /* ===== 模块一：读大数 ===== */
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+        .controls input[type=text] {
+            flex: 1; min-width: 200px; border: 1px solid var(--line); border-radius: 10px;
+            padding: 10px 12px; font-size: 20px; font-weight: 800; letter-spacing: 1px; color: #312e81;
+        }
+        .controls input[type=text]:focus { outline: none; border-color: #a5b4fc; }
+
+        .place-table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; table-layout: fixed; }
+        .place-table th, .place-table td { border: 1px solid var(--line); text-align: center; padding: 4px 2px; }
+        .place-table thead .group { font-size: 12px; font-weight: 900; color: #fff; padding: 6px 2px; }
+        .group.zhao { background: #0d9488; }
+        .group.yi  { background: #ef4444; }
+        .group.wan { background: #f59e0b; }
+        .group.ge  { background: #2563eb; }
+        .place-table .pname { font-size: 12px; color: var(--muted); font-weight: 800; padding: 6px 2px; }
+        .place-table .digit { font-size: clamp(20px, 3.5vw, 30px); font-weight: 950; color: #1f2937; height: 52px; }
+        /* 阿拉伯数字 0 保持黑色，仅前导空位淡化 */
+        .place-table .digit.lead { color: #e2e8f0; }
+        /* 分段辅助开启：每级一种淡背景，强化“四位一级”的分块 */
+        .place-table.seg td.gcell.zhao { background: #f0fdfa; }
+        .place-table.seg td.gcell.yi  { background: #fef2f2; }
+        .place-table.seg td.gcell.wan { background: #fffbeb; }
+        .place-table.seg td.gcell.ge  { background: #eff6ff; }
+        /* 分段辅助开启：级与级之间加粗竖分隔线 */
+        .place-table.seg td.gstart, .place-table.seg th.gstart { border-left: 3px solid #94a3b8; }
+
+        .read-out {
+            margin-top: 14px; padding: 18px; border-radius: 16px; background: #eef2ff;
+            border: 1px solid #c7d2fe; text-align: center;
+        }
+        .read-out .num { font-size: 14px; color: var(--muted); font-weight: 800; margin-bottom: 6px; }
+        .read-out .chinese { font-size: clamp(24px, 4.5vw, 38px); font-weight: 950; color: #312e81; line-height: 1.5; }
+        /* 默认：零仅用柔和的暗红，不抢眼 */
+        .read-out .chinese .zero-mark { color: #c0392b; }
+        /* 分段辅助开启：按级给读法分块上色，零再稍微突出 */
+        .read-out.seg .chinese .seg-zhao { color: #0d9488; }
+        .read-out.seg .chinese .seg-yi  { color: #dc2626; }
+        .read-out.seg .chinese .seg-wan { color: #d97706; }
+        .read-out.seg .chinese .seg-ge  { color: #2563eb; }
+        .read-out.seg .chinese .zero-mark { color: #e11d48; background: #ffe4e6; border-radius: 6px; padding: 0 2px; }
+        .read-out .seg-tip { display: none; margin-top: 10px; font-size: 12.5px; font-weight: 800; }
+        .read-out.seg .seg-tip { display: block; }
+        .read-out .seg-tip span { display: inline-block; margin: 0 6px; padding: 2px 8px; border-radius: 999px; }
+        .seg-tip .t-zhao { color: #0d9488; background: #f0fdfa; }
+        .seg-tip .t-yi  { color: #dc2626; background: #fef2f2; }
+        .seg-tip .t-wan { color: #d97706; background: #fffbeb; }
+        .seg-tip .t-ge  { color: #2563eb; background: #eff6ff; }
+
+        .seg-toggle { display: inline-flex; align-items: center; gap: 7px; }
+        .btn.toggle.on { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.toggle.on:hover { color: #fff; }
+
+        .rules { margin-top: 16px; display: grid; gap: 8px; }
+        .rule { display: flex; gap: 10px; align-items: flex-start; padding: 11px 14px; border-radius: 12px; background: #f8fafc; border: 1px solid var(--line); font-size: 14px; line-height: 1.5; }
+        .rule b { color: var(--indigo); }
+        .rule .ic { flex: 0 0 auto; font-size: 17px; }
+        .rule.warn { background: #fffbeb; border-color: #fde68a; }
+        .rule.warn .ic { color: var(--amber); }
+
+        .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .chip { padding: 8px 12px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 800; border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+
+        /* ===== 模块二：数感估规模 ===== */
+        .quiz-card { text-align: center; }
+        .quiz-q { font-size: 15px; color: var(--muted); font-weight: 800; margin-bottom: 8px; }
+        .quiz-num { font-size: clamp(34px, 7vw, 64px); font-weight: 950; color: var(--indigo); letter-spacing: 2px; margin: 6px 0 4px; }
+        .quiz-sub { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+        .opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 560px; margin: 0 auto; }
+        .opt { border: 1px solid var(--line); background: #fff; border-radius: 14px; padding: 16px; font-weight: 850; font-size: 16px; color: var(--text); transition: .15s; }
+        .opt:hover { border-color: #c7d2fe; }
+        .opt.correct { background: #ecfdf5; border-color: var(--green); color: #065f46; }
+        .opt.wrong { background: #fef2f2; border-color: var(--red); color: #991b1b; }
+        .opt:disabled { cursor: default; }
+        .feedback { margin-top: 16px; padding: 14px 16px; border-radius: 14px; font-weight: 850; display: none; }
+        .feedback.show { display: block; }
+        .feedback.ok { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .feedback.no { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .scoreline { display: flex; justify-content: center; gap: 22px; margin-top: 16px; color: var(--muted); font-weight: 800; font-size: 14px; }
+        .scoreline b { color: var(--indigo); }
+        .scale-legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+        .scale-legend span { font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: #f1f5f9; color: #475569; }
+
+        /* ===== 模块三：生活中的数量规模 ===== */
+        .filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+        /* 量级图例：固定锚点——1个小点=1，十/百/千按真实面积放大 */
+        .anchor-legend { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 14px 16px; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 16px; background: #f8fafc; }
+        .anchor-legend .alg { text-align: center; }
+        .anchor-legend .alg .cap { display: block; margin-top: 6px; font-size: 12px; font-weight: 850; color: var(--muted); }
+        .anchor-legend .alg .cap b { color: var(--text); }
+
+        .scale-list { display: grid; gap: 14px; margin-top: 8px; }
+        .scale-item { border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; background: #fff; }
+        .scale-item .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+        .scale-item .label { font-weight: 900; font-size: 16px; }
+        .scale-item .val { font-weight: 950; color: var(--indigo); font-size: 16px; white-space: nowrap; }
+
+        /* 数量画布：所有图形共用同一个“点尺寸”，规模靠点/块的多少真实体现 */
+        .qty-canvas { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 7px; padding: 6px 0 2px; }
+        .dot1 { width: 7px; height: 7px; border-radius: 50%; display: block; }
+
+        /* 个：单个小点（基准单位，恒等于 1），最多 9 个，竖向少量排列 */
+        .u-ones { display: grid; grid-auto-flow: column; grid-template-rows: repeat(5, 7px); gap: 2px; }
+        /* 十：10 个点排成一条竖条 */
+        .u-ten { display: grid; grid-template-rows: repeat(10, 7px); gap: 2px; }
+        /* 百：10×10 的点阵方块——能看清单个点的最大单位 */
+        .u-hundred { display: grid; grid-template-columns: repeat(10, 7px); grid-template-rows: repeat(10, 7px); gap: 2px; padding: 4px; border-radius: 6px; background: rgba(0,0,0,.04); }
+
+        /* 更大的数：用“万块”作单位重复堆叠，万块为一个实心小方
+           （一个万块 ≈ 一个百块的占地，代表 1 万） */
+        .wan-block { width: 11px; height: 11px; border-radius: 2px; display: block; }
+        .u-wan-row { display: grid; grid-template-columns: repeat(10, 11px); gap: 2px; }
+        .u-wan-grid { display: grid; grid-template-columns: repeat(10, 11px); grid-template-rows: repeat(10, 11px); gap: 2px; padding: 3px; border-radius: 5px; background: rgba(0,0,0,.04); }
+        .u-wan-flow { display: grid; grid-auto-flow: column; grid-template-rows: repeat(5, 11px); gap: 2px; }
+
+        .scale-item .reado { margin-top: 12px; font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.55; }
+        .scale-item .reado .digits { color: var(--indigo); }
+        .scale-item .reado .each { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850; }
+        .scale-item .reado .each i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; font-style: normal; }
+
+        .footer-note { margin-top: 16px; font-size: 12.5px; color: var(--muted); text-align: center; }
+
+        @media (max-width: 760px) {
+            .page { padding: 16px; }
+            .topbar { display: block; }
+            .actions { justify-content: flex-start; margin-top: 14px; }
+            .modes { grid-template-columns: 1fr; }
+            .opts { grid-template-columns: 1fr; }
+            .place-table .digit { height: 44px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">位</div>
+                <div>
+                    <h1>数位与数感</h1>
+                    <p class="sub">读懂大数 · 估计规模 · 感受生活中的数量（人教版规范读数）</p>
+                </div>
+            </div>
+            <div class="actions">
+                <a class="btn ghost" href="../">返回首页</a>
+            </div>
+        </header>
+
+        <div class="modes" id="modes">
+            <button class="mode active" data-view="read">读懂大数<small>数位表 · 规范读数</small></button>
+            <button class="mode" data-view="sense">数感估规模<small>快速判断有多大</small></button>
+            <button class="mode" data-view="life">生活中的数量<small>常见数量的规模</small></button>
+        </div>
+
+        <!-- ============ 模块一：读懂大数 ============ -->
+        <section class="view active" id="view-read">
+            <div class="card panel">
+                <h2 class="section-h">读懂大数：四位一级，规范读数</h2>
+                <p class="lead">输入一个整数，把它放进数位表，按“万级 / 个级”分级读，重点练习带 0 的数。</p>
+
+                <div class="preset-row" id="presets"></div>
+
+                <div class="controls">
+                    <input type="text" id="numInput" inputmode="numeric" placeholder="输入数字，最多 15 位" value="10080500">
+                    <button class="btn toggle" id="segBtn" title="按级标红、分块，帮助理解如何分段读数">🎨 分段辅助</button>
+                    <button class="btn ghost" id="randomReadBtn">随机大数</button>
+                </div>
+
+                <div style="overflow-x:auto">
+                    <table class="place-table" id="placeTable"></table>
+                </div>
+
+                <div class="read-out" id="readOut">
+                    <div class="num" id="readDigits"></div>
+                    <div class="chinese" id="readChinese"></div>
+                    <div class="seg-tip">
+                        分级颜色：<span class="t-zhao">兆级</span><span class="t-yi">亿级</span><span class="t-wan">万级</span><span class="t-ge">个级</span>
+                    </div>
+                </div>
+
+                <div class="rules">
+                    <div class="rule"><span class="ic">①</span><div>从<b>个位</b>起，每<b>四位</b>分一级：个级（个、十、百、千）、万级（万、十万、百万、千万）、亿级。</div></div>
+                    <div class="rule"><span class="ic">②</span><div>先读<b>万级</b>，再读<b>个级</b>。万级的数照个级读，末尾加一个“<b>万</b>”字。</div></div>
+                    <div class="rule warn"><span class="ic">⚠</span><div>每级<b>末尾</b>不管有几个 0，<b>都不读</b>；其它数位上<b>连续几个 0，只读一个“零”</b>。</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ 模块二：数感估规模 ============ -->
+        <section class="view" id="view-sense">
+            <div class="card panel quiz-card">
+                <h2 class="section-h">数感练习：这个数大约有多大？</h2>
+                <p class="lead">不用读完每一位，先看<b>数有几位</b>，迅速判断它的规模。</p>
+
+                <div class="quiz-q" id="quizQ"></div>
+                <div class="quiz-num" id="quizNum"></div>
+                <div class="quiz-sub" id="quizSub"></div>
+
+                <div class="opts" id="quizOpts"></div>
+
+                <div class="feedback" id="quizFb"></div>
+
+                <div class="scoreline">
+                    <div>答对 <b id="scRight">0</b></div>
+                    <div>共答 <b id="scTotal">0</b></div>
+                    <div>连对 <b id="scStreak">0</b></div>
+                </div>
+
+                <div style="margin-top:16px">
+                    <button class="btn primary" id="nextQuizBtn">下一题 →</button>
+                </div>
+
+                <div class="scale-legend">
+                    <span>3位＝几百</span>
+                    <span>4位＝几千</span>
+                    <span>5位＝几万</span>
+                    <span>6位＝几十万</span>
+                    <span>7位＝几百万</span>
+                    <span>8位＝几千万</span>
+                    <span>9位＝几亿</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ 模块三：生活中的数量规模 ============ -->
+        <section class="view" id="view-life">
+            <div class="card panel">
+                <h2 class="section-h">生活中常见数量的规模</h2>
+                <p class="lead"><b>一个小点永远代表 1。</b>规模不是靠数字标签，而是靠<b>画面占多大</b>体现：十是一条，百是一个方块，万是 100 个这样的方块那么大。</p>
+
+                <div class="anchor-legend" id="anchorLegend"></div>
+                <div class="filter-row" id="lifeFilter"></div>
+                <div class="scale-list" id="lifeBars"></div>
+                <p class="footer-note">数据为帮助建立数感的近似值，并非精确统计。同一个小点在所有图里大小一样——块越多、越大，数就越大。</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    /* ============================================================
+       模块一：读大数
+       ============================================================ */
+    const MAX_LEN = 15;            // 最多支持 15 位（到百兆位）
+    const DEFAULT_COLS = 10;       // 默认数位表展示到十亿
+    // 个十百千 / 万十万百万千万 / 亿十亿百亿千亿 / 兆十兆百兆
+    const placeNames = ["个","十","百","千","万","十万","百万","千万","亿","十亿","百亿","千亿","兆","十兆","百兆"];
+    // 级标签：每四位一级（个级0-3，万级4-7，亿级8-11，兆级12-14）
+    const levelNames = ["", "万", "亿", "兆"];
+    const levelClsByIndex = ["ge", "wan", "yi", "zhao"];   // 0=个级 1=万级 2=亿级 3=兆级
+    const levelNameByIndex = ["个级", "万级", "亿级", "兆级"];
+    const digitGroupClass = i => levelClsByIndex[Math.floor(i / 4)];
+    const cnDigits = ["零","一","二","三","四","五","六","七","八","九"];
+
+    let segMode = false;           // 分段辅助开关
+
+    // 把 4 位一段读成中文（不含级单位），seg 是数组，高位在前，长度<=4
+    function readSegment(segDigits) {
+        const units = ["","十","百","千"];
+        const n = segDigits.length;
+        let out = "";
+        let pendingZero = false;
+        for (let i = 0; i < n; i++) {
+            const d = segDigits[i];
+            const pos = n - 1 - i; // 该位对应 units 下标（0=个，3=千）
+            if (d === 0) {
+                pendingZero = true;
+            } else {
+                if (pendingZero && out !== "") out += "零";
+                pendingZero = false;
+                out += cnDigits[d] + units[pos];
+            }
+        }
+        return out; // 末尾 0 自动被忽略
+    }
+
+    // 完整读数：返回 { chinese, parts }
+    // parts: [{ text, levelIndex }]，按级切好，便于按级上色
+    function readNumber(numStr) {
+        let s = numStr.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (s === "" ) return { chinese: "", parts: [] };
+        if (s === "0") return { chinese: "零", parts: [{ text: "零", levelIndex: 0 }] };
+        const digits = s.split("").map(Number);
+        const len = digits.length;
+        // 按高位在前每4位切级
+        const rem = len % 4;
+        let idx = 0;
+        const rawSegs = [];
+        if (rem > 0) { rawSegs.push(digits.slice(0, rem)); idx = rem; }
+        while (idx < len) { rawSegs.push(digits.slice(idx, idx + 4)); idx += 4; }
+        const segCount = rawSegs.length;
+        const parts = [];
+        let out = "";
+        let prevWholeWasNonZeroAndNeedsZero = false;
+        for (let g = 0; g < segCount; g++) {
+            const seg = rawSegs[g];
+            const levelIndex = segCount - 1 - g; // 0=个级,1=万级,2=亿级,3=兆级
+            const isAllZero = seg.every(d => d === 0);
+            const segRead = readSegment(seg);
+            if (isAllZero) {
+                // 整级为 0：留待下一非零级前补“零”
+                if (out !== "") prevWholeWasNonZeroAndNeedsZero = true;
+                continue;
+            }
+            let piece = "";
+            if (out !== "" && (seg[0] === 0 || prevWholeWasNonZeroAndNeedsZero)) {
+                piece += "零";
+            }
+            prevWholeWasNonZeroAndNeedsZero = false;
+            piece += segRead + (levelNames[levelIndex] || "");
+            parts.push({ text: piece, levelIndex });
+            out += piece;
+        }
+        // 整串开头的“一十”读作“十”（如 十万、十亿、十五），但不影响中间的“一十”
+        if (out.startsWith("一十")) {
+            out = out.slice(1);
+            if (parts.length && parts[0].text.startsWith("一十")) {
+                parts[0] = { ...parts[0], text: parts[0].text.slice(1) };
+            }
+        }
+        return { chinese: out, parts };
+    }
+
+    function buildPlaceTable(numStr) {
+        let s = numStr.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (s.length > MAX_LEN) s = s.slice(-MAX_LEN);
+        const digits = s.split("").map(Number);
+        const len = digits.length;
+        // 列数：默认到十亿(10列)，数字更长时按需扩展（最多15）
+        const cols = Math.min(MAX_LEN, Math.max(DEFAULT_COLS, len));
+        // 构造数位单元（个..最高位），高位在前
+        const cells = [];
+        for (let pos = cols - 1; pos >= 0; pos--) {
+            const hasDigit = pos < len;
+            const d = hasDigit ? digits[len - 1 - pos] : null;
+            const gIndex = Math.floor(pos / 4);           // 0个级..3兆级
+            const isGroupStart = (pos % 4 === 3);         // 每级最高位（千位/千万位…）左侧加分隔
+            cells.push({ pos, name: placeNames[pos], d, gCls: digitGroupClass(pos), gIndex, isGroupStart, hasDigit });
+        }
+        // 表头：级分组（只显示用到的级）
+        const groups = [];
+        for (let gi = 3; gi >= 0; gi--) {
+            const lo = gi * 4, hi = lo + 3;
+            if (lo >= cols) continue;               // 此级未用到
+            const span = Math.min(hi, cols - 1) - lo + 1;
+            groups.push({ cls: levelClsByIndex[gi], name: levelNameByIndex[gi], span });
+        }
+        const table = document.getElementById("placeTable");
+        let html = "<thead><tr>";
+        groups.forEach((g, i) => {
+            const gs = i === 0 ? "" : " gstart"; // 第一个(最高级)不需要内分隔
+            html += `<th class="group ${g.cls}${gs}" colspan="${g.span}">${g.name}</th>`;
+        });
+        html += "</tr><tr>";
+        cells.forEach(c => {
+            const gs = (c.isGroupStart && c.pos !== cols - 1) ? " gstart" : "";
+            html += `<td class="pname${gs}">${c.name}</td>`;
+        });
+        html += "</tr></thead><tbody><tr>";
+        cells.forEach(c => {
+            const gs = (c.isGroupStart && c.pos !== cols - 1) ? " gstart" : "";
+            if (c.d === null) {
+                html += `<td class="digit lead gcell ${c.gCls}${gs}">·</td>`;
+            } else {
+                // 阿拉伯数字 0 保持黑色，不再淡化
+                html += `<td class="digit gcell ${c.gCls}${gs}">${c.d}</td>`;
+            }
+        });
+        html += "</tr></tbody>";
+        table.innerHTML = html;
+    }
+
+    function groupNumber(s) {
+        // 每4位一空格便于看级
+        s = s.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (s === "") return "";
+        let out = "";
+        for (let i = 0; i < s.length; i++) {
+            if (i > 0 && (s.length - i) % 4 === 0) out += " ";
+            out += s[i];
+        }
+        return out;
+    }
+
+    function escZero(text) {
+        // 把“零”包成柔和高亮
+        return text.replace(/零/g, '<span class="zero-mark">零</span>');
+    }
+
+    function refreshRead() {
+        const raw = document.getElementById("numInput").value;
+        let s = raw.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (s.length > MAX_LEN) { s = s.slice(0, MAX_LEN); document.getElementById("numInput").value = s; }
+        buildPlaceTable(s);
+        const { chinese, parts } = readNumber(s);
+        document.getElementById("readDigits").textContent = s === "" ? "请输入一个整数" : ("数字：" + groupNumber(s));
+
+        const target = document.getElementById("readChinese");
+        if (s === "") { target.innerHTML = "—"; return; }
+        if (segMode) {
+            // 按级分块上色；级内的“零”再单独高亮
+            target.innerHTML = parts.map(p =>
+                `<span class="seg-${levelClsByIndex[p.levelIndex]}">${escZero(p.text)}</span>`
+            ).join("");
+        } else {
+            target.innerHTML = escZero(chinese);
+        }
+    }
+
+    function applySegMode() {
+        const btn = document.getElementById("segBtn");
+        document.getElementById("placeTable").classList.toggle("seg", segMode);
+        document.getElementById("readOut").classList.toggle("seg", segMode);
+        btn.classList.toggle("on", segMode);
+        btn.textContent = segMode ? "✓ 分段辅助" : "🎨 分段辅助";
+    }
+
+    const presets = [
+        { label: "整万：50 0000", v: "500000" },
+        { label: "中间一个零：100 8050", v: "1008050" },
+        { label: "连续零只读一个：1 0080 0500", v: "100800500" },
+        { label: "末尾零不读：3 6000", v: "36000" },
+        { label: "亿级：2 0508 0000", v: "205080000" },
+        { label: "全是非零：3 8527 6941", v: "385276941" },
+        { label: "兆级·14位：30 0026 0000 5000", v: "30002600005000" },
+    ];
+    function renderPresets() {
+        const box = document.getElementById("presets");
+        box.innerHTML = "";
+        presets.forEach(p => {
+            const b = document.createElement("button");
+            b.className = "chip";
+            b.textContent = p.label;
+            b.onclick = () => { document.getElementById("numInput").value = p.v; refreshRead(); };
+            box.appendChild(b);
+        });
+    }
+
+    document.getElementById("numInput").addEventListener("input", refreshRead);
+    document.getElementById("segBtn").addEventListener("click", () => {
+        segMode = !segMode;
+        applySegMode();
+        refreshRead();
+    });
+    document.getElementById("randomReadBtn").addEventListener("click", () => {
+        // 生成带 0 概率较高的随机数（5~12 位，覆盖万级~亿级）
+        const len = 5 + Math.floor(Math.random() * 8);
+        let s = "" + (1 + Math.floor(Math.random() * 9));
+        for (let i = 1; i < len; i++) {
+            s += Math.random() < 0.4 ? "0" : "" + Math.floor(Math.random() * 10);
+        }
+        document.getElementById("numInput").value = s;
+        refreshRead();
+    });
+
+    /* ============================================================
+       模块二：数感估规模
+       ============================================================ */
+    const scaleWords = {
+        2: "几十", 3: "几百", 4: "几千", 5: "几万", 6: "几十万",
+        7: "几百万", 8: "几千万", 9: "几亿", 10: "几十亿"
+    };
+    let score = { right: 0, total: 0, streak: 0 };
+
+    function randInt(min, max) { return min + Math.floor(Math.random() * (max - min + 1)); }
+
+    function makeQuizNumber() {
+        // 随机位数 3~9
+        const len = randInt(3, 9);
+        let s = "" + randInt(1, 9);
+        for (let i = 1; i < len; i++) s += "" + randInt(0, 9);
+        return s;
+    }
+
+    let currentAnswer = null;
+    function newQuiz() {
+        const s = makeQuizNumber();
+        const len = s.length;
+        currentAnswer = scaleWords[len];
+        document.getElementById("quizQ").textContent = "下面这个数，大约是——";
+        document.getElementById("quizNum").textContent = groupNumber(s);
+        document.getElementById("quizSub").textContent = `（共 ${len} 位）`;
+
+        // 构造选项：正确 + 3 个相邻规模干扰
+        const pool = [];
+        for (let k = -3; k <= 3; k++) {
+            const L = len + k;
+            if (L >= 2 && L <= 10 && L !== len && scaleWords[L]) pool.push(scaleWords[L]);
+        }
+        const distractors = [];
+        const uniq = [...new Set(pool)];
+        while (distractors.length < 3 && uniq.length) {
+            const i = randInt(0, uniq.length - 1);
+            distractors.push(uniq.splice(i, 1)[0]);
+        }
+        const opts = [currentAnswer, ...distractors].sort(() => Math.random() - 0.5);
+
+        const box = document.getElementById("quizOpts");
+        box.innerHTML = "";
+        opts.forEach(o => {
+            const b = document.createElement("button");
+            b.className = "opt";
+            b.textContent = o;
+            b.onclick = () => answerQuiz(b, o, len, s);
+            box.appendChild(b);
+        });
+        const fb = document.getElementById("quizFb");
+        fb.className = "feedback";
+        fb.textContent = "";
+    }
+
+    function answerQuiz(btn, choice, len, s) {
+        const all = document.querySelectorAll("#quizOpts .opt");
+        all.forEach(b => { b.disabled = true; });
+        score.total++;
+        const fb = document.getElementById("quizFb");
+        if (choice === currentAnswer) {
+            btn.classList.add("correct");
+            score.right++; score.streak++;
+            fb.className = "feedback show ok";
+            fb.textContent = `✔ 对了！${len} 位数就是“${currentAnswer}”。看位数最快。`;
+        } else {
+            btn.classList.add("wrong");
+            score.streak = 0;
+            all.forEach(b => { if (b.textContent === currentAnswer) b.classList.add("correct"); });
+            fb.className = "feedback show no";
+            fb.textContent = `✘ 这是 ${len} 位数，应该是“${currentAnswer}”。从个位起每 4 位分一级再看。`;
+        }
+        document.getElementById("scRight").textContent = score.right;
+        document.getElementById("scTotal").textContent = score.total;
+        document.getElementById("scStreak").textContent = score.streak;
+    }
+    document.getElementById("nextQuizBtn").addEventListener("click", newQuiz);
+
+    /* ============================================================
+       模块三：生活中的数量规模
+       ============================================================ */
+    const lifeData = [
+        { cat: "人口", label: "一个班的学生", v: 45, unit: "人", note: "大约 40~50 人，两位数。" },
+        { cat: "人口", label: "一所小学的学生", v: 1200, unit: "人", note: "上千人，四位数。" },
+        { cat: "人口", label: "一座小县城的人口", v: 300000, unit: "人", note: "三十万左右，六位数。" },
+        { cat: "人口", label: "一座大城市的人口", v: 10000000, unit: "人", note: "上千万，八位数。" },
+        { cat: "人口", label: "中国的人口", v: 1400000000, unit: "人", note: "十四亿，十位数。" },
+        { cat: "长度", label: "一支铅笔", v: 18, unit: "厘米", note: "不到 20 厘米。" },
+        { cat: "长度", label: "操场跑道一圈", v: 400, unit: "米", note: "几百米。" },
+        { cat: "长度", label: "马拉松全程", v: 42195, unit: "米", note: "四万多米，五位数。" },
+        { cat: "长度", label: "长江的长度", v: 6300000, unit: "米", note: "约 6300 千米，七位数（米）。" },
+        { cat: "时间", label: "一天", v: 86400, unit: "秒", note: "八万多秒，五位数。" },
+        { cat: "时间", label: "一年", v: 31536000, unit: "秒", note: "三千多万秒，八位数。" },
+        { cat: "时间", label: "你出生到现在(约10岁)", v: 3650, unit: "天", note: "三千多天，四位数。" },
+        { cat: "钱", label: "一支冰淇淋", v: 5, unit: "元", note: "个位数。" },
+        { cat: "钱", label: "一部手机", v: 3000, unit: "元", note: "几千元。" },
+        { cat: "钱", label: "一辆家用汽车", v: 150000, unit: "元", note: "十几万元，六位数。" },
+        { cat: "钱", label: "一套城市住房", v: 2000000, unit: "元", note: "上百万元，七位数。" },
+        { cat: "其它", label: "一本书的字数", v: 80000, unit: "字", note: "几万字，五位数。" },
+        { cat: "其它", label: "天上的星星(肉眼)", v: 3000, unit: "颗", note: "晴夜约三千颗。" },
+    ];
+    const lifeCats = ["全部", "人口", "长度", "时间", "钱", "其它"];
+    const catColor = { "人口": "#4f46e5", "长度": "#0ea5e9", "时间": "#f59e0b", "钱": "#10b981", "其它": "#7c3aed" };
+    let lifeFilter = "全部";
+
+    function fmtBig(n) {
+        if (n >= 100000000) {
+            const y = n / 100000000;
+            return (Number.isInteger(y) ? y : y.toFixed(1)) + " 亿";
+        }
+        if (n >= 10000) {
+            const w = n / 10000;
+            return (Number.isInteger(w) ? w : w.toFixed(1)) + " 万";
+        }
+        return n.toLocaleString("en-US");
+    }
+
+    /* ---- 核心：一个“小点”永远代表 1。规模用真实面积体现 ----
+       基本积木（点尺寸固定，面积关系真实）：
+         · 个   = 1 个小点
+         · 十   = 10 个点竖排成一条
+         · 百   = 10×10 点阵方块（“百块”，看清单个点的最大单位）
+       数量 < 1 万：用 百块 + 十条 + 散点 拼出来（最多 99 个百块）。
+       数量 ≥ 1 万：把“1 个百块”整体当作 100，再上一层——
+         一个“万块”= 100 个百块那么大的实心方，按同样的 百/十/个 方式堆叠。
+       这样 8 永远是 8 个小点，80000 是 8 个“万块”，
+       面积差 1 万倍，一眼可辨。                                  */
+
+    function dot(color) { return `<span class="dot1" style="background:${color}"></span>`; }
+
+    // 用“百块 / 十条 / 散点”拼出 0~9999 的真实点阵
+    function buildPlacePile(n, color) {
+        const hundreds = Math.floor(n / 100);
+        const tens = Math.floor((n % 100) / 10);
+        const ones = n % 10;
+        let blocks = "";
+        // 百块（10×10 点阵）
+        for (let h = 0; h < hundreds; h++) {
+            let inner = "";
+            for (let i = 0; i < 100; i++) inner += dot(color);
+            blocks += `<span class="u-hundred">${inner}</span>`;
+        }
+        // 十条（竖排 10 点）
+        for (let t = 0; t < tens; t++) {
+            let inner = "";
+            for (let i = 0; i < 10; i++) inner += dot(color);
+            blocks += `<span class="u-ten">${inner}</span>`;
+        }
+        // 散点
+        if (ones > 0) {
+            let inner = "";
+            for (let i = 0; i < ones; i++) inner += dot(color);
+            blocks += `<span class="u-ones">${inner}</span>`;
+        }
+        return blocks;
+    }
+
+    // 把“万块”当一个实心小方（其面积 = 100 个百块），按 百/十/个 堆叠出 N 个万块
+    function buildWanPile(count, color) {
+        const hundreds = Math.floor(count / 100); // 每 100 个万块 = 1 个“百万块”
+        const tens = Math.floor((count % 100) / 10);
+        const ones = count % 10;
+        let html = "";
+        for (let h = 0; h < hundreds; h++) {
+            let inner = "";
+            for (let i = 0; i < 100; i++) inner += `<span class="wan-block" style="background:${color}"></span>`;
+            html += `<span class="u-wan-grid">${inner}</span>`;
+        }
+        for (let t = 0; t < tens; t++) {
+            let inner = "";
+            for (let i = 0; i < 10; i++) inner += `<span class="wan-block" style="background:${color}"></span>`;
+            html += `<span class="u-wan-row">${inner}</span>`;
+        }
+        if (ones > 0) {
+            let inner = "";
+            for (let i = 0; i < ones; i++) inner += `<span class="wan-block" style="background:${color}"></span>`;
+            html += `<span class="u-wan-flow">${inner}</span>`;
+        }
+        return html;
+    }
+
+    // 决定用哪一级单位画，并返回画布 + 读法说明
+    function buildQuantity(v, color) {
+        if (v < 10000) {
+            // 真实点阵：1 个小点 = 1
+            const html = `<div class="qty-canvas">${buildPlacePile(v, color)}</div>`;
+            const reado = `每个小点 = <b>1</b> 个。一个<b>百块</b>(10×10) = <b>100</b> 个。`;
+            return { html, reado };
+        }
+        if (v < 100000000) {
+            // 万块：每个方块 = 1 万（=100 个百块那么大）
+            const count = Math.round(v / 10000);
+            const html = `<div class="qty-canvas">${buildWanPile(count, color)}</div>`;
+            const reado = `画了 <b>${count}</b> 个<span class="each"><i style="background:${color}"></i>万块</span>，每个 = <b>1 万</b>（=100 个百块）。`;
+            return { html, reado };
+        }
+        // 亿级：每个方块 = 1 亿（=1 万个万块）
+        const count = Math.round(v / 100000000);
+        let inner = "";
+        for (let i = 0; i < count; i++) inner += `<span class="wan-block" style="background:${color};width:22px;height:22px;border-radius:4px"></span>`;
+        const html = `<div class="qty-canvas"><span class="u-wan-flow" style="gap:5px">${inner}</span></div>`;
+        const reado = `画了 <b>${count}</b> 个<span class="each"><i style="background:${color}"></i>亿块</span>，每个 = <b>1 亿</b>（=1 万个万块）。`;
+        return { html, reado };
+    }
+
+    // 固定锚点图例：个 / 十 / 百 / 千，用同一个点尺寸，体现真实面积关系
+    function renderAnchorLegend() {
+        const box = document.getElementById("anchorLegend");
+        const c = "#475569";
+        const specs = [
+            { html: `<div class="qty-canvas">${buildPlacePile(1, c)}</div>`, cap: "<b>1</b> · 个" },
+            { html: `<div class="qty-canvas">${buildPlacePile(10, c)}</div>`, cap: "<b>10</b> · 十（一条）" },
+            { html: `<div class="qty-canvas">${buildPlacePile(100, c)}</div>`, cap: "<b>100</b> · 百（一块）" },
+            { html: `<div class="qty-canvas">${buildPlacePile(1000, c)}</div>`, cap: "<b>1000</b> · 千（10 块）" },
+        ];
+        box.innerHTML = specs.map(s => `<div class="alg">${s.html}<span class="cap">${s.cap}</span></div>`).join("");
+    }
+
+    function renderLife() {
+        const filterBox = document.getElementById("lifeFilter");
+        filterBox.innerHTML = "";
+        lifeCats.forEach(c => {
+            const b = document.createElement("button");
+            b.className = "chip";
+            b.textContent = c;
+            if (c === lifeFilter) { b.style.background = "#eef2ff"; b.style.color = "#4f46e5"; b.style.borderColor = "#c7d2fe"; }
+            b.onclick = () => { lifeFilter = c; renderLife(); };
+            filterBox.appendChild(b);
+        });
+
+        const items = lifeData.filter(d => lifeFilter === "全部" || d.cat === lifeFilter);
+        const box = document.getElementById("lifeBars");
+        box.innerHTML = "";
+        items.forEach(d => {
+            const digits = String(d.v).length;
+            const color = catColor[d.cat] || "#4f46e5";
+            const q = buildQuantity(d.v, color);
+            const el = document.createElement("div");
+            el.className = "scale-item";
+            el.innerHTML = `
+                <div class="head">
+                    <span class="label">${d.label}</span>
+                    <span class="val">${fmtBig(d.v)} ${d.unit}</span>
+                </div>
+                ${q.html}
+                <div class="reado"><span class="digits">${digits} 位数</span> · ${q.reado} ${d.note}</div>
+            `;
+            box.appendChild(el);
+        });
+    }
+
+    /* ============================================================
+       模块切换
+       ============================================================ */
+    document.getElementById("modes").addEventListener("click", e => {
+        const btn = e.target.closest(".mode");
+        if (!btn) return;
+        document.querySelectorAll(".mode").forEach(m => m.classList.remove("active"));
+        btn.classList.add("active");
+        const v = btn.dataset.view;
+        document.querySelectorAll(".view").forEach(s => s.classList.remove("active"));
+        document.getElementById("view-" + v).classList.add("active");
+        if (v === "sense" && score.total === 0) newQuiz();
+    });
+
+    // 初始化
+    renderPresets();
+    refreshRead();
+    newQuiz();
+    renderAnchorLegend();
+    renderLife();
+    </script>
+</body>
+</html>

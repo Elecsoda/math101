@@ -1345,7 +1345,8 @@
         };
 
         // ============================================================
-        // 顶层：模块标签页（基础 / 和差倍 / 年龄 / 归一 / 间隔 / 移多补少 / 练习）
+        // 顶层：基础读题工具只保留基础模型、简单和差倍、移多补少与练习。
+        // 复杂和差倍、年龄、归一归总、植树间隔已拆到各自的专题工具。
         // ============================================================
         // 各模块的配色（完整类名，避免 Tailwind CDN 拼接扫描不到）
         const MOD_STYLE = {
@@ -1373,14 +1374,7 @@
             { id: 'basic',   label: '基础问题',   color: 'blue',
               groups: [ { title: '基础版 · 单步', data: BASIC, render: 'basic' } ] },
             { id: 'sumdiff', label: '和差倍问题', color: 'purple',
-              groups: [ { title: '基础 · 和倍/差倍/和差', data: ADVANCED, render: 'advanced' },
-                        { title: '终极挑战', data: ULTIMATE, render: 'story', theme: 'rose', bars: 'ultimate' } ] },
-            { id: 'age',     label: '年龄问题',   color: 'teal',
-              groups: [ { title: '年龄问题', data: AGE, render: 'story', theme: 'teal', bars: 'age' } ] },
-            { id: 'norm',    label: '归一问题',   color: 'indigo',
-              groups: [ { title: '归一问题', data: NORM, render: 'story', theme: 'indigo', bars: 'norm' } ] },
-            { id: 'gap',     label: '间隔问题',   color: 'emerald',
-              groups: [ { title: '植树 / 排队 / 方阵 / 爬楼', data: GAP, render: 'story', theme: 'emerald', bars: 'gap' } ] },
+              groups: [ { title: '基础 · 和倍/差倍/和差', data: ADVANCED, render: 'advanced' } ] },
             { id: 'move',    label: '移多补少',   color: 'orange',
               groups: [ { title: '移多补少 / 平均数', data: MOVE, render: 'story', theme: 'orange', bars: 'move' } ] },
             { id: 'practice',label: '我来试试',   color: 'green',
@@ -1388,13 +1382,13 @@
         ];
 
         // 画图函数 / 模式组件 的查表
-        const BARS = { ultimate: buildUltimateBars, age: buildAgeBars, norm: buildNormBars, gap: buildGapBars, move: buildMoveBars };
+        const BARS = { move: buildMoveBars };
 
         const App = () => {
             const [modId, setModId] = useState('basic');
             // 每个数据组各自记住当前选中的题号：用 "moduleId/groupIndex" 作 key
             const [sel, setSel] = useState({});
-            // 每个模块当前"激活"的分组（多分组模块如和差倍，主区只显示激活的那组）
+            // 每个模块当前激活的题目分组
             const [activeGroup, setActiveGroup] = useState({});
             const mod = MODULES.find(m => m.id === modId);
             const getSel = (key) => sel[key] || 0;
@@ -1403,9 +1397,15 @@
 
             return (
                 <div className="max-w-5xl mx-auto px-4 py-8">
-                    <header className="text-center mb-5">
+                    <header className="relative text-center mb-5 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
                         <h1 className="text-3xl font-bold text-gray-800">读题 · 画图 · 列式</h1>
-                        <p className="text-gray-500 mt-2">把文字、图和式子对应起来，分类突破各种应用题</p>
+                        <p className="text-gray-500 mt-2">先学会读懂基本数量关系，再用图把简单和差倍画清楚</p>
                     </header>
 
                     {/* 顶部模块标签 */}

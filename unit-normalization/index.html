@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>归一归总问题 | Math101</title>
+    <link rel="stylesheet" href="../word-problem-tool.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand"><div class="brand-mark" id="mark">一</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div>
+            <div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div>
+        </header>
+        <nav class="tabs" id="tabs" aria-label="题型分类"></nav><p class="tab-intro" id="tabIntro"></p>
+        <div class="layout">
+            <section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section>
+            <aside class="card library"><div class="library-head"><h3>当前题库</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside>
+        </div>
+    </main>
+    <script>
+        window.WORD_PROBLEM_TOOL = {
+            title: "归一 · 归总问题",
+            subtitle: "归一先求一份，归总先求不变的总量；两种思路分开练。",
+            mark: "一", accent: "#4f46e5", accentDark: "#3730a3", accentSoft: "#eef2ff",
+            tabs: [
+                {
+                    id: "normalize", label: "归一问题", intro: "先求 1 人、1 小时、1 份对应多少，再按目标份数计算。",
+                    problems: [
+                        {
+                            label: "归一① · 制作彩旗", story: "3 个同学 2 小时制作 120 面彩旗。照这样计算，要在 2.5 小时内制作 500 面彩旗，需要多少个同学？",
+                            keywords: ["3 个同学 2 小时", "120 面彩旗", "2.5 小时", "500 面彩旗"],
+                            relations: [{label:"双归一",value:"先求 1 人 1 小时的工作量"},{label:"目标",value:"人数 × 2.5 小时 × 单位效率 = 500"}],
+                            diagram: [{label:"已知",parts:3,note:"3 人 × 2 小时 → 120 面"},{label:"一份",parts:1,tone:"warm",note:"1 人 × 1 小时 → 20 面"},{label:"目标",parts:5,tone:"alt",note:"每人 2.5 小时做 50 面"}],
+                            diagramNote: "把人数和时间都归到 1，得到最基础的单位效率。",
+                            equation: "500 ÷ (120 ÷ 3 ÷ 2 × 2.5) = 10",
+                            steps: ["1 个同学 1 小时做 120 ÷ 3 ÷ 2 = 20（面）。","1 个同学 2.5 小时做 20 × 2.5 = 50（面）。","需要 500 ÷ 50 = 10（人）。"], answer: "需要 10 个同学。"
+                        },
+                        {
+                            label: "归一② · 猩猩吃香蕉", story: "6 只猩猩 8 天吃 24 个香蕉。照这样的速度，9 只猩猩 10 天吃多少个香蕉？",
+                            keywords: ["6 只猩猩 8 天", "24 个香蕉", "9 只猩猩 10 天"],
+                            relations: [{label:"先归一",value:"1 只猩猩 1 天吃多少"},{label:"再归份",value:"单位量 × 9 只 × 10 天"}],
+                            diagram: [{label:"已知",parts:6,note:"6 只 × 8 天 → 24 个"},{label:"一份",parts:1,tone:"warm",note:"1 只 × 1 天 → 0.5 个"},{label:"目标",parts:5,tone:"alt",note:"9 只 × 10 天"}],
+                            diagramNote: "人数和天数都变化时，连续除两次求出双单位量。",
+                            equation: "24 ÷ 6 ÷ 8 × 9 × 10 = 45",
+                            steps: ["1 只猩猩 1 天吃 24 ÷ 6 ÷ 8 = 0.5（个）。","9 只猩猩 1 天吃 0.5 × 9 = 4.5（个）。","9 只猩猩 10 天吃 4.5 × 10 = 45（个）。"], answer: "共吃 45 个香蕉。"
+                        },
+                        {
+                            label: "归一③ · 买练习本", story: "买 5 本同样的练习本需要 30 元。照这个单价，买 18 本需要多少元？",
+                            keywords: ["5 本", "30 元", "18 本"],
+                            relations: [{label:"一份量",value:"1 本的价钱 = 总价 ÷ 本数"},{label:"目标总价",value:"单价 × 18 本"}],
+                            diagram: [{label:"5 本",parts:5,note:"共 30 元"},{label:"1 本",parts:1,tone:"warm",note:"30 ÷ 5 = 6 元"},{label:"18 本",parts:6,tone:"alt",note:"用 6 格代表 18 本"}],
+                            equation: "30 ÷ 5 × 18 = 108",
+                            steps: ["每本练习本 30 ÷ 5 = 6（元）。","18 本需要 6 × 18 = 108（元）。"], answer: "买 18 本需要 108 元。"
+                        }
+                    ]
+                },
+                {
+                    id: "total", label: "归总问题", intro: "先根据已有条件求出不变的总量，再用总量解决新条件。",
+                    problems: [
+                        {
+                            label: "归总① · 攒钱买书架", story: "聪聪每月攒 66 元，攒一年正好可以买一个书架。如果每月攒 99 元，可以少攒几个月？",
+                            keywords: ["每月攒 66 元", "攒一年", "每月攒 99 元", "少攒几个月"],
+                            relations: [{label:"不变总量",value:"书架总价不变"},{label:"新月数",value:"总价 ÷ 每月 99 元"}],
+                            diagram: [{label:"原计划",parts:6,note:"66 元/月 × 12 月"},{label:"总价",parts:4,tone:"warm",note:"792 元（不变）"},{label:"新计划",parts:4,tone:"alt",note:"99 元/月 × 8 月"}],
+                            diagramNote: "每月攒的钱变了，但书架总价没有变。",
+                            equation: "12 − (66 × 12 ÷ 99) = 4",
+                            steps: ["书架总价 66 × 12 = 792（元）。","每月攒 99 元，需要 792 ÷ 99 = 8（个月）。","比原计划少 12 − 8 = 4（个月）。"], answer: "可以少攒 4 个月。"
+                        },
+                        {
+                            label: "归总② · 上学路程", story: "赵老师每分钟走 72 米，12 分钟到学校。某天每分钟多走 24 米，这次多少分钟到学校？",
+                            keywords: ["每分钟走 72 米", "12 分钟", "每分钟多走 24 米", "多少分钟"],
+                            relations: [{label:"不变总量",value:"家到学校的路程不变"},{label:"新时间",value:"总路程 ÷ 新速度"}],
+                            diagram: [{label:"原来",parts:6,note:"72 米/分 × 12 分"},{label:"路程",parts:4,tone:"warm",note:"864 米（不变）"},{label:"现在",parts:5,tone:"alt",note:"96 米/分 × 9 分"}],
+                            diagramNote: "先归总求路程，再用新速度求时间。",
+                            equation: "72 × 12 ÷ (72 + 24) = 9",
+                            steps: ["总路程 72 × 12 = 864（米）。","新速度 72 + 24 = 96（米/分）。","新时间 864 ÷ 96 = 9（分钟）。"], answer: "这次 9 分钟到学校。"
+                        },
+                        {
+                            label: "归总③ · 修一条路", story: "修路队每天修 45 米，16 天修完一条路。如果每天修 60 米，多少天修完？",
+                            keywords: ["每天修 45 米", "16 天", "每天修 60 米"],
+                            relations: [{label:"不变总量",value:"这条路的总长度不变"},{label:"新天数",value:"总长度 ÷ 每天 60 米"}],
+                            diagram: [{label:"原计划",parts:4,note:"45 米/天 × 16 天"},{label:"全长",parts:6,tone:"warm",note:"720 米"},{label:"新计划",parts:3,tone:"alt",note:"60 米/天 × ? 天"}],
+                            equation: "45 × 16 ÷ 60 = 12",
+                            steps: ["公路全长 45 × 16 = 720（米）。","每天修 60 米，需要 720 ÷ 60 = 12（天）。"], answer: "12 天修完。"
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+    <script src="../word-problem-tool.js"></script>
+</body>
+</html>

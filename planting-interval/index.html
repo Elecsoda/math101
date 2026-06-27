@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植树与间隔问题 | Math101</title>
+    <link rel="stylesheet" href="../word-problem-tool.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand"><div class="brand-mark" id="mark">间</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div>
+            <div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div>
+        </header>
+        <nav class="tabs" id="tabs" aria-label="题型分类"></nav><p class="tab-intro" id="tabIntro"></p>
+        <div class="layout">
+            <section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section>
+            <aside class="card library"><div class="library-head"><h3>当前题库</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside>
+        </div>
+    </main>
+    <script>
+        window.WORD_PROBLEM_TOOL = {
+            title: "植树 · 间隔问题",
+            subtitle: "先分清直线还是封闭图形、两端是否计数，再处理棵数与间隔数。",
+            mark: "间", accent: "#059669", accentDark: "#047857", accentSoft: "#ecfdf5",
+            tabs: [
+                {
+                    id: "planting", label: "植树问题", intro: "四种基本模型：两端都栽、只栽一端、两端都不栽、封闭成环。",
+                    problems: [
+                        {
+                            label: "植树① · 两端都栽", story: "一条 120 米长的小路一旁每隔 10 米栽一棵树，两端都栽，一共要栽多少棵？",
+                            keywords: ["120 米", "每隔 10 米", "两端都栽"],
+                            relations: [{label:"间隔数",value:"全长 ÷ 间距"},{label:"两端都栽",value:"棵数 = 间隔数 + 1"}],
+                            diagram: [{label:"起点到终点",parts:6,note:"用 6 格表示 12 个间隔"},{label:"树的位置",parts:6,tone:"alt",extra:true,note:"两端都有树"}],
+                            diagramNote: "直线上两端都栽，树比间隔多 1。",
+                            equation: "120 ÷ 10 + 1 = 13",
+                            steps: ["间隔数 120 ÷ 10 = 12（个）。","两端都栽，棵数 12 + 1 = 13（棵）。"], answer: "一共栽 13 棵。"
+                        },
+                        {
+                            label: "植树② · 只栽一端", story: "一条 150 米长的河堤每隔 15 米栽一棵树，起点栽、终点不栽，一共栽多少棵？",
+                            keywords: ["150 米", "每隔 15 米", "起点栽、终点不栽"],
+                            relations: [{label:"间隔数",value:"150 ÷ 15 = 10"},{label:"只栽一端",value:"棵数 = 间隔数"}],
+                            diagram: [{label:"河堤",parts:5,note:"10 个间隔"},{label:"树的位置",parts:5,tone:"alt",note:"一端计入、一端不计"}],
+                            diagramNote: "只栽一端时，每个间隔恰好对应一棵树。",
+                            equation: "150 ÷ 15 = 10",
+                            steps: ["河堤共有 150 ÷ 15 = 10（个）间隔。","只栽一端，棵数等于间隔数。"], answer: "一共栽 10 棵。"
+                        },
+                        {
+                            label: "植树③ · 两端都不栽", story: "一条 90 米长的走廊每隔 9 米摆一盆花，两端都不摆，一共摆多少盆？",
+                            keywords: ["90 米", "每隔 9 米", "两端都不摆"],
+                            relations: [{label:"间隔数",value:"90 ÷ 9 = 10"},{label:"两端都不摆",value:"盆数 = 间隔数 − 1"}],
+                            diagram: [{label:"走廊",parts:5,note:"10 个间隔"},{label:"花盆",parts:4,tone:"alt",note:"去掉两端位置"}],
+                            diagramNote: "直线上两端都不摆，点数比间隔数少 1。",
+                            equation: "90 ÷ 9 − 1 = 9",
+                            steps: ["走廊共有 90 ÷ 9 = 10（个）间隔。","两端都不摆，花盆数 10 − 1 = 9（盆）。"], answer: "一共摆 9 盆。"
+                        },
+                        {
+                            label: "植树④ · 封闭成环", story: "一个周长 360 米的圆形湖边每隔 20 米栽一棵树，一共要栽多少棵？",
+                            keywords: ["周长 360 米", "圆形湖边", "每隔 20 米"],
+                            relations: [{label:"封闭图形",value:"首尾是同一个位置"},{label:"环形植树",value:"棵数 = 间隔数"}],
+                            diagram: [{label:"湖边一圈",parts:6,note:"用 6 格表示封闭的一圈"},{label:"树的位置",parts:6,tone:"alt",note:"首尾不重复计算"}],
+                            diagramNote: "封闭成环没有“多出来”的端点，棵数等于间隔数。",
+                            equation: "360 ÷ 20 = 18",
+                            steps: ["湖边一圈共有 360 ÷ 20 = 18（个）间隔。","环形上棵数等于间隔数。"], answer: "一共栽 18 棵。"
+                        }
+                    ]
+                },
+                {
+                    id: "interval", label: "间隔问题", intro: "把路灯、彩旗、楼层、方阵等情境还原成“点与段”的关系。",
+                    problems: [
+                        {
+                            label: "间隔① · 路灯共用位置", story: "2400 米公路一旁安装路灯，两端都装。原来每 6 米一个，现在改为每 8 米一个，有多少个原预留位置仍可使用？",
+                            keywords: ["2400 米", "两端都装", "每 6 米", "每 8 米"],
+                            relations: [{label:"共同位置间距",value:"6 和 8 的最小公倍数 = 24 米"},{label:"两端都计",value:"位置数 = 间隔数 + 1"}],
+                            diagram: [{label:"原灯位",parts:6,note:"每 6 米一个"},{label:"新灯位",parts:4,tone:"alt",note:"每 8 米一个"},{label:"共同位置",parts:2,tone:"warm",note:"每 24 米重合"}],
+                            diagramNote: "共同位置必须同时是 6 米和 8 米间距的整数倍。",
+                            equation: "2400 ÷ [6, 8] + 1 = 101",
+                            equationTip: "[6, 8] 表示 6 和 8 的最小公倍数 24。",
+                            steps: ["6 和 8 的最小公倍数是 24。","每 24 米出现一个共同位置，共 2400 ÷ 24 = 100 个间隔。","两端都装，位置数 100 + 1 = 101。"], answer: "有 101 个位置仍可使用。"
+                        },
+                        {
+                            label: "间隔② · 环形彩旗", story: "400 米环形跑道原来每隔 16 米插一杆彩旗。重新缩短间隔后有 5 杆彩旗位置没动。现在相邻彩旗间隔是多少米？",
+                            keywords: ["400 米环形跑道", "每隔 16 米", "缩短间隔", "5 杆彩旗位置没动"],
+                            relations: [{label:"不动位置的间隔",value:"400 ÷ 5 = 80 米"},{label:"新间隔条件",value:"小于 16，且能整除 80 和 400"}],
+                            diagram: [{label:"跑道一圈",parts:5,note:"5 个不动位置把一圈分成 5 段"},{label:"每一大段",parts:4,tone:"alt",note:"80 米，可再按 10 米细分"}],
+                            diagramNote: "新间隔既要在共同位置处重合，又必须比 16 米短。",
+                            equation: "400 ÷ 5 = 80，符合条件的新间隔为 10 米",
+                            steps: ["5 个不动位置把 400 米平均分成 5 段，每段 80 米。","新间隔要能整除 80 和 400。","新间隔小于 16，且应产生更多彩旗，取 10 米。","验证：400 ÷ 10 = 40 杆。"], answer: "现在相邻彩旗间隔 10 米。"
+                        },
+                        {
+                            label: "间隔③ · 爬楼梯", story: "甲跑到 4 层时，乙刚到 3 层。照这样计算，甲跑到 16 层时，乙跑到多少层？",
+                            keywords: ["甲跑到 4 层", "乙刚到 3 层", "甲跑到 16 层"],
+                            relations: [{label:"层数与段数",value:"爬的段数 = 到达层数 − 1"},{label:"速度比",value:"甲 : 乙 = 3 : 2"}],
+                            diagram: [{label:"甲",parts:3,note:"到 4 层，爬 3 段"},{label:"乙",parts:2,tone:"alt",note:"到 3 层，爬 2 段"}],
+                            diagramNote: "比较的是爬过的楼梯段数，不是楼层编号。",
+                            equation: "(16 − 1) ÷ 3 × 2 + 1 = 11",
+                            steps: ["甲到 4 层爬 3 段，乙到 3 层爬 2 段。","甲到 16 层爬 15 段。","乙爬 15 ÷ 3 × 2 = 10 段。","爬 10 段后到第 10 + 1 = 11 层。"], answer: "乙跑到 11 层。"
+                        },
+                        {
+                            label: "间隔④ · 表演方阵", story: "4 个表演方阵，每个方阵 6 行、每行 6 人，最外一圈是男生，其余是女生。男生和女生各多少人？",
+                            keywords: ["4 个表演方阵", "6 行、每行 6 人", "最外一圈是男生"],
+                            relations: [{label:"每阵外圈",value:"6 × 4 − 4 = 20 人"},{label:"每阵里面",value:"(6 − 2) × (6 − 2) = 16 人"}],
+                            diagram: [{label:"外圈",parts:5,tone:"warm",note:"每阵 20 人"},{label:"里面",parts:4,tone:"alt",note:"每阵 16 人"},{label:"方阵数",parts:4,note:"共 4 个"}],
+                            diagramNote: "数外圈时四个角不能重复；里面每边都少 2 人。",
+                            equation: "男：20 × 4 = 80；女：16 × 4 = 64",
+                            steps: ["一个方阵外圈人数 6 × 4 − 4 = 20。","一个方阵里面人数 4 × 4 = 16。","4 个方阵男生 20 × 4 = 80 人。","4 个方阵女生 16 × 4 = 64 人。"], answer: "男生 80 人，女生 64 人。"
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+    <script src="../word-problem-tool.js"></script>
+</body>
+</html>

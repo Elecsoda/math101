@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>周长与面积实验室 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --teal: #0d9488;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #ccfbf1 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { max-width: 1080px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff;
+            box-shadow: 0 12px 24px rgba(13, 148, 136, .25); font-size: 22px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none; white-space: nowrap;
+        }
+        .btn:hover { border-color: #99f6e4; color: var(--teal); }
+        .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+        .btn.primary:hover { color: #fff; filter: brightness(1.05); }
+        .btn.small { padding: 7px 11px; font-size: 13px; }
+        .card {
+            background: rgba(255,255,255,.96); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 22px; }
+        .tabs {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            margin-bottom: 18px; padding: 6px; border: 1px solid var(--line);
+            border-radius: 16px; background: #fff;
+        }
+        .tab {
+            border: 0; border-radius: 12px; padding: 12px 8px; color: var(--muted);
+            background: transparent; font-weight: 950; text-align: center; line-height: 1.25; font-size: 14px;
+        }
+        .tab small { display: block; font-weight: 750; font-size: 11px; margin-top: 3px; opacity: .82; }
+        .tab.active { background: var(--teal); color: #fff; box-shadow: 0 8px 18px rgba(13,148,136,.25); }
+        .view { display: none; animation: fade .22s ease; }
+        .view.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        h3.blk { margin: 18px 0 8px; font-size: 16px; color: #0f766e; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 16px; line-height: 1.6; }
+        .lead b { color: var(--teal); }
+        code { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-weight: 850; }
+
+        .level-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .level-row .lbl { font-size: 13px; color: var(--muted); font-weight: 800; margin-right: 2px; }
+        .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex-wrap: wrap; }
+        .seg button { border: 0; background: #fff; padding: 8px 14px; font-weight: 850; color: var(--muted); font-size: 13px; border-right: 1px solid var(--line); }
+        .seg button:last-child { border-right: 0; }
+        .seg button.active { background: var(--teal); color: #fff; }
+
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; align-items: center; }
+        .chip { padding: 8px 13px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850;
+            border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #99f6e4; color: var(--teal); }
+        .chip.active { background: var(--teal); color: #fff; }
+
+        /* stage / canvas wrappers */
+        .stage {
+            position: relative; border-radius: 16px; border: 1px solid var(--line);
+            background: linear-gradient(180deg,#fdfffe,#eef6f4); padding: 14px; text-align: center;
+            overflow-x: auto;
+        }
+        svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .readout {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px;
+        }
+        .stat-pill { background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 12px; padding: 8px 16px;
+            font-weight: 850; font-size: 14px; color: #115e59; }
+        .stat-pill b { color: var(--teal); font-size: 18px; }
+        .stat-pill.area { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+        .stat-pill.area b { color: #d97706; }
+
+        .hintbox { border: 1px solid #99f6e4; background: #f0fdfa; border-radius: 14px; padding: 12px 16px;
+            line-height: 1.7; font-size: 14px; margin-top: 14px; color: #134e4a; }
+        .hintbox b { color: var(--teal); }
+        .hintbox .formula { display: inline-block; background: #fff; border: 1px solid #99f6e4; border-radius: 8px;
+            padding: 2px 10px; font-weight: 900; color: #0f766e; margin: 2px 0; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 6px 0 14px; }
+        .control { display: flex; align-items: center; gap: 8px; font-weight: 850; font-size: 13px; color: #334155; }
+        .control input[type=range] { accent-color: var(--teal); width: 130px; }
+        .control .val { display: inline-block; min-width: 26px; text-align: center; color: var(--teal); font-weight: 950; font-size: 15px; }
+
+        .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+        .tgl { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 13px;
+            font-weight: 850; font-size: 13px; color: var(--muted); }
+        .tgl.on { background: #ccfbf1; border-color: #5eead4; color: #0f766e; }
+
+        .step-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 12px; }
+        .count-display { font-size: clamp(22px,4vw,30px); font-weight: 950; color: #0f766e; text-align: center;
+            margin: 8px 0; letter-spacing: 1px; }
+        .count-display .small { font-size: 16px; color: var(--muted); font-weight: 800; }
+
+        /* counting cell highlight pulse */
+        .pulse { animation: pulse .4s ease; }
+        @keyframes pulse { 0%{ filter: brightness(1);} 50%{ filter: brightness(1.4);} 100%{ filter: brightness(1);} }
+
+        /* 乘法简化高亮条（图形周长用） */
+        .mul-tip {
+            display: inline-flex; align-items: center; gap: 8px; margin: 10px auto 2px;
+            padding: 10px 18px; border-radius: 14px; font-weight: 950;
+            background: linear-gradient(180deg,#fff7ed,#fef3c7); border: 2px solid #f59e0b;
+            color: #b45309; font-size: clamp(17px,3.4vw,22px); box-shadow: 0 6px 16px rgba(245,158,11,.22);
+        }
+        .mul-tip .spark { font-size: 18px; }
+        .mul-tip b { color: #d97706; }
+        .mul-wrap { text-align: center; }
+        .add-line { color: var(--muted); font-size: clamp(15px,2.6vw,18px); font-weight: 850; }
+        .add-line .strong { color: #0d9488; }
+
+        /* legend */
+        .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 10px; font-size: 13px; color: var(--muted); font-weight: 800; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+        .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 720px) {
+            .tabs { grid-template-columns: repeat(2, 1fr); }
+            .topbar { display: block; }
+            .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .twocol { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">▦</div>
+                <div>
+                    <h1>周长与面积实验室</h1>
+                    <p class="sub">先数格子、数线段，理解周长和面积是什么；再到图形周长，最后用割补法推面积（人教三上→五上）</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-view="intro">直观认识<small>数线段·数格子</small></button>
+            <button class="tab" data-view="perimeter">图形周长<small>正方形→多边形</small></button>
+            <button class="tab" data-view="area-grid">面积·数格子<small>正方形→长方形</small></button>
+            <button class="tab" data-view="area-cut">面积·割补法<small>平行/三角/梯形</small></button>
+        </div>
+
+        <!-- ============ Tab1 直观认识 ============ -->
+        <section class="card view active" id="view-intro">
+            <div class="panel">
+                <h2>1 · 周长是“一圈有多长”，面积是“占了多少格”</h2>
+                <p class="lead">先不用任何公式。<b>周长</b>就是沿着图形<b>边线走一圈的总长度</b>——从<b>起点</b>出发、<b>顺时针</b>一段一段<b>按顺序数线段</b>，不重不漏；<b>面积</b>就是图形<b>盖住了多少个方格</b>——一个一个地<b>数格子</b>。下面在网格里画一个图形，点按钮亲手数一数。</p>
+
+                <div class="chip-row" id="introShapes"></div>
+
+                <div class="stage">
+                    <svg id="introSvg" viewBox="0 0 480 360" width="480" height="360"></svg>
+                    <div class="legend">
+                        <span><i style="background:#0d9488"></i>边线（数线段 → 周长）</span>
+                        <span><i style="background:#fcd34d"></i>方格（数格子 → 面积）</span>
+                        <span style="color:#94a3b8">每个小格 = 边长 1 的正方形</span>
+                    </div>
+                </div>
+
+                <div class="step-bar" style="justify-content:center;margin-top:14px">
+                    <button class="btn small primary" id="introCountPeri">① 顺时针走一段（按顺序数线段）</button>
+                    <button class="btn small primary" id="introCountArea">② 一格一格数（数面积）</button>
+                    <button class="btn small" id="introReset">重数</button>
+                </div>
+
+                <div class="count-display" id="introCount">点上面的按钮开始数</div>
+
+                <div class="readout">
+                    <span class="stat-pill">周长 = 走过 <b id="introPeri">0</b> 段 = <b id="introPeri2">0</b></span>
+                    <span class="stat-pill area">面积 = 盖住 <b id="introArea">0</b> 格 = <b id="introArea2">0</b></span>
+                </div>
+
+                <div class="hintbox" id="introHint">
+                    <b>周长</b>沿着边线数，单位是<b>长度</b>（如厘米）；<b>面积</b>数里面的方格，单位是<b>面积</b>（如平方厘米）。它们数的东西不一样——周长数“边”，面积数“面”。
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab2 图形周长 ============ -->
+        <section class="card view" id="view-perimeter">
+            <div class="panel">
+                <h2>2 · 图形的周长 = 把每条边加起来（相同的边用乘法更快）</h2>
+                <p class="lead">周长就是<b>所有边长之和</b>。先把每条边<b>一条一条加起来</b>；当图形有<b>相同长度的边</b>时，与其反复相加，不如用<b style="color:#d97706">乘法</b>简化（如正方形 边长×4、正多边形 边长×边数）——下面会把乘法捷径<b style="color:#d97706">高亮</b>出来。</p>
+
+                <div class="level-row">
+                    <span class="lbl">选图形：</span>
+                    <div class="seg" id="periShapeSeg"></div>
+                </div>
+
+                <div class="controls" id="periControls"></div>
+
+                <div class="stage">
+                    <svg id="periSvg" viewBox="0 0 480 360" width="480" height="360"></svg>
+                </div>
+
+                <div class="count-display" id="periSum"></div>
+
+                <div class="readout">
+                    <span class="stat-pill">周长 C = <b id="periTotal">0</b></span>
+                </div>
+
+                <div class="hintbox" id="periHint"></div>
+            </div>
+        </section>
+
+        <!-- ============ Tab3 面积·数格子 ============ -->
+        <section class="card view" id="view-area-grid">
+            <div class="panel">
+                <h2>3 · 面积起步：从正方形到长方形，先数格子</h2>
+                <p class="lead">面积就是<b>数里面有多少个单位方格</b>。先看<b>正方形</b>：每行同样多，有几行就是几个那么多。再看<b>长方形</b>：一行有 <b>长</b> 个方格，一共有 <b>宽</b> 行——不用一个个数，<b>每行个数 × 行数</b> 就能算出来。这就是“面积 = 长 × 宽”的来历。</p>
+
+                <div class="level-row">
+                    <span class="lbl">图形：</span>
+                    <div class="seg" id="gridShapeSeg">
+                        <button data-shape="square" class="active">正方形</button>
+                        <button data-shape="rect">长方形</button>
+                    </div>
+                </div>
+
+                <div class="controls" id="gridControls"></div>
+
+                <div class="toggle-row">
+                    <button class="tgl on" id="gridShowGrid">显示方格</button>
+                    <button class="tgl" id="gridShowNums">逐行标注个数</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="gridSvg" viewBox="0 0 480 360" width="480" height="360"></svg>
+                </div>
+
+                <div class="step-bar" style="justify-content:center">
+                    <button class="btn small primary" id="gridCountBtn">一行一行数过去</button>
+                    <button class="btn small" id="gridResetBtn">重数</button>
+                </div>
+
+                <div class="count-display" id="gridCount"></div>
+
+                <div class="readout">
+                    <span class="stat-pill">每行 <b id="gridCols">0</b> 个 × <b id="gridRows">0</b> 行</span>
+                    <span class="stat-pill area">面积 S = <b id="gridArea">0</b> 格</span>
+                </div>
+
+                <div class="hintbox" id="gridHint"></div>
+            </div>
+        </section>
+
+        <!-- ============ Tab4 面积·割补法 ============ -->
+        <section class="card view" id="view-area-cut">
+            <div class="panel">
+                <h2>4 · 割补法：把新图形“变”成会算的图形</h2>
+                <p class="lead">不认识的图形怎么求面积？<b>剪一刀平移</b>或<b>复制一个旋转拼上</b>，变成已经会算的图形，面积不变就能算了。<b>平行四边形</b>沿高剪下三角形平移→<b>长方形</b>；<b>三角形、梯形</b>则复制一个<b>绕中心旋转 180°</b>拼上→<b>平行四边形</b>，原图是它的一半。点<b>“割补演示”</b>看过程。</p>
+
+                <div class="level-row">
+                    <span class="lbl">图形：</span>
+                    <div class="seg" id="cutShapeSeg">
+                        <button data-shape="para" class="active">平行四边形</button>
+                        <button data-shape="tri">三角形</button>
+                        <button data-shape="trap">梯形</button>
+                    </div>
+                </div>
+
+                <div class="controls" id="cutControls"></div>
+
+                <div class="stage">
+                    <svg id="cutSvg" viewBox="0 0 520 340" width="520" height="340"></svg>
+                </div>
+
+                <div class="step-bar" style="justify-content:center">
+                    <button class="btn small primary" id="cutAnimBtn">▶ 割补演示</button>
+                    <button class="btn small" id="cutResetBtn">复原图形</button>
+                </div>
+
+                <div class="readout">
+                    <span class="stat-pill"><span id="cutRectLabel">拼成的图形</span>：<b id="cutRectW">0</b> × <b id="cutRectH">0</b></span>
+                    <span class="stat-pill area">面积 S = <b id="cutArea">0</b></span>
+                </div>
+
+                <div class="hintbox" id="cutHint"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    const $ = id => document.getElementById(id);
+    const SVGNS = "http://www.w3.org/2000/svg";
+    function el(tag, attrs) {
+        const e = document.createElementNS(SVGNS, tag);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        return e;
+    }
+    function clear(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+    // 整洁数字：去掉多余的 .0
+    function num(n) { return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString(); }
+
+    /* ============================================================
+       Tab 1 · 直观认识：网格上画图形，分别数线段(周长)、数格子(面积)
+       图形用「网格单元」描述：格子集合 cells + 占据的列宽行高
+       ============================================================ */
+    const GU = 40;       // 每格像素
+    const introOX = 60, introOY = 40; // 网格原点(像素)
+
+    // 形状：在网格里占据哪些格子(列col,行row 从0计)
+    const introShapes = {
+        rect: { name: "长方形", cells: rectCells(5, 3) },
+        square: { name: "正方形", cells: rectCells(4, 4) },
+        Lshape: { name: "L 形", cells: [
+            ...rectCells(2, 4),
+            { c: 2, r: 3 }, { c: 3, r: 3 }, { c: 4, r: 3 }
+        ] },
+        step: { name: "台阶形", cells: [
+            { c: 0, r: 0 }, { c: 1, r: 0 }, { c: 2, r: 0 }, { c: 3, r: 0 },
+            { c: 0, r: 1 }, { c: 1, r: 1 }, { c: 2, r: 1 },
+            { c: 0, r: 2 }, { c: 1, r: 2 }
+        ] }
+    };
+    function rectCells(w, h) {
+        const a = [];
+        for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) a.push({ c, r });
+        return a;
+    }
+    let introCur = "rect";
+    let introState = { periDone: 0, areaDone: 0 };
+
+    // 从格子集合算出外轮廓线段，并按【顺时针顺序】首尾相接排好，
+    // 让学生能沿着同一个方向、一段一段有顺序地数（有序、有逻辑）。
+    function outlineEdges(cells) {
+        const has = new Set(cells.map(p => p.c + "," + p.r));
+        // 每个填充格贡献 4 条有向边（顺时针：上→右→下→左，SVG 中 y 向下）。
+        // 只保留“外侧无格”的边即为外轮廓；它们天然首尾相接成一条闭合回路。
+        const dirEdges = new Map(); // key: 起点 "x,y" -> 终点 [x,y]
+        cells.forEach(({ c, r }) => {
+            // 上边：左→右（外侧 = 上方无格）
+            if (!has.has(c + "," + (r - 1)))       dirEdges.set(c + "," + r,         [c + 1, r]);
+            // 右边：上→下（外侧 = 右方无格）
+            if (!has.has((c + 1) + "," + r))       dirEdges.set((c + 1) + "," + r,   [c + 1, r + 1]);
+            // 下边：右→左（外侧 = 下方无格）
+            if (!has.has(c + "," + (r + 1)))       dirEdges.set((c + 1) + "," + (r + 1), [c, r + 1]);
+            // 左边：下→上（外侧 = 左方无格）
+            if (!has.has((c - 1) + "," + r))       dirEdges.set(c + "," + (r + 1),   [c, r]);
+        });
+        // 选一个起点：最上、再最左的顶点（视觉上的左上角），从这里开始顺时针走。
+        let start = null;
+        for (const key of dirEdges.keys()) {
+            const [x, y] = key.split(",").map(Number);
+            if (!start || y < start[1] || (y === start[1] && x < start[0])) start = [x, y];
+        }
+        // 沿有向边一段一段走回起点，得到有序的轮廓
+        const ordered = [];
+        let cur = start, guard = 0;
+        while (cur && guard++ < dirEdges.size + 2) {
+            const nxt = dirEdges.get(cur[0] + "," + cur[1]);
+            if (!nxt) break;
+            ordered.push([[cur[0], cur[1]], [nxt[0], nxt[1]]]);
+            if (nxt[0] === start[0] && nxt[1] === start[1]) break; // 回到起点，闭合
+            cur = nxt;
+        }
+        return ordered;
+    }
+    function px(c, r) { return [introOX + c * GU, introOY + r * GU]; }
+
+    function bounds(cells) {
+        let maxC = 0, maxR = 0;
+        cells.forEach(({ c, r }) => { maxC = Math.max(maxC, c + 1); maxR = Math.max(maxR, r + 1); });
+        return { maxC, maxR };
+    }
+
+    function drawIntro() {
+        const svg = $("introSvg");
+        clear(svg);
+        const sh = introShapes[introCur];
+        const cells = sh.cells;
+        const { maxC, maxR } = bounds(cells);
+        // 背景网格
+        for (let c = 0; c <= maxC + 1; c++) {
+            const [x] = px(c, 0);
+            svg.appendChild(el("line", { x1: x, y1: introOY, x2: x, y2: introOY + (maxR + 1) * GU, stroke: "#e2e8f0", "stroke-width": 1 }));
+        }
+        for (let r = 0; r <= maxR + 1; r++) {
+            const [, y] = px(0, r);
+            svg.appendChild(el("line", { x1: introOX, y1: y, x2: introOX + (maxC + 1) * GU, y2: y, stroke: "#e2e8f0", "stroke-width": 1 }));
+        }
+        // 已数的格子上色
+        cells.forEach(({ c, r }, i) => {
+            const [x, y] = px(c, r);
+            const rect = el("rect", {
+                x: x + 1, y: y + 1, width: GU - 2, height: GU - 2, rx: 3,
+                fill: i < introState.areaDone ? "#fcd34d" : "#fef9e7",
+                stroke: "#facc15", "stroke-width": 1, "data-cell": i
+            });
+            svg.appendChild(rect);
+        });
+        // 边线（已按顺时针顺序排好）
+        const edges = outlineEdges(cells);
+        edges.forEach((e, i) => {
+            const [a, b] = e;
+            const [x1, y1] = px(a[0], a[1]);
+            const [x2, y2] = px(b[0], b[1]);
+            const done = i < introState.periDone;
+            svg.appendChild(el("line", {
+                x1, y1, x2, y2,
+                stroke: done ? "#0d9488" : "#cbd5e1",
+                "stroke-width": done ? 6 : 4,
+                "stroke-linecap": "round", "data-edge": i
+            }));
+            // 给已数过的每一段标上顺序号，强化“按顺序走”的逻辑感
+            if (done) {
+                const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+                const horiz = y1 === y2;
+                const lx = mx + (horiz ? 0 : 13), ly = my + (horiz ? -8 : 4);
+                svg.appendChild(el("circle", { cx: lx, cy: ly - 4, r: 9, fill: "#0d9488" }));
+                svg.appendChild(text(lx, ly, String(i + 1), { fill: "#fff", "font-size": 11, "font-weight": 900 }));
+            }
+        });
+        // 起点标记 + 当前所在位置的“小箭头”，让方向感更直观
+        if (edges.length) {
+            const [s] = edges[0];
+            const [sx, sy] = px(s[0], s[1]);
+            svg.appendChild(el("circle", { cx: sx, cy: sy, r: 6, fill: "#fff", stroke: "#0f766e", "stroke-width": 3 }));
+            svg.appendChild(text(sx, sy - 14, "起点", { fill: "#0f766e", "font-size": 12, "font-weight": 900 }));
+            if (introState.periDone > 0 && introState.periDone < edges.length) {
+                // 在刚走到的位置画一个指向行进方向的箭头
+                const e = edges[introState.periDone - 1];
+                const [pa, pb] = e;
+                const [ax, ay] = px(pa[0], pa[1]), [bx, by] = px(pb[0], pb[1]);
+                const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+                const ux = dx / len, uy = dy / len;
+                const tip = [bx, by], back = [bx - ux * 12, by - uy * 12];
+                const perp = [-uy, ux];
+                svg.appendChild(el("polygon", {
+                    points: [tip, [back[0] + perp[0] * 6, back[1] + perp[1] * 6], [back[0] - perp[0] * 6, back[1] - perp[1] * 6]].map(p => p.join(",")).join(" "),
+                    fill: "#0f766e"
+                }));
+            }
+        }
+        // 数过的格子里写序号
+        cells.forEach(({ c, r }, i) => {
+            if (i < introState.areaDone) {
+                const [x, y] = px(c, r);
+                svg.appendChild(text(x + GU / 2, y + GU / 2 + 5, String(i + 1), { fill: "#92400e", "font-size": 14, "font-weight": 900 }));
+            }
+        });
+        // 更新读数
+        const totalEdges = edges.length, totalCells = cells.length;
+        $("introPeri").textContent = introState.periDone;
+        $("introPeri2").textContent = introState.periDone + (introState.periDone === totalEdges ? "（厘米）" : "");
+        $("introArea").textContent = introState.areaDone;
+        $("introArea2").textContent = introState.areaDone + (introState.areaDone === totalCells ? "（平方厘米）" : "");
+        introState._totalEdges = totalEdges;
+        introState._totalCells = totalCells;
+    }
+    function text(x, y, str, attrs) {
+        const t = el("text", Object.assign({ x, y, "text-anchor": "middle", "font-family": "Segoe UI, Microsoft YaHei, sans-serif" }, attrs || {}));
+        t.textContent = str;
+        return t;
+    }
+
+    function introStepPeri() {
+        const total = introState._totalEdges;
+        if (introState.periDone >= total) { introState.periDone = 0; }
+        introState.periDone++;
+        drawIntro();
+        if (introState.periDone >= total) {
+            $("introCount").innerHTML = `从起点出发，<b>顺时针</b>一段一段走，共走过 <b style="color:#0d9488">${total}</b> 段 <span class="small">→ 周长 = ${total} 厘米</span>`;
+            $("introHint").innerHTML = `走完一整圈回到起点！数边线一定要<b>从起点出发，朝同一个方向（这里是顺时针）一段接一段</b>地数，<b>不重不漏</b>——这就是周长。`;
+        } else {
+            $("introCount").innerHTML = `顺时针走第 <b style="color:#0d9488">${introState.periDone}</b> 段（沿着箭头方向，按顺序数）`;
+        }
+    }
+    function introStepArea() {
+        const total = introState._totalCells;
+        if (introState.areaDone >= total) { introState.areaDone = 0; }
+        introState.areaDone++;
+        drawIntro();
+        const last = $("introSvg").querySelector(`[data-cell="${introState.areaDone - 1}"]`);
+        if (last) { last.classList.add("pulse"); }
+        if (introState.areaDone >= total) {
+            $("introCount").innerHTML = `一共盖住 <b style="color:#d97706">${total}</b> 个方格 <span class="small">→ 面积 = ${total} 平方厘米</span>`;
+            $("introHint").innerHTML = `数满了！图形盖住的方格数就是<b>面积</b>，这里 = <b>${total} 平方厘米</b>。面积只看“里面的格子”，和边线一圈多长无关。`;
+        } else {
+            $("introCount").innerHTML = `一格一格数… 已数 <b style="color:#d97706">${introState.areaDone}</b> 格`;
+        }
+    }
+    function introReset() {
+        introState.periDone = 0; introState.areaDone = 0;
+        $("introCount").textContent = "点上面的按钮开始数";
+        $("introHint").innerHTML = `<b>周长</b>沿着边线数，单位是<b>长度</b>（如厘米）；<b>面积</b>数里面的方格，单位是<b>面积</b>（如平方厘米）。它们数的东西不一样——周长数“边”，面积数“面”。`;
+        drawIntro();
+    }
+    (function buildIntro() {
+        const row = $("introShapes");
+        Object.keys(introShapes).forEach((k, i) => {
+            const b = document.createElement("button");
+            b.className = "chip" + (i === 0 ? " active" : "");
+            b.textContent = introShapes[k].name;
+            b.addEventListener("click", () => {
+                introCur = k;
+                row.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === b));
+                introReset();
+            });
+            row.appendChild(b);
+        });
+    })();
+    $("introCountPeri").addEventListener("click", introStepPeri);
+    $("introCountArea").addEventListener("click", introStepArea);
+    $("introReset").addEventListener("click", introReset);
+    introReset();
+
+    /* ============================================================
+       Tab 2 · 图形周长：正方形/长方形/三角形/正多边形/任意多边形
+       每条边标长度，逐条相加；给出公式总结
+       ============================================================ */
+    const periShapes = {
+        square: { name: "正方形", ctrls: [["a", "边长", 2, 8, 4]] },
+        rect:   { name: "长方形", ctrls: [["a", "长", 2, 9, 6], ["b", "宽", 1, 6, 3]] },
+        tri:    { name: "三角形", ctrls: [["a", "边①", 2, 7, 5], ["b", "边②", 2, 7, 4], ["c", "边③", 2, 7, 3]] },
+        regp:   { name: "正多边形", ctrls: [["n", "边数", 3, 8, 5], ["a", "边长", 2, 6, 3]] },
+        poly:   { name: "任意五边形", ctrls: [["a", "边①", 2, 6, 4], ["b", "边②", 2, 6, 3], ["c", "边③", 2, 6, 5], ["d", "边④", 2, 6, 2], ["e", "边⑤", 2, 6, 4]] }
+    };
+    let periCur = "square";
+    let periVals = {};
+
+    function buildPeriControls() {
+        const box = $("periControls");
+        box.innerHTML = "";
+        periVals = {};
+        periShapes[periCur].ctrls.forEach(([key, label, min, max, def]) => {
+            periVals[key] = def;
+            const wrap = document.createElement("label");
+            wrap.className = "control";
+            wrap.innerHTML = `${label} <input type="range" min="${min}" max="${max}" value="${def}" data-k="${key}"><span class="val">${def}</span>`;
+            const inp = wrap.querySelector("input");
+            const val = wrap.querySelector(".val");
+            inp.addEventListener("input", () => { periVals[key] = +inp.value; val.textContent = inp.value; drawPeri(); });
+            box.appendChild(wrap);
+        });
+    }
+
+    // 像素缩放：把“单位长度”映射到画布
+    function drawPeri() {
+        const svg = $("periSvg");
+        clear(svg);
+        const cx = 240, cy = 175;
+        let pts = [], labels = [], total = 0, formula = "", summary = "", mulForm = null;
+
+        if (periCur === "square") {
+            const a = periVals.a, s = unitScale(a, a);
+            const w = a * s;
+            pts = [[cx - w/2, cy - w/2], [cx + w/2, cy - w/2], [cx + w/2, cy + w/2], [cx - w/2, cy + w/2]];
+            labels = [a, a, a, a];
+            total = 4 * a;
+            formula = `${a} + ${a} + ${a} + ${a} = ${total}`;
+            mulForm = `4 个 ${a} 相加，就是 ${a} × 4 = <b>${total}</b>`;
+            summary = `正方形 4 条边相等，与其一个个加，不如用<b>乘法</b>更快：<span class="formula">周长 = 边长 × 4 = ${a} × 4 = ${total}</span>`;
+        } else if (periCur === "rect") {
+            const a = periVals.a, b = periVals.b, s = unitScale(a, b);
+            const w = a * s, h = b * s;
+            pts = [[cx - w/2, cy - h/2], [cx + w/2, cy - h/2], [cx + w/2, cy + h/2], [cx - w/2, cy + h/2]];
+            labels = [a, b, a, b];
+            total = 2 * (a + b);
+            formula = `${a} + ${b} + ${a} + ${b} = ${total}`;
+            mulForm = `长和宽各有 2 条，先加再乘 2：(${a} + ${b}) × 2 = <b>${total}</b>`;
+            summary = `长方形对边相等，用<b>乘法</b>更快：<span class="formula">周长 = (长 + 宽) × 2 = (${a} + ${b}) × 2 = ${total}</span>`;
+        } else if (periCur === "tri") {
+            const { a, b, c } = periVals;
+            // 三边能否构成三角形
+            const ok = a + b > c && a + c > b && b + c > a;
+            const s = 26;
+            if (ok) {
+                // 用余弦定理定坐标：A在原点，B在(c,0)... 这里以 a=BC,b=CA,c=AB 简化为标注
+                // 放置：底边为 c(=labels)，顶点由 a,b 决定
+                const base = c, side1 = a, side2 = b;
+                // 顶点 x: (base^2 + side2^2 - side1^2)/(2 base)
+                const vx = (base*base + side2*side2 - side1*side1) / (2 * base);
+                const vy2 = side2*side2 - vx*vx;
+                const vy = vy2 > 0 ? Math.sqrt(vy2) : 0;
+                const P0 = [0, 0], P1 = [base, 0], P2 = [vx, -vy];
+                const all = [P0, P1, P2];
+                const minx = Math.min(...all.map(p=>p[0])), maxx = Math.max(...all.map(p=>p[0]));
+                const miny = Math.min(...all.map(p=>p[1])), maxy = Math.max(...all.map(p=>p[1]));
+                const sc = Math.min(300 / (maxx - minx || 1), 200 / (maxy - miny || 1));
+                const mvx = cx - (minx + maxx)/2 * sc, mvy = cy - (miny + maxy)/2 * sc;
+                pts = all.map(p => [p[0]*sc + mvx, p[1]*sc + mvy]);
+                labels = [base, side1, side2]; // 边 P0P1=c, P1P2=a, P2P0=b
+                // 重排 labels 与 pts 顺序对应：P0P1, P1P2, P2P0
+                labels = [c, a, b];
+                total = a + b + c;
+                formula = `${a} + ${b} + ${c} = ${total}`;
+                if (a === b && b === c) {
+                    // 等边三角形：可用乘法
+                    mulForm = `三条边都是 ${a}，等边三角形 → ${a} × 3 = <b>${total}</b>`;
+                    summary = `这是<b>等边三角形</b>，三条边相等，可以用<b>乘法</b>简化：<span class="formula">边长 × 3 = ${a} × 3 = ${total}</span>`;
+                } else if (a === b || b === c || a === c) {
+                    // 等腰三角形：两条相等的可合并成 ×2
+                    const eq = a === b ? a : (b === c ? b : a);
+                    const other = a === b ? c : (b === c ? a : b);
+                    mulForm = `两条腰都是 ${eq}，可以写成 ${eq} × 2 + ${other} = <b>${total}</b>`;
+                    summary = `这是<b>等腰三角形</b>，两条相等的边可合并成乘法：<span class="formula">${eq} × 2 + ${other} = ${total}</span>`;
+                } else {
+                    mulForm = null;
+                    summary = `三条边都不相等，没有可合并的边，只能<b>三条边逐条相加</b>：<span class="formula">${a} + ${b} + ${c} = ${total}</span>`;
+                }
+            } else {
+                drawPeriError(svg, `这三条边 ${a}、${b}、${c} 拼不成三角形`, "任意两边之和必须大于第三边。试试把最短的两条调大一点。");
+                $("periSum").textContent = "";
+                $("periTotal").textContent = "—";
+                $("periHint").innerHTML = `<b>三角形不等式</b>：任意两边之和 &gt; 第三边，才能围成三角形。`;
+                return;
+            }
+        } else if (periCur === "regp") {
+            const n = periVals.n, a = periVals.a;
+            const R = Math.min(140, 26 * a / (2 * Math.sin(Math.PI / n)) + 40);
+            const rr = Math.max(70, Math.min(150, 30 * a));
+            pts = [];
+            for (let i = 0; i < n; i++) {
+                const ang = -Math.PI/2 + i * 2 * Math.PI / n;
+                pts.push([cx + rr * Math.cos(ang), cy + rr * Math.sin(ang)]);
+            }
+            labels = new Array(n).fill(a);
+            total = n * a;
+            formula = `${Array(n).fill(a).join(" + ")} = ${total}`;
+            mulForm = `${n} 个 ${a} 相加，正多边形最适合用乘法：${a} × ${n} = <b>${total}</b>`;
+            summary = `正多边形所有边都相等，加 ${n} 次太麻烦，<b>乘法一步到位</b>：<span class="formula">周长 = 边长 × 边数 = ${a} × ${n} = ${total}</span>`;
+        } else if (periCur === "poly") {
+            const L = [periVals.a, periVals.b, periVals.c, periVals.d, periVals.e];
+            // 固定一个不规则五边形骨架，再按各边长摆放（用方向角近似）
+            const dirs = [0, 72, 150, 215, 290].map(d => d * Math.PI / 180);
+            let x = 0, y = 0; const raw = [[0,0]];
+            for (let i = 0; i < 4; i++) { x += L[i] * Math.cos(dirs[i]); y += L[i] * Math.sin(dirs[i]); raw.push([x, y]); }
+            const minx = Math.min(...raw.map(p=>p[0])), maxx = Math.max(...raw.map(p=>p[0]));
+            const miny = Math.min(...raw.map(p=>p[1])), maxy = Math.max(...raw.map(p=>p[1]));
+            const sc = Math.min(300 / (maxx - minx || 1), 220 / (maxy - miny || 1));
+            const mvx = cx - (minx + maxx)/2 * sc, mvy = cy - (miny + maxy)/2 * sc;
+            pts = raw.map(p => [p[0]*sc + mvx, p[1]*sc + mvy]);
+            labels = L;
+            total = L.reduce((s, v) => s + v, 0);
+            formula = `${L.join(" + ")} = ${total}`;
+            // 若恰好有相等的边，提示可以把相同的合并成乘法
+            const counts = {};
+            L.forEach(v => counts[v] = (counts[v] || 0) + 1);
+            const groups = Object.keys(counts).map(Number).sort((x, y) => y - x);
+            const repeated = groups.filter(v => counts[v] >= 2);
+            if (repeated.length) {
+                const parts = groups.map(v => counts[v] >= 2 ? `${v} × ${counts[v]}` : `${v}`);
+                mulForm = `有相同的边可以合并成乘法：${parts.join(" + ")} = <b>${total}</b>`;
+                summary = `任意多边形没有现成公式，但<b>遇到相同的边可以合并成乘法</b>再相加：<span class="formula">${parts.join(" + ")} = ${total}</span>`;
+            } else {
+                mulForm = null;
+                summary = `任意多边形没有公式，每条边都不一样，只能<b>把每条边都加起来</b>：<span class="formula">${L.join(" + ")} = ${total}</span>`;
+            }
+        }
+
+        // 画多边形 + 边长标注
+        const poly = el("polygon", { points: pts.map(p => p.join(",")).join(" "), fill: "rgba(13,148,136,.10)", stroke: "#0d9488", "stroke-width": 3, "stroke-linejoin": "round" });
+        svg.appendChild(poly);
+        const palette = ["#0d9488", "#2563eb", "#7c3aed", "#d97706", "#db2777", "#0891b2", "#65a30d", "#dc2626"];
+        for (let i = 0; i < pts.length; i++) {
+            const p1 = pts[i], p2 = pts[(i + 1) % pts.length];
+            const mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2;
+            // 标注向外偏移
+            const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+            const len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len, ny = dx / len;
+            // 朝远离中心方向
+            const toC = (mx - cx) * nx + (my - cy) * ny;
+            const off = toC >= 0 ? 16 : -16;
+            const lx = mx + nx * off, ly = my + ny * off + 4;
+            svg.appendChild(text(lx, ly, num(labels[i]), { fill: palette[i % palette.length], "font-size": 16, "font-weight": 900 }));
+            // 顶点小圆
+            svg.appendChild(el("circle", { cx: p1[0], cy: p1[1], r: 3.5, fill: "#0f766e" }));
+        }
+
+        // 先展示“逐条相加”，再用醒目的乘法简化条突出乘法
+        let sumHtml = `<div class="mul-wrap"><div class="add-line">逐条相加：<span class="strong">${formula}</span></div>`;
+        if (mulForm) {
+            sumHtml += `<div class="mul-tip"><span class="spark">✨</span>用乘法简化：${mulForm}</div>`;
+        } else {
+            sumHtml += `<div class="add-line" style="margin-top:6px;font-size:14px">（这个图形的边各不相同，没有可用乘法合并的捷径）</div>`;
+        }
+        sumHtml += `</div>`;
+        $("periSum").innerHTML = sumHtml;
+        $("periTotal").textContent = num(total);
+        $("periHint").innerHTML = summary;
+    }
+    function drawPeriError(svg, title, msg) {
+        svg.appendChild(text(240, 160, "✗ " + title, { fill: "#dc2626", "font-size": 18, "font-weight": 900 }));
+        svg.appendChild(text(240, 200, msg, { fill: "#64748b", "font-size": 13, "font-weight": 700 }));
+    }
+    function unitScale(a, b) {
+        const m = Math.max(a, b);
+        return Math.min(46, 280 / m);
+    }
+    (function buildPeriSeg() {
+        const seg = $("periShapeSeg");
+        Object.keys(periShapes).forEach((k, i) => {
+            const b = document.createElement("button");
+            b.textContent = periShapes[k].name;
+            if (i === 0) b.className = "active";
+            b.dataset.shape = k;
+            b.addEventListener("click", () => {
+                periCur = k;
+                seg.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+                buildPeriControls(); drawPeri();
+            });
+            seg.appendChild(b);
+        });
+    })();
+    buildPeriControls();
+    drawPeri();
+
+    /* ============================================================
+       Tab 3 · 面积·数格子：正方形 / 长方形
+       ============================================================ */
+    let gridShape = "square";
+    let gridVals = { a: 4, b: 6, h: 4 };
+    let gridShowGrid = true, gridShowNums = false;
+    let gridCounted = 0;
+    const gOX = 70, gOY = 40, gCell = 40;
+
+    function gridDims() {
+        if (gridShape === "square") return { cols: gridVals.a, rows: gridVals.a };
+        return { cols: gridVals.b, rows: gridVals.h };
+    }
+    function buildGridControls() {
+        const box = $("gridControls");
+        box.innerHTML = "";
+        const defs = gridShape === "square"
+            ? [["a", "边长", 1, 8]]
+            : [["b", "长", 1, 9], ["h", "宽", 1, 6]];
+        defs.forEach(([key, label, min, max]) => {
+            const wrap = document.createElement("label");
+            wrap.className = "control";
+            wrap.innerHTML = `${label} <input type="range" min="${min}" max="${max}" value="${gridVals[key]}" data-k="${key}"><span class="val">${gridVals[key]}</span>`;
+            const inp = wrap.querySelector("input"), val = wrap.querySelector(".val");
+            inp.addEventListener("input", () => { gridVals[key] = +inp.value; val.textContent = inp.value; gridCounted = 0; drawGrid(); });
+            box.appendChild(wrap);
+        });
+    }
+    function drawGrid() {
+        const svg = $("gridSvg");
+        clear(svg);
+        const { cols, rows } = gridDims();
+        const cell = Math.min(gCell, 360 / Math.max(cols, 1), 260 / Math.max(rows, 1));
+        const W = cols * cell, H = rows * cell;
+        const ox = 240 - W / 2, oy = 40;
+        // 外框填充
+        svg.appendChild(el("rect", { x: ox, y: oy, width: W, height: H, fill: "rgba(245,158,11,.10)", stroke: "#d97706", "stroke-width": 3, rx: 2 }));
+        // 方格
+        if (gridShowGrid) {
+            for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+                const idx = r * cols + c;
+                svg.appendChild(el("rect", {
+                    x: ox + c * cell, y: oy + r * cell, width: cell, height: cell,
+                    fill: idx < gridCounted ? "#fcd34d" : "rgba(255,255,255,.4)",
+                    stroke: "#f59e0b", "stroke-width": 1
+                }));
+                if (gridShowNums || idx < gridCounted) {
+                    svg.appendChild(text(ox + c*cell + cell/2, oy + r*cell + cell/2 + 4, String(idx + 1),
+                        { fill: idx < gridCounted ? "#92400e" : "#cbd5e1", "font-size": Math.min(14, cell*0.4), "font-weight": 800 }));
+                }
+            }
+        }
+        // 行/列 标注
+        // 顶部：每行个数
+        svg.appendChild(text(ox + W/2, oy - 14, `每行 ${cols} 个`, { fill: "#0f766e", "font-size": 14, "font-weight": 900 }));
+        // 左侧：行数
+        const lt = text(ox - 16, oy + H/2, `${rows} 行`, { fill: "#0f766e", "font-size": 14, "font-weight": 900 });
+        lt.setAttribute("transform", `rotate(-90 ${ox - 16} ${oy + H/2})`);
+        svg.appendChild(lt);
+        // 逐行括号标注（显示个数时画每行的"+"链）
+        if (gridShowNums) {
+            for (let r = 0; r < rows; r++) {
+                svg.appendChild(text(ox + W + 18, oy + r*cell + cell/2 + 4, `${cols}`, { fill: "#92400e", "font-size": 13, "font-weight": 800 }));
+            }
+            svg.appendChild(text(ox + W + 18, oy + H + 16, `共 ${rows} 行`, { fill: "#64748b", "font-size": 11, "font-weight": 700 }));
+        }
+
+        $("gridCols").textContent = cols;
+        $("gridRows").textContent = rows;
+        $("gridArea").textContent = cols * rows;
+
+        if (gridShape === "square") {
+            $("gridHint").innerHTML = `正方形每行 <b>${cols}</b> 个，正好 <b>${cols}</b> 行（行数 = 边长）。一共 ${cols} × ${cols} = <b>${cols*cols}</b> 格 → <span class="formula">正方形面积 = 边长 × 边长 = ${cols} × ${cols} = ${cols*cols}</span>`;
+        } else {
+            $("gridHint").innerHTML = `长方形每行 <b>${cols}</b> 个（= 长），有 <b>${rows}</b> 行（= 宽）。不用一个个数，<b>每行个数 × 行数</b> = ${cols} × ${rows} = <b>${cols*rows}</b> → <span class="formula">长方形面积 = 长 × 宽 = ${cols} × ${rows} = ${cols*rows}</span>`;
+        }
+    }
+    function gridCountStep() {
+        const { cols, rows } = gridDims();
+        const total = cols * rows;
+        if (gridCounted >= total) gridCounted = 0;
+        // 一次数一整行
+        gridCounted = Math.min(total, gridCounted + cols);
+        gridShowGrid = true; $("gridShowGrid").classList.add("on");
+        drawGrid();
+        const doneRows = Math.round(gridCounted / cols);
+        if (gridCounted >= total) {
+            $("gridCount").innerHTML = `数满了！${cols} + ${cols} + … （${rows} 个 ${cols}）= <b style="color:#d97706">${cols} × ${rows} = ${total}</b> 格`;
+        } else {
+            const sumExpr = Array(doneRows).fill(cols).join(" + ");
+            $("gridCount").innerHTML = `已数 <b style="color:#d97706">${doneRows}</b> 行：${sumExpr} = <b>${gridCounted}</b> 格`;
+        }
+    }
+    (function buildGridSeg() {
+        $("gridShapeSeg").querySelectorAll("button").forEach(b => {
+            b.addEventListener("click", () => {
+                gridShape = b.dataset.shape;
+                $("gridShapeSeg").querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+                gridCounted = 0; $("gridCount").textContent = "";
+                buildGridControls(); drawGrid();
+            });
+        });
+    })();
+    $("gridShowGrid").addEventListener("click", () => { gridShowGrid = !gridShowGrid; $("gridShowGrid").classList.toggle("on", gridShowGrid); drawGrid(); });
+    $("gridShowNums").addEventListener("click", () => { gridShowNums = !gridShowNums; $("gridShowNums").classList.toggle("on", gridShowNums); drawGrid(); });
+    $("gridCountBtn").addEventListener("click", gridCountStep);
+    $("gridResetBtn").addEventListener("click", () => { gridCounted = 0; $("gridCount").textContent = ""; drawGrid(); });
+    buildGridControls();
+    drawGrid();
+
+    /* ============================================================
+       Tab 4 · 面积·割补法：平行四边形 / 三角形 / 梯形
+       平行四边形：剪下三角形【平移】→ 长方形
+       三角形、梯形：复制一个【绕中心旋转 180°】拼上 → 平行四边形
+       ============================================================ */
+    let cutShape = "para";
+    let cutVals = { base: 6, height: 4, slant: 2, top: 3, tb: 6, th: 4 };
+    const cuScale = 36;       // 像素/单位
+    const cuOY = 250;         // 底边基准线 y
+
+    function buildCutControls() {
+        const box = $("cutControls");
+        box.innerHTML = "";
+        let defs;
+        if (cutShape === "para") defs = [["base", "底", 3, 9], ["height", "高", 2, 5], ["slant", "倾斜", 1, 4]];
+        else if (cutShape === "tri") defs = [["base", "底", 3, 9], ["height", "高", 2, 6]];
+        else defs = [["top", "上底", 2, 6], ["tb", "下底", 4, 9], ["th", "高", 2, 5]];
+        defs.forEach(([key, label, min, max]) => {
+            const wrap = document.createElement("label");
+            wrap.className = "control";
+            wrap.innerHTML = `${label} <input type="range" min="${min}" max="${max}" value="${cutVals[key]}" data-k="${key}"><span class="val">${cutVals[key]}</span>`;
+            const inp = wrap.querySelector("input"), val = wrap.querySelector(".val");
+            inp.addEventListener("input", () => { cutVals[key] = +inp.value; val.textContent = inp.value; drawCut(0); });
+            box.appendChild(wrap);
+        });
+    }
+
+    // t: 0=原图, 1=拼成的长方形；中间为动画插值
+    function drawCut(t) {
+        const svg = $("cutSvg");
+        clear(svg);
+        const cx = 260;
+        if (cutShape === "para") drawPara(svg, cx, t);
+        else if (cutShape === "tri") drawTri(svg, cx, t);
+        else drawTrap(svg, cx, t);
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    // 绕中心点 c 旋转 angle 弧度（真正的“转动”，点沿圆弧走，而不是直线缩放）
+    function rotateAround(p, c, angle) {
+        const dx = p[0] - c[0], dy = p[1] - c[1];
+        const cos = Math.cos(angle), sin = Math.sin(angle);
+        return [c[0] + dx * cos - dy * sin, c[1] + dx * sin + dy * cos];
+    }
+    function poly(svg, pts, fill, stroke, extra) {
+        const p = el("polygon", Object.assign({ points: pts.map(q => q.join(",")).join(" "), fill, stroke, "stroke-width": 2.5, "stroke-linejoin": "round" }, extra || {}));
+        svg.appendChild(p); return p;
+    }
+    function dline(svg, x1, y1, x2, y2) {
+        svg.appendChild(el("line", { x1, y1, x2, y2, stroke: "#0f766e", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+    }
+
+    function drawPara(svg, cx, t) {
+        const b = cutVals.base, h = cutVals.height, sl = cutVals.slant;
+        const W = b * cuScale, H = h * cuScale, S = sl * cuScale;
+        const left = cx - (W + S) / 2;
+        const yTop = cuOY - H, yBot = cuOY;
+        // 原平行四边形顶点（左下、右下、右上、左上）
+        // 拼成长方形时：把左边的直角三角形(宽 S)移到右边
+        // 长方形顶点：left..left+W
+        // 三角形：底边的左侧三角形 (left,yBot)-(left+S,yBot)? 用左斜边切。
+        // 平行四边形：A(left+S,yTop) B(left+S+W,yTop) C(left+W,yBot) D(left,yBot)
+        const A = [left + S, yTop], B = [left + S + W, yTop], C = [left + W, yBot], D = [left, yBot];
+        // 左侧三角形 cut = D, A, (left+S,yBot)
+        const Tbl = [left + S, yBot];
+        // 主体梯形(去掉左三角)：A, B, C, Tbl
+        const main = [A, B, C, Tbl];
+        // 三角形平移到右端：平移向量 = (+W, 0)
+        const triOrig = [D, A, Tbl];
+        const triMoved = triOrig.map(p => [lerp(p[0], p[0] + W, t), p[1]]);
+
+        // 目标长方形(参考虚线)
+        if (t > 0) {
+            poly(svg, [[left + S, yTop], [left + S + W, yTop], [left + S + W, yBot], [left + S, yBot]],
+                "none", "rgba(13,148,136,.35)", { "stroke-dasharray": "6 5", "stroke-width": 2 });
+        }
+        // 主体
+        poly(svg, main, "rgba(245,158,11,.18)", "#d97706");
+        // 移动的三角形
+        poly(svg, triMoved, "rgba(13,148,136,.30)", "#0d9488", { "stroke-dasharray": t > 0 && t < 1 ? "0" : "0" });
+        // 高（虚线）
+        dline(svg, left + S, yTop, left + S, yBot);
+        // 标注
+        svg.appendChild(text((A[0] + B[0]) / 2, yTop - 10, `底 = ${b}`, { fill: "#92400e", "font-size": 14, "font-weight": 900 }));
+        svg.appendChild(text(left + S - 14, (yTop + yBot) / 2, `高 ${h}`, { fill: "#0f766e", "font-size": 13, "font-weight": 900, "text-anchor": "end" }));
+
+        $("cutRectLabel").textContent = "拼成的长方形";
+        $("cutRectW").textContent = b;
+        $("cutRectH").textContent = h;
+        $("cutArea").textContent = b * h;
+        $("cutHint").innerHTML = t >= 1
+            ? `沿高剪下左边的直角三角形，<b>平移到右边</b>，正好拼成一个<b>长方形</b>：长 = 底 ${b}，宽 = 高 ${h}。面积没变，所以 <span class="formula">平行四边形面积 = 底 × 高 = ${b} × ${h} = ${b*h}</span>`
+            : `平行四边形<b>歪歪的</b>，不好数格子。点“割补演示”，沿<b>高</b>剪一刀，把三角形<b>平移</b>过去拼成长方形。`;
+    }
+
+    function drawTri(svg, cx, t) {
+        const b = cutVals.base, h = cutVals.height;
+        const W = b * cuScale, H = h * cuScale;
+        const left = cx - W / 2;
+        const yTop = cuOY - H, yBot = cuOY;
+        // 三角形顶点：底(left,yBot)-(left+W,yBot)，顶点取中上 apex
+        const apex = [left + W * 0.42, yTop];
+        const Bl = [left, yBot], Br = [left + W, yBot];
+        // 方法：旋转复制一个相同三角形拼成平行四边形 → 等价长方形面积 = b*h/2
+        // 动画：复制一个三角形旋转180°拼到上方，组成平行四边形，再示意取一半
+        // 简化：显示原三角 + 半透明拼合三角（t→1 出现），并显示长方形(底b,高h)虚线，面积写 ÷2
+        poly(svg, [Bl, Br, apex], "rgba(245,158,11,.20)", "#d97706");
+        // 复制一个相同三角形，绕右腰中点 M【旋转 180°】拼上，得到平行四边形
+        const M = [(Br[0] + apex[0]) / 2, (Br[1] + apex[1]) / 2];
+        const ghost = [Bl, Br, apex].map(p => rotateAround(p, M, Math.PI * t));
+        if (t > 0.02) poly(svg, ghost, "rgba(13,148,136,.22)", "#0d9488", { "stroke-dasharray": "5 4" });
+        // 旋转中心标记
+        if (t > 0 && t < 1) svg.appendChild(el("circle", { cx: M[0], cy: M[1], r: 4, fill: "#0f766e" }));
+        // 高
+        dline(svg, apex[0], yTop, apex[0], yBot);
+        svg.appendChild(text((Bl[0] + Br[0]) / 2, yBot + 20, `底 = ${b}`, { fill: "#92400e", "font-size": 14, "font-weight": 900 }));
+        svg.appendChild(text(apex[0] - 12, (yTop + yBot) / 2, `高 ${h}`, { fill: "#0f766e", "font-size": 13, "font-weight": 900, "text-anchor": "end" }));
+
+        $("cutRectLabel").textContent = "拼成的平行四边形";
+        $("cutRectW").textContent = b;
+        $("cutRectH").textContent = h;
+        $("cutArea").textContent = num(b * h / 2);
+        $("cutHint").innerHTML = t >= 1
+            ? `复制一个完全一样的三角形，<b>绕中心旋转 180°</b>拼上，得到一个<b>平行四边形</b>（底 ${b}、高 ${h}）。一个三角形正好是它的<b>一半</b>：<span class="formula">三角形面积 = 底 × 高 ÷ 2 = ${b} × ${h} ÷ 2 = ${num(b*h/2)}</span>`
+            : `三角形的面积怎么算？点“割补演示”——复制一个相同的三角形，<b>绕中心旋转 180°</b>拼上，得到一个<b>平行四边形</b>，三角形就是它的一半。`;
+    }
+
+    function drawTrap(svg, cx, t) {
+        const top = cutVals.top, tb = cutVals.tb, h = cutVals.th;
+        const Wt = top * cuScale, Wb = tb * cuScale, H = h * cuScale;
+        const yTop = cuOY - H, yBot = cuOY;
+        // 居中梯形：下底 tb，上底 top
+        const blx = cx - Wb / 2, brx = cx + Wb / 2;
+        const tlx = cx - Wt / 2, trx = cx + Wt / 2;
+        const TL = [tlx, yTop], TR = [trx, yTop], BR = [brx, yBot], BL = [blx, yBot];
+        poly(svg, [TL, TR, BR, BL], "rgba(245,158,11,.20)", "#d97706");
+        // 复制一个相同梯形，绕右腰中点 M【旋转 180°】拼上，得到平行四边形
+        // 长 = (上底+下底)，高 = h
+        const M = [(TR[0] + BR[0]) / 2, (TR[1] + BR[1]) / 2];
+        const ghost = [TL, TR, BR, BL].map(p => rotateAround(p, M, Math.PI * t));
+        if (t > 0.02) poly(svg, ghost, "rgba(13,148,136,.22)", "#0d9488", { "stroke-dasharray": "5 4" });
+        if (t > 0 && t < 1) svg.appendChild(el("circle", { cx: M[0], cy: M[1], r: 4, fill: "#0f766e" }));
+        // 高标注（左侧虚线）
+        dline(svg, cx - Wb/2 - 6, yTop, cx - Wb/2 - 6, yBot);
+        svg.appendChild(text((TL[0]+TR[0])/2, yTop - 10, `上底 = ${top}`, { fill: "#92400e", "font-size": 13, "font-weight": 900 }));
+        svg.appendChild(text(cx, yBot + 20, `下底 = ${tb}`, { fill: "#92400e", "font-size": 13, "font-weight": 900 }));
+        svg.appendChild(text(cx - Wb/2 - 16, (yTop+yBot)/2, `高 ${h}`, { fill: "#0f766e", "font-size": 12, "font-weight": 900, "text-anchor": "end" }));
+
+        const area = (top + tb) * h / 2;
+        $("cutRectLabel").textContent = "拼成的平行四边形";
+        $("cutRectW").textContent = `${top}+${tb}`;
+        $("cutRectH").textContent = h;
+        $("cutArea").textContent = num(area);
+        $("cutHint").innerHTML = t >= 1
+            ? `复制一个相同的梯形，<b>绕中心旋转 180°</b>拼上，得到<b>平行四边形</b>：底 = 上底 + 下底 = ${top} + ${tb} = ${top+tb}，高 = ${h}。梯形是它的一半：<span class="formula">梯形面积 = (上底 + 下底) × 高 ÷ 2 = (${top} + ${tb}) × ${h} ÷ 2 = ${num(area)}</span>`
+            : `梯形上下底不一样长。点“割补演示”——复制一个梯形<b>绕中心旋转 180°</b>拼上，得到底为 (上底+下底) 的<b>平行四边形</b>，梯形面积是它的一半。`;
+    }
+
+    // 动画驱动
+    let cutAnim = null;
+    function runCutAnim() {
+        if (cutAnim) cancelAnimationFrame(cutAnim);
+        const dur = 1100;
+        let start = null;
+        function frame(ts) {
+            if (start === null) start = ts;
+            const t = Math.min(1, (ts - start) / dur);
+            const ease = t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+            drawCut(ease);
+            if (t < 1) cutAnim = requestAnimationFrame(frame);
+        }
+        cutAnim = requestAnimationFrame(frame);
+    }
+    (function buildCutSeg() {
+        $("cutShapeSeg").querySelectorAll("button").forEach(b => {
+            b.addEventListener("click", () => {
+                cutShape = b.dataset.shape;
+                $("cutShapeSeg").querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+                buildCutControls(); drawCut(0);
+            });
+        });
+    })();
+    $("cutAnimBtn").addEventListener("click", runCutAnim);
+    $("cutResetBtn").addEventListener("click", () => { if (cutAnim) cancelAnimationFrame(cutAnim); drawCut(0); });
+    buildCutControls();
+    drawCut(0);
+
+    /* ============================================================
+       标签切换
+       ============================================================ */
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === btn));
+            document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + btn.dataset.view));
+        });
+    });
+    </script>
+</body>
+</html>

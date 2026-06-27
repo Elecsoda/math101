@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四则混合运算顺序 | Math101</title>
+    <style>
+        :root {
+            --bg: #f5f7ff;
+            --card: #ffffff;
+            --ink: #172033;
+            --muted: #667085;
+            --line: #dfe4ee;
+            --purple: #6d4aff;
+            --purple-dark: #5234dc;
+            --purple-soft: #f0edff;
+            --blue: #2878ff;
+            --blue-soft: #eaf2ff;
+            --amber: #f3a712;
+            --amber-soft: #fff6dc;
+            --green: #16a36a;
+            --green-soft: #e9fbf3;
+            --red: #df4b55;
+            --red-soft: #fff0f1;
+            --shadow: 0 18px 48px rgba(42, 49, 83, .10);
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 10% 0, rgba(109, 74, 255, .13), transparent 28rem),
+                radial-gradient(circle at 100% 35%, rgba(40, 120, 255, .09), transparent 26rem),
+                var(--bg);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button { font: inherit; cursor: pointer; }
+        button:focus-visible, a:focus-visible { outline: 3px solid rgba(40,120,255,.3); outline-offset: 2px; }
+        .page { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 44px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 13px; }
+        .brand-icon {
+            width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center;
+            color: white; background: linear-gradient(135deg, var(--purple), var(--blue));
+            box-shadow: 0 10px 24px rgba(83, 52, 220, .25); font-size: 22px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(23px, 3.4vw, 32px); letter-spacing: -.5px; }
+        .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .home-link {
+            display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid var(--line);
+            border-radius: 11px; background: rgba(255,255,255,.82); color: #44506a; text-decoration: none;
+            font-size: 14px; font-weight: 800; white-space: nowrap;
+        }
+        .home-link:hover { color: var(--purple); border-color: #c9c0ff; }
+
+        .tabs {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 7px;
+            background: rgba(255,255,255,.9); border: 1px solid var(--line); border-radius: 18px;
+            box-shadow: 0 7px 24px rgba(35,44,80,.06); position: sticky; top: 8px; z-index: 20;
+        }
+        .tab {
+            border: 0; border-radius: 13px; background: transparent; color: var(--muted);
+            padding: 11px 8px; font-weight: 900; line-height: 1.25;
+        }
+        .tab small { display: block; margin-top: 2px; font-size: 11px; opacity: .8; }
+        .tab.active { color: white; background: linear-gradient(135deg, var(--purple), var(--purple-dark)); box-shadow: 0 8px 18px rgba(83,52,220,.22); }
+        .view { display: none; margin-top: 18px; animation: rise .22s ease; }
+        .view.active { display: block; }
+        @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        .card { background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+        .panel { padding: clamp(18px, 3vw, 28px); }
+        .section-head { margin-bottom: 18px; }
+        .eyebrow { margin: 0 0 5px; color: var(--purple); font-size: 12px; font-weight: 950; letter-spacing: 1.4px; }
+        h2 { margin: 0; font-size: clamp(21px, 3vw, 28px); }
+        .lead { margin: 7px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+
+        .rule-hero {
+            padding: clamp(20px, 4vw, 34px); overflow: hidden; position: relative;
+            background: linear-gradient(135deg, #271b64, #6042df 58%, #2878ff); color: white;
+            border-radius: 22px; box-shadow: 0 20px 46px rgba(68,47,176,.25);
+        }
+        .rule-hero::after { content: "{ [ ( ) ] }"; position: absolute; right: 22px; bottom: -15px; color: rgba(255,255,255,.09); font: 950 clamp(46px,9vw,100px)/1 monospace; }
+        .rule-hero h2 { position: relative; z-index: 1; font-size: clamp(24px,4vw,38px); }
+        .rule-hero p { position: relative; z-index: 1; max-width: 760px; margin: 9px 0 0; color: #e6e3ff; line-height: 1.7; }
+        .formula-strip { display: flex; flex-wrap: wrap; gap: 8px; position: relative; z-index: 1; margin-top: 18px; }
+        .formula-chip { padding: 8px 11px; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; background: rgba(255,255,255,.12); font-size: 13px; font-weight: 850; }
+        .rules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; margin-top: 16px; }
+        .rule-card { padding: 18px; border-radius: 18px; background: white; border: 1px solid var(--line); box-shadow: 0 10px 28px rgba(37,48,79,.07); }
+        .rule-no { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; margin-bottom: 12px; font-weight: 950; }
+        .rule-card:nth-child(1) .rule-no { background: var(--purple-soft); color: var(--purple); }
+        .rule-card:nth-child(2) .rule-no { background: var(--amber-soft); color: #a96900; }
+        .rule-card:nth-child(3) .rule-no { background: var(--blue-soft); color: var(--blue); }
+        .rule-card h3 { margin: 0 0 5px; font-size: 17px; }
+        .rule-card p { margin: 0; color: var(--muted); line-height: 1.65; font-size: 14px; }
+        .rule-card strong { color: var(--ink); }
+
+        .bracket-board { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; margin-top: 18px; }
+        .bracket-box, .mistake-box { padding: 21px; }
+        .bracket-title { margin: 0 0 13px; font-size: 17px; }
+        .nesting { display: flex; align-items: center; justify-content: center; min-height: 150px; padding: 14px; border-radius: 15px; background: #f8f7ff; overflow-x: auto; }
+        .brace { padding: 16px; border: 3px solid #8070db; border-radius: 18px; color: #5641c6; font: 900 clamp(18px,3vw,27px)/1.5 monospace; white-space: nowrap; }
+        .square { display: inline-block; padding: 11px; border: 3px solid #4585df; border-radius: 13px; color: #1f67c7; }
+        .round { display: inline-block; padding: 6px 9px; border: 3px solid #eea921; border-radius: 999px; color: #a76800; background: #fff9e9; }
+        .nest-caption { margin: 11px 0 0; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
+        .nest-caption b { color: var(--purple); }
+        .mistake-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+        .mistake-row:last-child { border: 0; }
+        .math { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-weight: 900; letter-spacing: .2px; }
+        .wrong { color: var(--red); text-decoration: line-through; text-decoration-thickness: 2px; }
+        .right { color: var(--green); }
+        .arrow { color: #a2a9b7; }
+        .mini-note { margin-top: 13px; padding: 10px 12px; border-radius: 11px; color: #795500; background: var(--amber-soft); font-size: 13px; line-height: 1.55; }
+        .method-line { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+        .method-step { padding: 13px 9px; border-radius: 14px; text-align: center; background: #f7f8fc; border: 1px solid var(--line); font-weight: 900; font-size: 14px; }
+        .method-step span { display: block; width: 25px; height: 25px; line-height: 25px; margin: 0 auto 6px; border-radius: 50%; color: white; background: var(--purple); font-size: 12px; }
+
+        .demo-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .picker-btn, .mode-btn {
+            border: 1px solid var(--line); background: white; color: #59647a; border-radius: 11px;
+            padding: 9px 13px; font-weight: 850; font-size: 13px;
+        }
+        .picker-btn:hover, .mode-btn:hover { border-color: #bdb2ff; color: var(--purple); }
+        .picker-btn.active, .mode-btn.active { color: white; border-color: var(--purple); background: var(--purple); }
+        .demo-stage { padding: clamp(17px,3vw,25px); background: linear-gradient(180deg,#fbfaff,#f7f9ff); border: 1px solid #ddd8fb; border-radius: 18px; }
+        .demo-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+        .demo-tag { display: inline-block; margin-bottom: 7px; padding: 4px 9px; color: var(--purple); background: var(--purple-soft); border-radius: 999px; font-size: 12px; font-weight: 900; }
+        .demo-title { margin: 0; font-size: 18px; }
+        .step-count { flex: 0 0 auto; color: var(--muted); background: white; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 800; }
+        .step-list { margin-top: 18px; display: grid; gap: 9px; }
+        .step-row { display: grid; grid-template-columns: 31px minmax(0,1fr); gap: 11px; align-items: start; opacity: .42; }
+        .step-row.shown { opacity: 1; animation: rise .2s ease; }
+        .step-row.current .step-num { background: var(--purple); color: white; }
+        .step-row.current .step-content { border-color: #bfb4ff; background: white; box-shadow: 0 8px 20px rgba(83,52,220,.09); }
+        .step-num { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 9px; background: #e9ebf2; color: #768096; font-size: 12px; font-weight: 950; }
+        .step-content { min-width: 0; padding: 11px 14px; border: 1px solid transparent; border-radius: 13px; }
+        .step-expression { font-size: clamp(18px,3.3vw,27px); overflow-x: auto; white-space: nowrap; }
+        .step-note { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+        .focus { display: inline-block; padding: 1px 5px; border-radius: 7px; color: #864f00; background: #ffebaa; box-shadow: inset 0 0 0 2px #f7c74f; }
+        .answer { color: var(--green); background: var(--green-soft); padding: 2px 7px; border-radius: 8px; }
+        .demo-actions { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 18px; }
+        .btn { border: 1px solid var(--line); border-radius: 11px; padding: 10px 16px; background: white; color: #4c566b; font-weight: 900; }
+        .btn:hover { border-color: #bdb2ff; color: var(--purple); }
+        .btn.primary { color: white; border-color: var(--purple); background: var(--purple); }
+        .btn.primary:hover { background: var(--purple-dark); }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+        .demo-rule { margin-top: 14px; padding: 11px 14px; color: #4b3d91; background: var(--purple-soft); border-radius: 12px; font-size: 13px; line-height: 1.6; }
+        .source-note { margin-top: 14px; padding: 12px 14px; border-left: 4px solid #9aa4b7; border-radius: 0 11px 11px 0; background: #f7f8fb; color: var(--muted); font-size: 12px; line-height: 1.65; }
+        .source-note b { color: #4d586d; }
+
+        .practice-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .mode-group { display: flex; gap: 7px; }
+        .score { color: var(--muted); font-size: 13px; font-weight: 850; }
+        .progress-track { height: 8px; background: #eceef4; border-radius: 999px; overflow: hidden; margin-bottom: 20px; }
+        .progress-bar { height: 100%; border-radius: inherit; background: linear-gradient(90deg,var(--purple),var(--blue)); transition: width .3s ease; }
+        .question-card { padding: clamp(18px,3vw,28px); border-radius: 18px; border: 1px solid var(--line); background: #fafbff; }
+        .question-kicker { color: var(--purple); font-size: 12px; font-weight: 950; }
+        .question-text { margin: 8px 0 4px; font-size: clamp(21px,4vw,32px); overflow-x: auto; white-space: nowrap; }
+        .question-tip { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
+        .choice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .choice {
+            min-height: 54px; border: 2px solid var(--line); border-radius: 13px; background: white;
+            color: #39445a; padding: 10px 12px; font-weight: 900; font-size: 16px;
+        }
+        .choice:hover:not(:disabled) { border-color: #bdb2ff; color: var(--purple); transform: translateY(-1px); }
+        .choice.correct { color: #087a4c; border-color: #54c996; background: var(--green-soft); }
+        .choice.wrong-choice { color: #b42d39; border-color: #f09aa1; background: var(--red-soft); }
+        .feedback { margin-top: 14px; border-radius: 13px; padding: 13px 15px; line-height: 1.65; font-size: 14px; }
+        .feedback.ok { color: #0b7049; background: var(--green-soft); border: 1px solid #a6e5c9; }
+        .feedback.bad { color: #9b2933; background: var(--red-soft); border: 1px solid #f0b8bd; }
+        .solution { display: block; margin-top: 5px; color: #505b70; }
+        .next-row { display: flex; justify-content: flex-end; margin-top: 13px; }
+
+        .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .quick-quiz, .tricks { padding: clamp(18px,3vw,24px); }
+        .target { display: inline-flex; align-items: center; gap: 8px; margin: 8px 0 14px; padding: 8px 12px; border-radius: 11px; color: #754800; background: var(--amber-soft); font-weight: 900; }
+        .quick-choices { display: grid; gap: 8px; }
+        .quick-choice { text-align: left; border: 2px solid var(--line); background: white; border-radius: 12px; padding: 11px 13px; color: #3a455b; font-size: 16px; }
+        .quick-choice:hover:not(:disabled) { border-color: #f0bf55; background: #fffaf0; }
+        .quick-choice.correct { border-color: #54c996; background: var(--green-soft); color: #087a4c; }
+        .quick-choice.wrong-choice { border-color: #f09aa1; background: var(--red-soft); color: #b42d39; }
+        .quick-feedback { min-height: 48px; margin-top: 12px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+        .quick-feedback b { color: var(--green); }
+        .trick-list { display: grid; gap: 9px; }
+        .trick { border: 1px solid var(--line); border-radius: 13px; overflow: hidden; background: #fff; }
+        .trick button { width: 100%; display: flex; justify-content: space-between; gap: 10px; border: 0; padding: 12px 14px; background: #fafbff; color: var(--ink); text-align: left; font-weight: 900; }
+        .trick button:hover { background: var(--purple-soft); }
+        .trick-answer { display: none; padding: 12px 14px; color: #4d586d; border-top: 1px solid var(--line); line-height: 1.65; font-size: 13px; }
+        .trick.open .trick-answer { display: block; animation: rise .2s ease; }
+        .trick.open button { color: var(--purple); }
+        .trick-eq { display: block; margin-bottom: 4px; color: var(--green); font-size: 16px; }
+        .quick-law { margin-top: 13px; border-radius: 12px; padding: 12px 14px; background: var(--blue-soft); color: #245aa5; font-size: 13px; line-height: 1.6; }
+        .footer { margin-top: 22px; text-align: center; color: #98a0b1; font-size: 12px; }
+
+        @media (max-width: 800px) {
+            .rules-grid { grid-template-columns: 1fr; }
+            .bracket-board, .quick-grid { grid-template-columns: 1fr; }
+            .method-line { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 560px) {
+            .page { width: min(100% - 20px, 1120px); padding-top: 14px; }
+            .brand-icon { width: 42px; height: 42px; }
+            .subtitle { display: none; }
+            .home-link span { display: none; }
+            .tabs { top: 4px; gap: 3px; padding: 4px; }
+            .tab { padding: 9px 3px; font-size: 12px; }
+            .tab small { display: none; }
+            .choice-grid { grid-template-columns: 1fr; }
+            .step-row { grid-template-columns: 27px minmax(0,1fr); gap: 5px; }
+            .step-content { padding: 9px 8px; }
+            .demo-actions { gap: 6px; }
+            .btn { padding: 9px 11px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon" aria-hidden="true">{ }</div>
+            <div>
+                <h1>四则混合运算顺序</h1>
+                <p class="subtitle">看懂顺序 · 一步一步算 · 巧用括号速算</p>
+            </div>
+        </div>
+        <a class="home-link" href="/" aria-label="返回工具主页">⌂ <span>返回主页</span></a>
+    </header>
+
+    <nav class="tabs" aria-label="学习模块">
+        <button class="tab active" data-tab="rules">① 学规则<small>先建立顺序</small></button>
+        <button class="tab" data-tab="demo">② 看演示<small>逐步算例题</small></button>
+        <button class="tab" data-tab="practice">③ 闯关判断<small>复杂题找第一步</small></button>
+        <button class="tab" data-tab="quick">④ 括号速算<small>添括号与巧分组</small></button>
+    </nav>
+
+    <main>
+        <section class="view active" id="view-rules">
+            <div class="rule-hero">
+                <h2>只记一句：括号 → 乘除 → 加减</h2>
+                <p>括号从最里层向外；乘和除是同一级，加和减也是同一级。同一级相遇时，不挑“喜欢的”先算，要从左往右。</p>
+                <div class="formula-strip">
+                    <span class="formula-chip">① 最里层括号</span>
+                    <span class="formula-chip">② 乘、除从左到右</span>
+                    <span class="formula-chip">③ 加、减从左到右</span>
+                </div>
+            </div>
+
+            <div class="rules-grid">
+                <article class="rule-card">
+                    <div class="rule-no">1</div>
+                    <h3>有括号：从里向外</h3>
+                    <p>先找最里面的一层。规范嵌套时通常是 <strong>小括号（ ）→ 中括号［ ］→ 大括号｛ ｝</strong>。</p>
+                </article>
+                <article class="rule-card">
+                    <div class="rule-no">2</div>
+                    <h3>无括号：先乘除</h3>
+                    <p>乘法和除法级别相同，一段连续乘除要<strong>从左往右</strong>。被加减号隔开的多个乘除块，可分别先算。</p>
+                </article>
+                <article class="rule-card">
+                    <div class="rule-no">3</div>
+                    <h3>最后：加减从左往右</h3>
+                    <p>加法和减法也是同一级。前面的乘除都完成后，再按<strong>从左往右</strong>完成加减。</p>
+                </article>
+            </div>
+
+            <div class="bracket-board">
+                <article class="card bracket-box">
+                    <h3 class="bracket-title">括号像套娃：先打开最里面</h3>
+                    <div class="nesting" aria-label="大括号、中括号、小括号嵌套示意">
+                        <div class="brace">{ 96 − <span class="square">[ 28 + <span class="round">(14 − 8)</span> × 3 ]</span> }</div>
+                    </div>
+                    <p class="nest-caption">先算 <b>(14 − 8)</b>，再完成中括号，最后完成大括号。<br>真正的原则是“最里层优先”，不是看谁长得更圆。</p>
+                </article>
+                <article class="card mistake-box">
+                    <h3 class="bracket-title">两个最容易踩的坑</h3>
+                    <div class="mistake-row">
+                        <span class="math">18 − 6 + 2</span><span class="arrow">→</span>
+                        <span><span class="wrong">10</span>　<span class="right">14 ✓</span></span>
+                    </div>
+                    <div class="mistake-row">
+                        <span class="math">24 ÷ 6 × 2</span><span class="arrow">→</span>
+                        <span><span class="wrong">2</span>　<span class="right">8 ✓</span></span>
+                    </div>
+                    <div class="mini-note">加减同级、乘除同级，都从左向右。<b>“先乘后除、先加后减”是错误口诀。</b></div>
+                </article>
+            </div>
+
+            <div class="method-line" aria-label="四步计算法">
+                <div class="method-step"><span>1</span>看：找最里层</div>
+                <div class="method-step"><span>2</span>圈：标出先算处</div>
+                <div class="method-step"><span>3</span>算：处理优先区域</div>
+                <div class="method-step"><span>4</span>抄：其余原样落下</div>
+            </div>
+        </section>
+
+        <section class="view" id="view-demo">
+            <div class="card panel">
+                <div class="section-head">
+                    <p class="eyebrow">STEP BY STEP</p>
+                    <h2>例题逐步演示</h2>
+                    <p class="lead">黄色框表示“这一轮优先处理这里”。如果有多个互不相连的乘除块，可以分别算出，再进行加减。</p>
+                </div>
+                <div class="demo-picker" id="demo-picker"></div>
+                <div id="demo-content"></div>
+                <div class="source-note"><b>例型编排参考：</b>义务教育教科书数学四年级上册“整数四则混合运算”先安排多个乘法结果相加，再练习乘除位于减号两侧、乘除出现在算式右侧等变化；人教版二年级下册“两级混合运算”教案也特别指出，“乘在后面”是学生容易出错的情形。本工具据此增加对比与反直觉演示，数字作了适龄调整。</div>
+            </div>
+        </section>
+
+        <section class="view" id="view-practice">
+            <div class="card panel">
+                <div class="section-head">
+                    <p class="eyebrow">ORDER CHALLENGE</p>
+                    <h2>复杂题顺序闯关</h2>
+                    <p class="lead">先练“第一步算哪里”，再挑战完整结果。答错也没关系，解析会把计算路线完整亮出来。</p>
+                </div>
+                <div id="practice-content"></div>
+            </div>
+        </section>
+
+        <section class="view" id="view-quick">
+            <div class="section-head">
+                <p class="eyebrow">BRACKET MAGIC</p>
+                <h2>括号不只是“先算”——它还能让计算变聪明</h2>
+                <p class="lead">一类题用括号改变顺序、得到新结果；另一类题用括号记录合理分组，把难算变成凑整。</p>
+            </div>
+            <div class="quick-grid">
+                <article class="card quick-quiz" id="quick-quiz"></article>
+                <article class="card tricks">
+                    <h3 class="bracket-title">点开看：括号怎样帮助速算</h3>
+                    <p class="lead">先在心里找“好朋友”：能凑整的数，常常值得用括号分成一组。</p>
+                    <div class="trick-list" id="trick-list"></div>
+                    <div class="quick-law"><b>注意：</b>重新添、去或移动括号时，必须有运算律或运算性质作依据，保证算式的值不变；不能为了好算随意搬括号。</div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">Math101 · 四则混合运算顺序学习工具</footer>
+</div>
+
+<script>
+    const demos = [
+        {
+            label: '乘法在右侧', title: '不能看见加号就从左开始',
+            rule: '先扫描完整算式。即使乘法写在最右边，也要在左边的加法之前完成。',
+            steps: [
+                { exp: '7 + <span class="focus">4 × 3</span>', note: '常见直觉会先算左边的 7 + 4，但右侧乘法优先级更高。' },
+                { exp: '<span class="focus">7 + 12</span>', note: '乘法完成后，回到加法。' },
+                { exp: '= <span class="answer">19</span>', note: '正确结果是 19，不是 33。' }
+            ]
+        },
+        {
+            label: '多乘除相加', title: '三个“乘除块”先分别算',
+            rule: '加号把算式分成三个独立的乘除块。先分别求出每一块，再把三个结果从左往右相加。',
+            steps: [
+                { exp: '<span class="focus">8 × 7</span> + <span class="focus">54 ÷ 6</span> + <span class="focus">5 × 3</span>', note: '这一轮有三个互不相连的优先区域：两个乘法块和一个除法块。' },
+                { exp: '<span class="focus">56 + 9</span> + 15', note: '乘除都完成了，现在进入加法层，并从左向右。' },
+                { exp: '<span class="focus">65 + 15</span>', note: '继续完成第二个加法。' },
+                { exp: '= <span class="answer">80</span>', note: '正确结果是 80。不要跨过运算符，把 7 + 54 或 6 + 5 拼成一组。' }
+            ]
+        },
+        {
+            label: '乘除夹着减号', title: '减号两侧都要先处理',
+            rule: '减号左右各有一个乘除块。两边的乘除都比中间的减法优先，得到两个结果后再相减。',
+            steps: [
+                { exp: '<span class="focus">240 ÷ 6</span> − <span class="focus">2 × 17</span>', note: '不要先算 6 − 2。除法块和乘法块互不相连，可以分别算出。' },
+                { exp: '<span class="focus">40 − 34</span>', note: '两侧乘除都完成，最后只剩减法。' },
+                { exp: '= <span class="answer">6</span>', note: '正确结果是 6。' }
+            ]
+        },
+        {
+            label: '除法藏中间', title: '从左读，不等于从左算',
+            rule: '先看运算级别，再看书写位置。中间的除法先完成，剩下的加减才从左向右。',
+            steps: [
+                { exp: '51 − <span class="focus">36 ÷ 3</span> + 25', note: '虽然 51 − 36 写在最左边，但除法必须先算。' },
+                { exp: '<span class="focus">51 − 12</span> + 25', note: '除法完成后，加减同级，从左往右先减。' },
+                { exp: '<span class="focus">39 + 25</span>', note: '再完成加法。' },
+                { exp: '= <span class="answer">64</span>', note: '正确结果是 64。' }
+            ]
+        },
+        {
+            label: '右侧连续乘除', title: '先走完右边的乘除链',
+            rule: '乘除链整体比左边加法优先；链内部的除法和乘法同级，所以从左向右依次完成。',
+            steps: [
+                { exp: '150 + <span class="focus">120 ÷ 6</span> × 5', note: '先跳过左边的加号，从右侧乘除链的最左端开始。' },
+                { exp: '150 + <span class="focus">20 × 5</span>', note: '除法和乘法同级，继续从左向右。' },
+                { exp: '<span class="focus">150 + 100</span>', note: '右侧乘除链完成，最后做加法。' },
+                { exp: '= <span class="answer">250</span>', note: '正确结果是 250。' }
+            ]
+        },
+        {
+            label: '小括号', title: '括号优先',
+            rule: '括号里的运算先完成，括号外仍然遵守“乘除在前、加减在后”。',
+            steps: [
+                { exp: '72 − <span class="focus">(18 + 6)</span> ÷ 3', note: '小括号改变了顺序，18 + 6 最先算。' },
+                { exp: '72 − <span class="focus">24 ÷ 3</span>', note: '括号完成后，除法比减法优先。' },
+                { exp: '<span class="focus">72 − 8</span>', note: '最后完成减法。' },
+                { exp: '= <span class="answer">64</span>', note: '结果是 64。' }
+            ]
+        },
+        {
+            label: '三层括号', title: '小括号 → 中括号 → 大括号',
+            rule: '多层括号按“最里层向外”依次完成。每一层内部仍要遵守乘除优先、同级从左到右。',
+            steps: [
+                { exp: '{96 − [28 + <span class="focus">(14 − 8)</span> × 3]} ÷ 5', note: '最里层是小括号 (14 − 8)。' },
+                { exp: '{96 − [28 + <span class="focus">6 × 3</span>]} ÷ 5', note: '进入中括号后，先算乘法 6 × 3。' },
+                { exp: '{96 − <span class="focus">[28 + 18]</span>} ÷ 5', note: '完成中括号里的加法。' },
+                { exp: '<span class="focus">{96 − 46}</span> ÷ 5', note: '中括号完成，再算外层大括号。' },
+                { exp: '<span class="focus">50 ÷ 5</span>', note: '所有括号完成，最后算括号外的除法。' },
+                { exp: '= <span class="answer">10</span>', note: '结果是 10。' }
+            ]
+        },
+        {
+            label: '同级陷阱', title: '不是“先乘后除、先加后减”',
+            rule: '乘与除地位相同，加与减地位相同。同级混在一起时，只看谁在左边。',
+            steps: [
+                { exp: '<span class="focus">48 ÷ 6</span> × 2 − 9 + 5', note: '不能先算 6 × 2；乘除同级，从左向右先算 48 ÷ 6。' },
+                { exp: '<span class="focus">8 × 2</span> − 9 + 5', note: '继续完成乘法。' },
+                { exp: '<span class="focus">16 − 9</span> + 5', note: '加减同级，从左向右先减。' },
+                { exp: '<span class="focus">7 + 5</span>', note: '再完成加法。' },
+                { exp: '= <span class="answer">12</span>', note: '结果是 12。' }
+            ]
+        }
+    ];
+
+    const orderQuestions = [
+        { q: '80 − 24 ÷ 6 × 3 + 5', options: ['80 − 24', '24 ÷ 6', '6 × 3', '3 + 5'], answer: 1, explain: '无括号，先乘除；乘除同级从左往右，所以先算 24 ÷ 6。', solution: '80 − 24 ÷ 6 × 3 + 5 → 80 − 4 × 3 + 5 → 73' },
+        { q: '72 ÷ [3 × (5 + 3)]', options: ['72 ÷ 3', '3 × 5', '5 + 3', '3 × 8'], answer: 2, explain: '最里层的小括号优先。', solution: '72 ÷ [3 × (5 + 3)] → 72 ÷ [3 × 8] → 3' },
+        { q: '120 − {40 − [18 ÷ (3 + 3)] × 4}', options: ['120 − 40', '40 − 18', '18 ÷ 3', '3 + 3'], answer: 3, explain: '有三层括号，第一眼先找最里面的 (3 + 3)。', solution: '120 − {40 − [18 ÷ 6] × 4} → 120 − {40 − 3 × 4} → 92' },
+        { q: '{96 − [28 + (14 − 8) × 3]} ÷ 5', options: ['96 − 28', '28 + 14', '14 − 8', '8 × 3'], answer: 2, explain: '小括号 (14 − 8) 是最里层，必须最先完成。', solution: '{96 − [28 + 6 × 3]} ÷ 5 → {96 − 46} ÷ 5 → 10' },
+        { q: '84 ÷ (7 × 2) + 6 × 5', options: ['84 ÷ 7', '7 × 2', '6 × 5', '84 ÷ 14'], answer: 1, explain: '虽然右边也有乘法，但括号里的 7 × 2 优先。', solution: '84 ÷ (7 × 2) + 6 × 5 → 84 ÷ 14 + 30 → 36' },
+        { q: '100 − {36 ÷ [2 × (8 − 5)] + 4}', options: ['100 − 36', '36 ÷ 2', '2 × 8', '8 − 5'], answer: 3, explain: '从大括号一路向里找，最内层是 (8 − 5)。', solution: '100 − {36 ÷ [2 × 3] + 4} → 100 − {6 + 4} → 90' }
+    ];
+
+    const resultQuestions = [
+        { q: '48 − 18 ÷ 3 × 2 + 7', options: ['25', '43', '55', '27'], answer: 1, explain: '先按从左往右完成 18 ÷ 3 × 2，再按从左往右完成加减。', solution: '48 − 18 ÷ 3 × 2 + 7 → 48 − 6 × 2 + 7 → 48 − 12 + 7 = 43' },
+        { q: '(36 + 24) ÷ 6 × 5', options: ['2', '10', '50', '300'], answer: 2, explain: '先括号得 60，再按从左往右算 60 ÷ 6 × 5。', solution: '(36 + 24) ÷ 6 × 5 → 60 ÷ 6 × 5 → 10 × 5 = 50' },
+        { q: '120 − [36 ÷ (3 + 3) + 14] × 4', options: ['40', '64', '80', '104'], answer: 0, explain: '先小括号，再中括号内的除法与加法，接着乘，最后减。', solution: '120 − [36 ÷ 6 + 14] × 4 → 120 − [6 + 14] × 4 → 120 − 80 = 40' },
+        { q: '{150 − [42 − (18 + 6) ÷ 4] × 3} ÷ 6', options: ['6', '7', '18', '25'], answer: 1, explain: '从最里面的 (18 + 6) 开始，逐层向外。', solution: '{150 − [42 − 24 ÷ 4] × 3} ÷ 6 → {150 − 36 × 3} ÷ 6 → 42 ÷ 6 = 7' },
+        { q: '240 ÷ [4 × (9 − 3)] + 15', options: ['25', '21', '55', '30'], answer: 0, explain: '先算 9 − 3，再完成中括号，最后除法和加法。', solution: '240 ÷ [4 × 6] + 15 → 240 ÷ 24 + 15 → 10 + 15 = 25' },
+        { q: '{80 + [45 ÷ (8 − 3)] × 5} ÷ 5', options: ['17', '21', '25', '29'], answer: 2, explain: '括号从里向外；中括号完成后，仍先乘再加。', solution: '{80 + [45 ÷ 5] × 5} ÷ 5 → {80 + 9 × 5} ÷ 5 → 125 ÷ 5 = 25' }
+    ];
+
+    const quickQuestions = [
+        { base: '8 + 4 × 5', target: 60, options: ['8 + (4 × 5)', '(8 + 4) × 5', '8 + 4 × (5)', '(8 + 4 × 5)'], answer: 1, why: '括号让 8 + 4 提前算：12 × 5 = 60。' },
+        { base: '36 ÷ 6 + 3', target: 4, options: ['(36 ÷ 6) + 3', '36 ÷ (6 + 3)', '(36 ÷ 6 + 3)', '36 ÷ 6 + (3)'], answer: 1, why: '先算 6 + 3 = 9，再算 36 ÷ 9 = 4。' },
+        { base: '100 − 25 × 4', target: 300, options: ['100 − (25 × 4)', '(100 − 25) × 4', '100 − 25 × (4)', '(100 − 25 × 4)'], answer: 1, why: '先算 100 − 25 = 75，再乘 4 得 300。' },
+        { base: '72 ÷ 8 − 2', target: 12, options: ['(72 ÷ 8) − 2', '72 ÷ (8 − 2)', '(72 ÷ 8 − 2)', '72 ÷ 8 − (2)'], answer: 1, why: '先算 8 − 2 = 6，72 ÷ 6 = 12。' },
+        { base: '25 × 4 + 6', target: 250, options: ['(25 × 4) + 6', '25 × (4 + 6)', '(25 × 4 + 6)', '25 × 4 + (6)'], answer: 1, why: '括号把 4 + 6 组成 10，25 × 10 = 250。' }
+    ];
+
+    const tricks = [
+        { q: '125 × 8 × 7', eq: '(125 × 8) × 7 = 1000 × 7 = 7000', note: '用乘法结合律，让 125 和 8 这对“好朋友”先凑成 1000。' },
+        { q: '560 ÷ (7 × 8)', eq: '560 ÷ 7 ÷ 8 = 80 ÷ 8 = 10', note: '一个数除以两个数的积，可以连续除以这两个数；这是有依据地去括号。' },
+        { q: '500 − 137 − 63', eq: '500 − (137 + 63) = 500 − 200 = 300', note: '连续减去两个数，等于减去这两个数的和。括号帮 137 和 63 先凑整。' },
+        { q: '25 × 40 − 25 × 4', eq: '25 × (40 − 4) = 25 × 36 = 900', note: '反用乘法分配律，提取相同的 25，用括号把差合成一组。' },
+        { q: '88 + 47 + 12 + 53', eq: '(88 + 12) + (47 + 53) = 100 + 100 = 200', note: '用加法交换律、结合律重新分组，括号把两对凑整数清楚地标出来。' }
+    ];
+
+    const appState = {
+        demo: 0,
+        demoStep: 0,
+        practiceMode: 'order',
+        practiceIndex: 0,
+        practiceScore: 0,
+        practiceAnswered: false,
+        practiceChoice: null,
+        quickIndex: 0,
+        quickChoice: null
+    };
+
+    document.querySelectorAll('.tab').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(item => item.classList.toggle('active', item === button));
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById(`view-${button.dataset.tab}`).classList.add('active');
+        });
+    });
+
+    function renderDemo() {
+        const picker = document.getElementById('demo-picker');
+        picker.innerHTML = demos.map((demo, index) => `<button class="picker-btn ${index === appState.demo ? 'active' : ''}" data-demo="${index}">${demo.label}</button>`).join('');
+        picker.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+            appState.demo = Number(button.dataset.demo);
+            appState.demoStep = 0;
+            renderDemo();
+        }));
+
+        const demo = demos[appState.demo];
+        const last = demo.steps.length - 1;
+        const steps = demo.steps.map((step, index) => `
+            <div class="step-row ${index <= appState.demoStep ? 'shown' : ''} ${index === appState.demoStep ? 'current' : ''}">
+                <div class="step-num">${index + 1}</div>
+                <div class="step-content">
+                    <div class="step-expression math">${step.exp}</div>
+                    <div class="step-note">${step.note}</div>
+                </div>
+            </div>`).join('');
+
+        document.getElementById('demo-content').innerHTML = `
+            <div class="demo-stage">
+                <div class="demo-top">
+                    <div><span class="demo-tag">${demo.label}</span><h3 class="demo-title">${demo.title}</h3></div>
+                    <span class="step-count">第 ${appState.demoStep + 1} / ${demo.steps.length} 步</span>
+                </div>
+                <div class="step-list">${steps}</div>
+                <div class="demo-actions">
+                    <button class="btn" id="demo-reset">重看</button>
+                    <button class="btn" id="demo-prev" ${appState.demoStep === 0 ? 'disabled' : ''}>← 上一步</button>
+                    <button class="btn primary" id="demo-next" ${appState.demoStep === last ? 'disabled' : ''}>下一步 →</button>
+                </div>
+                <div class="demo-rule"><b>这一题的路线：</b>${demo.rule}</div>
+            </div>`;
+        document.getElementById('demo-reset').addEventListener('click', () => { appState.demoStep = 0; renderDemo(); });
+        document.getElementById('demo-prev').addEventListener('click', () => { appState.demoStep = Math.max(0, appState.demoStep - 1); renderDemo(); });
+        document.getElementById('demo-next').addEventListener('click', () => { appState.demoStep = Math.min(last, appState.demoStep + 1); renderDemo(); });
+    }
+
+    function practiceSet() { return appState.practiceMode === 'order' ? orderQuestions : resultQuestions; }
+
+    function setPracticeMode(mode) {
+        appState.practiceMode = mode;
+        appState.practiceIndex = 0;
+        appState.practiceScore = 0;
+        appState.practiceAnswered = false;
+        appState.practiceChoice = null;
+        renderPractice();
+    }
+
+    function renderPractice() {
+        const questions = practiceSet();
+        const question = questions[appState.practiceIndex];
+        const answered = appState.practiceAnswered;
+        const isCorrect = appState.practiceChoice === question.answer;
+        const choices = question.options.map((option, index) => {
+            let cls = '';
+            if (answered && index === question.answer) cls = 'correct';
+            if (answered && index === appState.practiceChoice && index !== question.answer) cls = 'wrong-choice';
+            return `<button class="choice math ${cls}" data-choice="${index}" ${answered ? 'disabled' : ''}>${option}</button>`;
+        }).join('');
+        const progress = ((appState.practiceIndex + (answered ? 1 : 0)) / questions.length) * 100;
+        const finalQuestion = appState.practiceIndex === questions.length - 1;
+
+        document.getElementById('practice-content').innerHTML = `
+            <div class="practice-toolbar">
+                <div class="mode-group">
+                    <button class="mode-btn ${appState.practiceMode === 'order' ? 'active' : ''}" data-mode="order">找第一步</button>
+                    <button class="mode-btn ${appState.practiceMode === 'result' ? 'active' : ''}" data-mode="result">算最终结果</button>
+                </div>
+                <div class="score">第 ${appState.practiceIndex + 1} / ${questions.length} 题　·　答对 ${appState.practiceScore} 题</div>
+            </div>
+            <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
+            <div class="question-card">
+                <div class="question-kicker">${appState.practiceMode === 'order' ? '下面第一步应该算哪一部分？' : '按正确顺序计算，结果是多少？'}</div>
+                <div class="question-text math">${question.q}</div>
+                <p class="question-tip">先别急着算，先用眼睛扫描：最里层括号在哪里？有没有乘除？</p>
+                <div class="choice-grid">${choices}</div>
+                ${answered ? `
+                    <div class="feedback ${isCorrect ? 'ok' : 'bad'}">
+                        <b>${isCorrect ? '✓ 判断正确！' : '再看一眼顺序：'}</b> ${question.explain}
+                        <span class="solution math">完整路线：${question.solution}</span>
+                    </div>
+                    <div class="next-row"><button class="btn primary" id="practice-next">${finalQuestion ? '重新挑战' : '下一题 →'}</button></div>` : ''}
+            </div>`;
+
+        document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => setPracticeMode(button.dataset.mode)));
+        document.querySelectorAll('[data-choice]').forEach(button => button.addEventListener('click', () => {
+            if (appState.practiceAnswered) return;
+            appState.practiceChoice = Number(button.dataset.choice);
+            appState.practiceAnswered = true;
+            if (appState.practiceChoice === question.answer) appState.practiceScore += 1;
+            renderPractice();
+        }));
+        const next = document.getElementById('practice-next');
+        if (next) next.addEventListener('click', () => {
+            if (finalQuestion) {
+                appState.practiceIndex = 0;
+                appState.practiceScore = 0;
+            } else {
+                appState.practiceIndex += 1;
+            }
+            appState.practiceAnswered = false;
+            appState.practiceChoice = null;
+            renderPractice();
+        });
+    }
+
+    function renderQuickQuiz() {
+        const question = quickQuestions[appState.quickIndex];
+        const answered = appState.quickChoice !== null;
+        const correct = appState.quickChoice === question.answer;
+        const options = question.options.map((option, index) => {
+            let cls = '';
+            if (answered && index === question.answer) cls = 'correct';
+            if (answered && index === appState.quickChoice && index !== question.answer) cls = 'wrong-choice';
+            return `<button class="quick-choice math ${cls}" data-quick-choice="${index}" ${answered ? 'disabled' : ''}>${option}</button>`;
+        }).join('');
+        document.getElementById('quick-quiz').innerHTML = `
+            <h3 class="bracket-title">添一组括号，让等式成立</h3>
+            <p class="lead">原算式：<span class="math">${question.base}</span></p>
+            <div class="target">目标结果 <span class="math">= ${question.target}</span></div>
+            <div class="quick-choices">${options}</div>
+            <div class="quick-feedback">${answered ? `<b>${correct ? '✓ 找到了！' : '正确写法已标绿。'}</b> ${question.why}` : '试着比较：括号放在哪里，会让哪一部分提前计算？'}</div>
+            ${answered ? `<button class="btn primary" id="quick-next">${appState.quickIndex === quickQuestions.length - 1 ? '从头再练' : '换一题 →'}</button>` : ''}`;
+        document.querySelectorAll('[data-quick-choice]').forEach(button => button.addEventListener('click', () => {
+            appState.quickChoice = Number(button.dataset.quickChoice);
+            renderQuickQuiz();
+        }));
+        const next = document.getElementById('quick-next');
+        if (next) next.addEventListener('click', () => {
+            appState.quickIndex = (appState.quickIndex + 1) % quickQuestions.length;
+            appState.quickChoice = null;
+            renderQuickQuiz();
+        });
+    }
+
+    function renderTricks() {
+        const holder = document.getElementById('trick-list');
+        holder.innerHTML = tricks.map((trick, index) => `
+            <div class="trick">
+                <button type="button" aria-expanded="false"><span class="math">${trick.q}</span><span>看巧算 ＋</span></button>
+                <div class="trick-answer"><span class="trick-eq math">${trick.eq}</span>${trick.note}</div>
+            </div>`).join('');
+        holder.querySelectorAll('.trick button').forEach(button => button.addEventListener('click', () => {
+            const item = button.parentElement;
+            item.classList.toggle('open');
+            const open = item.classList.contains('open');
+            button.setAttribute('aria-expanded', String(open));
+            button.lastElementChild.textContent = open ? '收起 −' : '看巧算 ＋';
+        }));
+    }
+
+    renderDemo();
+    renderPractice();
+    renderQuickQuiz();
+    renderTricks();
+</script>
+</body>
+</html>

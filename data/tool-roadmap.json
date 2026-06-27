@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-06-26",
+  "updatedAt": "2026-06-27",
   "sources": {
     "knowledgeGraph": "../private-school-management/data/skilltree.json",
     "textbook": "人教版小学数学教材主线",
@@ -99,10 +99,17 @@
           "id": "mixed-operation-order",
           "name": "四则混合运算顺序",
           "grade": "3-4",
-          "status": "planned",
+          "status": "ready",
           "route": "/operation-order",
           "knowledgeNodeIds": [
-            "op-laws"
+            "op-laws",
+            "m-op-order"
+          ],
+          "tabs": [
+            "学规则",
+            "看演示",
+            "闯关判断",
+            "括号速算"
           ]
         },
         {
@@ -289,20 +296,20 @@
         "angle-intro",
         "length-unit",
         "symmetry",
-        "translate-rotate"
+        "translate-rotate",
+        "quad-perimeter",
+        "area",
+        "parallelogram-trapezoid",
+        "polygon-area"
       ],
       "missingNodeIds": [
         "shape-solid",
         "shape-plane",
         "pos-basic",
         "observe-object",
-        "quad-perimeter",
-        "area",
         "measure-units",
         "angle-measure",
-        "parallelogram-trapezoid",
         "triangle-classify",
-        "polygon-area",
         "cuboid-cube",
         "circle",
         "cylinder-cone",
@@ -336,12 +343,20 @@
         {
           "id": "perimeter-area-lab",
           "name": "周长与面积实验室",
-          "grade": "3",
-          "status": "planned",
+          "grade": "3-5",
+          "status": "ready",
           "route": "/perimeter-area",
           "knowledgeNodeIds": [
             "quad-perimeter",
-            "area"
+            "area",
+            "parallelogram-trapezoid",
+            "polygon-area"
+          ],
+          "tabs": [
+            "直观认识",
+            "图形周长",
+            "面积·数格子",
+            "面积·割补法"
           ]
         },
         {
@@ -366,10 +381,10 @@
         },
         {
           "id": "polygon-area-lab",
-          "name": "三角形、平行四边形与梯形面积",
+          "name": "三角形分类与多边形面积练习",
           "grade": "4-5",
-          "status": "planned",
-          "route": "/polygon-area",
+          "status": "partial",
+          "route": "/perimeter-area",
           "knowledgeNodeIds": [
             "parallelogram-trapezoid",
             "triangle-classify",
@@ -685,68 +700,195 @@
       ],
       "coverage": "partial",
       "coveredNodeIds": [
+        "basic-word-analysis",
         "sum-diff-times",
-        "chicken-rabbit"
-      ],
-      "missingNodeIds": [
         "age-problem",
-        "tree-planting",
-        "profit-loss",
-        "square-array",
+        "chicken-rabbit",
+        "purchase-promotion",
         "average-problem",
         "unit-normalize",
-        "economy-problem",
+        "unit-totalize",
+        "tree-planting",
+        "interval-problem"
+      ],
+      "missingNodeIds": [
+        "profit-loss",
+        "reverse-reasoning",
+        "sports-problem",
+        "equivalent-substitution",
+        "interest-tax",
         "concentration",
         "engineering",
-        "cow-grass",
-        "frac-percent-app"
+        "basic-travel",
+        "frac-percent-app",
+        "proportion-application"
       ],
       "recommendedTools": [
         {
-          "id": "age-planting-profit",
-          "name": "年龄、植树、盈亏模型",
-          "grade": "3-4",
-          "status": "planned",
-          "route": "/age-planting-profit",
+          "id": "word-problem-analysis",
+          "name": "基本读题、画图与列式分析",
+          "grade": "1-6",
+          "status": "ready",
+          "route": "/bar-model",
           "knowledgeNodeIds": [
-            "age-problem",
-            "tree-planting",
-            "profit-loss"
+            "basic-word-analysis"
           ]
         },
         {
-          "id": "array-average-unit",
-          "name": "方阵、平均数、归一归总",
+          "id": "sum-difference-age",
+          "name": "和差倍与年龄问题",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/sum-difference-multiple",
+          "knowledgeNodeIds": [
+            "sum-diff-times",
+            "age-problem"
+          ],
+          "tabs": [
+            "复杂和差倍",
+            "年龄问题"
+          ]
+        },
+        {
+          "id": "profit-loss-reverse",
+          "name": "盈亏问题与倒推问题",
+          "grade": "3-5",
+          "status": "planned",
+          "route": "/profit-loss-reverse",
+          "knowledgeNodeIds": [
+            "profit-loss",
+            "reverse-reasoning"
+          ]
+        },
+        {
+          "id": "chicken-rabbit-model",
+          "name": "鸡兔同笼问题",
+          "grade": "3-5",
+          "status": "ready",
+          "route": "/chicken-rabbit",
+          "knowledgeNodeIds": [
+            "chicken-rabbit"
+          ]
+        },
+        {
+          "id": "purchase-promotion",
+          "name": "促销与购买问题",
+          "grade": "2-6",
+          "status": "partial",
+          "route": "/shopping",
+          "knowledgeNodeIds": [
+            "purchase-promotion"
+          ]
+        },
+        {
+          "id": "sports-equivalent-substitution",
+          "name": "体育比赛与等量代换",
           "grade": "3-6",
           "status": "planned",
-          "route": "/array-average-unit",
+          "route": "/sports-equivalent-substitution",
           "knowledgeNodeIds": [
-            "square-array",
-            "average-problem",
-            "unit-normalize"
+            "sports-problem",
+            "equivalent-substitution"
           ]
         },
         {
-          "id": "percent-economy-concentration",
-          "name": "经济、浓度、分百应用",
+          "id": "interest-tax",
+          "name": "利息与税务问题",
           "grade": "5-6",
           "status": "planned",
-          "route": "/percent-applications",
+          "route": "/interest-tax",
           "knowledgeNodeIds": [
-            "economy-problem",
-            "concentration",
+            "interest-tax"
+          ]
+        },
+        {
+          "id": "concentration-problem",
+          "name": "浓度问题",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/concentration",
+          "knowledgeNodeIds": [
+            "concentration"
+          ]
+        },
+        {
+          "id": "engineering-basics",
+          "name": "工程问题基本工具",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/engineering-basics",
+          "knowledgeNodeIds": [
+            "engineering"
+          ]
+        },
+        {
+          "id": "travel-basics",
+          "name": "行程问题基本工具",
+          "grade": "3-6",
+          "status": "planned",
+          "route": "/basic-travel",
+          "knowledgeNodeIds": [
+            "basic-travel"
+          ]
+        },
+        {
+          "id": "average-problem-tool",
+          "name": "平均数问题",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/bar-model",
+          "knowledgeNodeIds": [
+            "average-problem"
+          ]
+        },
+        {
+          "id": "fraction-percent-applications",
+          "name": "分数与百分数应用题",
+          "grade": "5-6",
+          "status": "planned",
+          "route": "/fraction-percent-applications",
+          "knowledgeNodeIds": [
             "frac-percent-app"
           ]
         },
         {
-          "id": "engineering-cow-grass",
-          "name": "工程与牛吃草",
-          "grade": "5-6",
+          "id": "proportion-applications",
+          "name": "比例应用题",
+          "grade": "6",
           "status": "planned",
-          "route": "/engineering-cow-grass",
+          "route": "/proportion-applications",
           "knowledgeNodeIds": [
-            "engineering",
-            "cow-grass"
+            "proportion-application"
+          ]
+        },
+        {
+          "id": "unit-normalization",
+          "name": "归一归总问题",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/unit-normalization",
+          "knowledgeNodeIds": [
+            "unit-normalize",
+            "unit-totalize"
+          ],
+          "tabs": [
+            "归一问题",
+            "归总问题"
+          ]
+        },
+        {
+          "id": "planting-interval",
+          "name": "植树与间隔问题",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/planting-interval",
+          "knowledgeNodeIds": [
+            "tree-planting",
+            "interval-problem"
+          ],
+          "tabs": [
+            "植树问题",
+            "间隔问题"
           ]
         }
       ]

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数轴探索 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #dbeafe 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .25); font-size: 24px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none;
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.primary:hover { color: #fff; }
+        .card {
+            background: rgba(255,255,255,.95); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 20px; }
+
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
+        .lead b { color: var(--indigo); }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+        .controls label { font-weight: 850; color: #334155; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+        .controls input[type=number], .controls input[type=text] {
+            border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px;
+            font-weight: 900; color: #312e81; background: #fff; width: 130px; font-size: 16px;
+        }
+        .controls input:focus { outline: none; border-color: #a5b4fc; }
+        .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+        .chip { padding: 8px 12px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850; border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+
+        .stage {
+            margin: 14px 0 6px; border: 1px solid var(--line); border-radius: 16px;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            position: relative; overflow: hidden;
+        }
+        svg.axis { display: block; width: 100%; height: 220px; touch-action: none; cursor: grab; }
+        svg.axis.dragging { cursor: grabbing; }
+        svg.axis text { font-family: inherit; user-select: none; }
+        .axis-toolbar {
+            position: absolute; right: 12px; top: 12px; display: flex; gap: 6px;
+        }
+        .axis-toolbar button {
+            width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
+            background: rgba(255,255,255,.95); color: #334155; font-size: 18px; font-weight: 950;
+            box-shadow: 0 2px 6px rgba(15,23,42,.08); display: grid; place-items: center; padding: 0;
+        }
+        .axis-toolbar button:hover { border-color: #a5b4fc; color: var(--indigo); }
+        .zoom-badge {
+            position: absolute; left: 12px; top: 12px; padding: 6px 12px; border-radius: 999px;
+            background: rgba(255,255,255,.92); border: 1px solid var(--line); font-size: 12px;
+            font-weight: 850; color: #475569; box-shadow: 0 2px 6px rgba(15,23,42,.06);
+        }
+        .hint-bar {
+            display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px;
+            margin: 4px 2px 0; line-height: 1.6;
+        }
+        .hint-bar span b { color: #334155; }
+
+        .read-out {
+            margin-top: 14px; padding: 16px 18px; border-radius: 16px; background: #eef2ff;
+            border: 1px solid #c7d2fe;
+        }
+        .read-out .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+        .read-out .label { font-size: 13px; color: var(--muted); font-weight: 850; }
+        .value-pill {
+            display: inline-block; min-width: 64px; text-align: center; padding: 4px 14px;
+            border-radius: 999px; background: var(--indigo); color: #fff; font-weight: 950;
+            font-size: clamp(20px, 3.5vw, 28px);
+        }
+        .value-pill.neg { background: var(--red); }
+        .value-pill.pos { background: var(--green); }
+        .value-pill.zero { background: #475569; }
+        .read-detail { margin-top: 10px; color: #312e81; font-weight: 800; line-height: 1.65; font-size: 14px; }
+        .read-detail b { color: var(--indigo); }
+        .read-detail .neg { color: var(--red); }
+
+        .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+        .explain {
+            border: 1px solid var(--line); border-radius: 14px; background: #f8fafc;
+            padding: 13px 14px; line-height: 1.55; font-size: 14px;
+        }
+        .explain b { color: var(--indigo); }
+        .explain .o { color: #1f2937; } .explain .p { color: var(--green); } .explain .u { color: var(--amber); }
+
+        @media (max-width: 760px) {
+            .page { padding: 16px; }
+            .topbar { display: block; }
+            .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .explain-grid { grid-template-columns: 1fr; }
+            svg.axis { height: 200px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">轴</div>
+                <div>
+                    <h1>数轴探索</h1>
+                    <p class="sub">规定了原点、正方向、单位长度的直线，就是数轴</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <section class="card panel">
+            <h2>一条数轴，理解正负数、整数与小数，并比较大小</h2>
+            <p class="lead">数轴是<b>规定了原点、正方向、单位长度</b>的直线：原点表示 0，向右的箭头表示正方向，每隔一个单位长度依次表示 1、2、3……向左依次表示 −1、−2、−3……数轴上的<b>每一个点都对应一个数</b>。</p>
+
+            <div class="controls">
+                <label>定位到 <input type="text" id="goInput" inputmode="decimal" placeholder="如 -2.5" value="2.5"></label>
+                <button class="btn primary" id="goBtn">跳到这个数</button>
+                <button class="btn" id="resetBtn">回到原点</button>
+            </div>
+            <div class="preset-row" id="presets"></div>
+
+            <div class="stage">
+                <div class="zoom-badge" id="zoomBadge">每格 = 1</div>
+                <div class="axis-toolbar">
+                    <button id="zoomIn" title="放大">＋</button>
+                    <button id="zoomOut" title="缩小">－</button>
+                </div>
+                <svg class="axis" id="axis" preserveAspectRatio="xMinYMin meet"></svg>
+            </div>
+            <div class="hint-bar">
+                <span>🖱️ <b>拖动红点</b>或在数轴上<b>点击</b>放置点</span>
+                <span>🔍 <b>滚轮</b>在光标处放大 / 缩小，看清不同量级</span>
+                <span>✋ 在空白处<b>左右拖动</b>可平移数轴</span>
+            </div>
+
+            <div class="read-out">
+                <div class="row">
+                    <span class="label">这个点对应的数：</span>
+                    <span class="value-pill" id="valuePill">2.5</span>
+                </div>
+                <div class="read-detail" id="readDetail"></div>
+            </div>
+
+            <div class="explain-grid">
+                <div class="explain"><b class="o">原点</b>：表示 0 的点，是数轴的起点，也是正数和负数的分界。0 既不是正数也不是负数。</div>
+                <div class="explain"><b class="p">正方向</b>：规定向右为正方向（箭头指向）。在数轴上，<b>越往右的数越大</b>，越往左越小。</div>
+                <div class="explain"><b class="u">单位长度</b>：相邻整数间的距离处处相等。把一格平均分成 10 份，每份就是 0.1，可以表示小数。</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const SVGNS = "http://www.w3.org/2000/svg";
+        const svg = $("axis");
+
+        // ---- 视图状态：origin 是 x=0 对应的像素，pxPerUnit 是 1 个单位的像素长度 ----
+        const state = {
+            origin: 0,          // 像素：数值 0 的横坐标（运行时按宽度初始化）
+            pxPerUnit: 80,      // 像素 / 单位
+            y: 130,             // 主线纵坐标
+            point: 2.5,         // 红点对应的数值
+            width: 980,
+            height: 220,
+        };
+        const MIN_PPU = 0.02;   // 最小缩放（一格很短，可看到很大的数）
+        const MAX_PPU = 4000;   // 最大缩放（可看清很小的小数）
+
+        // 数值 <-> 像素
+        const toPx = v => state.origin + v * state.pxPerUnit;
+        const toVal = px => (px - state.origin) / state.pxPerUnit;
+
+        function el(name, attrs, text) {
+            const node = document.createElementNS(SVGNS, name);
+            for (const k in attrs) node.setAttribute(k, attrs[k]);
+            if (text != null) node.textContent = text;
+            return node;
+        }
+
+        // 取整洁的刻度间隔：让每个主刻度间隔约 70~140px，按 1/2/5×10^k 选择
+        function niceStep() {
+            const targetPx = 88;                       // 期望的主刻度像素间隔
+            const rawStep = targetPx / state.pxPerUnit; // 对应多少“单位”
+            const pow = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const frac = rawStep / pow;
+            let m;
+            if (frac < 1.5) m = 1;
+            else if (frac < 3.5) m = 2;
+            else if (frac < 7.5) m = 5;
+            else m = 10;
+            return m * pow;                            // 主刻度间隔（数值）
+        }
+
+        // 浮点显示，避免 0.30000004 之类；按当前精度决定小数位
+        function fmt(v, step) {
+            const decimals = step ? Math.max(0, Math.ceil(-Math.log10(step) + 0.0001)) : 3;
+            let s = v.toFixed(Math.min(decimals, 6));
+            if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+            if (s === "-0") s = "0";
+            return s.replace("-", "−");
+        }
+
+        function clampPpu(p) { return Math.max(MIN_PPU, Math.min(MAX_PPU, p)); }
+
+        function render() {
+            svg.setAttribute("viewBox", `0 0 ${state.width} ${state.height}`);
+            svg.innerHTML = "";
+            const y = state.y;
+            const step = niceStep();          // 主刻度间隔
+            const minor = step / 5;           // 小刻度（把一格再分 5/10 份的视觉提示）
+
+            // 箭头定义（只有正方向一个箭头）
+            const defs = el("defs");
+            const m = el("marker", { id: "axis-arrow", viewBox: "0 0 10 10", refX: "7", refY: "5", markerWidth: "9", markerHeight: "9", orient: "auto" });
+            m.appendChild(el("path", { d: "M0 0 L10 5 L0 10 z", fill: "#1f2937" }));
+            defs.appendChild(m);
+            svg.appendChild(defs);
+
+            // 主线：左端不加箭头（数轴向两端无限延伸，但课本画法右端标正方向箭头）
+            svg.appendChild(el("line", { x1: 0, y1: y, x2: state.width - 6, y2: y, stroke: "#1f2937", "stroke-width": "3", "marker-end": "url(#axis-arrow)" }));
+
+            // 可见数值范围
+            const vMin = toVal(-20);
+            const vMax = toVal(state.width + 20);
+
+            // 小刻度
+            const firstMinor = Math.ceil(vMin / minor) * minor;
+            for (let v = firstMinor; v <= vMax; v += minor) {
+                if (Math.abs(v / step - Math.round(v / step)) < 1e-9) continue; // 主刻度另画
+                const x = toPx(v);
+                svg.appendChild(el("line", { x1: x, y1: y - 6, x2: x, y2: y + 6, stroke: "#cbd5e1", "stroke-width": "1.5" }));
+            }
+
+            // 主刻度 + 数字
+            const firstMajor = Math.ceil(vMin / step) * step;
+            for (let i = 0; ; i++) {
+                const v = firstMajor + i * step;
+                if (v > vMax) break;
+                const vv = Math.abs(v) < step / 1e6 ? 0 : v;   // 消除接近 0 的浮点
+                const x = toPx(vv);
+                const isZero = vv === 0;
+                svg.appendChild(el("line", { x1: x, y1: y - 13, x2: x, y2: y + 13, stroke: isZero ? "#1f2937" : "#94a3b8", "stroke-width": isZero ? "3" : "2" }));
+                svg.appendChild(el("text", {
+                    x, y: y + 34, "text-anchor": "middle", "font-size": "16",
+                    "font-weight": isZero ? "950" : "800",
+                    fill: isZero ? "#1f2937" : (vv < 0 ? "#dc2626" : "#334155")
+                }, isZero ? "0" : fmt(vv, step)));
+                if (isZero) {
+                    svg.appendChild(el("text", { x, y: y - 22, "text-anchor": "middle", "font-size": "13", "font-weight": "950", fill: "#1f2937" }, "原点"));
+                }
+            }
+
+            // 正方向标注
+            svg.appendChild(el("text", { x: state.width - 14, y: y - 16, "text-anchor": "end", "font-size": "13", "font-weight": "850", fill: "#10b981" }, "正方向"));
+
+            // 一个单位长度的标注（在 0 和 step 之间画一个尺寸说明，仅当 0 附近可见）
+            drawUnitBracket(step, y);
+
+            // 红点
+            drawPoint(y, step);
+
+            // 缩放标识
+            $("zoomBadge").textContent = `每大格 = ${fmt(step, step)}　·　1 单位 ≈ ${Math.round(state.pxPerUnit)}px`;
+            updateReadout(step);
+        }
+
+        function drawUnitBracket(step, y) {
+            // 在 0 与 step 之间画“单位长度”大括号，需两端都在可见区域内
+            const x0 = toPx(0), x1 = toPx(step);
+            if (x1 < 0 || x0 > state.width) return;
+            if (Math.abs(x1 - x0) < 40) return;
+            const by = y + 52;
+            svg.appendChild(el("path", {
+                d: `M${x0} ${by-7} L${x0} ${by} L${x1} ${by} L${x1} ${by-7}`,
+                fill: "none", stroke: "#f59e0b", "stroke-width": "2"
+            }));
+            svg.appendChild(el("text", { x: (x0 + x1) / 2, y: by + 16, "text-anchor": "middle", "font-size": "12", "font-weight": "850", fill: "#b45309" }, `单位长度 = ${fmt(step, step)}`));
+        }
+
+        function pointColor(v) { return v > 0 ? "#10b981" : v < 0 ? "#ef4444" : "#475569"; }
+
+        function drawPoint(y, step) {
+            const v = state.point;
+            const x = toPx(v);
+            const cx = Math.max(8, Math.min(state.width - 8, x));   // 离屏时把标签夹到边缘
+            const onScreen = x >= -4 && x <= state.width + 4;
+            const color = pointColor(v);
+            // 引线
+            svg.appendChild(el("line", { x1: cx, y1: y, x2: cx, y2: y - 46, stroke: color, "stroke-width": "2", "stroke-dasharray": "4 3" }));
+            // 标签
+            const label = fmt(v, step / 10);
+            const w = Math.max(56, label.length * 13 + 22);
+            svg.appendChild(el("rect", { x: cx - w / 2, y: y - 74, width: w, height: 28, rx: 9, fill: color }));
+            svg.appendChild(el("text", { x: cx, y: y - 55, "text-anchor": "middle", "font-size": "16", "font-weight": "950", fill: "#fff" }, label));
+            // 圆点
+            const dot = el("circle", { cx, cy: y, r: 11, fill: color, stroke: "#fff", "stroke-width": "3", id: "thePoint" });
+            dot.style.cursor = "grab";
+            svg.appendChild(dot);
+            if (!onScreen) {
+                svg.appendChild(el("text", { x: cx, y: y + 4, "text-anchor": "middle", "font-size": "13", "font-weight": "950", fill: "#fff" }, x < 0 ? "‹" : "›"));
+            }
+        }
+
+        function updateReadout(step) {
+            const v = state.point;
+            const cls = v > 0 ? "pos" : v < 0 ? "neg" : "zero";
+            const pill = $("valuePill");
+            pill.textContent = fmt(v, 1e-6);
+            pill.className = "value-pill " + cls;
+
+            let detail;
+            if (Math.abs(v) < 1e-9) {
+                detail = `它落在<b>原点</b>上，表示 <b>0</b>。0 既不是正数也不是负数，是正数与负数的分界。`;
+            } else {
+                const kind = v > 0 ? "正数" : "负数";
+                const dist = fmt(Math.abs(v), 1e-6);
+                const opp = fmt(-v, 1e-6);
+                const sideTxt = v > 0 ? "原点右边" : "原点左边";
+                const isInt = Math.abs(v - Math.round(v)) < 1e-9;
+                const typeTxt = isInt ? "是一个整数" : "是一个小数";
+                detail = `它在<b>${sideTxt}</b>，${typeTxt}，是<b>${kind}</b>，到原点的距离是 ${dist}（即它的绝对值）。它的相反数是 <b class="${v>0?'neg':''}">${opp}</b>，在原点的另一侧。`;
+            }
+            $("readDetail").innerHTML = detail;
+        }
+
+        // ---------- 交互：拖点 / 点击放置 / 平移 / 缩放 ----------
+        function clientToSvgX(clientX) {
+            const rect = svg.getBoundingClientRect();
+            return (clientX - rect.left) / rect.width * state.width;
+        }
+
+        let drag = null; // {mode:'point'|'pan', startX, startOrigin}
+
+        function snapValue(v, step) {
+            // 拖动时轻微吸附到当前精度的 1/10 小格，手感更准
+            const grid = step / 10;
+            const snapped = Math.round(v / grid) * grid;
+            return Math.abs(snapped - v) < grid * 0.18 ? snapped : v;
+        }
+
+        svg.addEventListener("pointerdown", e => {
+            svg.setPointerCapture(e.pointerId);
+            const sx = clientToSvgX(e.clientX);
+            const px = toPx(state.point);
+            if (Math.abs(sx - px) <= 18) {
+                drag = { mode: "point", pointerId: e.pointerId };
+                svg.classList.add("dragging");
+            } else if (e.shiftKey || e.button === 1) {
+                drag = { mode: "pan", startX: sx, startOrigin: state.origin, pointerId: e.pointerId };
+                svg.classList.add("dragging");
+            } else {
+                // 单击空白：把点放过去
+                state.point = toVal(sx);
+                render();
+                drag = { mode: "point", pointerId: e.pointerId };
+                svg.classList.add("dragging");
+            }
+        });
+
+        svg.addEventListener("pointermove", e => {
+            if (!drag) return;
+            const sx = clientToSvgX(e.clientX);
+            if (drag.mode === "point") {
+                const step = niceStep();
+                state.point = snapValue(toVal(sx), step);
+                render();
+            } else if (drag.mode === "pan") {
+                state.origin = drag.startOrigin + (sx - drag.startX);
+                render();
+            }
+        });
+
+        function endDrag(e) {
+            if (!drag) return;
+            try { svg.releasePointerCapture(drag.pointerId); } catch (_) {}
+            drag = null;
+            svg.classList.remove("dragging");
+        }
+        svg.addEventListener("pointerup", endDrag);
+        svg.addEventListener("pointercancel", endDrag);
+
+        // 滚轮：以光标处的数值为中心缩放
+        svg.addEventListener("wheel", e => {
+            e.preventDefault();
+            const sx = clientToSvgX(e.clientX);
+            const valAtCursor = toVal(sx);
+            const factor = Math.exp(-e.deltaY * 0.0012);   // 向上滚放大
+            state.pxPerUnit = clampPpu(state.pxPerUnit * factor);
+            // 保持光标下的数值不动
+            state.origin = sx - valAtCursor * state.pxPerUnit;
+            render();
+        }, { passive: false });
+
+        function zoomBy(factor) {
+            const cx = state.width / 2;
+            const valAtCenter = toVal(cx);
+            state.pxPerUnit = clampPpu(state.pxPerUnit * factor);
+            state.origin = cx - valAtCenter * state.pxPerUnit;
+            render();
+        }
+        $("zoomIn").addEventListener("click", () => zoomBy(1.5));
+        $("zoomOut").addEventListener("click", () => zoomBy(1 / 1.5));
+
+        // 跳到某个数：居中显示，并把点落在那里
+        function goTo(v, recenter = true) {
+            state.point = v;
+            if (recenter) {
+                // 自动选一个能把该数和原点都看清的缩放
+                const span = Math.max(Math.abs(v) * 2.4, 6);
+                state.pxPerUnit = clampPpu(state.width / span);
+                state.origin = state.width / 2 - v * state.pxPerUnit;
+            }
+            render();
+        }
+
+        $("goBtn").addEventListener("click", () => {
+            const raw = $("goInput").value.replace(/−/g, "-").replace(/[^0-9.\-]/g, "");
+            const v = Number(raw);
+            if (raw !== "" && raw !== "-" && !Number.isNaN(v)) goTo(v);
+        });
+        $("goInput").addEventListener("keydown", e => { if (e.key === "Enter") $("goBtn").click(); });
+        $("resetBtn").addEventListener("click", () => {
+            state.pxPerUnit = 80;
+            goTo(0);
+        });
+
+        const presets = [
+            ["−3", -3], ["−0.5", -0.5], ["0", 0], ["1.5", 1.5],
+            ["7", 7], ["放大看 0.25", 0.25], ["放大看 0.08", 0.08], ["远看 −120", -120]
+        ];
+        $("presets").innerHTML = presets.map((p, i) => `<button class="chip" data-i="${i}">${p[0]}</button>`).join("");
+        document.querySelectorAll("#presets .chip").forEach(btn => {
+            btn.addEventListener("click", () => { goTo(presets[Number(btn.dataset.i)][1]); $("goInput").value = fmt(presets[Number(btn.dataset.i)][1], 1e-6); });
+        });
+
+        // ---- 自适应宽度 ----
+        function fitSize() {
+            const rect = svg.getBoundingClientRect();
+            state.width = Math.max(640, Math.round(rect.width));
+            state.height = Math.round(rect.height) || 220;
+            state.y = Math.round(state.height * 0.55);
+        }
+
+        function init() {
+            fitSize();
+            state.pxPerUnit = 80;
+            state.point = 2.5;
+            state.origin = state.width / 2 - state.point * state.pxPerUnit;
+            render();
+        }
+        window.addEventListener("resize", () => {
+            const valLeft = toVal(0);
+            fitSize();
+            // 维持左端数值大致不变
+            state.origin = -valLeft * state.pxPerUnit;
+            render();
+        });
+        init();
+    </script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分数的意义、约分与通分 | Math101</title>
+    <script src="../vendor/react.production.min.js"></script>
+    <script src="../vendor/react-dom.production.min.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #f6f7fb; color: #1f2937; }
+        button, select, input { font: inherit; }
+        .fade-in { animation: fadeIn .35s ease both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+        .new-cut { stroke-dasharray: 90; stroke-dashoffset: 90; animation: drawCut .65s ease forwards; }
+        @keyframes drawCut { to { stroke-dashoffset: 0; } }
+        .vanish-cut { animation: vanishCut .75s ease forwards; }
+        @keyframes vanishCut { from { opacity: 1; } to { opacity: .12; } }
+        .pulse-fill { animation: pulseFill .65s ease both; transform-origin: center; }
+        @keyframes pulseFill { 0% { opacity: .45; } 100% { opacity: 1; } }
+        .smooth { transition: all .2s ease; }
+        .fraction-line { min-width: 1.15em; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useEffect, useMemo, useState } = React;
+
+        const COLORS = {
+            a: '#f59e0b', aSoft: '#fef3c7',
+            b: '#8b5cf6', bSoft: '#ede9fe',
+            c: '#0ea5e9', cSoft: '#e0f2fe',
+            empty: '#ffffff', line: '#94a3b8', strong: '#334155', newLine: '#ef4444'
+        };
+
+        const gcd = (a, b) => b ? gcd(b, a % b) : a;
+        const lcm = (a, b) => a * b / gcd(a, b);
+        const asNumerator = value => Math.max(0, Math.floor(Number(value) || 0));
+        const asDenominator = value => Math.max(1, Math.floor(Number(value) || 1));
+
+        const Fraction = ({ n, d, color = 'text-slate-700', size = 'text-3xl' }) => (
+            <span className={`inline-flex flex-col items-center justify-center align-middle leading-none font-bold mx-1 ${color} ${size}`}>
+                <span>{n}</span>
+                <span className="fraction-line w-full border-t-2 border-current my-0.5"></span>
+                <span>{d}</span>
+            </span>
+        );
+
+        /*
+         * fineDen 决定真正的小份数；group 决定每几小份仍属于原来的一份。
+         * revealCuts=false：只画原分母的粗线。
+         * revealCuts=true：把通分时新添的细线用红色动画画出来。
+         * fadeInner=true：约分时把组内多余的线淡去。
+         */
+        const Pie = ({ num, fineDen, group = 1, color = COLORS.a, size = 210, revealCuts = false, fadeInner = false, label }) => {
+            const cx = 110, cy = 110, r = 94;
+            const pathFor = (i) => {
+                const a0 = i / fineDen * Math.PI * 2 - Math.PI / 2;
+                const a1 = (i + 1) / fineDen * Math.PI * 2 - Math.PI / 2;
+                const p0 = [cx + r * Math.cos(a0), cy + r * Math.sin(a0)];
+                const p1 = [cx + r * Math.cos(a1), cy + r * Math.sin(a1)];
+                return `M ${cx} ${cy} L ${p0[0]} ${p0[1]} A ${r} ${r} 0 ${a1-a0 > Math.PI ? 1 : 0} 1 ${p1[0]} ${p1[1]} Z`;
+            };
+            const lineAt = (i) => {
+                const a = i / fineDen * Math.PI * 2 - Math.PI / 2;
+                return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+            };
+            return (
+                <figure className="m-0 text-center inline-flex flex-col items-center">
+                    <svg width={size} height={size} viewBox="0 0 220 220" role="img" aria-label={label || `涂色 ${num}/${fineDen} 的饼图`}>
+                        {Array.from({ length: fineDen }, (_, i) => (
+                            <path key={`p-${i}`} d={pathFor(i)} fill={i < num ? color : COLORS.empty} className={i < num ? 'pulse-fill' : ''} />
+                        ))}
+                        {Array.from({ length: fineDen }, (_, i) => {
+                            const p = lineAt(i);
+                            const original = i % group === 0;
+                            const cls = !original && revealCuts ? 'new-cut' : (!original && fadeInner ? 'vanish-cut' : '');
+                            if (!original && !revealCuts && !fadeInner) return null;
+                            return <line key={`l-${i}`} x1={cx} y1={cy} x2={p.x} y2={p.y}
+                                stroke={original ? COLORS.strong : (revealCuts ? COLORS.newLine : COLORS.line)}
+                                strokeWidth={original ? 2.8 : 1.7} className={cls}
+                                style={{ animationDelay: revealCuts && !original ? `${(i % group) * .08}s` : '0s' }} />;
+                        })}
+                        <circle cx={cx} cy={cy} r={r} fill="none" stroke={COLORS.strong} strokeWidth="3" />
+                    </svg>
+                    {label && <figcaption className="text-sm text-slate-500 -mt-1">{label}</figcaption>}
+                </figure>
+            );
+        };
+
+        // 输入分数可以是假分数。最多画 3 个整圆；数值再大时保留准确算式，避免饼图挤成一团。
+        const PieAmount = ({ num, fineDen, group = 1, color = COLORS.a, revealCuts = false, fadeInner = false, label }) => {
+            const whole = Math.floor(num / fineDen), remainder = num % fineDen;
+            const pieCount = whole + (remainder > 0 || num === 0 ? 1 : 0);
+            if (fineDen > 120 || pieCount > 3) {
+                return (
+                    <div className="h-[220px] flex flex-col items-center justify-center rounded-full text-slate-400">
+                        <Fraction n={num} d={fineDen} size="text-4xl" color="text-slate-500" />
+                        <p className="text-xs mt-3 mb-0">切线或整圆过多，保留准确算式显示</p>
+                    </div>
+                );
+            }
+            const amounts = Array.from({ length: whole }, () => fineDen);
+            if (remainder > 0 || num === 0) amounts.push(remainder);
+            const size = amounts.length > 1 ? 130 : 210;
+            return (
+                <div className="text-center">
+                    <div className="min-h-[210px] flex flex-wrap items-center justify-center gap-1">
+                        {amounts.map((amount, i) => <Pie key={i} num={amount} fineDen={fineDen} group={group} color={color} size={size} revealCuts={revealCuts} fadeInner={fadeInner} />)}
+                    </div>
+                    {label && <p className="text-sm text-slate-500 mt-0 mb-0">{label}</p>}
+                </div>
+            );
+        };
+
+        const FractionInput = ({ value, onChange, label, accent = 'border-slate-300' }) => (
+            <div className="flex flex-col items-center gap-1">
+                <span className="text-xs font-semibold text-slate-500">{label}</span>
+                <div className="inline-flex flex-col items-center">
+                    <input aria-label={`${label}的分子`} type="number" min="0" step="1" value={value.n}
+                        onChange={e => onChange({ ...value, n: e.target.value })}
+                        onBlur={() => onChange({ ...value, n: String(asNumerator(value.n)) })}
+                        className={`w-20 rounded-lg border-2 ${accent} bg-white px-2 py-1.5 text-center text-xl font-bold outline-none focus:ring-2 focus:ring-indigo-100`} />
+                    <span className="w-20 border-t-2 border-slate-500 my-1"></span>
+                    <input aria-label={`${label}的分母`} type="number" min="1" step="1" value={value.d}
+                        onChange={e => onChange({ ...value, d: e.target.value })}
+                        onBlur={() => onChange({ ...value, d: String(asDenominator(value.d)) })}
+                        className={`w-20 rounded-lg border-2 ${accent} bg-white px-2 py-1.5 text-center text-xl font-bold outline-none focus:ring-2 focus:ring-indigo-100`} />
+                </div>
+            </div>
+        );
+
+        const StepDots = ({ labels, step }) => (
+            <div className="flex flex-wrap justify-center gap-2 mb-5" aria-label="演示步骤">
+                {labels.map((label, i) => (
+                    <div key={label} className={`px-3 py-1.5 rounded-full text-sm font-semibold smooth ${i === step ? 'bg-slate-800 text-white shadow' : i < step ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-400 border border-slate-200'}`}>
+                        {i < step ? '✓ ' : ''}{label}
+                    </div>
+                ))}
+            </div>
+        );
+
+        const StepButtons = ({ step, setStep, max }) => (
+            <div className="flex justify-center gap-3 mt-5">
+                {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
+                {step < max && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
+                {step === max && <button onClick={() => setStep(0)} className="px-6 py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow smooth">再演示一次 ↻</button>}
+            </div>
+        );
+
+        const MeaningDemo = () => {
+            const [den, setDen] = useState(5);
+            const [num, setNum] = useState(2);
+            const safeNum = Math.min(num, den);
+            return (
+                <section className="fade-in">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+                        <p className="text-xl leading-relaxed m-0">一个分数，描述的是<b className="text-slate-800">同一个整体</b>被怎样平均分，以及取了多少份。</p>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-5">
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center justify-center">
+                            <div className="text-center">
+                                <Pie num={safeNum} fineDen={den} size={250} label={`平均分成 ${den} 份，涂色 ${safeNum} 份`} />
+                                <div className="mt-3"><Fraction n={safeNum} d={den} color="text-amber-600" size="text-5xl" /></div>
+                            </div>
+                        </div>
+                        <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 flex flex-col justify-center gap-4">
+                            <div className="rounded-xl bg-sky-50 border border-sky-100 p-4">
+                                <b className="text-sky-700 text-lg">分母 {den}</b>
+                                <p className="text-slate-600 mt-1 mb-0">表示把一个整体<b>平均分成 {den} 份</b>，决定每一小份有多大。</p>
+                            </div>
+                            <div className="rounded-xl bg-amber-50 border border-amber-100 p-4">
+                                <b className="text-amber-700 text-lg">分子 {safeNum}</b>
+                                <p className="text-slate-600 mt-1 mb-0">表示取其中<b>{safeNum} 份</b>，也就是图中涂色的小份。</p>
+                            </div>
+                            <p className="text-sm text-slate-500 m-0">关键前提：每一份必须一样大，整体也必须一样大。</p>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 mt-5 space-y-4">
+                        <label className="flex items-center gap-4"><span className="w-28 text-sm text-slate-500">分母 · 分几份</span><input className="flex-1 accent-sky-500" type="range" min="2" max="12" value={den} onChange={e => { const d = +e.target.value; setDen(d); setNum(Math.min(num, d)); }} /><b className="w-7 text-sky-600 text-xl">{den}</b></label>
+                        <label className="flex items-center gap-4"><span className="w-28 text-sm text-slate-500">分子 · 取几份</span><input className="flex-1 accent-amber-500" type="range" min="0" max={den} value={safeNum} onChange={e => setNum(+e.target.value)} /><b className="w-7 text-amber-600 text-xl">{safeNum}</b></label>
+                    </div>
+                </section>
+            );
+        };
+
+        const EQUIV_CASES = [
+            { n: 1, d: 2, m: 2 }, { n: 2, d: 3, m: 3 }, { n: 3, d: 4, m: 2 }, { n: 2, d: 5, m: 3 }
+        ];
+        const EquivalentDemo = () => {
+            const [ci, setCi] = useState(0);
+            const [step, setStep] = useState(0);
+            const c = EQUIV_CASES[ci], nn = c.n * c.m, dd = c.d * c.m;
+            useEffect(() => setStep(0), [ci]);
+            return (
+                <section className="fade-in">
+                    <StepDots labels={['先看原分数', `每份再分成 ${c.m} 份`, '确认大小不变']} step={step} />
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-8">
+                            <div><Pie num={c.n * c.m} fineDen={dd} group={c.m} color={COLORS.a} label={`原来：${c.d} 份中取 ${c.n} 份`} /><Fraction n={c.n} d={c.d} color="text-amber-600" /></div>
+                            <div className="text-4xl text-slate-300">{step >= 2 ? '=' : '→'}</div>
+                            {step === 0 ? <div className="w-[210px] text-slate-400"><div className="h-40 flex items-center justify-center text-5xl">?</div><p>下一步会发生什么？</p></div> :
+                                <div className="fade-in"><Pie num={nn} fineDen={dd} group={c.m} revealCuts color={COLORS.a} label={`现在：${dd} 份中取 ${nn} 份`} /><Fraction n={nn} d={dd} color="text-amber-600" /></div>}
+                        </div>
+                        {step >= 1 && <div className="mt-5 bg-rose-50 border border-rose-100 rounded-xl p-4 fade-in">
+                            <p className="m-0 text-slate-700">每一份都<b className="text-rose-600">再平均分成 {c.m} 份</b>：涂色份数和总份数都变成原来的 {c.m} 倍。</p>
+                            <div className="mt-2 text-lg font-semibold text-slate-700 flex items-center justify-center flex-wrap">
+                                <Fraction n={`${c.n}×${c.m}`} d={`${c.d}×${c.m}`} size="text-xl" color="text-rose-600" /> = <Fraction n={nn} d={dd} size="text-xl" color="text-rose-600" />
+                            </div>
+                            <p className="text-sm text-rose-700 mt-2 mb-0">注意：是<b>分子、分母同时乘 {c.m}</b>，不是把整个分数乘 {c.m}。</p>
+                        </div>}
+                        {step >= 2 && <p className="mt-4 mb-0 text-emerald-700 font-semibold fade-in">切得更细了，但涂色面积一点也没变，所以两个分数相等。</p>}
+                    </div>
+                    <StepButtons step={step} setStep={setStep} max={2} />
+                    <div className="flex flex-wrap justify-center gap-2 mt-5">
+                        {EQUIV_CASES.map((x, i) => <button key={i} onClick={() => setCi(i)} className={`px-3 py-2 rounded-xl border smooth ${i === ci ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-500'}`}><Fraction n={x.n} d={x.d} size="text-base" color="inherit" /> <span className="ml-1">每份再分 {x.m} 份</span></button>)}
+                    </div>
+                </section>
+            );
+        };
+
+        const REDUCE_CASES = [
+            { n: 6, d: 8 }, { n: 8, d: 12 }, { n: 10, d: 15 }, { n: 12, d: 18 }
+        ];
+        const ReduceDemo = () => {
+            const [input, setInput] = useState({ n: '6', d: '8' });
+            const [step, setStep] = useState(0);
+            const c = { n: asNumerator(input.n), d: asDenominator(input.d) };
+            const g = gcd(c.n, c.d), nn = c.n / g, dd = c.d / g;
+            const changeInput = next => { setInput(next); setStep(0); };
+            const chooseCase = x => { setInput({ n: String(x.n), d: String(x.d) }); setStep(0); };
+            return (
+                <section className="fade-in">
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-5">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+                            <FractionInput value={input} onChange={changeInput} label="输入任意分数" accent="border-emerald-300" />
+                            <div className="text-center sm:text-left">
+                                <p className="font-semibold text-emerald-800 mt-0 mb-1">自动求最大公因数：{g}</p>
+                                <p className="text-sm text-slate-500 m-0">分子可为 0，分母必须是正整数；也支持假分数。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <StepDots labels={g > 1 ? ['看见很多小份', `每 ${g} 小份合成一组`, '写成最简分数'] : ['看原分数', '分子分母已经互质', '确认是最简分数']} step={step} />
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-8">
+                            <div><PieAmount num={c.n} fineDen={c.d} group={1} color={COLORS.a} label={`每个整体平均分成 ${c.d} 份`} /><Fraction n={c.n} d={c.d} color="text-amber-600" /></div>
+                            <div className="text-4xl text-slate-300">{step >= 2 ? '=' : '→'}</div>
+                            {step === 0 ? <div className="w-[210px] text-slate-400"><div className="h-40 flex items-center justify-center text-5xl">?</div><p>哪些小份能合成一组？</p></div> :
+                                <div className="fade-in"><PieAmount num={c.n} fineDen={c.d} group={g} fadeInner color={COLORS.a} label={g > 1 ? `每 ${g} 小份合成一大份` : '没有可以合并的切线'} /><Fraction n={nn} d={dd} color="text-emerald-600" /></div>}
+                        </div>
+                        {step >= 1 && <div className="mt-5 bg-emerald-50 border border-emerald-100 rounded-xl p-4 fade-in">
+                            {g > 1 ? <p className="m-0">把相邻的<b className="text-emerald-700">每 {g} 小份看成一大份</b>。组内切线淡去，涂色面积仍然不变。</p> : <p className="m-0">{c.n} 和 {c.d} 的最大公因数是 1，不能再合并小份，这个分数已经最简。</p>}
+                            <div className="mt-2 text-lg font-semibold flex items-center justify-center flex-wrap"><Fraction n={`${c.n}÷${g}`} d={`${c.d}÷${g}`} size="text-xl" color="text-emerald-700" /> = <Fraction n={nn} d={dd} size="text-xl" color="text-emerald-700" /></div>
+                        </div>}
+                        {step >= 2 && <p className="mt-4 mb-0 text-slate-700 fade-in"><b>约分</b>就是让分子、分母同时除以同一个公因数（0 除外）。份数变少、每份变大，分数大小不变。</p>}
+                    </div>
+                    <StepButtons step={step} setStep={setStep} max={2} />
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-5"><span className="text-sm text-slate-400">示例：</span>{REDUCE_CASES.map((x, i) => <button key={i} onClick={() => chooseCase(x)} className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-emerald-300 smooth"><Fraction n={x.n} d={x.d} size="text-base" color="inherit" /></button>)}</div>
+                </section>
+            );
+        };
+
+        const COMMON_CASES = [
+            { label: '二分之一、三分之一', values: [{ n: 1, d: 2 }, { n: 1, d: 3 }] },
+            { label: '三分之二、四分之三', values: [{ n: 2, d: 3 }, { n: 3, d: 4 }] },
+            { label: '三个分数', values: [{ n: 1, d: 2 }, { n: 1, d: 3 }, { n: 1, d: 4 }] },
+            { label: '分母有公因数', values: [{ n: 5, d: 6 }, { n: 3, d: 8 }, { n: 7, d: 12 }] }
+        ];
+        const FRACTION_STYLES = [
+            { fill: COLORS.a, title: 'text-amber-700', fraction: 'text-amber-600', border: 'border-amber-300' },
+            { fill: COLORS.b, title: 'text-violet-700', fraction: 'text-violet-600', border: 'border-violet-300' },
+            { fill: COLORS.c, title: 'text-sky-700', fraction: 'text-sky-600', border: 'border-sky-300' }
+        ];
+        const CommonDemo = () => {
+            const [count, setCount] = useState(2);
+            const [inputs, setInputs] = useState([{ n: '1', d: '2' }, { n: '1', d: '3' }, { n: '1', d: '4' }]);
+            const [step, setStep] = useState(0);
+            const fractions = inputs.slice(0, count).map(f => ({ n: asNumerator(f.n), d: asDenominator(f.d) }));
+            const common = fractions.reduce((answer, f) => lcm(answer, f.d), 1);
+            const results = fractions.map(f => ({ ...f, m: common / f.d, nn: f.n * (common / f.d) }));
+            const converted = step >= 2;
+            const changeCount = next => { setCount(next); setStep(0); };
+            const changeInput = (index, value) => {
+                setInputs(inputs.map((item, i) => i === index ? value : item));
+                setStep(0);
+            };
+            const chooseCase = example => {
+                setCount(example.values.length);
+                setInputs([0, 1, 2].map(i => example.values[i] ? { n: String(example.values[i].n), d: String(example.values[i].d) } : inputs[i]));
+                setStep(0);
+            };
+            return (
+                <section className="fade-in">
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-5 text-center">
+                        <p className="m-0 text-slate-700"><b className="text-indigo-700">为什么要通分？</b> 分母不同时，每一份大小不同；把它们切成同样大小的小份，才方便比较或相加减。</p>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-5 shadow-sm">
+                        <div className="flex justify-center gap-2 mb-5">
+                            {[2, 3].map(number => <button key={number} onClick={() => changeCount(number)} className={`px-5 py-2 rounded-xl font-semibold smooth ${count === number ? 'bg-indigo-600 text-white shadow' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{number} 个分数</button>)}
+                        </div>
+                        <div className={`grid ${count === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-5 max-w-2xl mx-auto`}>
+                            {inputs.slice(0, count).map((value, i) => <FractionInput key={i} value={value} onChange={next => changeInput(i, next)} label={`第 ${i + 1} 个分数`} accent={FRACTION_STYLES[i].border} />)}
+                        </div>
+                        <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+                            <span className="text-sm text-slate-500">自动求得最小公分母：</span>
+                            <b className="text-3xl text-indigo-700 ml-2">{common}</b>
+                        </div>
+                    </div>
+                    <StepDots labels={[new Set(fractions.map(f => f.d)).size === 1 ? '已经是同分母' : '异分母：每份不同', '找公分母', '分别切成同样的小份', '验证大小不变']} step={step} />
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        {step === 1 && <div className="fade-in text-center mb-5 bg-sky-50 border border-sky-100 rounded-xl p-4">
+                            <p className="m-0 text-slate-700">{fractions.map(f => f.d).join('、')} 的最小公倍数是 <b className="text-sky-700 text-2xl">{common}</b>，所以选 {common} 作公分母。</p>
+                            <p className="mt-2 mb-0 text-sm text-slate-500">目标：让 {count} 个饼都平均分成 {common} 份，每一份都是整个饼的 <Fraction n={1} d={common} size="text-lg" color="text-sky-700" />。</p>
+                        </div>}
+                        <div className={`grid ${count === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'} items-start gap-4 text-center`}>
+                            {results.map((f, i) => {
+                                const style = FRACTION_STYLES[i];
+                                return <div key={i} className={i > 0 ? 'md:border-l md:border-dashed md:border-slate-200 md:pl-4' : ''}>
+                                    <h3 className={`${style.title} mt-0`}>第 {i + 1} 个分数</h3>
+                                    <PieAmount num={converted ? f.nn : f.n} fineDen={converted ? common : f.d} group={converted ? f.m : 1} revealCuts={converted} color={style.fill} label={converted ? `原来每份再分成 ${f.m} 小份` : `平均分成 ${f.d} 份`} />
+                                    <div className="mt-2 flex justify-center items-center flex-wrap">
+                                        <Fraction n={f.n} d={f.d} color={style.fraction} />
+                                        {converted && <><span className="text-slate-400 mx-1">=</span><Fraction n={f.nn} d={common} color={style.fraction} /></>}
+                                    </div>
+                                    {converted && <div className="text-sm text-rose-600 fade-in flex items-center justify-center flex-wrap mt-2"><Fraction n={`${f.n}×${f.m}`} d={`${f.d}×${f.m}`} size="text-base" color="text-rose-600" /><span className="ml-1">（分子分母同乘 {f.m}）</span></div>}
+                                </div>;
+                            })}
+                        </div>
+                        {step === 0 && <div className="text-center mt-5 text-slate-600 bg-amber-50 rounded-xl p-3 flex items-center justify-center flex-wrap">原来每一份分别是：{fractions.map((f, i) => <Fraction key={i} n={1} d={f.d} size="text-lg" color={FRACTION_STYLES[i].fraction} />)}。分母不同时，<b>小份大小不一样</b>。</div>}
+                        {step >= 2 && <div className="mt-5 rounded-xl bg-rose-50 border border-rose-100 p-4 text-center fade-in">
+                            <p className="m-0 text-slate-700">各分数的每一旧份分别再分成 <b>{results.map(f => f.m).join('、')}</b> 小份。现在每一小份都等于整个饼的 <Fraction n={1} d={common} size="text-lg" color="text-rose-600" />。</p>
+                        </div>}
+                        {step >= 3 && <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-100 p-4 text-center fade-in">
+                            <div className="m-0 text-lg font-semibold text-emerald-800 flex flex-wrap items-center justify-center gap-3">{results.map((f, i) => <span key={i} className="inline-flex items-center"><Fraction n={f.n} d={f.d} size="text-xl" color={FRACTION_STYLES[i].fraction} /> = <Fraction n={f.nn} d={common} size="text-xl" color={FRACTION_STYLES[i].fraction} /></span>)}</div>
+                            <p className="mt-2 mb-0 text-slate-600">通分没有改变这些分数的大小，只把它们改写成了<b>分母相同</b>的分数。</p>
+                        </div>}
+                    </div>
+                    <StepButtons step={step} setStep={setStep} max={3} />
+                    <div className="flex flex-wrap justify-center gap-2 mt-5">
+                        <span className="text-sm text-slate-400 self-center">示例：</span>{COMMON_CASES.map((example, i) => <button key={i} onClick={() => chooseCase(example)} className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:border-indigo-300 smooth">{example.label}</button>)}
+                    </div>
+                </section>
+            );
+        };
+
+        const TABS = [
+            { id: 'meaning', title: '① 分数的意义', hint: '分母定小份，分子数小份', color: 'bg-sky-600' },
+            { id: 'equiv', title: '② 分数基本性质', hint: '切得更细，大小不变', color: 'bg-amber-500' },
+            { id: 'reduce', title: '③ 约分', hint: '小份合组，切线减少', color: 'bg-emerald-600' },
+            { id: 'common', title: '④ 通分（重点）', hint: '异分母变成同分母', color: 'bg-indigo-600' }
+        ];
+
+        const App = () => {
+            const [tab, setTab] = useState('common');
+            return (
+                <main className="max-w-5xl mx-auto px-4 py-8">
+                    <header className="relative text-center mb-6 px-12">
+                        <a href="/" aria-label="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 smooth">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        </a>
+                        <div className="inline-flex px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold mb-2">五年级 · 分数的意义和性质</div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-slate-800 m-0">分数的意义、约分与通分</h1>
+                        <p className="text-slate-500 mt-3 mb-0">用饼图看清：<b>切线变了，涂色面积不变</b></p>
+                    </header>
+                    <nav className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-7" aria-label="知识模块">
+                        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`p-3 rounded-xl border-2 text-left smooth ${tab === t.id ? `${t.color} text-white border-transparent shadow-md` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}><b className="block">{t.title}</b><span className={`text-xs ${tab === t.id ? 'text-white/80' : 'text-slate-400'}`}>{t.hint}</span></button>)}
+                    </nav>
+                    {tab === 'meaning' && <MeaningDemo />}
+                    {tab === 'equiv' && <EquivalentDemo />}
+                    {tab === 'reduce' && <ReduceDemo />}
+                    {tab === 'common' && <CommonDemo />}
+                    <footer className="text-center text-slate-400 text-sm mt-10">Math101 · 分数可视化 · 适用人教版五年级下册</footer>
+                </main>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+    <div style="box-sizing:border-box;width:100%;padding:24px 16px;text-align:center;color:#94a3b8;font:13px/1.6 system-ui,-apple-system,sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

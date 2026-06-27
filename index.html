@@ -366,19 +366,20 @@
     <!-- ============ 板块一：数与代数 ============ -->
     <div class="board-title board-anchor" id="board-number">
         <h2>数与代数</h2>
-        <p>教材知识与进阶计算体系：数感、整数运算、乘除模型、小数、分数、比、方程、巧算与运算律。</p>
+        <p>按整数、小数、分数、比与比例、方程五大板块依次展开，整数部分含认识、计算与所有基本运算的理解和练习。</p>
     </div>
 
     <div class="section-title">
         <h3>教材知识 · 数与代数</h3>
-        <p>数感、整数运算、乘除模型、小数、分数、比与方程。</p>
+        <p>按整数、小数、分数、比与比例、方程的顺序分块。</p>
     </div>
 
+    <!-- ===== 一、整数部分 ===== -->
     <div class="section-title sub-title">
-        <h3>数的认识与数感</h3>
-        <p>数位、大小、倍数、小数意义和数轴。</p>
+        <h3>整数 · 认识与数感</h3>
+        <p>数位、位值、大小、数轴与倍数因数。</p>
     </div>
-    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="negative-number-line">
+    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="__none__">
         <a href="/place-value" class="tool-card math-op">
             <div class="url-tag">/place-value</div>
             <span class="category-label">数的认识</span>
@@ -395,11 +396,11 @@
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/decimal-1" class="tool-card math-op">
-            <div class="url-tag">/decimal-1</div>
-            <span class="category-label">小数意义</span>
-            <h2>小数显示工具</h2>
-            <p>用数轴和数位表建立小数数感。</p>
+        <a href="/number-line" class="tool-card math-op">
+            <div class="url-tag">/number-line</div>
+            <span class="category-label">数轴·正负数</span>
+            <h2>数轴探索 <span class="update-tag">NEW</span></h2>
+            <p>可拖动点、滚轮缩放，理解正负数、整数与小数。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -413,7 +414,7 @@
     </div>
 
     <div class="section-title sub-title">
-        <h3>整数运算与乘除模型</h3>
+        <h3>整数 · 运算与乘除模型</h3>
         <p>加减法、表内乘除、有余数除法和多位数运算。</p>
     </div>
     <div class="container" data-interface-categories="school-number calc-track advanced-calc-number-theory" data-interface-tool-ids="multi-digit-calc-lab integer-skill-drill">
@@ -473,14 +474,6 @@
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/multiply-model" class="tool-card math-op">
-            <div class="url-tag">/multiply-model</div>
-            <span class="category-label">乘法应用模型</span>
-            <h2>每份数×份数=总数 <span class="update-tag">NEW</span></h2>
-            <p>把应用题画成每份数、份数、总数。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
         <a href="/calc" class="tool-card math-law">
             <div class="url-tag">/calc</div>
             <span class="category-label">计算训练</span>
@@ -506,11 +499,20 @@
         </a>
     </div>
 
+    <!-- ===== 二、小数部分 ===== -->
     <div class="section-title sub-title">
-        <h3>小数、分数、比与比例</h3>
-        <p>小数运算、分数意义、分数计算、比、百分数和比例。</p>
+        <h3>小数 · 认识与运算</h3>
+        <p>小数意义、数位、小数点移位与小数运算。</p>
     </div>
-    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="decimal-calc-lab fraction-meaning-properties fraction-mul-div ratio-percent-proportion fraction-decimal-mix">
+    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="decimal-calc-lab fraction-decimal-mix">
+        <a href="/decimal-1" class="tool-card math-op">
+            <div class="url-tag">/decimal-1</div>
+            <span class="category-label">小数意义</span>
+            <h2>小数显示工具</h2>
+            <p>用数轴和数位表建立小数数感。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
         <a href="/decimal-2" class="tool-card math-op">
             <div class="url-tag">/decimal-2</div>
             <span class="category-label">小数运算</span>
@@ -518,12 +520,27 @@
             <p>演示小数点移动和乘除关系。</p>
             <span class="status-badge">进入工具</span>
         </a>
+    </div>
 
+    <!-- ===== 三、分数部分 ===== -->
+    <div class="section-title sub-title">
+        <h3>分数 · 认识、性质与运算</h3>
+        <p>分数意义、约分通分与分数加减乘除。</p>
+    </div>
+    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="fraction-meaning-properties fraction-mul-div">
         <a href="/fraction" class="tool-card math-op">
             <div class="url-tag">/fraction</div>
             <span class="category-label">分数初步认识</span>
             <h2>分数的初步认识 <span class="update-tag">NEW</span></h2>
             <p>用整体平均分理解分子和分母。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/fraction-properties" class="tool-card math-op">
+            <div class="url-tag">/fraction-properties</div>
+            <span class="category-label">分数的意义和性质</span>
+            <h2>约分与通分演示器 <span class="update-tag">NEW</span></h2>
+            <p>用饼图演示等值分数、自动约分，以及两至三个异分母分数的自动通分。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -536,6 +553,15 @@
         </a>
     </div>
 
+    <!-- ===== 四、比与比例 ===== -->
+    <div class="section-title sub-title">
+        <h3>比与比例</h3>
+        <p>比的意义、百分数、正反比例与比例应用。</p>
+    </div>
+    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="ratio-percent-proportion">
+    </div>
+
+    <!-- ===== 五、方程 ===== -->
     <div class="section-title sub-title">
         <h3>方程与代数初步</h3>
         <p>用天平模型和数量关系进入方程思想。</p>
@@ -590,6 +616,22 @@
             <span class="category-label">周长与面积</span>
             <h2>周长与面积实验室 <span class="update-tag">NEW</span></h2>
             <p>先数线段、数格子，再到图形周长和割补法求面积。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/object-viewer" class="tool-card geometry">
+            <div class="url-tag">/object-viewer</div>
+            <span class="category-label">观察物体</span>
+            <h2>观察物体·三视图 <span class="update-tag">NEW</span></h2>
+            <p>搭小正方体，拖动旋转，自动得到正视图、侧视图和俯视图。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/solid-shapes" class="tool-card geometry">
+            <div class="url-tag">/solid-shapes</div>
+            <span class="category-label">立体图形</span>
+            <h2>基础立体图形 <span class="update-tag">NEW</span></h2>
+            <p>长方体、圆柱、圆锥、球、正四面体，拖动旋转看三视图。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>
@@ -679,6 +721,14 @@
         <p>从读题画图到归一、行程、工程、浓度与经济应用模型。</p>
     </div>
     <div class="container" data-interface-categories="advanced-word">
+        <a href="/multiply-model" class="tool-card applied">
+            <div class="url-tag">/multiply-model</div>
+            <span class="category-label">乘法应用模型</span>
+            <h2>每份数×份数=总数 <span class="update-tag">NEW</span></h2>
+            <p>把应用题画成每份数、份数、总数。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
         <a href="/bar-model" class="tool-card applied">
             <div class="url-tag">/bar-model</div>
             <span class="category-label">线段图与模型</span>

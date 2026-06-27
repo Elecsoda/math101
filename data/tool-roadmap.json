@@ -47,7 +47,8 @@
         "frac-intro",
         "decimal-meaning",
         "op-laws",
-        "equation"
+        "equation",
+        "negative"
       ],
       "missingNodeIds": [
         "num-10k",
@@ -67,8 +68,7 @@
         "frac-div",
         "ratio",
         "percent",
-        "proportion",
-        "negative"
+        "proportion"
       ],
       "recommendedTools": [
         {
@@ -138,7 +138,7 @@
           "id": "fraction-meaning-properties",
           "name": "分数意义、约分与通分",
           "grade": "5",
-          "status": "planned",
+          "status": "ready",
           "route": "/fraction-properties",
           "knowledgeNodeIds": [
             "frac-meaning",
@@ -170,10 +170,10 @@
         },
         {
           "id": "negative-number-line",
-          "name": "负数与数轴",
-          "grade": "6",
-          "status": "planned",
-          "route": "/negative-number-line",
+          "name": "数轴探索（可拖动点·滚轮缩放）",
+          "grade": "1-6",
+          "status": "ready",
+          "route": "/number-line",
           "knowledgeNodeIds": [
             "negative"
           ]
@@ -300,13 +300,13 @@
         "quad-perimeter",
         "area",
         "parallelogram-trapezoid",
-        "polygon-area"
+        "polygon-area",
+        "observe-object",
+        "shape-solid"
       ],
       "missingNodeIds": [
-        "shape-solid",
         "shape-plane",
         "pos-basic",
-        "observe-object",
         "measure-units",
         "angle-measure",
         "triangle-classify",
@@ -334,10 +334,25 @@
           "id": "object-viewer",
           "name": "观察物体三视图",
           "grade": "2-4",
-          "status": "planned",
+          "status": "ready",
           "route": "/object-viewer",
           "knowledgeNodeIds": [
             "observe-object"
+          ],
+          "tabs": [
+            "搭一搭·看三视图",
+            "学规则",
+            "辨认练习"
+          ]
+        },
+        {
+          "id": "solid-shapes",
+          "name": "基础立体图形（旋转·三视图）",
+          "grade": "1-6",
+          "status": "ready",
+          "route": "/solid-shapes",
+          "knowledgeNodeIds": [
+            "shape-solid"
           ]
         },
         {

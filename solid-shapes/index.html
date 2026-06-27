@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础立体图形 | Math101</title>
+    <script src="../vendor/three.min.js"></script>
+    <style>
+        :root {
+            --bg: #f4f7fb; --card: #ffffff; --text: #1f2937; --muted: #64748b;
+            --line: #dbe4ef; --blue: #2563eb; --indigo: #4f46e5; --purple: #7c3aed;
+            --amber: #f59e0b; --green: #10b981; --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+            --front: #60a5fa; --side: #34d399; --top: #fbbf24;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh;
+            background: radial-gradient(circle at top left, #ede9fe 0, transparent 32rem), var(--bg);
+            color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif; }
+        button, input, select { font: inherit; } button { cursor: pointer; }
+        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--purple), var(--indigo)); color: #fff;
+            box-shadow: 0 12px 24px rgba(124, 58, 237, .25); font-size: 22px; font-weight: 950; }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .btn { border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none; }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .card { background: rgba(255,255,255,.95); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow); }
+        .panel { padding: 20px; }
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
+        .lead b { color: var(--indigo); }
+
+        .shape-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .pick { border: 1px solid var(--line); background: #fff; color: #475569;
+            border-radius: 12px; padding: 10px 14px; font-weight: 850; font-size: 14px;
+            box-shadow: 0 2px 6px rgba(15,23,42,.05); display: inline-flex; gap: 8px; align-items: center; }
+        .pick:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .pick.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .pick .ic { font-size: 16px; }
+
+        .layout {
+            display: grid; gap: 14px;
+            grid-template-columns: minmax(0,1fr) 185px 185px;
+            grid-template-areas: "iso views info";
+            align-items: stretch;
+        }
+        .area-iso{grid-area:iso;} .area-info{grid-area:info;}
+        .area-views { grid-area: views; display: flex; flex-direction: column; gap: 12px; }
+        .area-views .mini { flex: 1; }
+        .stage { border: 1px solid var(--line); border-radius: 16px;
+            background: linear-gradient(180deg, #ffffff, #f8fafc); padding: 14px; position: relative; }
+        .stage-title { font-weight: 900; color: #334155; font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+        .canvas-wrap { width: 100%; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden;
+            background: radial-gradient(circle at 60% 30%, #f5f3ff, #f8fafc 70%); position: relative; }
+        .canvas-wrap canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+        .canvas-wrap canvas:active { cursor: grabbing; }
+        .rotate-badge { position: absolute; left: 10px; bottom: 10px; padding: 5px 11px; border-radius: 999px;
+            background: rgba(255,255,255,.92); border: 1px solid var(--line); font-size: 12px; font-weight: 800;
+            color: #475569; box-shadow: 0 2px 6px rgba(15,23,42,.06); pointer-events: none; }
+        .mini { padding: 10px; }
+        .mini .stage-title { font-size: 13px; margin-bottom: 6px; }
+        svg { display: block; width: 100%; height: auto; user-select: none; }
+        svg text { font-family: inherit; }
+        .mini svg { max-height: 150px; }
+
+        .info-list { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+        .info-list li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+        .info-list li:last-child { border-bottom: 0; }
+        .info-list .k { color: var(--muted); font-weight: 800; }
+        .info-list .v { color: #312e81; font-weight: 950; text-align: right; }
+        .info-note { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+        .info-note b { color: var(--indigo); }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 14px 0 4px; }
+        .controls label { font-weight: 850; color: #334155; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+        input[type=range] { accent-color: var(--indigo); }
+        .read-out { margin-top: 16px; padding: 14px 16px; border-radius: 16px; background: #eef2ff; border: 1px solid #c7d2fe; color: #312e81; font-weight: 800; line-height: 1.65; font-size: 14px; }
+        .read-out b { color: var(--indigo); }
+        .read-out .f { color:#2563eb; } .read-out .s { color:#059669; } .read-out .t { color:#d97706; }
+
+        .dir-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+        .dir-row .dir-label { font-size: 12px; font-weight: 850; color: #94a3b8; margin-right: 2px; }
+        .dir-btn { border: 1px solid var(--line); background: #fff; color: #475569; border-radius: 9px;
+            padding: 6px 11px; font-weight: 850; font-size: 13px; box-shadow: 0 1px 4px rgba(15,23,42,.05); }
+        .dir-btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .dir-btn.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .dir-btn small { font-weight: 700; opacity: .7; }
+
+        @media (max-width: 880px) {
+            .page { padding: 16px; }
+            .topbar { display: block; } .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .layout { grid-template-columns: 1fr; grid-template-areas: "iso" "views" "info"; }
+            .area-views { flex-direction: row; }
+            .area-views .mini { min-width: 0; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">体</div>
+                <div>
+                    <h1>基础立体图形</h1>
+                    <p class="sub">认识长方体、正方体、圆柱、圆锥、球、正四面体，拖动旋转并观察它们的三视图</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <section class="card panel">
+            <div class="shape-picker" id="picker"></div>
+            <p class="lead" id="shapeLead"></p>
+
+            <div class="layout">
+                <!-- 中：立体图 + 六向观察按钮 + 尺寸滑块 -->
+                <div class="area-iso stage">
+                    <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>立体图（按住拖动可旋转 🔄）</p>
+                    <div class="canvas-wrap"><canvas id="solid3d"></canvas><span class="rotate-badge">🖱️ 拖动旋转 · 滚轮缩放</span></div>
+                    <div class="dir-row" data-dir-row="solid">
+                        <span class="dir-label">切换视角：</span>
+                        <button class="dir-btn" data-dir="front">前 <small>正视</small></button>
+                        <button class="dir-btn" data-dir="back">后</button>
+                        <button class="dir-btn" data-dir="left">左 <small>侧视</small></button>
+                        <button class="dir-btn" data-dir="right">右</button>
+                        <button class="dir-btn" data-dir="top">上 <small>俯视</small></button>
+                        <button class="dir-btn" data-dir="bottom">下</button>
+                    </div>
+                    <div class="controls" id="dimControls"></div>
+                </div>
+
+                <!-- 右：三视图竖排 -->
+                <div class="area-views">
+                    <div class="stage mini">
+                        <p class="stage-title"><span class="dot" style="background:var(--front)"></span>正视图（从前往后 →）</p>
+                        <svg id="viewFront" viewBox="0 0 150 150"></svg>
+                    </div>
+                    <div class="stage mini">
+                        <p class="stage-title"><span class="dot" style="background:var(--side)"></span>侧视图（从左往右 →）</p>
+                        <svg id="viewSide" viewBox="0 0 150 150"></svg>
+                    </div>
+                    <div class="stage mini">
+                        <p class="stage-title"><span class="dot" style="background:var(--top)"></span>俯视图（从上往下 ↓）</p>
+                        <svg id="viewTop" viewBox="0 0 150 150"></svg>
+                    </div>
+                </div>
+
+                <!-- 图形特征 -->
+                <div class="area-info stage">
+                    <p class="stage-title"><span class="dot" style="background:var(--purple)"></span>图形特征</p>
+                    <ul class="info-list" id="infoList"></ul>
+                    <div class="info-note" id="infoNote"></div>
+                </div>
+            </div>
+
+            <div class="read-out" id="readout"></div>
+        </section>
+    </main>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const SVGNS = "http://www.w3.org/2000/svg";
+        function S(name, attrs, text) { const n=document.createElementNS(SVGNS,name); for(const k in attrs) n.setAttribute(k,attrs[k]); if(text!=null) n.textContent=text; return n; }
+        function clearSvg(svg){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+
+        // ---------- SVG 形状基元（用于三视图） ----------
+        // 视图坐标系：viewBox 150x150，中心 (75,75)
+        const VB=150, CX=75, CY=75;
+        function svgRect(svg,w,h,color,opts={}){ clearSvg(svg);
+            const x=CX-w/2, y=CY-h/2;
+            svg.appendChild(S("rect",{x,y,width:w,height:h,rx:opts.rx||2,fill:color,stroke:"#1e293b","stroke-width":1.6}));
+            if(opts.midV) svg.appendChild(S("line",{x1:CX,y1:y,x2:CX,y2:y+h,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"4 3"}));
+            if(opts.midH) svg.appendChild(S("line",{x1:x,y1:CY,x2:x+w,y2:CY,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"4 3"}));
+        }
+        function svgCircle(svg,r,color,opts={}){ clearSvg(svg);
+            svg.appendChild(S("circle",{cx:CX,cy:CY,r,fill:color,stroke:"#1e293b","stroke-width":1.6}));
+            if(opts.center) svg.appendChild(S("circle",{cx:CX,cy:CY,r:2.4,fill:"#1e293b"}));
+            if(opts.dashCenter) svg.appendChild(S("line",{x1:CX,y1:CY-r,x2:CX,y2:CY+r,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"4 3"}));
+        }
+        function svgTriangle(svg,base,height,color,opts={}){ clearSvg(svg);
+            const x0=CX-base/2, x1=CX+base/2, yb=CY+height/2, yt=CY-height/2;
+            svg.appendChild(S("polygon",{points:`${CX},${yt} ${x1},${yb} ${x0},${yb}`,fill:color,stroke:"#1e293b","stroke-width":1.6,"stroke-linejoin":"round"}));
+            if(opts.apexLine) svg.appendChild(S("line",{x1:CX,y1:yt,x2:CX,y2:yb,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"4 3"}));
+        }
+
+        // ================= Three.js 通用观察器 =================
+        function makeViewer(canvas) {
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+            renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+            const root = new THREE.Group(); scene.add(root);
+            const l1 = new THREE.DirectionalLight(0xffffff,0.85); l1.position.set(4,7,5); scene.add(l1);
+            const l2 = new THREE.DirectionalLight(0xffffff,0.35); l2.position.set(-5,3,-4); scene.add(l2);
+            scene.add(new THREE.AmbientLight(0xffffff,0.62));
+            const state = { yaw:-0.7, pitch:0.45, dist:9, target:new THREE.Vector3() };
+            function applyCam(){ const {yaw,pitch,dist,target}=state;
+                camera.position.set(target.x+dist*Math.cos(pitch)*Math.sin(yaw), target.y+dist*Math.sin(pitch), target.z+dist*Math.cos(pitch)*Math.cos(yaw));
+                camera.lookAt(target); }
+            function resize(){ const w=canvas.clientWidth,h=canvas.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+            function render(){ resize(); applyCam(); renderer.render(scene,camera); }
+            let drag=null;
+            canvas.addEventListener("pointerdown", e=>{ canvas.setPointerCapture(e.pointerId); drag={x:e.clientX,y:e.clientY}; });
+            canvas.addEventListener("pointermove", e=>{ if(!drag) return;
+                state.yaw -= (e.clientX-drag.x)*0.01; state.pitch=Math.max(-1.4,Math.min(1.45,state.pitch+(e.clientY-drag.y)*0.01));
+                drag={x:e.clientX,y:e.clientY}; render(); });
+            const stop=e=>{ try{canvas.releasePointerCapture(e.pointerId);}catch(_){} drag=null; };
+            canvas.addEventListener("pointerup",stop); canvas.addEventListener("pointercancel",stop);
+            canvas.addEventListener("wheel", e=>{ e.preventDefault(); state.dist=Math.max(3,Math.min(24,state.dist*Math.exp(e.deltaY*0.0012))); render(); }, {passive:false});
+            // 平滑转到目标视角（yaw 取最短弧）
+            let anim=null;
+            function animateTo(yaw, pitch) {
+                if (drag) { state.yaw=yaw; state.pitch=pitch; render(); return; }
+                let dy=yaw-state.yaw; dy=Math.atan2(Math.sin(dy),Math.cos(dy));
+                const fromYaw=state.yaw, toYaw=state.yaw+dy, fromPitch=state.pitch, t0=performance.now(), dur=360;
+                if (anim) cancelAnimationFrame(anim);
+                (function step(now){ const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
+                    state.yaw=fromYaw+(toYaw-fromYaw)*e; state.pitch=fromPitch+(pitch-fromPitch)*e; render();
+                    if (k<1) anim=requestAnimationFrame(step); })(t0);
+            }
+            // 六向标准视角（坐标：x=右, y=上, z=前朝观察者）
+            const DIRS = {
+                front:{yaw:0,pitch:0}, back:{yaw:Math.PI,pitch:0},
+                right:{yaw:Math.PI/2,pitch:0}, left:{yaw:-Math.PI/2,pitch:0},
+                top:{yaw:0,pitch:Math.PI/2-0.001}, bottom:{yaw:0,pitch:-Math.PI/2+0.001},
+            };
+            return {
+                scene, root, state, render,
+                snapTo(dir){ const d=DIRS[dir]; if(d) animateTo(d.yaw,d.pitch); },
+                setMesh(geo, sizeForFit, accent=0xc4b5fd) {
+                    while(root.children.length) root.remove(root.children[0]);
+                    const mat = new THREE.MeshLambertMaterial({ color: accent, transparent:true, opacity:0.92 });
+                    const mesh = new THREE.Mesh(geo, mat); root.add(mesh);
+                    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 18), new THREE.LineBasicMaterial({ color:0x475569 }));
+                    root.add(edges);
+                    state.target.set(0,0,0);
+                    state.dist = Math.max(4.5, sizeForFit * 2.3);
+                    render();
+                }
+            };
+        }
+
+        // ================= 形状定义 =================
+        // 每个形状：名称、emoji、说明、几何生成、三视图绘制、特征、尺寸滑块
+        const SHAPES = {
+            cuboid: {
+                name:"长方体", ic:"📦", accent:0x93c5fd,
+                lead:"长方体有 <b>6 个面</b>（相对的面完全相同的长方形）、<b>12 条棱</b>、<b>8 个顶点</b>。相对的棱长度相等。",
+                dims:[ ["length","长",1,4,3], ["width","宽",1,4,2], ["depth","高",1,4,2.4] ],
+                geo:d=>new THREE.BoxGeometry(d.length, d.depth, d.width),
+                fit:d=>Math.max(d.length,d.width,d.depth),
+                views:(svgF,svgS,svgT,d)=>{ const k=26;
+                    svgRect(svgF, d.length*k, d.depth*k, "var(--front)");   // 正：长×高
+                    svgRect(svgS, d.width*k,  d.depth*k, "var(--side)");    // 侧：宽×高
+                    svgRect(svgT, d.length*k, d.width*k, "var(--top)");     // 俯：长×宽
+                },
+                info:d=>[["面的个数","6 个"],["棱的条数","12 条"],["顶点个数","8 个"],["长 / 宽 / 高",`${d.length} / ${d.width} / ${d.depth}`]],
+                note:"三视图都是<b>长方形</b>，但长宽各不相同：正视图=长×高，侧视图=宽×高，俯视图=长×宽。",
+                read:'长方体的三视图<b class="f">正</b>、<b class="s">侧</b>、<b class="t">俯</b>都是长方形。沿不同方向，量到的边长不同。'
+            },
+            cube: {
+                name:"正方体", ic:"🧊", accent:0xa5b4fc,
+                lead:"正方体是<b>特殊的长方体</b>：6 个面都是<b>完全相同的正方形</b>，12 条棱<b>一样长</b>，8 个顶点。",
+                dims:[ ["a","棱长",1,4,2.6] ],
+                geo:d=>new THREE.BoxGeometry(d.a,d.a,d.a),
+                fit:d=>d.a,
+                views:(svgF,svgS,svgT,d)=>{ const s=d.a*26; svgRect(svgF,s,s,"var(--front)"); svgRect(svgS,s,s,"var(--side)"); svgRect(svgT,s,s,"var(--top)"); },
+                info:d=>[["面的个数","6 个"],["棱的条数","12 条"],["顶点个数","8 个"],["棱长",`${d.a}`]],
+                note:"正方体从<b>哪个方向看都一样</b>——三视图是三个<b>完全相同的正方形</b>。",
+                read:'正方体的<b class="f">正</b>、<b class="s">侧</b>、<b class="t">俯</b>视图是三个一样大的<b>正方形</b>。'
+            },
+            cylinder: {
+                name:"圆柱", ic:"🥫", accent:0x86efac,
+                lead:"圆柱有<b>两个完全相同的圆形底面</b>和<b>一个曲面（侧面）</b>。侧面展开是一个<b>长方形</b>。",
+                dims:[ ["r","底面半径",0.6,2,1.3], ["h","高",1,4,2.6] ],
+                geo:d=>new THREE.CylinderGeometry(d.r,d.r,d.h,48),
+                fit:d=>Math.max(d.r*2,d.h),
+                views:(svgF,svgS,svgT,d)=>{ const k=26;
+                    svgRect(svgF, d.r*2*k, d.h*k, "var(--front)");   // 正：长方形
+                    svgRect(svgS, d.r*2*k, d.h*k, "var(--side)");    // 侧：长方形（同正）
+                    svgCircle(svgT, d.r*k, "var(--top)", {center:true}); // 俯：圆
+                },
+                info:d=>[["底面","2 个圆"],["侧面","1 个曲面"],["底面半径",`${d.r}`],["高",`${d.h}`]],
+                note:"正视图和侧视图都是<b>长方形</b>（宽=直径，高=圆柱的高）；俯视图是一个<b>圆</b>。",
+                read:'圆柱：<b class="f">正视图</b>和<b class="s">侧视图</b>是长方形，<b class="t">俯视图</b>是圆。'
+            },
+            cone: {
+                name:"圆锥", ic:"🍦", accent:0xfca5a5,
+                lead:"圆锥有<b>一个圆形底面</b>、<b>一个曲面（侧面）</b>和<b>一个顶点</b>。从顶点到底面圆心的距离是它的高。",
+                dims:[ ["r","底面半径",0.6,2,1.4], ["h","高",1,4,2.8] ],
+                geo:d=>new THREE.ConeGeometry(d.r,d.h,48),
+                fit:d=>Math.max(d.r*2,d.h),
+                views:(svgF,svgS,svgT,d)=>{ const k=26;
+                    svgTriangle(svgF, d.r*2*k, d.h*k, "var(--front)");   // 正：三角形
+                    svgTriangle(svgS, d.r*2*k, d.h*k, "var(--side)");    // 侧：三角形
+                    svgCircle(svgT, d.r*k, "var(--top)", {center:true}); // 俯：圆+圆心
+                },
+                info:d=>[["底面","1 个圆"],["侧面","1 个曲面"],["顶点","1 个"],["底面半径 / 高",`${d.r} / ${d.h}`]],
+                note:"正视图、侧视图都是<b>等腰三角形</b>（底=直径，高=圆锥的高）；俯视图是<b>带圆心的圆</b>。",
+                read:'圆锥：<b class="f">正视图</b>和<b class="s">侧视图</b>是三角形，<b class="t">俯视图</b>是带圆心点的圆。'
+            },
+            sphere: {
+                name:"球", ic:"⚽", accent:0xfdba74,
+                lead:"球的表面是一个<b>曲面</b>，球面上每一点到<b>球心</b>的距离都相等，这个距离就是<b>半径</b>。",
+                dims:[ ["r","半径",0.8,2.2,1.6] ],
+                geo:d=>new THREE.SphereGeometry(d.r,48,32),
+                fit:d=>d.r*2,
+                views:(svgF,svgS,svgT,d)=>{ const r=d.r*30; svgCircle(svgF,r,"var(--front)"); svgCircle(svgS,r,"var(--side)"); svgCircle(svgT,r,"var(--top)"); },
+                info:d=>[["表面","1 个曲面"],["顶点 / 棱","0"],["半径",`${d.r}`]],
+                note:"球<b>从任何方向看都是圆</b>——三视图是三个<b>一样大的圆</b>。",
+                read:'球的<b class="f">正</b>、<b class="s">侧</b>、<b class="t">俯</b>视图都是<b>大小相同的圆</b>。'
+            },
+            tetra: {
+                name:"正四面体", ic:"🔺", accent:0xc4b5fd,
+                lead:"正四面体有<b>4 个完全相同的等边三角形面</b>、<b>6 条等长的棱</b>、<b>4 个顶点</b>，是最简单的正多面体。",
+                dims:[ ["a","棱长",1.4,3.2,2.4] ],
+                geo:d=>new THREE.TetrahedronGeometry(d.a*0.62),
+                fit:d=>d.a,
+                views:(svgF,svgS,svgT,d)=>{ const k=24;
+                    svgTriangle(svgF, d.a*k, d.a*0.9*k, "var(--front)", {apexLine:true});
+                    svgTriangle(svgS, d.a*0.86*k, d.a*0.9*k, "var(--side)", {apexLine:true});
+                    // 俯视：等边三角形 + 中心点（顶点投影）
+                    clearSvg(svgT); const b=d.a*k, x0=CX-b/2, x1=CX+b/2, yt=CY-b*0.45, yb=CY+b*0.4;
+                    svgT.appendChild(S("polygon",{points:`${CX},${yt} ${x1},${yb} ${x0},${yb}`,fill:"var(--top)",stroke:"#1e293b","stroke-width":1.6,"stroke-linejoin":"round"}));
+                    const gx=CX, gy=(yt+yb+yb)/3;
+                    svgT.appendChild(S("line",{x1:CX,y1:yt,x2:gx,y2:gy,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"3 3"}));
+                    svgT.appendChild(S("line",{x1:x1,y1:yb,x2:gx,y2:gy,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"3 3"}));
+                    svgT.appendChild(S("line",{x1:x0,y1:yb,x2:gx,y2:gy,stroke:"#1e293b","stroke-width":1,"stroke-dasharray":"3 3"}));
+                    svgT.appendChild(S("circle",{cx:gx,cy:gy,r:2.4,fill:"#1e293b"}));
+                },
+                info:d=>[["面的个数","4 个"],["棱的条数","6 条"],["顶点个数","4 个"],["棱长",`${d.a}`]],
+                note:"正四面体的正视图、侧视图是<b>三角形</b>；俯视图是一个<b>三角形</b>，顶点投影落在三角形<b>中心</b>，连出三条线。",
+                read:'正四面体：<b class="f">正</b>、<b class="s">侧</b>视图是三角形，<b class="t">俯视图</b>是带中心连线的三角形。'
+            },
+        };
+
+        const ORDER = ["cuboid","cube","cylinder","cone","sphere","tetra"];
+        let current = "cuboid", dims = {}, viewer = null;
+
+        function buildPicker() {
+            const p = $("picker"); p.innerHTML = "";
+            ORDER.forEach(key => {
+                const s = SHAPES[key];
+                const b = document.createElement("button");
+                b.className = "pick" + (key===current?" active":""); b.dataset.key = key;
+                b.innerHTML = `<span class="ic">${s.ic}</span>${s.name}`;
+                b.addEventListener("click", () => selectShape(key));
+                p.appendChild(b);
+            });
+        }
+        function buildDimControls() {
+            const wrap = $("dimControls"); wrap.innerHTML = "";
+            const s = SHAPES[current];
+            s.dims.forEach(([key,label,min,max,def]) => {
+                const id = "dim_"+key;
+                const lab = document.createElement("label");
+                lab.innerHTML = `${label} <input type="range" id="${id}" min="${min}" max="${max}" step="0.1" value="${dims[key]}">`;
+                lab.querySelector("input").addEventListener("input", e => { dims[key] = parseFloat(e.target.value); refresh(); });
+                wrap.appendChild(lab);
+            });
+        }
+        function refresh() {
+            const s = SHAPES[current];
+            viewer.setMesh(s.geo(dims), s.fit(dims), s.accent);
+            s.views($("viewFront"), $("viewSide"), $("viewTop"), dims);
+            $("infoList").innerHTML = s.info(dims).map(([k,v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join("");
+            $("infoNote").innerHTML = s.note;
+            $("readout").innerHTML = s.read + "　拖动立体图旋转，观察它和三视图的对应关系。";
+        }
+        function selectShape(key) {
+            current = key;
+            dims = {}; SHAPES[key].dims.forEach(([k,_l,_min,_max,def]) => dims[k] = def);
+            $("picker").querySelectorAll(".pick").forEach(b => b.classList.toggle("active", b.dataset.key===key));
+            $("shapeLead").innerHTML = SHAPES[key].lead;
+            buildDimControls();
+            refresh();
+        }
+
+        function wireDirButtons(rowName, vw) {
+            const row = document.querySelector(`.dir-row[data-dir-row="${rowName}"]`);
+            if (!row) return;
+            row.querySelectorAll(".dir-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    row.querySelectorAll(".dir-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    vw.snapTo(btn.dataset.dir);
+                });
+            });
+        }
+
+        window.addEventListener("resize", () => viewer && viewer.render());
+        // 手动拖动后，清除“当前视角”高亮（避免误导）
+        document.addEventListener("pointerdown", e => {
+            if (e.target.tagName === "CANVAS") document.querySelectorAll(".dir-btn.active").forEach(b => b.classList.remove("active"));
+        }, true);
+        function init() {
+            buildPicker();
+            viewer = makeViewer($("solid3d"));
+            wireDirButtons("solid", viewer);
+            selectShape("cuboid");
+        }
+        init();
+    </script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

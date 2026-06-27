@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行程问题思维可视化 - 专项训练</title>
+    <script src="../vendor/react.development.js"></script>
+    <script src="../vendor/react-dom.development.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f0f9ff; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .road {
+            background-color: #e2e8f0;
+            border-bottom: 4px solid #94a3b8;
+        }
+        
+        /* 播放按钮脉冲 - 用于底部按钮 */
+        .pulse-btn {
+            animation: pulse-shadow 2s infinite;
+        }
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+    </style>
+</head>
+<body>
+<a href="../" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9999px;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;color:#475569;font:500 13px/1 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);backdrop-filter:blur(4px);">← 返回首页</a>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 图标组件
+        const Icons = {
+            MapIcon: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            ),
+            RefreshCw: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            ),
+            Play: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            ),
+            Highlighter: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 11-6 6v3h9l3-3"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path></svg>
+            ),
+            Pencil: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            ),
+            Calculator: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>
+            ),
+            ChevronRight: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>
+            ),
+            CheckCircle: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            ),
+            Users: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            ),
+            Train: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="5" y1="19" x2="5" y2="21"></line><line x1="19" y1="19" x2="19" y2="21"></line></svg>
+            ),
+            TrendingUp: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            ),
+            PlayCircle: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon></svg>
+            ),
+            PauseCircle: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg>
+            ),
+            SkipForward: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            )
+        };
+
+        const { Play, PlayCircle, PauseCircle, SkipForward, RefreshCw, ChevronRight, Calculator, Highlighter, MapIcon, Pencil, CheckCircle, Users, Train, TrendingUp } = Icons;
+
+        const STEPS = {
+            READ: 0,
+            HIGHLIGHT: 1,
+            ANIMATE: 2,
+            DIAGRAM: 3,
+            FORMULA: 4
+        };
+
+        const STEP_CONFIG = [
+            { id: STEPS.READ, label: "读题", icon: <MapIcon size={16}/> },
+            { id: STEPS.HIGHLIGHT, label: "找重点", icon: <Highlighter size={16}/> },
+            { id: STEPS.ANIMATE, label: "看动画", icon: <Play size={16}/> },
+            { id: STEPS.DIAGRAM, label: "画线段", icon: <Pencil size={16}/> },
+            { id: STEPS.FORMULA, label: "列算式", icon: <Calculator size={16}/> }
+        ];
+
+        // 场景数据配置
+        const SCENARIOS = {
+            MEETING: {
+                id: 'meeting',
+                title: '中点相遇问题',
+                icon: <Users size={20}/>,
+                maxDiagramStep: 3, 
+                params: { 
+                    v1: 18, 
+                    v2: 15, 
+                    t: 2, // 2小时
+                    offset: 3, // 距中点3千米
+                    label1: "小红", 
+                    label2: "小明", 
+                    unit: "千米/时" 
+                },
+                getInstruction: (step, subStep) => {
+                     if(step === STEPS.DIAGRAM) {
+                        if(subStep===0) return "1. 画出全程线段，标出中点（虚线）。";
+                        if(subStep===1) return "2. 小红速度快，小明速度慢，相遇点在中点偏右还是偏左？";
+                        if(subStep===2) return "3. 标出相遇点。注意题目条件：距中点 3 千米。";
+                        return "4. 思考：小红比小明多走了多少？";
+                    }
+                    return null;
+                }
+            },
+            DOUBLE: {
+                id: 'double',
+                title: '二次相遇问题',
+                icon: <TrendingUp size={20}/>,
+                maxDiagramStep: 5, // 步骤 0-5 共6步
+                params: { 
+                    vA: 80, 
+                    vB: 60, 
+                    vC: 50, 
+                    dt: 8, // 8分钟
+                    labelA: "甲", 
+                    labelB: "乙", 
+                    labelC: "丙",
+                    t1: 104, // 第一次相遇时间
+                    unit: "米/分"
+                },
+                getInstruction: (step, subStep) => {
+                    if(step === STEPS.ANIMATE) return "观察动画，注意两个暂停时刻：第一次相遇（甲乙）和第二次相遇（甲丙）。";
+                    if(step === STEPS.DIAGRAM) {
+                       if(subStep===0) return "第一步：画出一条线段，标上A、B两地。";
+                       if(subStep===1) return "第二步：标出甲（A地），乙、丙（B地）的位置。";
+                       if(subStep===2) return "第三步：标出箭头方向，表示“相向而行”。";
+                       if(subStep===3) return "第四步：画出甲和乙的路线，标出【第一次相遇】点。";
+                       if(subStep===4) return "第五步：画出甲继续前行，与丙的【第二次相遇】点。";
+                       return "第六步：重点！标出两次相遇之间相隔的【8分钟】，这就是解题的关键！";
+                   }
+                   return null;
+               }
+            }
+        };
+
+        const App = () => {
+            const [scenario, setScenario] = useState('meeting');
+            const [step, setStep] = useState(STEPS.READ);
+            const [time, setTime] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false); 
+            const [diagramSubStep, setDiagramSubStep] = useState(0); 
+            
+            // Phase for animation: 0=Start, 1=Meet1 Pause, 2=Finished/Meet2
+            const [phase, setPhase] = useState(0); 
+            
+            const config = SCENARIOS[scenario.toUpperCase()];
+            const { v1, v2, t, label1, label2, offset, vA, vB, vC, dt, labelA, labelB, labelC, t1 } = config.params;
+            
+            const animationRef = useRef(null);
+            const startTimeRef = useRef(null);
+            const startFromTimeRef = useRef(0);
+
+            // 切换场景
+            const switchScenario = (key) => {
+                setScenario(key);
+                setStep(STEPS.READ);
+                resetAnimation();
+                setDiagramSubStep(0);
+            };
+
+            const resetAnimation = () => {
+                setTime(0);
+                setIsPlaying(false);
+                setPhase(0);
+                if (animationRef.current) cancelAnimationFrame(animationRef.current);
+            };
+
+            const changeStep = (newStep) => {
+                setStep(newStep);
+                setDiagramSubStep(0);
+                
+                if (newStep === STEPS.ANIMATE) {
+                    resetAnimation();
+                } else if (newStep > STEPS.ANIMATE) {
+                    const maxTime = (scenario === 'double') ? (t1 + dt) : t;
+                    setTime(maxTime);
+                    setIsPlaying(false);
+                    setPhase(2);
+                } else {
+                    resetAnimation();
+                }
+            };
+
+            const handleNextClick = () => {
+                if (step === STEPS.DIAGRAM && diagramSubStep < config.maxDiagramStep) {
+                    setDiagramSubStep(prev => prev + 1);
+                } else {
+                    changeStep(step + 1);
+                }
+            };
+
+            // 核心动画循环
+            const startAnimation = () => {
+                const maxTime = (scenario === 'double') ? (t1 + dt) : t;
+                
+                // 如果已经结束，重置
+                if (Math.abs(time - maxTime) < 0.1) {
+                    setTime(0);
+                    setPhase(0);
+                    startFromTimeRef.current = 0;
+                } else {
+                    startFromTimeRef.current = time;
+                }
+
+                setIsPlaying(true);
+                startTimeRef.current = null; // Reset frame timestamp
+                
+                // 速度设置
+                let speed = 1;
+                if (scenario === 'double') speed = 20; // 加速
+
+                const animate = (timestamp) => {
+                    if (!startTimeRef.current) startTimeRef.current = timestamp;
+                    const elapsed = (timestamp - startTimeRef.current) / 1000 * speed;
+                    const newTime = startFromTimeRef.current + elapsed;
+
+                    let targetTime = maxTime;
+                    let shouldPause = false;
+
+                    // 检查暂停点
+                    if (scenario === 'double') {
+                        // 目标1: 第一次相遇 t1
+                        if (startFromTimeRef.current < t1 - 0.1) {
+                            // 如果起点在 t1 之前，由于动画帧间隔，如果 newTime 超过 t1，则应暂停在 t1
+                            if (newTime >= t1) {
+                                targetTime = t1;
+                                shouldPause = true;
+                            } else {
+                                targetTime = newTime; // 正常播放
+                            }
+                        } 
+                        // 目标2: 第二次相遇 t1+dt
+                        else if (startFromTimeRef.current < (t1 + dt) - 0.1) {
+                            if (newTime >= t1 + dt) {
+                                targetTime = t1 + dt;
+                                shouldPause = true;
+                            } else {
+                                targetTime = newTime;
+                            }
+                        }
+                    } else {
+                        // Meeting 场景: 直接播到结束
+                         if (newTime >= maxTime) {
+                            targetTime = maxTime;
+                            shouldPause = true;
+                         } else {
+                             targetTime = newTime;
+                         }
+                    }
+
+                    setTime(targetTime);
+
+                    if (shouldPause) {
+                        setIsPlaying(false);
+                        // 更新阶段
+                        if (scenario === 'double') {
+                             if (Math.abs(targetTime - t1) < 0.1) setPhase(1);
+                             else if (Math.abs(targetTime - (t1+dt)) < 0.1) setPhase(2);
+                        } else {
+                            if (Math.abs(targetTime - maxTime) < 0.1) setPhase(2);
+                        }
+                    } else {
+                        animationRef.current = requestAnimationFrame(animate);
+                    }
+                };
+                animationRef.current = requestAnimationFrame(animate);
+            };
+
+            const pauseAnimation = () => {
+                setIsPlaying(false);
+                if (animationRef.current) cancelAnimationFrame(animationRef.current);
+            };
+            
+            const togglePlay = () => {
+                if (isPlaying) {
+                    pauseAnimation();
+                } else {
+                    startAnimation();
+                }
+            };
+
+            // 动态生成引导语
+            const getInstruction = () => {
+                const custom = config.getInstruction(step, diagramSubStep);
+                if (custom) return custom;
+
+                switch(step) {
+                    case STEPS.READ: return "第一步：先通读题目，了解大概意思。";
+                    case STEPS.HIGHLIGHT: return "第二步：圈出重点词。谁和谁相遇？时间关系？";
+                    case STEPS.ANIMATE: return "第三步：脑海里“播放”过程。";
+                    case STEPS.DIAGRAM: return "第四步：把过程画在纸上。"; 
+                    case STEPS.FORMULA: return "第五步：根据线段图的长短关系，列出算式。";
+                    default: return "";
+                }
+            };
+
+            const KeyPoint = ({ children, label, type, active }) => {
+                if (!active) return <span>{children}</span>;
+                let colorClasses = "";
+                if (type === 'direction') colorClasses = "bg-orange-100 border-orange-400 text-orange-900"; 
+                if (type === 'time') colorClasses = "bg-blue-100 border-blue-400 text-blue-900"; 
+                if (type === 'unit') colorClasses = "bg-green-100 border-green-400 text-green-900"; 
+                if (type === 'special') colorClasses = "bg-purple-100 border-purple-400 text-purple-900"; 
+                return (
+                    <span className={`relative inline-block border-b-2 px-1 mx-0.5 rounded pb-0.5 cursor-help ${colorClasses} font-bold transition-all duration-500`}>
+                        {children}
+                        <span className={`absolute top-full left-1/2 -translate-x-1/2 text-[10px] font-bold bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap mt-1 border z-10 ${colorClasses.replace('bg-', 'border-').split(' ')[1]}`}>
+                            {label}
+                        </span>
+                    </span>
+                );
+            };
+
+            const renderProblemText = () => {
+                const h = (text, condition) => (
+                    <span className={`${condition ? 'bg-yellow-200 ring-2 ring-yellow-300 rounded px-1' : ''} transition-all duration-300`}>{text}</span>
+                );
+                const isHighlightStep = step === STEPS.HIGHLIGHT;
+                
+                if (scenario === 'meeting') {
+                    return (
+                        <span className="leading-[3rem]"> 
+                            <span className="text-red-600 font-bold">{label1}</span>和<span className="text-blue-600 font-bold">{label2}</span>
+                            <KeyPoint label="时间相同" type="time" active={isHighlightStep}>同时</KeyPoint>
+                            从甲、乙两地骑车
+                            <KeyPoint label="关键方向" type="direction" active={isHighlightStep}>
+                                {step===STEPS.DIAGRAM && diagramSubStep===1 ? h("相向而行", true) : "相向而行"}
+                            </KeyPoint>
+                            ，
+                            {label1}每小时行<KeyPoint label="速度快" type="unit" active={isHighlightStep}>{v1}千米</KeyPoint>，
+                            {label2}每小时行<KeyPoint label="速度慢" type="unit" active={isHighlightStep}>{v2}千米</KeyPoint>，
+                            两人在
+                            <KeyPoint label="关键条件" type="special" active={isHighlightStep}>
+                                {step===STEPS.DIAGRAM && diagramSubStep>=2 ? h(`距中点 ${offset} 千米`, true) : `距中点 ${offset} 千米`}
+                            </KeyPoint>
+                            的地方{step===STEPS.DIAGRAM && diagramSubStep===3 ? h("相遇", true) : "相遇"}。
+                            甲、乙两地相距多少千米？
+                        </span>
+                    );
+                } else if (scenario === 'double') {
+                    return (
+                        <span className="leading-[3rem]">
+                             <span className="text-red-600 font-bold">{labelA}</span>从A地，
+                             <span className="text-blue-600 font-bold">{labelB}</span>、
+                             <span className="text-green-600 font-bold">{labelC}</span>从B地，
+                             三人<KeyPoint label="时间相同" type="time" active={isHighlightStep}>同时出发</KeyPoint>
+                             <KeyPoint label="方向相对" type="direction" active={isHighlightStep}>相向而行</KeyPoint>。
+                             当{labelA}与{labelB}<KeyPoint label="第一次相遇" type="special" active={isHighlightStep}>{step===STEPS.DIAGRAM && diagramSubStep===3 ? h("相遇", true) : "相遇"}</KeyPoint>后，
+                             又过了<KeyPoint label="时间差" type="time" active={isHighlightStep}>{step===STEPS.DIAGRAM && diagramSubStep===5 ? h(`${dt}分钟`, true) : `${dt}分钟`}</KeyPoint>
+                             {labelA}与{labelC}<KeyPoint label="第二次相遇" type="special" active={isHighlightStep}>{step===STEPS.DIAGRAM && diagramSubStep>=4 ? h("相遇", true) : "相遇"}</KeyPoint>。
+                             已知{labelA}每分行<KeyPoint label="单位:米" type="unit" active={isHighlightStep}>{vA}米</KeyPoint>，
+                             {labelB}每分行<KeyPoint label="单位:米" type="unit" active={isHighlightStep}>{vB}米</KeyPoint>，
+                             {labelC}每分行<KeyPoint label="单位:米" type="unit" active={isHighlightStep}>{vC}米</KeyPoint>。
+                             求A、B两地的距离？
+                        </span>
+                    );
+                }
+            };
+
+            const renderAnimation = () => {
+                const maxTime = (scenario === 'double') ? (t1 + dt) : t;
+                const progress = Math.min(100, (time / maxTime) * 100);
+
+                let content = null;
+
+                if (scenario === 'meeting') {
+                    const totalDist = (v1+v2)*t;
+                    // Leave padding: 10% on left, 10% on right
+                    const roadStart = 10;
+                    const roadEnd = 90;
+                    const roadWidth = 80;
+                    
+                    const leftPos = roadStart + (v1 * time) / totalDist * roadWidth;
+                    const rightPos = roadEnd - (v2 * time) / totalDist * roadWidth;
+                    
+                    content = (
+                        <div className="h-full relative road flex items-center">
+                             <div className="absolute top-1/2 left-[10%] w-[80%] border-t border-dashed border-gray-400"></div>
+                             
+                             {/* 中点 */}
+                             <div className="absolute top-0 bottom-0 left-1/2 border-l-2 border-dashed border-gray-400 z-0 opacity-50">
+                                 <div className="absolute top-2 left-1 text-gray-500 text-xs font-bold">中点</div>
+                             </div>
+
+                             {/* 左侧小红 */}
+                             <div className="absolute top-0 bottom-0 left-[10%] bg-red-100/30" style={{ width: `${leftPos - 10}%` }}></div>
+                             <div className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col items-center transition-none" style={{ left: `${leftPos}%`, transform: 'translate(-50%, -50%)' }}>
+                                 <span className="text-4xl transform scale-x-[-1] block">👧🏻</span>
+                                 <div className="text-xs bg-white/80 rounded px-1 shadow mt-1 font-bold text-red-600">甲</div>
+                             </div>
+
+                             {/* 右侧小明 */}
+                             <div className="absolute top-0 bottom-0 right-[10%] bg-blue-100/30" style={{ width: `${90 - rightPos}%` }}></div>
+                             <div className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col items-center transition-none" style={{ left: `${rightPos}%`, transform: 'translate(-50%, -50%)' }}>
+                                 <span className="text-4xl block">👦🏻</span>
+                                 <div className="text-xs bg-white/80 rounded px-1 shadow mt-1 font-bold text-blue-600">乙</div>
+                             </div>
+
+                             {time >= t && (
+                                 <div className="absolute left-[52%] top-12 transform -translate-x-1/2 bg-yellow-400 text-xs px-2 py-1 rounded font-bold shadow animate-bounce z-20">
+                                     相遇点
+                                 </div>
+                             )}
+                        </div>
+                    );
+                } else if (scenario === 'double') {
+                    const totalDist = (vA + vB) * t1; 
+                    const roadStart = 10;
+                    const roadEnd = 90;
+                    const roadWidth = 80;
+
+                    const getPos = (val, fromRight = false) => {
+                        const pct = (val / totalDist) * roadWidth;
+                        return fromRight ? (roadEnd - pct) : (roadStart + pct);
+                    };
+
+                    const posA = getPos(vA * time);
+                    const posB = getPos(vB * time, true);
+                    const posC = getPos(vC * time, true);
+                    
+                    content = (
+                        <div className="h-full relative bg-slate-100 flex flex-col justify-center">
+                            {/* Road Markings */}
+                            <div className="absolute top-1/2 w-[80%] left-[10%] border-t-2 border-dashed border-gray-400"></div>
+                            <div className="absolute left-[2%] top-1/2 -translate-y-1/2 font-bold text-gray-500 bg-slate-100 px-2 border-r-4 border-gray-700 h-8 flex items-center">A地</div>
+                            <div className="absolute right-[2%] top-1/2 -translate-y-1/2 font-bold text-gray-500 bg-slate-100 px-2 border-l-4 border-gray-700 h-8 flex items-center">B地</div>
+
+                            {/* Character A */}
+                            <div className="absolute top-1/2 -translate-y-1/2 z-20 flex flex-col items-center transition-none" style={{ left: `${Math.min(posA, 100)}%`, transform: 'translate(-50%, -50%)' }}>
+                                <span className="text-3xl transform scale-x-[-1] block">🔴</span>
+                                <span className="text-xs font-bold text-red-600">甲</span>
+                            </div>
+
+                            {/* Character B */}
+                            <div className="absolute top-1/2 -translate-y-1/2 z-20 flex flex-col items-center transition-none" style={{ left: `${Math.min(posB, 100)}%`, transform: 'translate(-50%, -80%)' }}>
+                                <span className="text-3xl block">🔵</span>
+                                <span className="text-xs font-bold text-blue-600">乙</span>
+                            </div>
+
+                            {/* Character C */}
+                            <div className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col items-center transition-none" style={{ left: `${Math.min(posC, 100)}%`, transform: 'translate(-50%, -20%)' }}>
+                                <span className="text-2xl block opacity-80">🟢</span>
+                                <span className="text-xs font-bold text-green-600">丙</span>
+                            </div>
+
+                            {/* 8分钟 Interval Visual */}
+                            {time > t1 && (
+                                <div className="absolute top-[60%] z-0 h-6 bg-yellow-100/80 border-x-2 border-yellow-500 flex items-center justify-center text-[10px] text-yellow-800 font-bold whitespace-nowrap shadow-sm"
+                                     style={{ 
+                                         left: `${getPos(vA*t1)}%`, 
+                                         width: `${getPos(vA*time) - getPos(vA*t1)}%` 
+                                     }}>
+                                    {(time - t1).toFixed(0)} min
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+
+                // 统一的动画容器和控制层
+                return (
+                    <div className="h-64 relative border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-inner flex flex-col">
+                        <div className="flex-1 relative overflow-hidden">
+                            {content}
+                            
+                            {/* 顶部轻量级状态提示 (不遮挡) */}
+                            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
+                                <div className="bg-white/90 backdrop-blur px-4 py-1.5 rounded-full shadow-sm border border-slate-200 text-xs font-bold flex items-center gap-2">
+                                    <span className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></span>
+                                    {isPlaying ? "动画演示中..." : 
+                                     (phase === 1 ? "暂停中：已到达第一次相遇点" : 
+                                     (phase === 2 ? "演示结束" : "准备就绪"))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 底部控制栏 */}
+                        <div className="h-14 bg-slate-50 border-t border-gray-200 flex items-center px-4 gap-4 z-40">
+                            {/* 智能播放按钮 */}
+                            <button 
+                                onClick={togglePlay} 
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white transition-all shadow-md active:scale-95
+                                    ${(!isPlaying && (phase === 0 || phase === 1)) ? 'bg-blue-600 hover:bg-blue-700 pulse-btn' : 
+                                      (isPlaying ? 'bg-slate-500 hover:bg-slate-600' : 'bg-green-600 hover:bg-green-700')}
+                                `}
+                            >
+                                {isPlaying ? <PauseCircle size={20} /> : (phase===2 ? <RefreshCw size={20}/> : <PlayCircle size={20} />)}
+                                <span>{isPlaying ? "暂停" : (phase===1 ? "继续播放" : (phase===2 ? "重新开始" : "开始"))}</span>
+                            </button>
+                            
+                            {/* 进度条显示 */}
+                            <div className="flex-1 flex items-center gap-3">
+                                <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden border border-gray-300 relative">
+                                    <div className="h-full bg-blue-500 transition-all duration-75 ease-linear" style={{ width: `${progress}%` }}></div>
+                                    {/* 刻度点 */}
+                                    {scenario === 'double' && (
+                                        <>
+                                            <div className="absolute top-0 bottom-0 w-0.5 bg-white/50" style={{left: `${(t1/maxTime)*100}%`}}></div>
+                                        </>
+                                    )}
+                                </div>
+                                <span className="text-xs font-mono text-slate-500 w-16 text-right font-bold">
+                                    {time.toFixed(0)} / {maxTime.toFixed(0)} {scenario==='meeting'?'h':'m'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderDiagram = () => {
+                const svgWidth = 600;
+                const commonViewBox = "-50 -50 700 350"; // 增加高度以便容纳更多步骤
+                
+                if (scenario === 'meeting') {
+                    // (保留第一题的绘图逻辑)
+                    const totalRatio = v1 + v2; 
+                    const meetRatio = v1 / totalRatio; 
+                    const meetX = meetRatio * svgWidth;
+                    const midpointX = svgWidth / 2;
+                    
+                    return (
+                         <svg viewBox="-50 -50 700 250" className="w-full h-auto overflow-visible">
+                            <defs>
+                                <marker id="arrow-r" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#dc2626" /></marker>
+                                <marker id="arrow-b" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#2563eb" /></marker>
+                            </defs>
+                            <g className="fade-in">
+                                <line x1="10" y1="80" x2={svgWidth-10} y2="80" stroke="#333" strokeWidth="2"/>
+                                <line x1="10" y1="75" x2="10" y2="85" stroke="#333" strokeWidth="2"/>
+                                <text x="10" y="55" textAnchor="middle" fill="#dc2626" fontWeight="bold" fontSize="16">甲(小红)</text>
+                                <line x1={svgWidth-10} y1="75" x2={svgWidth-10} y2="85" stroke="#333" strokeWidth="2"/>
+                                <text x={svgWidth-10} y="55" textAnchor="middle" fill="#2563eb" fontWeight="bold" fontSize="16">乙(小明)</text>
+                                <line x1={midpointX} y1="60" x2={midpointX} y2="100" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5,5"/>
+                                <text x={midpointX} y="50" textAnchor="middle" fill="#94a3b8" fontSize="14">中点</text>
+                            </g>
+                            {diagramSubStep >= 1 && (
+                                <g className="fade-in">
+                                    <line x1="30" y1="70" x2="150" y2="70" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrow-r)" />
+                                    <text x="90" y="60" textAnchor="middle" fill="#dc2626" fontSize="12">18km/h</text>
+                                    <line x1={svgWidth-30} y1="70" x2={svgWidth-150} y2="70" stroke="#2563eb" strokeWidth="2" markerEnd="url(#arrow-b)" />
+                                    <text x={svgWidth-90} y="60" textAnchor="middle" fill="#2563eb" fontSize="12">15km/h</text>
+                                </g>
+                            )}
+                            {diagramSubStep >= 2 && (
+                                <g className="fade-in">
+                                    <path transform={`translate(${meetX}, 75)`} d="M0 0 L0 15 M0 0 L15 5 L0 10 Z" fill="#eab308" stroke="#ca8a04"/>
+                                    <text x={meetX} y="110" textAnchor="middle" fill="#ca8a04" fontWeight="bold" fontSize="14">相遇点</text>
+                                    <path d={`M ${midpointX} 90 L ${meetX} 90`} stroke="#7c3aed" strokeWidth="2"/>
+                                    <line x1={midpointX} y1="85" x2={midpointX} y2="95" stroke="#7c3aed"/>
+                                    <line x1={meetX} y1="85" x2={meetX} y2="95" stroke="#7c3aed"/>
+                                    <text x={(midpointX + meetX)/2} y="105" textAnchor="middle" fill="#7c3aed" fontSize="12" fontWeight="bold">3km</text>
+                                </g>
+                            )}
+                            {diagramSubStep >= 3 && (
+                                <g className="fade-in">
+                                    <text x={svgWidth/2} y="140" textAnchor="middle" fill="#666" fontSize="14">
+                                        小红比一半多走 3km，小明比一半少走 3km
+                                    </text>
+                                    <text x={svgWidth/2} y="160" textAnchor="middle" fill="#dc2626" fontWeight="bold" fontSize="14">
+                                        所以：小红比小明多走 3×2 = 6km
+                                    </text>
+                                </g>
+                            )}
+                        </svg>
+                    );
+                } else if (scenario === 'double') {
+                    // 二次相遇图示 - 6步法
+                    // 总长度对应 (vA+vB)*t1 = 14560
+                    const meet1X = (vA / (vA + vB)) * svgWidth; // 甲乙相遇点
+                    const meet2X = (vA * (t1 + dt)) / ((vA + vB) * t1) * svgWidth; // 甲丙相遇点 (甲继续走)
+                    
+                    return (
+                        <svg viewBox={commonViewBox} className="w-full h-auto overflow-visible">
+                            <defs>
+                                <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#dc2626" /></marker>
+                                <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2563eb" /></marker>
+                                <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#16a34a" /></marker>
+                            </defs>
+                            
+                            {/* Step 0: 画线段 AB */}
+                            <g className="fade-in">
+                                <line x1="10" y1="100" x2={svgWidth-10} y2="100" stroke="#333" strokeWidth="2"/>
+                                <line x1="10" y1="95" x2="10" y2="105" stroke="#333" strokeWidth="2"/>
+                                <line x1={svgWidth-10} y1="95" x2={svgWidth-10} y2="105" stroke="#333" strokeWidth="2"/>
+                                <text x="10" y="125" textAnchor="middle" fill="#333" fontWeight="bold" fontSize="16">A地</text>
+                                <text x={svgWidth-10} y="125" textAnchor="middle" fill="#333" fontWeight="bold" fontSize="16">B地</text>
+                            </g>
+
+                            {/* Step 1: 标出甲乙丙位置 */}
+                            {diagramSubStep >= 1 && (
+                                <g className="fade-in">
+                                    <circle cx="10" cy="100" r="4" fill="#dc2626"/>
+                                    <text x="10" y="85" textAnchor="middle" fill="#dc2626" fontWeight="bold">甲</text>
+                                    
+                                    <circle cx={svgWidth-10} cy="100" r="4" fill="#2563eb"/>
+                                    <text x={svgWidth-10} y="85" textAnchor="middle" fill="#2563eb" fontWeight="bold">乙、丙</text>
+                                </g>
+                            )}
+
+                            {/* Step 2: 标方向 */}
+                            {diagramSubStep >= 2 && (
+                                <g className="fade-in">
+                                    <line x1="20" y1="70" x2="80" y2="70" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrow-red)"/>
+                                    <line x1={svgWidth-20} y1="70" x2={svgWidth-80} y2="70" stroke="#2563eb" strokeWidth="2" markerEnd="url(#arrow-blue)"/>
+                                    <text x={svgWidth/2} y="60" textAnchor="middle" fill="#666" fontSize="12">相向而行</text>
+                                </g>
+                            )}
+
+                            {/* Step 3: 甲乙相遇 */}
+                            {diagramSubStep >= 3 && (
+                                <g className="fade-in">
+                                    {/* 甲路线1 */}
+                                    <path d={`M 10 100 Q ${meet1X/2} 40 ${meet1X} 100`} fill="none" stroke="#dc2626" strokeWidth="2"/>
+                                    {/* 乙路线 */}
+                                    <path d={`M ${svgWidth-10} 100 Q ${(svgWidth-10+meet1X)/2} 40 ${meet1X} 100`} fill="none" stroke="#2563eb" strokeWidth="2"/>
+                                    
+                                    {/* 相遇点1 */}
+                                    <path transform={`translate(${meet1X}, 95)`} d="M0 0 L0 15 M0 0 L15 5 L0 10 Z" fill="#eab308" stroke="#ca8a04"/>
+                                    <text x={meet1X} y="135" textAnchor="middle" fill="#ca8a04" fontSize="12" fontWeight="bold">第一次相遇(甲乙)</text>
+                                </g>
+                            )}
+
+                            {/* Step 4: 甲丙相遇 (甲继续走，丙走到Meet2) */}
+                            {diagramSubStep >= 4 && (
+                                <g className="fade-in">
+                                    {/* 甲路线2 (从Meet1到Meet2) */}
+                                    <path d={`M ${meet1X} 100 Q ${(meet1X+meet2X)/2} 80 ${meet2X} 100`} fill="none" stroke="#dc2626" strokeWidth="2" strokeDasharray="4,2"/>
+                                    
+                                    {/* 丙路线 (从起点到Meet2) - 画在下方避免重叠 */}
+                                    <path d={`M ${svgWidth-10} 100 Q ${(svgWidth-10+meet2X)/2} 160 ${meet2X} 100`} fill="none" stroke="#16a34a" strokeWidth="2"/>
+                                    <text x={(svgWidth-10+meet2X)/2} y="150" textAnchor="middle" fill="#16a34a" fontSize="12">丙的路线</text>
+
+                                    {/* 相遇点2 */}
+                                    <path transform={`translate(${meet2X}, 95)`} d="M0 0 L0 15 M0 0 L15 5 L0 10 Z" fill="#eab308" stroke="#ca8a04"/>
+                                    <text x={meet2X+10} y="85" fill="#eab308" fontSize="12" fontWeight="bold">第二次相遇(甲丙)</text>
+                                </g>
+                            )}
+
+                            {/* Step 5: 重点标注8分钟 */}
+                            {diagramSubStep >= 5 && (
+                                <g className="fade-in">
+                                    {/* 标注甲走的这一段 */}
+                                    <rect x={meet1X} y="90" width={meet2X-meet1X} height="20" fill="rgba(255,0,0,0.1)" stroke="none"/>
+                                    <text x={(meet1X+meet2X)/2} y="115" textAnchor="middle" fill="#dc2626" fontWeight="bold" fontSize="10">8分钟</text>
+                                    
+                                    {/* 标注这是关键路程 */}
+                                    <path d={`M ${meet1X} 160 L ${meet2X} 160`} stroke="#9333ea" strokeWidth="2"/>
+                                    <line x1={meet1X} y1="155" x2={meet1X} y2="165" stroke="#9333ea"/>
+                                    <line x1={meet2X} y1="155" x2={meet2X} y2="165" stroke="#9333ea"/>
+                                    <text x={(meet1X+meet2X)/2} y="175" textAnchor="middle" fill="#9333ea" fontSize="12" fontWeight="bold">
+                                        这一段是甲8分钟走的
+                                    </text>
+                                    
+                                    <text x={svgWidth/2} y="220" textAnchor="middle" fill="#333" fontSize="14" fontWeight="bold" className="bg-yellow-100 px-2">
+                                        关键点：从第一次相遇到第二次相遇，甲和丙共同走了8分钟！
+                                    </text>
+                                </g>
+                            )}
+                        </svg>
+                    )
+                }
+            };
+
+            const renderFormula = () => {
+                if(scenario === 'meeting') {
+                    return (
+                        <div className="text-left max-w-lg mx-auto space-y-3 font-mono text-sm md:text-base">
+                             <div className="flex justify-between border-b pb-2">
+                                 <span>1. 计算速度差：</span>
+                                 <span className="font-bold">{v1} - {v2} = <span className="text-orange-600">{v1-v2}</span> (km/h)</span>
+                             </div>
+                             <div className="flex justify-between border-b pb-2">
+                                 <span>2. 计算路程差(距中点{offset}km × 2)：</span>
+                                 <span className="font-bold">{offset} × 2 = <span className="text-orange-600">{offset*2}</span> (km)</span>
+                             </div>
+                             <div className="flex justify-between border-b pb-2">
+                                 <span>3. 计算相遇时间(路程差÷速度差)：</span>
+                                 <span className="font-bold">{offset*2} ÷ {v1-v2} = <span className="text-blue-600">{t}</span> (h)</span>
+                             </div>
+                             <div className="flex justify-between bg-yellow-100 p-2 rounded">
+                                 <span>4. 计算总路程(速度和×时间)：</span>
+                                 <span className="font-bold text-lg">({v1}+{v2}) × {t} = <span className="text-red-600">{(v1+v2)*t}</span> (km)</span>
+                             </div>
+                        </div>
+                    )
+                } else if (scenario === 'double') {
+                     return (
+                        <div className="text-left max-w-lg mx-auto space-y-3 font-mono text-sm md:text-base">
+                             <div className="flex justify-between border-b pb-2">
+                                 <span>1. 关键路程(乙丙差距 = 甲丙合走8分钟)：</span>
+                                 <span className="font-bold">({vA} + {vC}) × {dt} = <span className="text-purple-600">{(vA+vC)*dt}</span> (米)</span>
+                             </div>
+                             <div className="flex justify-between border-b pb-2">
+                                 <span>2. 乙丙速度差：</span>
+                                 <span className="font-bold">{vB} - {vC} = <span className="text-orange-600">{vB-vC}</span> (米/分)</span>
+                             </div>
+                             <div className="flex justify-between border-b pb-2">
+                                 <span>3. 求甲乙相遇时间(差距÷速度差)：</span>
+                                 <span className="font-bold">{(vA+vC)*dt} ÷ {vB-vC} = <span className="text-blue-600">{t1}</span> (分)</span>
+                             </div>
+                             <div className="flex justify-between bg-yellow-100 p-2 rounded">
+                                 <span>4. 计算总路程(甲乙合走)：</span>
+                                 <span className="font-bold text-lg">({vA}+{vB}) × {t1} = <span className="text-red-600">{(vA+vB)*t1}</span> (米)</span>
+                             </div>
+                        </div>
+                    )
+                }
+            }
+
+            return (
+                <div className="min-h-screen p-4 flex flex-col items-center bg-slate-50">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl overflow-hidden border border-slate-200 flex flex-col min-h-[650px]">
+                        <div className="flex border-b border-slate-200 bg-slate-50">
+                            {Object.values(SCENARIOS).map(s => (
+                                <button key={s.id} onClick={() => switchScenario(s.id)} className={`flex-1 py-3 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${scenario === s.id ? 'bg-white text-blue-600 border-t-2 border-blue-600' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                    {s.icon} {s.title}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="bg-white border-b border-slate-200 p-2">
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {STEP_CONFIG.map((s) => (
+                                    <button key={s.id} onClick={() => changeStep(s.id)} className={`px-3 py-2 rounded-lg text-xs md:text-sm font-bold flex items-center gap-1 transition-all ${step === s.id ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                        {step > s.id ? <CheckCircle size={14} /> : s.icon} {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-6 text-center border-b border-dashed border-slate-200 bg-slate-50/50">
+                            <div className="text-lg md:text-xl text-slate-800 leading-relaxed font-serif">
+                                {renderProblemText()}
+                            </div>
+                        </div>
+                        <div className="flex-1 p-6 relative flex flex-col justify-center min-h-[400px]">
+                            {step === STEPS.ANIMATE && (
+                                <div className="mb-4 fade-in w-full">
+                                    {renderAnimation()}
+                                </div>
+                            )}
+                            {step >= STEPS.DIAGRAM && (
+                                <div className="fade-in bg-white p-4 border border-slate-200 rounded-lg shadow-sm relative mt-2">
+                                    <div className="absolute -top-3 left-4 bg-white text-slate-500 px-2 text-sm font-bold flex items-center border border-slate-200 rounded shadow-sm">
+                                        <Pencil size={14} className="mr-1"/> 线段图绘制
+                                    </div>
+                                    <div className="w-full pt-4 overflow-visible flex justify-center">
+                                        {renderDiagram()}
+                                    </div>
+                                    {step === STEPS.DIAGRAM && (
+                                        <div className="flex justify-center gap-2 mt-4">
+                                            {/* 动态生成步骤指示器 */}
+                                            {Array.from({length: config.maxDiagramStep + 1}).map((_, i) => (
+                                                <div key={i} className={`h-1.5 w-6 rounded-full transition-colors ${diagramSubStep >= i ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                             {step === STEPS.FORMULA && (
+                                <div className="mt-4 bg-yellow-50 p-6 rounded-lg border border-yellow-200 fade-in text-center">
+                                    <div className="text-sm text-slate-500 mb-2">根据线段图关系可得：</div>
+                                    {renderFormula()}
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
+                            <div className="text-slate-600 text-sm font-medium flex items-center flex-1 mr-4">
+                                <span className="mr-2 text-xl">💡</span> 
+                                <span>{getInstruction()}</span>
+                            </div>
+                            {step < STEPS.FORMULA ? (
+                                <button onClick={handleNextClick} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                                    {(step === STEPS.DIAGRAM && diagramSubStep < config.maxDiagramStep) ? '画下一步' : '下一步'} <ChevronRight size={18}/>
+                                </button>
+                            ) : (
+                                <button onClick={() => switchScenario(scenario)} className="bg-slate-600 hover:bg-slate-700 text-white px-5 py-2 rounded-full font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                                    再来一次 <RefreshCw size={18}/>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<div style="position:fixed;bottom:0;left:0;width:100%;z-index:9998;box-sizing:border-box;padding:4px 16px;text-align:center;color:#94a3b8;font:11px/1.4 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:rgba(248,250,252,0.85);pointer-events:none;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盈亏与倒推问题 | Math101</title>
+    <link rel="stylesheet" href="../word-problem-tool.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand"><div class="brand-mark" id="mark">盈</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div>
+            <div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div>
+        </header>
+        <nav class="tabs" id="tabs" aria-label="题型分类"></nav><p class="tab-intro" id="tabIntro"></p>
+        <div class="layout">
+            <section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section>
+            <aside class="card library"><div class="library-head"><h3>当前题库</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside>
+        </div>
+    </main>
+    <script>
+        window.WORD_PROBLEM_TOOL = {
+            title: "盈亏 · 倒推问题",
+            subtitle: "盈亏问题看两次分配的“总差额 ÷ 每份差”求份数；倒推问题从结果一步步还原。",
+            mark: "盈", accent: "#d97706", accentDark: "#b45309", accentSoft: "#fef3c7",
+            tabs: [
+                {
+                    id: "profit-loss", label: "盈亏问题", intro: "两次分配，一次盈（多）一次亏（少）。份数 = 两次结果之差 ÷ 每份相差。",
+                    problems: [
+                        {
+                            label: "盈亏① · 分棒棒糖",
+                            story: "小高把棒棒糖分给同学。每人 3 根剩下 9 根；每人 5 根缺少 27 根。一共准备了多少根棒棒糖？",
+                            keywords: ["每人 3 根", "剩下 9 根", "每人 5 根", "缺少 27 根"],
+                            relations: [{label:"一盈一亏",value:"先剩 9（盈），后缺 27（亏）"},{label:"每份相差",value:"5 − 3 = 2 根"}],
+                            readingTip: "两次分配，每人多分 2 根，需要多 9 + 27 根，差额正好对应人数。",
+                            diagram: [{label:"每人 3 根",parts:3,note:"分完剩 9 根（盈）"},{label:"每人 5 根",parts:5,tone:"alt",note:"还缺 27 根（亏）"},{label:"总差额",parts:4,tone:"warm",note:"9 + 27 = 36 根"}],
+                            diagramNote: "一盈一亏，总差额 = 盈 + 亏 = 36，除以每份差 2 就是人数。",
+                            equation: "(9 + 27) ÷ (5 − 3) = 18；糖 = 3 × 18 + 9 = 63",
+                            equationTip: "盈亏问题口诀：（盈 + 亏）÷ 两次每份之差 = 份数。",
+                            steps: [
+                                "每人从 3 根加到 5 根，每人多分 5 − 3 = 2 根。",
+                                "由“剩 9”变“缺 27”，一共要多准备 9 + 27 = 36 根。",
+                                "人数 = 36 ÷ 2 = 18（人）。",
+                                "棒棒糖总数 = 3 × 18 + 9 = 63（根）。"
+                            ],
+                            answer: "一共准备了 63 根棒棒糖。"
+                        },
+                        {
+                            label: "盈亏② · 装桔子",
+                            story: "把一筐桔子装入盘子。每盘装 10 个则多余 2 个；每盘装 12 个则可以少用 1 个盘子。这筐桔子共有多少个？",
+                            keywords: ["每盘装 10 个", "多余 2 个", "每盘装 12 个", "少用 1 个盘子"],
+                            relations: [{label:"统一盘子数",value:"少用 1 盘 = 那盘的 12 个没装"},{label:"转化为盈亏",value:"10 个/盘余 2；12 个/盘缺 (12−0)"}],
+                            readingTip: "“少用 1 个盘子”说明这盘本该装 12 个，相当于缺 12 个但还多出原来的余数。",
+                            diagram: [{label:"每盘 10 个",parts:5,note:"装完多 2 个（盈 2）"},{label:"每盘 12 个",parts:6,tone:"alt",note:"少 1 盘 = 缺 12 个（亏 12）"},{label:"总差额",parts:5,tone:"warm",note:"2 + 12 = 14 个"}],
+                            diagramNote: "每盘多装 2 个，14 个差额对应盘子数。",
+                            equation: "(2 + 12) ÷ (12 − 10) = 7；桔子 = 10 × 7 + 2 = 72",
+                            steps: [
+                                "每盘从 10 个加到 12 个，每盘多装 12 − 10 = 2 个。",
+                                "“多余 2 个”是盈 2；“少用 1 盘”相当于亏 12（那盘 12 个的位置空着）。",
+                                "盘子数 = (2 + 12) ÷ 2 = 7（个）。",
+                                "桔子总数 = 10 × 7 + 2 = 72（个）。"
+                            ],
+                            answer: "这筐桔子共有 72 个。"
+                        },
+                        {
+                            label: "盈亏③ · 分糖果",
+                            story: "老师分糖果：每人 9 颗则剩 13 颗；若一半小朋友分 10 颗、另一半分 12 颗，就差 15 颗不够分。共有多少颗糖果？",
+                            keywords: ["每人 9 颗", "剩 13 颗", "一半 10 颗", "一半 12 颗", "差 15 颗"],
+                            relations: [{label:"第二种平均每人",value:"(10 + 12) ÷ 2 = 11 颗"},{label:"一盈一亏",value:"先剩 13，后缺 15"}],
+                            readingTip: "一半 10、一半 12，平均每人正好 11 颗，于是变成标准盈亏题。",
+                            diagram: [{label:"每人 9 颗",parts:4,note:"剩 13 颗（盈）"},{label:"每人 11 颗",parts:5,tone:"alt",note:"缺 15 颗（亏）"},{label:"总差额",parts:4,tone:"warm",note:"13 + 15 = 28 颗"}],
+                            diagramNote: "把“一半 10、一半 12”换算成平均每人 11 颗，再用盈亏口诀。",
+                            equation: "(13 + 15) ÷ (11 − 9) = 14；糖 = 9 × 14 + 13 = 139",
+                            steps: [
+                                "第二种分法平均每人 (10 + 12) ÷ 2 = 11 颗。",
+                                "每人从 9 颗加到 11 颗，每人多 2 颗；总差额 13 + 15 = 28 颗。",
+                                "小朋友人数 = 28 ÷ 2 = 14（人）。",
+                                "糖果总数 = 9 × 14 + 13 = 139（颗）。"
+                            ],
+                            answer: "共有 139 颗糖果。"
+                        }
+                    ]
+                },
+                {
+                    id: "reverse", label: "倒推问题", intro: "从最后的结果出发，把每一步操作“反着做”一遍，倒推回原来的数量。",
+                    problems: [
+                        {
+                            label: "倒推① · 竹竿全长",
+                            story: "把竹竿一端竖直插入水中，浸湿 1.35 m；反过来把另一端插入水中，这时还有“比全长的一半多 0.45 m”是干的。竹竿全长多少米？",
+                            keywords: ["浸湿 1.35 m", "另一端", "全长的一半多 0.45 m", "干的"],
+                            relations: [{label:"第二次浸湿",value:"全长 − (半长 + 0.45)"},{label:"两端浸湿相等",value:"都等于 1.35 m"}],
+                            readingTip: "两次都浸入水中，浸湿长度相同（同样深），都等于 1.35 m。",
+                            diagram: [{label:"第一次浸",parts:2,tone:"alt",note:"湿 1.35 m"},{label:"第二次干",parts:4,note:"半长 + 0.45"},{label:"第二次湿",parts:2,tone:"warm",note:"也是 1.35 m"}],
+                            diagramNote: "第二次浸湿 = 全长 − 干的部分 = 半长 − 0.45，而它又等于 1.35 m。",
+                            equation: "半长 − 0.45 = 1.35 ⇒ 半长 = 1.8 ⇒ 全长 = 3.6",
+                            equationTip: "干的部分 = 半长 + 0.45，所以湿的部分 = 半长 − 0.45。",
+                            steps: [
+                                "两端浸入深度相同，第二次浸湿也是 1.35 m。",
+                                "第二次干的部分是“半长 + 0.45”，所以湿的部分是“半长 − 0.45”。",
+                                "半长 − 0.45 = 1.35，半长 = 1.8（m）。",
+                                "全长 = 1.8 × 2 = 3.6（m）。"
+                            ],
+                            answer: "这根竹竿全长 3.6 米。"
+                        },
+                        {
+                            label: "倒推② · 卖梨子",
+                            story: "一筐梨：第一天卖出一半多 2 个；第二天卖出第一天余下的一半多 1 个；第三天卖出第二天余下的一半少 1 个；最后剩 3 个。原来有多少个？",
+                            keywords: ["一半多 2 个", "一半多 1 个", "一半少 1 个", "剩 3 个"],
+                            relations: [{label:"倒推方向",value:"从剩 3 个往回一步步还原"},{label:"反向操作",value:"“卖一半多/少”要反过来算"}],
+                            readingTip: "正着分三步，倒推就反着走三步：先还原第三天，再第二天，最后第一天。",
+                            diagram: [{label:"剩下",parts:1,tone:"warm",note:"3 个"},{label:"第二天余",parts:2,tone:"alt",note:"还原得 4 个"},{label:"第一天余",parts:5,note:"还原得 10 个"}],
+                            diagramNote: "每一步用“余下数”反推“被卖前的数”，最后回到原来的总数。",
+                            equation: "第二天余 (3 − 1) × 2 = 4；第一天余 (4 + 1) × 2 = 10；原有 (10 + 2) × 2 = 24",
+                            equationTip: "“卖一半少 1”反推：(剩 − 1) × 2；“卖一半多 a”反推：(剩 + a) × 2。",
+                            steps: [
+                                "第三天“卖一半少 1”后剩 3：第二天余下 = (3 − 1) × 2 = 4（个）。",
+                                "第二天“卖一半多 1”后剩 4：第一天余下 = (4 + 1) × 2 = 10（个）。",
+                                "第一天“卖一半多 2”后剩 10：原有 = (10 + 2) × 2 = 24（个）。"
+                            ],
+                            answer: "这筐梨原来有 24 个。"
+                        },
+                        {
+                            label: "倒推③ · 三人换书",
+                            story: "甲、乙、丙各有若干本书。甲给乙 5 本，乙给丙 10 本，丙给甲 15 本后，三人都是 35 本。原来各有多少本？",
+                            keywords: ["甲给乙 5 本", "乙给丙 10 本", "丙给甲 15 本", "都是 35 本"],
+                            relations: [{label:"倒推每个人",value:"把“给出/收到”反过来"},{label:"逐人还原",value:"原有 = 现有 − 收到 + 给出"}],
+                            readingTip: "对每个人单独看：他最后的 35 本里，要减去收到的、加回给出的。",
+                            diagram: [{label:"甲",parts:3,note:"35 − 15 + 5 = 25"},{label:"乙",parts:5,tone:"alt",note:"35 − 5 + 10 = 40"},{label:"丙",parts:5,tone:"warm",note:"35 − 10 + 15 = 40"}],
+                            diagramNote: "甲收到丙 15、给出乙 5；乙收到甲 5、给出丙 10；丙收到乙 10、给出甲 15。",
+                            equation: "甲 35−15+5=25；乙 35−5+10=40；丙 35−10+15=40",
+                            steps: [
+                                "甲：收到丙的 15 本要减去，给出的 5 本要加回，原有 35 − 15 + 5 = 25（本）。",
+                                "乙：收到甲的 5 本减去，给出的 10 本加回，原有 35 − 5 + 10 = 40（本）。",
+                                "丙：收到乙的 10 本减去，给出的 15 本加回，原有 35 − 10 + 15 = 40（本）。",
+                                "检验：25 + 40 + 40 = 105 = 35 × 3，正确。"
+                            ],
+                            answer: "原来甲 25 本、乙 40 本、丙 40 本。"
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+    <script src="../word-problem-tool.js"></script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

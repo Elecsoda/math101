@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>行程问题演示工具</title>
+    <script src="../vendor/react.production.min.js"></script>
+    <script src="../vendor/react-dom.production.min.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        body { font-family: 'Comic Sans MS', 'Ma Shan Zheng', 'Segoe UI', Roboto, sans-serif; background-color: #fffbeb; touch-action: manipulation; }
+        .track-bg { background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        .no-select { user-select: none; -webkit-user-select: none; }
+        .height-transition { transition: height 0.3s ease-out; }
+        /* 优化输入框 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        /* 文字描边，增加可读性 */
+        .text-halo { text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white, 0 0 3px white; }
+    </style>
+</head>
+<body>
+<a href="../" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9999px;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;color:#475569;font:500 13px/1 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);backdrop-filter:blur(4px);">← 返回首页</a>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- 图标 ---
+        const Icon = ({ path, size=20 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                {path}
+            </svg>
+        );
+        const Icons = {
+            Play: <polygon points="5 3 19 12 5 21 5 3" />,
+            Pause: <g><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></g>,
+            Reset: <g><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></g>,
+            Continue: <path d="M13 5l7 7-7 7M5 12h14" />
+        };
+
+        const DEFAULTS = {
+            distance: 400,
+            speedA: 50,
+            speedB: 30,
+            headStart: 100
+        };
+
+        const App = () => {
+            // --- 状态 ---
+            const [mode, setMode] = useState('meeting'); 
+            const [trackType, setTrackType] = useState('linear'); // 'linear' | 'circular'
+            
+            // 基础参数
+            const [distance, setDistance] = useState(DEFAULTS.distance); 
+            const [speedA, setSpeedA] = useState(DEFAULTS.speedA); 
+            const [speedB, setSpeedB] = useState(DEFAULTS.speedB); 
+            const [headStart, setHeadStart] = useState(DEFAULTS.headStart); 
+
+            // 演示控制
+            const [simSpeed, setSimSpeed] = useState(1); 
+            const [showMarkers, setShowMarkers] = useState(true);
+
+            // 实时状态
+            const [posA, setPosA] = useState(0); 
+            const [posB, setPosB] = useState(0); 
+            const [dirA, setDirA] = useState(1); 
+            const [dirB, setDirB] = useState(-1);
+            const [totalDistA, setTotalDistA] = useState(0); 
+            const [totalDistB, setTotalDistB] = useState(0);
+            const [currentTime, setCurrentTime] = useState(0); 
+            const [meetCount, setMeetCount] = useState(0);
+            
+            // 轨迹与历史
+            const [turnPointsA, setTurnPointsA] = useState([]);
+            const [turnPointsB, setTurnPointsB] = useState([]);
+            const [meetingHistory, setMeetingHistory] = useState([]);
+            
+            const [isRunning, setIsRunning] = useState(false);
+            const [isPausedAtEvent, setIsPausedAtEvent] = useState(false);
+
+            const requestRef = useRef();
+            const lastTimeRef = useRef();
+            
+            // 使用 ref 存储最新配置，供物理引擎实时读取
+            const latestConfig = useRef({
+                mode, trackType, distance, speedA, speedB, simSpeed
+            });
+
+            useEffect(() => {
+                latestConfig.current = { mode, trackType, distance, speedA, speedB, simSpeed };
+            }, [mode, trackType, distance, speedA, speedB, simSpeed]);
+
+            const physicsState = useRef({ 
+                posA: 0, posB: 0, 
+                dirA: 1, dirB: -1, 
+                totalDistA: 0, totalDistB: 0, 
+                time: 0,
+                turnsA: [], turnsB: []
+            });
+
+            // --- 重置 ---
+            const resetPositions = (targetMode = mode, resetParams = false) => {
+                setIsRunning(false);
+                setIsPausedAtEvent(false);
+                setCurrentTime(0);
+                setMeetCount(0);
+                setMeetingHistory([]);
+                lastTimeRef.current = undefined;
+
+                if (resetParams) {
+                    setDistance(DEFAULTS.distance);
+                    setSpeedA(DEFAULTS.speedA);
+                    setSpeedB(DEFAULTS.speedB);
+                    setHeadStart(DEFAULTS.headStart);
+                }
+
+                const d = resetParams ? DEFAULTS.distance : distance;
+                const hs = resetParams ? DEFAULTS.headStart : headStart;
+
+                let startA = 0;
+                let startB = 0;
+                let dA = 1;
+                let dB = -1;
+
+                if (targetMode === 'meeting') {
+                    startA = 0; startB = d; dA = 1; dB = -1;
+                } else { 
+                    startA = 0; startB = hs; dA = 1; dB = 1;
+                }
+
+                const initTurnsA = [{ pos: startA, totalDist: 0 }];
+                const initTurnsB = [{ pos: startB, totalDist: 0 }];
+
+                setPosA(startA); setPosB(startB);
+                setDirA(dA); setDirB(dB);
+                setTotalDistA(0); setTotalDistB(0);
+                setTurnPointsA(initTurnsA);
+                setTurnPointsB(initTurnsB);
+
+                physicsState.current = { 
+                    posA: startA, posB: startB, 
+                    dirA: dA, dirB: dB, 
+                    totalDistA: 0, totalDistB: 0, 
+                    time: 0,
+                    turnsA: JSON.parse(JSON.stringify(initTurnsA)), 
+                    turnsB: JSON.parse(JSON.stringify(initTurnsB))
+                };
+            };
+
+            // 仅当 distance/headStart 改变且不在运行时重置位置
+            useEffect(() => {
+                if (!isRunning && !isPausedAtEvent) resetPositions(mode, false);
+            }, [distance, headStart]);
+
+            const handleModeChange = (newMode) => {
+                setMode(newMode);
+                resetPositions(newMode, true);
+            };
+
+            const handleTrackChange = (newTrack) => {
+                setTrackType(newTrack);
+                resetPositions(mode, false);
+            };
+
+            // --- 物理引擎 ---
+            const loop = (timestamp) => {
+                if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+                const rawDt = (timestamp - lastTimeRef.current) / 1000;
+                lastTimeRef.current = timestamp;
+                
+                const cfg = latestConfig.current;
+                let timeLeft = Math.min(rawDt, 0.1) * cfg.simSpeed;
+                let state = physicsState.current;
+                let hasPaused = false;
+
+                while (timeLeft > 1e-9 && !hasPaused) {
+                    const { posA, posB, dirA, dirB } = state;
+                    const vA = cfg.speedA * dirA;
+                    const vB = cfg.speedB * dirB;
+                    const dist = cfg.distance;
+
+                    let tWallA = Infinity;
+                    let tWallB = Infinity;
+
+                    // 1. 墙壁检测
+                    if (cfg.trackType === 'linear' && cfg.mode === 'meeting') {
+                        if (dirA === 1) tWallA = (dist - posA) / vA;
+                        else tWallA = posA / -vA;
+
+                        if (dirB === 1) tWallB = (dist - posB) / vB;
+                        else tWallB = posB / -vB;
+                    } 
+
+                    // 2. 预测相遇 (仅直线)
+                    let tCol = Infinity;
+                    const relV = vA - vB;
+                    const relPos = posA - posB; 
+
+                    if (cfg.trackType === 'linear') {
+                        if (Math.abs(relV) > 1e-9) {
+                            const t = -relPos / relV;
+                            if (t > 1e-10) tCol = t;
+                        }
+                    } 
+
+                    const events = [
+                        { type: 'wallA', t: tWallA },
+                        { type: 'wallB', t: tWallB },
+                        { type: 'col', t: tCol }
+                    ].filter(e => e.t <= timeLeft && e.t >= 0);
+
+                    events.sort((a, b) => a.t - b.t);
+                    const nextEvent = events[0];
+
+                    const step = nextEvent ? nextEvent.t : timeLeft;
+                    
+                    const prevPosA = state.posA;
+                    const prevPosB = state.posB;
+
+                    // 移动
+                    state.posA += vA * step;
+                    state.posB += vB * step;
+                    state.totalDistA += Math.abs(vA * step); 
+                    state.totalDistB += Math.abs(vB * step);
+                    state.time += step;
+                    
+                    timeLeft -= step;
+
+                    // 处理事件
+                    if (nextEvent) {
+                        if (nextEvent.type === 'wallA') {
+                            state.posA = (dirA === 1) ? dist : 0;
+                            state.dirA *= -1;
+                            if (state.turnsA.length === 0 || state.turnsA[state.turnsA.length - 1].pos !== state.posA) {
+                                state.turnsA.push({ pos: state.posA, totalDist: state.totalDistA });
+                            }
+                        } else if (nextEvent.type === 'wallB') {
+                            state.posB = (dirB === 1) ? dist : 0;
+                            state.dirB *= -1;
+                            if (state.turnsB.length === 0 || state.turnsB[state.turnsB.length - 1].pos !== state.posB) {
+                                state.turnsB.push({ pos: state.posB, totalDist: state.totalDistB });
+                            }
+                        } else if (nextEvent.type === 'col') {
+                            triggerCollision(state);
+                            hasPaused = true;
+                        }
+                    } else {
+                        // 3. 穿透检测
+                        const currDiff = state.posA - state.posB;
+                        const prevDiff = prevPosA - prevPosB;
+
+                        if (cfg.trackType === 'linear') {
+                            if (Math.sign(currDiff) !== Math.sign(prevDiff)) {
+                                const totalDiffChange = Math.abs(currDiff - prevDiff);
+                                const fraction = Math.abs(prevDiff) / totalDiffChange;
+                                const backStep = step * (1 - fraction);
+                                
+                                rewindState(state, backStep, vA, vB);
+                                state.posA = state.posB = (state.posA + state.posB) / 2;
+                                triggerCollision(state);
+                                hasPaused = true;
+                            }
+                        } else {
+                            // 环形检测
+                            const kPrev = Math.floor(prevDiff / dist);
+                            const kCurr = Math.floor(currDiff / dist);
+                            
+                            if (kPrev !== kCurr) {
+                                const relV = vA - vB;
+                                let targetBoundaryK;
+                                
+                                if (relV > 0) targetBoundaryK = kPrev + 1;
+                                else targetBoundaryK = kPrev;
+
+                                const targetDiff = targetBoundaryK * dist;
+                                
+                                const totalChange = currDiff - prevDiff;
+                                if (Math.abs(totalChange) > 1e-9) {
+                                    const fraction = (targetDiff - prevDiff) / totalChange;
+                                    if (fraction >= 0 && fraction <= 1) {
+                                        const backStep = step * (1 - fraction);
+                                        rewindState(state, backStep, vA, vB);
+                                        triggerCollision(state);
+                                        hasPaused = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                setPosA(state.posA); setPosB(state.posB);
+                setDirA(state.dirA); setDirB(state.dirB);
+                setTotalDistA(state.totalDistA); setTotalDistB(state.totalDistB);
+                setCurrentTime(state.time);
+                
+                if (turnPointsA.length !== state.turnsA.length) setTurnPointsA([...state.turnsA]);
+                if (turnPointsB.length !== state.turnsB.length) setTurnPointsB([...state.turnsB]);
+
+                if (!hasPaused) {
+                    requestRef.current = requestAnimationFrame(loop);
+                } else {
+                    lastTimeRef.current = undefined;
+                }
+            };
+
+            const rewindState = (state, backStep, vA, vB) => {
+                state.posA -= vA * backStep;
+                state.posB -= vB * backStep;
+                state.totalDistA -= Math.abs(vA * backStep);
+                state.totalDistB -= Math.abs(vB * backStep);
+                state.time -= backStep;
+            };
+
+            const triggerCollision = (state) => {
+                const cfg = latestConfig.current;
+                
+                if (cfg.trackType === 'linear') {
+                    state.posA = state.posB = (state.posA + state.posB) / 2;
+                }
+                
+                const newCount = meetCount + 1;
+                setMeetCount(newCount);
+                setMeetingHistory(prev => [...prev, {
+                    count: newCount,
+                    pos: state.posA,
+                    totalDistA: state.totalDistA,
+                    totalDistB: state.totalDistB,
+                    time: state.time
+                }]);
+                setIsRunning(false);
+                setIsPausedAtEvent(true);
+            };
+
+            useEffect(() => {
+                if (isRunning) requestRef.current = requestAnimationFrame(loop);
+                else { cancelAnimationFrame(requestRef.current); lastTimeRef.current = undefined; }
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [isRunning]);
+
+            const handleContinue = () => {
+                const nudge = 0.05; 
+                let state = physicsState.current;
+                const cfg = latestConfig.current;
+                
+                state.posA += cfg.speedA * state.dirA * nudge;
+                state.posB += cfg.speedB * state.dirB * nudge;
+                state.totalDistA += Math.abs(cfg.speedA * nudge);
+                state.totalDistB += Math.abs(cfg.speedB * nudge);
+                state.time += nudge;
+                
+                if (cfg.trackType === 'linear' && cfg.mode === 'meeting') {
+                    if(state.posA > cfg.distance) state.posA = cfg.distance; 
+                    if(state.posA < 0) state.posA = 0;
+                    if(state.posB > cfg.distance) state.posB = cfg.distance; 
+                    if(state.posB < 0) state.posB = 0;
+                }
+
+                setPosA(state.posA); setPosB(state.posB);
+                setTotalDistA(state.totalDistA); setTotalDistB(state.totalDistB);
+                
+                setIsPausedAtEvent(false);
+                setIsRunning(true);
+            };
+            // 计算视图范围：追及模式下无限延伸
+            const viewMax = (mode === 'catching' && trackType === 'linear') 
+                ? Math.max(distance + 100, posA + 100, posB + 100)
+                : distance;
+
+            // 环形跑道参数调整：
+            // 修正：大幅缩小间距，避免学生产生"外圈跑更远"的误解
+            const spiralGap = 5; // 螺旋间距缩小到 5px，紧贴显示
+            // 主跑道 r=180
+            const circleRadiusA = 175; // 内圈基准 (紧贴主跑道内侧)
+            const circleRadiusB = 185; // 外圈基准 (紧贴主跑道外侧)
+            
+            const blueBaseY = 35;
+            const lineHeight = 20; 
+            const blueLinesCount = turnPointsA.length;
+            const blueMaxY = blueBaseY + (blueLinesCount - 1) * lineHeight;
+            const redBaseY = Math.max(blueBaseY + 40, blueBaseY + (blueLinesCount - 1) * lineHeight + 30);
+            const redLinesCount = turnPointsB.length;
+            const redMaxY = redBaseY + (redLinesCount - 1) * lineHeight;
+            
+            // 增加容器高度以适应更大的环形跑道
+            const dynamicContainerHeight = trackType === 'circular' ? 600 : Math.max(260, redMaxY + 150);
+
+            const getCirclePos = (linearPos, radius) => {
+                const pct = linearPos / distance;
+                const angleRad = pct * 2 * Math.PI - Math.PI / 2;
+                const x = Math.cos(angleRad) * radius;
+                const y = Math.sin(angleRad) * radius;
+                const rotation = (angleRad * 180) / Math.PI;
+                return { x, y, rotation, angleRad };
+            };
+
+            const renderLinearMarkers = (track, segmentStart, segmentEnd, startX, endX, y) => {
+                if (!showMarkers) return null;
+                const minD = Math.min(segmentStart, segmentEnd);
+                const maxD = Math.max(segmentStart, segmentEnd);
+
+                return meetingHistory.filter(m => {
+                    const d = track === 'A' ? m.totalDistA : m.totalDistB;
+                    return d >= minD - 0.01 && d <= maxD + 0.01;
+                }).map((m, i) => {
+                    const d = track === 'A' ? m.totalDistA : m.totalDistB;
+                    let ratio = 0;
+                    if (Math.abs(segmentEnd - segmentStart) > 0.01) ratio = (d - segmentStart) / (segmentEnd - segmentStart);
+                    const mx = startX + ratio * (endX - startX);
+                    return (
+                        <g key={i}>
+                            <circle cx={`${(mx/viewMax)*100}%`} cy={y} r="3" fill="red" stroke="white" strokeWidth="1" />
+                            <text x={`${(mx/viewMax)*100}%`} y={y - 7} fontSize="8" fill="red" textAnchor="middle" fontWeight="bold">{m.count}</text>
+                            <text x={`${(mx/viewMax)*100}%`} y={y + 9} fontSize="7" fill="#666" textAnchor="middle">{Math.round(d)}m</text>
+                            <text x={`${(mx/viewMax)*100}%`} y={y + 17} fontSize="7" fill="#999" textAnchor="middle">{m.time.toFixed(1)}s</text>
+                        </g>
+                    );
+                });
+            };
+
+            const renderCircularMarkers = (track, segmentStart, segmentEnd, radius) => {
+                if (!showMarkers) return null;
+                const minD = Math.min(segmentStart, segmentEnd);
+                const maxD = Math.max(segmentStart, segmentEnd);
+
+                return meetingHistory.filter(m => {
+                    const d = track === 'A' ? m.totalDistA : m.totalDistB;
+                    // 在环形跑道，我们通过总里程来判断这个标记是否属于当前这一圈（段）
+                    return d >= minD - 0.01 && d <= maxD + 0.01;
+                }).map((m, i) => {
+                    const d = track === 'A' ? m.totalDistA : m.totalDistB;
+                    const laps = (d / distance).toFixed(1).replace(/\.0$/, '');
+                    
+                    const posInfo = getCirclePos(m.pos, radius);
+                    
+                    // 策略：红圈(B,外圈)文字向外，蓝圈(A,内圈)文字向内
+                    // 修正：虽然轨迹贴的很近，但文字需要推远一点以防遮挡
+                    // A(内圈)文字距离点 25px，B(外圈)文字距离点 25px
+                    const textR = track === 'B' ? radius + 25 : radius - 25;
+                    const textX = Math.cos(posInfo.angleRad) * textR;
+                    const textY = Math.sin(posInfo.angleRad) * textR;
+
+                    const color = track === 'A' ? '#2563eb' : '#e11d48';
+
+                    return (
+                        <g key={i}>
+                            {/* 标记点 */}
+                            <circle cx={posInfo.x} cy={posInfo.y} r="4" fill="red" stroke="white" strokeWidth="2" />
+                            
+                            {/* 文字组 */}
+                            <g transform={`translate(${textX}, ${textY})`}>
+                                <text className="text-halo" y="-4" fontSize="10" fill={color} textAnchor="middle" fontWeight="bold">第{m.count}次</text>
+                                <text className="text-halo" y="8" fontSize="10" fill={color} textAnchor="middle" fontWeight="bold">{laps}圈</text>
+                            </g>
+                            
+                            {/* 可选：加一条细线连接点和文字，增加清晰度 */}
+                            <line x1={posInfo.x} y1={posInfo.y} x2={textX} y2={textY} stroke={color} strokeWidth="0.5" opacity="0.5" />
+                        </g>
+                    );
+                });
+            };
+
+            const getArcPath = (startPos, endPos, radius, color) => {
+                const absDiff = Math.abs(endPos - startPos);
+                if (absDiff >= distance - 0.1) {
+                    return <circle cx="0" cy="0" r={radius} fill="none" stroke={color} strokeWidth="3" opacity="0.6" />;
+                }
+                const startAngle = (startPos / distance) * 2 * Math.PI - Math.PI / 2;
+                const endAngle = (endPos / distance) * 2 * Math.PI - Math.PI / 2;
+                const startX = Math.cos(startAngle) * radius;
+                const startY = Math.sin(startAngle) * radius;
+                const endX = Math.cos(endAngle) * radius;
+                const endY = Math.sin(endAngle) * radius;
+                const diff = endPos - startPos;
+                const sweepFlag = diff >= 0 ? 1 : 0;
+                const angleDiff = (absDiff / distance) * 2 * Math.PI;
+                const largeArcFlag = angleDiff > Math.PI ? 1 : 0;
+                const d = `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${endX} ${endY}`;
+                
+                const markerId = color === '#2563eb' ? 'arrow-blue' : 'arrow-red';
+                return <path d={d} fill="none" stroke={color} strokeWidth="3" markerEnd={`url(#${markerId})`} opacity="0.6" />;
+            };
+
+            return (
+                <div className="min-h-screen p-2 md:p-8 max-w-4xl mx-auto flex flex-col">
+                    <header className="mb-4 text-center">
+                        <h1 className="text-2xl md:text-4xl font-bold text-amber-600 mb-2">🏃 行程问题演示工具</h1>
+                        <p className="text-xs md:text-base text-stone-500 font-bold">
+                            {mode === 'meeting' ? '相遇问题：面对面跑，看谁跑得快' : '追及问题：在后面追，看能不能追上'}
+                        </p>
+                    </header>
+
+                    {/* 控制面板 */}
+                    <div className="bg-white p-3 md:p-6 rounded-2xl shadow-lg border-2 border-amber-100 mb-4 select-none">
+                        <div className="flex flex-col md:flex-row justify-center gap-4 mb-4">
+                            <div className="bg-stone-100 p-1 rounded-xl flex gap-1">
+                                <button onClick={() => handleModeChange('meeting')} className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base transition-all ${mode === 'meeting' ? 'bg-white text-amber-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>
+                                    🤝 相遇问题
+                                </button>
+                                <button onClick={() => handleModeChange('catching')} className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base transition-all ${mode === 'catching' ? 'bg-white text-purple-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>
+                                    🐢 追及问题
+                                </button>
+                            </div>
+                            
+                            <div className="bg-stone-100 p-1 rounded-xl flex gap-1">
+                                <button onClick={() => handleTrackChange('linear')} className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base transition-all flex items-center gap-1 ${trackType === 'linear' ? 'bg-white text-emerald-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>
+                                    📏 直线跑道
+                                </button>
+                                <button onClick={() => handleTrackChange('circular')} className={`px-4 py-2 rounded-lg font-bold text-sm md:text-base transition-all flex items-center gap-1 ${trackType === 'circular' ? 'bg-white text-emerald-600 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>
+                                    ⭕ 环形跑道
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 参数输入区域 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div className="space-y-1">
+                                <label className="flex justify-between text-xs md:text-sm font-bold text-stone-600 items-center">
+                                    <span>🏁 {trackType === 'circular' ? '跑道周长' : (mode === 'catching' ? '跑道显示长度' : '两地距离')}</span>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" value={distance} onChange={(e) => setDistance(Math.max(10, Number(e.target.value)))} disabled={isRunning || isPausedAtEvent} className="w-16 border rounded px-1 text-right text-amber-600 border-amber-200 focus:outline-none focus:border-amber-500 text-sm" />
+                                        <span className="text-amber-600 text-xs md:text-sm">米</span>
+                                    </div>
+                                </label>
+                                <input type="range" min="100" max="2000" step="50" value={distance} onChange={e => setDistance(Number(e.target.value))} disabled={isRunning || isPausedAtEvent} className="w-full accent-amber-500 cursor-pointer h-6" />
+                            </div>
+
+                            {mode === 'catching' && (
+                                <div className="space-y-1">
+                                    <label className="flex justify-between text-xs md:text-sm font-bold text-stone-600 items-center">
+                                        <span>📏 小红先跑 (差距)</span>
+                                        <div className="flex items-center gap-1">
+                                            <input type="number" value={headStart} onChange={(e) => setHeadStart(Math.max(0, Number(e.target.value)))} disabled={isRunning || isPausedAtEvent} className="w-16 border rounded px-1 text-right text-purple-600 border-purple-200 focus:outline-none focus:border-purple-500 text-sm" />
+                                            <span className="text-purple-600 text-xs md:text-sm">米</span>
+                                        </div>
+                                    </label>
+                                    <input type="range" min="0" max="1000" step="10" value={headStart} onChange={e => setHeadStart(Number(e.target.value))} disabled={isRunning || isPausedAtEvent} className="w-full accent-purple-500 cursor-pointer h-6" />
+                                </div>
+                            )}
+                            
+                            {mode !== 'catching' && <div className="hidden md:block"></div>}
+
+                            <div className="space-y-1">
+                                <label className="flex justify-between text-xs md:text-sm font-bold text-stone-600 items-center">
+                                    <span>🏃‍♂️ 小明速度</span>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" value={speedA} onChange={(e) => setSpeedA(Math.max(1, Number(e.target.value)))} disabled={isRunning || isPausedAtEvent} className="w-16 border rounded px-1 text-right text-blue-600 border-blue-200 focus:outline-none focus:border-blue-500 text-sm" />
+                                        <span className="text-blue-600 text-xs md:text-sm">米/秒</span>
+                                    </div>
+                                </label>
+                                <input type="range" min="1" max="200" value={speedA} onChange={e => setSpeedA(Number(e.target.value))} disabled={isRunning || isPausedAtEvent} className="w-full accent-blue-500 cursor-pointer h-6" />
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="flex justify-between text-xs md:text-sm font-bold text-stone-600 items-center">
+                                    <span>🏃‍♀️ 小红速度</span>
+                                    <div className="flex items-center gap-1">
+                                        <input type="number" value={speedB} onChange={(e) => setSpeedB(Math.max(1, Number(e.target.value)))} disabled={isRunning || isPausedAtEvent} className="w-16 border rounded px-1 text-right text-rose-500 border-rose-200 focus:outline-none focus:border-rose-500 text-sm" />
+                                        <span className="text-rose-500 text-xs md:text-sm">米/秒</span>
+                                    </div>
+                                </label>
+                                <input type="range" min="1" max="200" value={speedB} onChange={e => setSpeedB(Number(e.target.value))} disabled={isRunning || isPausedAtEvent} className="w-full accent-rose-400 cursor-pointer h-6" />
+                            </div>
+                        </div>
+
+                        {/* 底部设置 */}
+                        <div className="mt-4 flex flex-wrap items-center justify-between border-t pt-4 border-stone-100 gap-2">
+                            <div className="flex items-center gap-1 md:gap-2">
+                                <span className="text-xs font-bold text-stone-400">倍速:</span>
+                                {[0.5, 1, 2, 5].map(rate => (
+                                    <button key={rate} onClick={() => setSimSpeed(rate)} className={`px-2 py-1 text-xs rounded border ${simSpeed === rate ? 'bg-stone-500 text-white border-stone-500' : 'bg-white text-stone-500 border-stone-200 hover:bg-stone-50'}`}>
+                                        {rate}x
+                                    </button>
+                                ))}
+                            </div>
+
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <span className="text-xs font-bold text-stone-500">显示标记</span>
+                                <div className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-300 ${showMarkers ? 'bg-green-500' : 'bg-stone-300'}`} onClick={() => setShowMarkers(!showMarkers)}>
+                                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${showMarkers ? 'translate-x-4' : ''}`}></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* 演示区域 */}
+                    <div className="space-y-4 md:space-y-6">
+                        <div className={`track-bg p-4 md:p-6 relative overflow-hidden border-2 border-stone-100 select-none height-transition ${trackType === 'circular' ? 'flex items-center justify-center' : ''}`} style={{ height: `${dynamicContainerHeight}px` }}>
+                            <div className="absolute top-3 left-4 text-stone-400 text-xs md:text-sm font-bold flex gap-2 z-20">
+                                {isPausedAtEvent 
+                                    ? <span className="text-green-600 text-sm md:text-lg animate-bounce inline-block">🚩 第 {meetCount} 次{mode === 'meeting' ? '相遇' : '追上'}！</span> 
+                                    : (isRunning ? '🏃 正在奔跑...' : '🏁 准备出发')}
+                            </div>
+
+                            {/* 通用定义区：确保所有marker都能找到 */}
+                            <svg className="absolute w-0 h-0">
+                                <defs>
+                                    <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#2563eb" /></marker>
+                                    <marker id="arrow-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#e11d48" /></marker>
+                                </defs>
+                            </svg>
+
+                            {/* 直线跑道视图 */}
+                            {trackType === 'linear' && (
+                                <div className="relative w-full h-1.5 bg-stone-300 rounded-full mt-12 z-10">
+                                    <svg className="absolute left-0 top-0 w-full overflow-visible pointer-events-none" style={{ height: `${dynamicContainerHeight}px` }}>
+                                        {turnPointsA.map((pt, i) => {
+                                            const startX = pt.pos;
+                                            const endX = (i === turnPointsA.length - 1) ? posA : turnPointsA[i + 1].pos;
+                                            const startTotal = pt.totalDist;
+                                            const endTotal = (i === turnPointsA.length - 1) ? totalDistA : turnPointsA[i + 1].totalDist;
+                                            if (Math.abs(endX - startX) < 1) return null;
+                                            const yOffset = blueBaseY + i * lineHeight;
+                                            return (
+                                                <g key={`a-${i}`}>
+                                                    <line x1={`${(startX/viewMax)*100}%`} y1={yOffset} x2={`${(endX/viewMax)*100}%`} y2={yOffset} stroke="#2563eb" strokeWidth="2" markerEnd="url(#arrow-blue)" opacity="0.6" />
+                                                    <text x={`${((startX+endX)/2/viewMax)*100}%`} y={yOffset-3} fill="#2563eb" fontSize="10" textAnchor="middle">{Math.round(Math.abs(endX-startX))}m</text>
+                                                    {renderLinearMarkers('A', startTotal, endTotal, startX, endX, yOffset)}
+                                                </g>
+                                            );
+                                        })}
+                                        {turnPointsB.map((pt, i) => {
+                                            const startX = pt.pos;
+                                            const endX = (i === turnPointsB.length - 1) ? posB : turnPointsB[i + 1].pos;
+                                            const startTotal = pt.totalDist;
+                                            const endTotal = (i === turnPointsB.length - 1) ? totalDistB : turnPointsB[i + 1].totalDist;
+                                            if (Math.abs(endX - startX) < 1) return null;
+                                            const yOffset = redBaseY + i * lineHeight;
+                                            return (
+                                                <g key={`b-${i}`}>
+                                                    <line x1={`${(startX/viewMax)*100}%`} y1={yOffset} x2={`${(endX/viewMax)*100}%`} y2={yOffset} stroke="#e11d48" strokeWidth="2" markerEnd="url(#arrow-red)" opacity="0.6" />
+                                                    <text x={`${((startX+endX)/2/viewMax)*100}%`} y={yOffset+12} fill="#e11d48" fontSize="10" textAnchor="middle">{Math.round(Math.abs(endX-startX))}m</text>
+                                                    {renderLinearMarkers('B', startTotal, endTotal, startX, endX, yOffset)}
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+                                    <div className="absolute left-0 -top-1 w-0.5 h-3 bg-stone-400"></div>
+                                    <div className="absolute left-0 -top-6 text-xs font-bold text-stone-500 -translate-x-1/2">0m</div>
+                                    {mode === 'meeting' && <><div className="absolute right-0 -top-1 w-0.5 h-3 bg-stone-400"></div><div className="absolute right-0 -top-6 text-xs font-bold text-stone-500 translate-x-1/2">{distance}m</div></>}
+                                    {mode === 'catching' && <><div className="absolute w-0.5 h-3 bg-purple-300 -top-1" style={{ left: `${(headStart/viewMax)*100}%` }}></div><div className="absolute text-xs font-bold text-purple-400 -top-6 -translate-x-1/2" style={{ left: `${(headStart/viewMax)*100}%` }}>{headStart}m</div></>}
+                                    <div className="absolute transition-none z-30" style={{ left: `${(posA/viewMax)*100}%`, top: '-50px', transform: `translateX(-50%) scaleX(${dirA===1?-1:1})` }}>
+                                        <div className="flex flex-col items-center"><span className="text-4xl md:text-5xl filter drop-shadow-md">🏃‍♂️</span><span className="text-[10px] font-bold text-blue-600 bg-white/90 px-1 rounded shadow-sm whitespace-nowrap" style={{transform:`scaleX(${dirA===1?-1:1})`}}>小明</span></div>
+                                    </div>
+                                    <div className="absolute transition-none z-20" style={{ left: `${(posB/viewMax)*100}%`, top: '-50px', transform: `translateX(-50%) scaleX(${dirB===1?-1:1})` }}>
+                                        <div className="flex flex-col items-center"><span className="text-4xl md:text-5xl filter drop-shadow-md inline-block">🏃‍♀️</span><span className="text-[10px] font-bold text-rose-500 bg-white/90 px-1 rounded shadow-sm whitespace-nowrap" style={{transform:`scaleX(${dirB===1?-1:1})`}}>小红</span></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 环形跑道视图 */}
+                            {trackType === 'circular' && (
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    {/* 扩大 viewBox 以适应更大的跑道 */}
+                                    <svg width="100%" height="100%" viewBox="-320 -320 640 640" className="overflow-visible">
+                                        <circle cx="0" cy="0" r="180" fill="none" stroke="#e7e5e4" strokeWidth="15" />
+                                        <line x1="0" y1="-170" x2="0" y2="-190" stroke="#78716c" strokeWidth="3" />
+                                        <text x="0" y="-195" fontSize="14" fill="#78716c" textAnchor="middle" fontWeight="bold">起点</text>
+
+                                        {turnPointsA.map((pt, i) => {
+                                            const endPos = (i === turnPointsA.length - 1) ? posA : turnPointsA[i + 1].pos;
+                                            const r = circleRadiusA - (i * spiralGap); 
+                                            const startTotal = pt.totalDist;
+                                            const endTotal = (i === turnPointsA.length - 1) ? totalDistA : turnPointsA[i + 1].totalDist;
+                                            return (
+                                                <g key={`ca-${i}`}>
+                                                    {getArcPath(pt.pos, endPos, r, "#2563eb")}
+                                                    {renderCircularMarkers('A', startTotal, endTotal, r)}
+                                                </g>
+                                            );
+                                        })}
+                                        {turnPointsB.map((pt, i) => {
+                                            const endPos = (i === turnPointsB.length - 1) ? posB : turnPointsB[i + 1].pos;
+                                            const r = circleRadiusB + (i * spiralGap);
+                                            const startTotal = pt.totalDist;
+                                            const endTotal = (i === turnPointsB.length - 1) ? totalDistB : turnPointsB[i + 1].totalDist;
+                                            return (
+                                                <g key={`cb-${i}`}>
+                                                    {getArcPath(pt.pos, endPos, r, "#e11d48")}
+                                                    {renderCircularMarkers('B', startTotal, endTotal, r)}
+                                                </g>
+                                            );
+                                        })}
+
+                                        {(() => {
+                                            const posACircle = getCirclePos(posA, circleRadiusA - (turnPointsA.length - 1) * spiralGap);
+                                            const posBCircle = getCirclePos(posB, circleRadiusB + (turnPointsB.length - 1) * spiralGap);
+                                            return (
+                                                <>
+                                                    <g transform={`translate(${posACircle.x}, ${posACircle.y})`}>
+                                                        <g transform={`rotate(${posACircle.rotation + 90})`}>
+                                                            <text fontSize="24" textAnchor="middle" dy="8" style={{transform: `scaleX(${dirA===1?-1:1})`}}>🏃‍♂️</text>
+                                                        </g>
+                                                    </g>
+                                                    <g transform={`translate(${posBCircle.x}, ${posBCircle.y})`}>
+                                                        <g transform={`rotate(${posBCircle.rotation + 90})`}>
+                                                            <text fontSize="24" textAnchor="middle" dy="8" style={{transform: `scaleX(${dirB===1?-1:1})`}}>🏃‍♀️</text>
+                                                        </g>
+                                                    </g>
+                                                </>
+                                            )
+                                        })()}
+                                    </svg>
+                                </div>
+                            )}
+
+                        </div>
+
+                        {/* 按钮 */}
+                        <div className="flex gap-4 items-center">
+                            <button onClick={() => {
+                                if (isPausedAtEvent) { handleContinue(); } 
+                                else setIsRunning(!isRunning);
+                            }} className={`flex-1 text-white text-base md:text-lg font-bold py-3 md:py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 ${isPausedAtEvent ? 'bg-blue-500 hover:bg-blue-600' : (isRunning?'bg-amber-400 hover:bg-amber-500':'bg-emerald-500 hover:bg-emerald-600')}`}>
+                                {isPausedAtEvent ? <><Icon path={Icons.Continue} /> 继续奔跑</> : (isRunning ? <><Icon path={Icons.Pause} /> 暂停</> : <><Icon path={Icons.Play} /> 开始运行</>)}
+                            </button>
+                            <button onClick={() => resetPositions(mode, false)} className="bg-white hover:bg-stone-100 text-stone-500 font-bold p-3 md:p-4 rounded-xl shadow border-2 border-stone-100 transition-colors flex items-center gap-2" title="重置">
+                                <Icon path={Icons.Reset} /> <span>重置</span>
+                            </button>
+                        </div>
+
+                        {/* 数据面板 */}
+                        <div className="grid grid-cols-3 gap-2 md:gap-4">
+                            <div className="bg-blue-50 text-blue-800 p-2 md:p-3 rounded-xl flex flex-col items-center justify-center">
+                                <span className="text-[10px] md:text-xs font-bold opacity-60 text-center">小明累计里程</span>
+                                <span className="font-mono font-bold text-lg md:text-xl tabular-nums">{Math.round(totalDistA)}</span>
+                            </div>
+                            <div className="bg-amber-50 text-amber-800 p-2 md:p-3 rounded-xl flex flex-col items-center justify-center border-2 border-amber-100">
+                                <span className="text-[10px] md:text-xs font-bold opacity-60">总时间</span>
+                                <span className="font-mono font-bold text-xl md:text-2xl tabular-nums">{currentTime.toFixed(1)}s</span>
+                            </div>
+                            <div className="bg-rose-50 text-rose-800 p-2 md:p-3 rounded-xl flex flex-col items-center justify-center">
+                                <span className="text-[10px] md:text-xs font-bold opacity-60 text-center">小红累计里程</span>
+                                <span className="font-mono font-bold text-lg md:text-xl tabular-nums">{Math.round(totalDistB)}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <footer className="mt-6 mb-4 text-center text-stone-400 text-xs font-bold opacity-80">
+                        @孙维刚教育研究院
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<div style="position:fixed;bottom:0;left:0;width:100%;z-index:9998;box-sizing:border-box;padding:4px 16px;text-align:center;color:#94a3b8;font:11px/1.4 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:rgba(248,250,252,0.85);pointer-events:none;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

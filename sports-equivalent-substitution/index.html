@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体育比赛与等量代换 | Math101</title>
+    <link rel="stylesheet" href="../word-problem-tool.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand"><div class="brand-mark" id="mark">赛</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div>
+            <div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div>
+        </header>
+        <nav class="tabs" id="tabs" aria-label="题型分类"></nav><p class="tab-intro" id="tabIntro"></p>
+        <div class="layout">
+            <section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section>
+            <aside class="card library"><div class="library-head"><h3>当前题库</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside>
+        </div>
+    </main>
+    <script>
+        window.WORD_PROBLEM_TOOL = {
+            title: "体育比赛 · 等量代换",
+            subtitle: "体育比赛先数“每两人/每两队赛一场”的总场数；等量代换用相等关系替换求量。",
+            mark: "赛", accent: "#7c3aed", accentDark: "#5b21b6", accentSoft: "#f3e8ff",
+            tabs: [
+                {
+                    id: "sports", label: "体育比赛", intro: "单循环赛“每两个人都赛一场”，n 个人共赛 n×(n−1)÷2 场；再结合胜负条件推理。",
+                    problems: [
+                        {
+                            label: "比赛① · 羽毛球胜场",
+                            story: "甲、乙、丙、丁 4 人进行羽毛球比赛，每两人都赛一场。一共要赛多少场？若甲胜了丁，且甲、乙、丙 3 人胜的场数相同，那么丁胜了多少场？",
+                            keywords: ["4 人", "每两人都赛一场", "甲胜了丁", "甲、乙、丙 3 人胜的场数相同"],
+                            relations: [{label:"总场数",value:"4 × (4 − 1) ÷ 2 = 6 场"},{label:"胜场总和",value:"每场一个赢家，共 6 个胜场"}],
+                            readingTip: "每场比赛恰好产生 1 个胜场，所以所有人的胜场之和等于总场数。",
+                            diagram: [{label:"总场数",parts:6,note:"6 场，6 个胜场"},{label:"甲乙丙",parts:6,tone:"alt",note:"3 人各胜相同场数"},{label:"丁",parts:1,tone:"warm",note:"剩下的胜场"}],
+                            diagramNote: "甲、乙、丙各胜 2 场（共 6 场全包），丁就没有胜场。",
+                            equation: "总场数 4×3÷2=6；甲乙丙各胜 2 场，6=2×3，丁胜 6−6=0",
+                            equationTip: "甲至少胜 1（胜丁），三人相同只能各胜 2，正好用完 6 个胜场。",
+                            steps: [
+                                "总场数 = 4 × (4 − 1) ÷ 2 = 6（场），共有 6 个胜场。",
+                                "甲胜了丁，所以甲至少胜 1 场；甲乙丙三人胜场相同。",
+                                "若各胜 2 场，三人共 2 × 3 = 6 个胜场，正好用完全部胜场。",
+                                "于是丁的胜场 = 6 − 6 = 0（场）。"
+                            ],
+                            answer: "一共赛 6 场，丁胜了 0 场。"
+                        },
+                        {
+                            label: "比赛② · 篮球循环赛打平",
+                            story: "5 个篮球队单循环赛（每两队赛一场）。胜得 2 分、负得 0 分、平各得 1 分。已知第一名没打平过，第二名没负过，第四名没胜过，各队得分都不相同。全部比赛共打平了多少场？",
+                            keywords: ["5 个篮球队", "每两队赛一场", "第一名没打平过", "第二名没负过", "第四名没胜过", "得分都不相同"],
+                            relations: [{label:"总场数",value:"5 × 4 ÷ 2 = 10 场"},{label:"总得分",value:"每场都产生 2 分，共 20 分"}],
+                            readingTip: "无论胜负还是打平，每场都恰好分出 2 分，5 队总分一定是 20 分。",
+                            diagram: [{label:"5 队得分",parts:5,note:"互不相同，和为 20"},{label:"唯一解",parts:5,tone:"alt",note:"6、5、4、3、2"},{label:"平局场数",parts:5,tone:"warm",note:"由得分倒推 = 5"}],
+                            diagramNote: "满足三条限制、5 个不同分数且和为 20，唯一为 6、5、4、3、2。",
+                            equation: "总分 = 10 × 2 = 20；唯一得分 6+5+4+3+2=20；打平 5 场",
+                            equationTip: "第一名没平→分数为偶数；逐条排除后只剩 6、5、4、3、2，对应 5 场平局。",
+                            steps: [
+                                "总场数 = 5 × 4 ÷ 2 = 10（场），每场分出 2 分，5 队总分 = 20 分。",
+                                "5 个互不相同的得分且和为 20，结合“第一名没平、第二名没负、第四名没胜”逐一排除。",
+                                "唯一可能的得分是 6、5、4、3、2。",
+                                "由这组得分还原各场胜负平，可数出共打平 5 场。"
+                            ],
+                            answer: "全部比赛共打平了 5 场。"
+                        },
+                        {
+                            label: "比赛③ · 乒乓球已赛场数",
+                            story: "甲、乙、丙、丁 4 名运动员，每两人之间赛一场乒乓球。甲已赛 3 场，乙已赛 2 场，丙已赛 1 场。丁已赛多少场？",
+                            keywords: ["每两人之间赛一场", "甲已赛 3 场", "乙已赛 2 场", "丙已赛 1 场"],
+                            relations: [{label:"甲赛 3 场",value:"甲已和乙、丙、丁都赛过"},{label:"丙只赛 1 场",value:"丙只和甲赛过"}],
+                            readingTip: "甲赛了 3 场说明甲和其余三人都打过；丙只赛 1 场，对手只能是甲。",
+                            diagram: [{label:"甲",parts:3,note:"对乙、丙、丁"},{label:"乙",parts:2,tone:"alt",note:"对甲、丁"},{label:"丁",parts:2,tone:"warm",note:"对甲、乙"}],
+                            diagramNote: "丙不和乙、丁打（它只和甲打过），所以丁的对手是甲和乙。",
+                            equation: "丁的对手 = 甲、乙 ⇒ 丁已赛 2 场",
+                            steps: [
+                                "甲赛 3 场 = 与乙、丙、丁各赛 1 场。",
+                                "丙只赛 1 场，对手只能是甲（因为甲和所有人都赛过）。",
+                                "乙赛 2 场，其中一场对甲，另一场不能对丙，只能对丁。",
+                                "于是丁和甲、乙各赛 1 场，共赛 2 场。"
+                            ],
+                            answer: "丁已经赛了 2 场。"
+                        }
+                    ]
+                },
+                {
+                    id: "substitution", label: "等量代换", intro: "找出“一种东西 = 几个另一种东西”的相等关系，把复杂的式子替换成简单的。",
+                    problems: [
+                        {
+                            label: "代换① · 篮球换排球",
+                            story: "李老师的钱可以买 4 个排球和 5 个篮球，或者买 3 个篮球和 10 个排球。若买 1 个篮球，剩下的钱可以买多少个排球？",
+                            keywords: ["4 个排球和 5 个篮球", "3 个篮球和 10 个排球", "买 1 个篮球"],
+                            relations: [{label:"钱数相等",value:"4 排 + 5 篮 = 3 篮 + 10 排"},{label:"化简",value:"2 篮 = 6 排 ⇒ 1 篮 = 3 排"}],
+                            readingTip: "两种买法花的是同一笔钱，把相等的两边消去相同部分。",
+                            diagram: [{label:"买法一",parts:5,note:"4 排 + 5 篮"},{label:"买法二",parts:5,tone:"alt",note:"3 篮 + 10 排"},{label:"代换",parts:3,tone:"warm",note:"1 篮 = 3 排"}],
+                            diagramNote: "两边同时去掉 3 篮和 4 排，得 2 篮 = 6 排，所以 1 篮 = 3 排。",
+                            equation: "总钱 = 3 篮 + 10 排 = 19 排；买 1 篮后剩 19 − 3 = 16 排",
+                            equationTip: "把 1 篮换成 3 排，总钱 = 9 排 + 10 排 = 19 排。",
+                            steps: [
+                                "两种买法钱数相等：4 排 + 5 篮 = 3 篮 + 10 排。",
+                                "两边同时去掉 3 篮、4 排：2 篮 = 6 排，所以 1 篮 = 3 排。",
+                                "总钱 = 3 篮 + 10 排 = 3 × 3 排 + 10 排 = 19 个排球的钱。",
+                                "买 1 个篮球（= 3 排）后，剩下 19 − 3 = 16 个排球。"
+                            ],
+                            answer: "剩下的钱可以买 16 个排球。"
+                        },
+                        {
+                            label: "代换② · 篮球足球单价",
+                            story: "买 3 个篮球和 5 个足球共 480 元；买 6 个篮球和 3 个足球共 519 元。篮球每个多少元？",
+                            keywords: ["3 个篮球和 5 个足球共 480 元", "6 个篮球和 3 个足球共 519 元"],
+                            relations: [{label:"消去篮球",value:"第一式 ×2 与第二式相减"},{label:"先求足球",value:"7 个足球 = 441 元"}],
+                            readingTip: "把篮球的个数配成相同（都变 6 个），相减就只剩足球。",
+                            diagram: [{label:"①×2",parts:6,note:"6 篮 + 10 足 = 960"},{label:"②",parts:5,tone:"alt",note:"6 篮 + 3 足 = 519"},{label:"相减",parts:4,tone:"warm",note:"7 足 = 441"}],
+                            diagramNote: "两式篮球数相同，相减后篮球被消去，只剩 7 个足球的钱。",
+                            equation: "足球 441 ÷ 7 = 63；篮球 (480 − 5 × 63) ÷ 3 = 55",
+                            steps: [
+                                "第一式两边都乘 2：6 篮 + 10 足 = 960（元）。",
+                                "减去第二式 6 篮 + 3 足 = 519：得 7 足 = 441（元），足球每个 63 元。",
+                                "代回第一式：3 篮 = 480 − 5 × 63 = 165（元）。",
+                                "篮球每个 165 ÷ 3 = 55（元）。"
+                            ],
+                            answer: "篮球每个 55 元。"
+                        },
+                        {
+                            label: "代换③ · 大小卡车运苹果",
+                            story: "运一批苹果：用 3 辆大卡车和 2 辆小卡车运，8 次运完；用 1 辆大卡车和 4 辆小卡车运，12 次运完。只用大卡车，几辆 5 次运完？只用小卡车，8 辆几次运完？",
+                            keywords: ["3 辆大卡车和 2 辆小卡车", "8 次运完", "1 辆大卡车和 4 辆小卡车", "12 次运完"],
+                            relations: [{label:"总量相等",value:"8×(3大+2小) = 12×(1大+4小)"},{label:"求关系",value:"3 大 = 8 小"}],
+                            readingTip: "两种方式运的是同一批苹果，总量相等；设 1 辆大、小卡车每次运的量。",
+                            diagram: [{label:"方式一",parts:5,note:"8 次 ×(3大+2小)"},{label:"方式二",parts:5,tone:"alt",note:"12 次 ×(1大+4小)"},{label:"代换",parts:4,tone:"warm",note:"3 大 = 8 小"}],
+                            diagramNote: "设 1 辆小卡车每次运 3 份，则 1 辆大卡车每次运 8 份，总量 240 份。",
+                            equation: "总量 240 份；大卡车 240÷5÷8=6 辆；小卡车 240÷8÷3=10 次",
+                            equationTip: "取 1 大 = 8 份、1 小 = 3 份，总量 8×(3×8+2×3)=240 份。",
+                            steps: [
+                                "总量相等：8 ×(3 大 + 2 小) = 12 ×(1 大 + 4 小)，化简得 3 大 = 8 小。",
+                                "取 1 辆小卡车每次 3 份，则 1 辆大卡车每次 8 份；总量 = 8 ×(3×8 + 2×3) = 240 份。",
+                                "只用大卡车 5 次运完：每辆 5 次运 8 × 5 = 40 份，需要 240 ÷ 40 = 6（辆）。",
+                                "只用 8 辆小卡车：每次运 8 × 3 = 24 份，需要 240 ÷ 24 = 10（次）。"
+                            ],
+                            answer: "只用大卡车需 6 辆运 5 次；只用 8 辆小卡车需运 10 次。"
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+    <script src="../word-problem-tool.js"></script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

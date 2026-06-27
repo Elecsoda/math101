@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-06-27",
+  "updatedAt": "2026-06-28",
   "sources": {
     "knowledgeGraph": "../private-school-management/data/skilltree.json",
     "textbook": "人教版小学数学教材主线",
@@ -709,19 +709,30 @@
         "unit-normalize",
         "unit-totalize",
         "tree-planting",
-        "interval-problem"
-      ],
-      "missingNodeIds": [
+        "interval-problem",
         "profit-loss",
         "reverse-reasoning",
         "sports-problem",
         "equivalent-substitution",
+        "engineering",
+        "cow-grazing",
+        "economic-promotion"
+      ],
+      "missingNodeIds": [
         "interest-tax",
         "concentration",
-        "engineering",
         "basic-travel",
         "frac-percent-app",
         "proportion-application"
+      ],
+      "newlyReadyNodeIds": [
+        "profit-loss",
+        "reverse-reasoning",
+        "sports-problem",
+        "equivalent-substitution",
+        "engineering",
+        "cow-grazing",
+        "economic-promotion"
       ],
       "recommendedTools": [
         {
@@ -753,11 +764,15 @@
           "id": "profit-loss-reverse",
           "name": "盈亏问题与倒推问题",
           "grade": "3-5",
-          "status": "planned",
+          "status": "ready",
           "route": "/profit-loss-reverse",
           "knowledgeNodeIds": [
             "profit-loss",
             "reverse-reasoning"
+          ],
+          "tabs": [
+            "盈亏问题",
+            "倒推问题"
           ]
         },
         {
@@ -781,14 +796,31 @@
           ]
         },
         {
+          "id": "economic-promotion",
+          "name": "促销与经济类问题",
+          "grade": "4-6",
+          "status": "ready",
+          "route": "/promotion",
+          "knowledgeNodeIds": [
+            "economic-promotion"
+          ],
+          "tabs": [
+            "促销比价"
+          ]
+        },
+        {
           "id": "sports-equivalent-substitution",
           "name": "体育比赛与等量代换",
           "grade": "3-6",
-          "status": "planned",
+          "status": "ready",
           "route": "/sports-equivalent-substitution",
           "knowledgeNodeIds": [
             "sports-problem",
             "equivalent-substitution"
+          ],
+          "tabs": [
+            "体育比赛",
+            "等量代换"
           ]
         },
         {
@@ -813,12 +845,17 @@
         },
         {
           "id": "engineering-basics",
-          "name": "工程问题基本工具",
+          "name": "牛吃草与工程问题",
           "grade": "5-6",
-          "status": "planned",
-          "route": "/engineering-basics",
+          "status": "ready",
+          "route": "/engineering-cow",
           "knowledgeNodeIds": [
-            "engineering"
+            "engineering",
+            "cow-grazing"
+          ],
+          "tabs": [
+            "牛吃草问题",
+            "工程问题"
           ]
         },
         {
@@ -901,25 +938,42 @@
       "sourceGroupIds": [
         "adv-travel"
       ],
-      "coverage": "planned",
-      "coveredNodeIds": [],
-      "missingNodeIds": [
+      "coverage": "partial",
+      "coveredNodeIds": [
         "basic-travel",
         "ring-track",
-        "boat-stream",
         "train-bridge",
+        "multi-meeting"
+      ],
+      "missingNodeIds": [
+        "boat-stream",
         "clock-problem",
-        "multi-meeting",
         "vary-speed",
         "travel-by-ratio"
       ],
+      "newlyReadyNodeIds": [
+        "basic-travel",
+        "ring-track",
+        "train-bridge",
+        "multi-meeting"
+      ],
       "recommendedTools": [
         {
-          "id": "basic-travel-diagram",
-          "name": "路程速度时间线段图",
-          "grade": "3-4",
-          "status": "planned",
-          "route": "/basic-travel",
+          "id": "travel-structure-lab",
+          "name": "速度和与速度差演示",
+          "grade": "3-5",
+          "status": "ready",
+          "route": "/travel-structure",
+          "knowledgeNodeIds": [
+            "basic-travel"
+          ]
+        },
+        {
+          "id": "travel-reading-lab",
+          "name": "行程读题翻译训练",
+          "grade": "3-5",
+          "status": "ready",
+          "route": "/travel-reading",
           "knowledgeNodeIds": [
             "basic-travel"
           ]
@@ -928,12 +982,31 @@
           "id": "meeting-chasing-lab",
           "name": "相遇追及与环形跑道",
           "grade": "4-6",
-          "status": "planned",
-          "route": "/meeting-chasing",
+          "status": "ready",
+          "route": "/travel-meeting",
           "knowledgeNodeIds": [
             "ring-track",
-            "multi-meeting",
-            "vary-speed"
+            "multi-meeting"
+          ]
+        },
+        {
+          "id": "travel-draw1-lab",
+          "name": "审题画线段图·基础",
+          "grade": "4-6",
+          "status": "ready",
+          "route": "/travel-draw1",
+          "knowledgeNodeIds": [
+            "train-bridge"
+          ]
+        },
+        {
+          "id": "travel-draw2-lab",
+          "name": "审题画线段图·进阶",
+          "grade": "4-6",
+          "status": "ready",
+          "route": "/travel-draw2",
+          "knowledgeNodeIds": [
+            "multi-meeting"
           ]
         },
         {

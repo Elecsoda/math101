@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>促销与经济类问题 | Math101</title>
+    <link rel="stylesheet" href="../word-problem-tool.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand"><div class="brand-mark" id="mark">惠</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div>
+            <div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div>
+        </header>
+        <nav class="tabs" id="tabs" aria-label="题型分类"></nav><p class="tab-intro" id="tabIntro"></p>
+        <div class="layout">
+            <section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section>
+            <aside class="card library"><div class="library-head"><h3>当前题库</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside>
+        </div>
+    </main>
+    <script>
+        window.WORD_PROBLEM_TOOL = {
+            title: "促销 · 经济类问题",
+            subtitle: "把“满减、折上折、满组赠送”等促销规则一步步算清，再比较哪种最省钱。",
+            mark: "惠", accent: "#e11d48", accentDark: "#9f1239", accentSoft: "#ffe4e6",
+            tabs: [
+                {
+                    id: "promotion", label: "促销比价", intro: "先把每种活动“分组”，算出实际付出，再比较谁更省钱。",
+                    problems: [
+                        {
+                            label: "促销① · 桌椅两方案",
+                            story: "学校要购进 26 套桌椅，原价每套 180 元，两种活动不可组合：①每满 10 套为一组，每组送 1 套（够几组送几套，不够不送）；②每满 5 套为一组，组内每套 170 元，不满一组按原价。哪种更省钱？",
+                            keywords: ["26 套桌椅", "每套 180 元", "每满 10 套", "送 1 套", "每满 5 套", "170 元"],
+                            relations: [{label:"方案①思路",value:"按满 10 送 1，少买几套"},{label:"方案②思路",value:"满 5 套的部分打折，零头原价"}],
+                            readingTip: "“满几送几”要先看够几个整组；“组内优惠”要把够组和零头分开算。",
+                            diagram: [{label:"需求",parts:6,note:"一共要 26 套"},{label:"方案①",parts:5,tone:"alt",note:"买 24 套即可（送 2 套）"},{label:"方案②",parts:5,tone:"warm",note:"25 套打折 + 1 套原价"}],
+                            diagramNote: "两种活动各画一条，分别算出真正要付的钱再比较。",
+                            equation: "方案① 24×180=4320；方案② 25×170+1×180=4430",
+                            equationTip: "26 ÷ 10 = 2 组余 6，送 2 套；26 ÷ 5 = 5 组余 1，5 组打折、1 套原价。",
+                            steps: [
+                                "方案①：26 套里满 2 个“10 套”，送 2 套，只需买 26 − 2 = 24 套，付 24 × 180 = 4320（元）。",
+                                "方案②：26 套里满 5 个“5 套”共 25 套打折，余 1 套原价；付 25 × 170 + 1 × 180 = 4250 + 180 = 4430（元）。",
+                                "比较 4320 元 < 4430 元。",
+                                "方案①更省钱，比方案②少花 4430 − 4320 = 110（元）。"
+                            ],
+                            answer: "选方案①（满 10 送 1）更省钱，付 4320 元，比方案②省 110 元。"
+                        },
+                        {
+                            label: "促销② · 满减与折上折",
+                            story: "同一件标价 640 元的衣服：甲品牌“每满 300 元减 80 元”，乙品牌“折上折”——先打八折，再在此基础上打九折。甲、乙哪个更优惠？相差多少元？",
+                            keywords: ["标价 640 元", "每满 300 元减 80 元", "折上折", "八折", "九折"],
+                            relations: [{label:"甲品牌",value:"看 640 里有几个满 300"},{label:"乙品牌",value:"640 × 0.8 × 0.9"}],
+                            readingTip: "“每满 300 减 80”是按整段满减，640 里只有 2 个 300；折上折是连续乘两次折扣。",
+                            diagram: [{label:"原价",parts:6,note:"640 元"},{label:"甲（满减）",parts:5,tone:"alt",note:"减 2 × 80 = 160"},{label:"乙（折上折）",parts:4,tone:"warm",note:"×0.8×0.9"}],
+                            diagramNote: "甲品牌付 640 − 160；乙品牌连续打折后付实际价。",
+                            equation: "甲 640 − 160 = 480；乙 640 × 0.8 × 0.9 = 460.8",
+                            equationTip: "640 ÷ 300 = 2 段（余 40 不再减），所以甲减 2 × 80 = 160。",
+                            steps: [
+                                "甲品牌：640 里有 2 个满 300（剩 40 不满 300），共减 2 × 80 = 160 元，付 640 − 160 = 480（元）。",
+                                "乙品牌：先八折 640 × 0.8 = 512（元），再九折 512 × 0.9 = 460.8（元）。",
+                                "比较 460.8 元 < 480 元，乙品牌更优惠。",
+                                "相差 480 − 460.8 = 19.2（元）。"
+                            ],
+                            answer: "乙品牌（折上折）更优惠，比甲品牌便宜 19.2 元。"
+                        },
+                        {
+                            label: "促销③ · 买几送几",
+                            story: "某文具店搞活动：练习本“买 4 送 1”，每本原价 3 元。老师要给班级准备 30 本练习本，按这个活动一共要花多少钱？",
+                            keywords: ["买 4 送 1", "每本原价 3 元", "30 本"],
+                            relations: [{label:"一组",value:"买 4 本得 5 本"},{label:"看够几组",value:"30 ÷ 5 = 6 组"}],
+                            readingTip: "“买 4 送 1”表示每 5 本里只付 4 本的钱。",
+                            diagram: [{label:"需求",parts:6,note:"要 30 本"},{label:"按 5 本分组",parts:6,tone:"alt",note:"6 组，每组付 4 本"}],
+                            diagramNote: "30 本正好分成 6 个“5 本组”，每组只付 4 本钱。",
+                            equation: "30 ÷ 5 × 4 × 3 = 72",
+                            steps: [
+                                "每“买 4 送 1”得到 5 本，30 ÷ 5 = 6（组）。",
+                                "每组只付 4 本，共付 6 × 4 = 24（本）的钱。",
+                                "一共花 24 × 3 = 72（元）。"
+                            ],
+                            answer: "一共要花 72 元。"
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+    <script src="../word-problem-tool.js"></script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牛吃草与工程问题 | Math101</title>
+    <link rel="stylesheet" href="../word-problem-tool.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <div class="brand"><div class="brand-mark" id="mark">效</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div>
+            <div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div>
+        </header>
+        <nav class="tabs" id="tabs" aria-label="题型分类"></nav><p class="tab-intro" id="tabIntro"></p>
+        <div class="layout">
+            <section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section>
+            <aside class="card library"><div class="library-head"><h3>当前题库</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside>
+        </div>
+    </main>
+    <script>
+        window.WORD_PROBLEM_TOOL = {
+            title: "牛吃草 · 工程问题",
+            subtitle: "牛吃草要分清“原有量 + 每天新增量”；工程问题先把总量看作 1 份效率累加。",
+            mark: "效", accent: "#0ea5e9", accentDark: "#0369a1", accentSoft: "#e0f2fe",
+            tabs: [
+                {
+                    id: "cow", label: "牛吃草问题", intro: "草每天匀速生长。先求“每天长草量”和“原有草量”，再算新情况。",
+                    problems: [
+                        {
+                            label: "牛吃草① · 牧场吃草天数",
+                            story: "牧场上草匀速生长。这片草可供 10 头牛吃 20 天，或供 15 头牛吃 10 天。这片草可供 25 头牛吃多少天？",
+                            keywords: ["匀速生长", "10 头牛吃 20 天", "15 头牛吃 10 天", "25 头牛吃多少天"],
+                            relations: [{label:"总草 = 原有 + 新长",value:"牛数 × 天数 = 原有草 + 每天长草 × 天数"},{label:"两式相减",value:"消去原有草，先求每天长草量"}],
+                            readingTip: "设 1 头牛 1 天吃 1 份草。10×20 与 15×10 的差，就是这段时间多长出的草。",
+                            diagram: [{label:"方案A",parts:5,note:"10 牛 × 20 天 = 200 份"},{label:"方案B",parts:4,tone:"alt",note:"15 牛 × 10 天 = 150 份"},{label:"差",parts:2,tone:"warm",note:"多吃 50 份 = 多长 10 天的草"}],
+                            diagramNote: "两方案吃掉的总草不同，差额全部来自“多生长的天数”里的新草。",
+                            equation: "每天长草 (200−150)÷(20−10)=5；原有 200−5×20=100；25 牛：100÷(25−5)=5",
+                            equationTip: "新草每天长 5 份，正好被 5 头牛吃掉；剩下 20 头牛吃原有的 100 份。",
+                            steps: [
+                                "设 1 头牛 1 天吃 1 份草。方案A 共吃 10 × 20 = 200 份，方案B 共吃 15 × 10 = 150 份。",
+                                "多出的 200 − 150 = 50 份，是多出的 20 − 10 = 10 天里长出来的，所以每天长草 50 ÷ 10 = 5 份。",
+                                "原有草 = 200 − 5 × 20 = 100 份。",
+                                "25 头牛中有 5 头“专吃”新长的草，剩 25 − 5 = 20 头吃原有草，100 ÷ 20 = 5（天）。"
+                            ],
+                            answer: "这片草可供 25 头牛吃 5 天。"
+                        },
+                        {
+                            label: "牛吃草② · 水池抽水",
+                            story: "一满水池池底不断匀速涌水。用 10 部抽水机 20 小时抽干，用 15 部抽水机 10 小时抽干。用 25 部同样的抽水机几小时抽干？",
+                            keywords: ["匀速涌水", "10 部抽水机 20 小时", "15 部抽水机 10 小时", "25 部"],
+                            relations: [{label:"和牛吃草同型",value:"涌水=长草，抽水机=牛"},{label:"先求每小时涌水",value:"两式相减消去原有水"}],
+                            readingTip: "把“涌水”当作“新长的草”，原有水当作“原有草”，方法完全一样。",
+                            diagram: [{label:"方案A",parts:5,note:"10 机 × 20 时 = 200 份"},{label:"方案B",parts:4,tone:"alt",note:"15 机 × 10 时 = 150 份"},{label:"差",parts:2,tone:"warm",note:"多抽 50 份 = 多涌 10 小时"}],
+                            diagramNote: "每小时涌出的水正好需要固定几部抽水机“专门处理”。",
+                            equation: "每时涌水 (200−150)÷(20−10)=5；原有 100；25 机：100÷(25−5)=5",
+                            steps: [
+                                "设 1 部抽水机 1 小时抽 1 份水。方案A 抽 10 × 20 = 200 份，方案B 抽 15 × 10 = 150 份。",
+                                "多出 50 份来自多出的 10 小时涌水，每小时涌水 50 ÷ 10 = 5 份。",
+                                "原有水 = 200 − 5 × 20 = 100 份。",
+                                "25 部中 5 部抵消涌水，剩 20 部抽原有水，100 ÷ 20 = 5（小时）。"
+                            ],
+                            answer: "用 25 部抽水机 5 小时可以抽干。"
+                        },
+                        {
+                            label: "牛吃草③ · 中途加牛",
+                            story: "牧场草每天匀速生长，可供 9 头牛吃 12 天，或供 8 头牛吃 16 天。若开始只有 4 头牛吃，从第 7 天起又增加若干头，再吃 6 天（共 12 天）吃光。增加了多少头牛？",
+                            keywords: ["9 头牛吃 12 天", "8 头牛吃 16 天", "4 头牛", "第 7 天起", "再吃 6 天"],
+                            relations: [{label:"先求基本量",value:"每天长草、原有草"},{label:"分段吃草",value:"前 6 天 4 头 + 后 6 天 (4+x) 头"}],
+                            readingTip: "总草 = 原有 + 12 天新长；这些草要等于两段牛吃掉的草之和。",
+                            diagram: [{label:"前 6 天",parts:3,note:"4 头牛吃"},{label:"后 6 天",parts:4,tone:"alt",note:"(4 + 增加) 头牛吃"},{label:"总草",parts:6,tone:"warm",note:"原有 + 12 天新长"}],
+                            diagramNote: "把 12 天分成两段，分别算各段吃的草，合起来等于全部草。",
+                            equation: "每天长草 (108−128)/(12−16)=5，原有 48；总草 48+5×12=108；增加 (108−4×6−4×6)/6−4=3",
+                            equationTip: "9×12=108，8×16=128；相减求每天长 5 份，原有 48 份。",
+                            steps: [
+                                "设 1 头牛 1 天吃 1 份。9 × 12 = 108 份，8 × 16 = 128 份；每天长草 (128 − 108) ÷ (16 − 12) = 5 份。",
+                                "原有草 = 108 − 5 × 12 = 48 份；12 天总草 = 48 + 5 × 12 = 108 份。",
+                                "前 6 天 4 头牛吃 4 × 6 = 24 份；后 6 天还要吃完 108 − 24 = 84 份。",
+                                "后 6 天每天要吃 84 ÷ 6 = 14 份，即需要 14 头牛，比原来的 4 头多 14 − 4 = 10 头。"
+                            ],
+                            answer: "第 7 天起增加了 10 头牛。"
+                        }
+                    ]
+                },
+                {
+                    id: "engineering", label: "工程问题", intro: "把总工作量看作单位“1”，每人每天的效率是几分之一，再相加。",
+                    problems: [
+                        {
+                            label: "工程① · 两人合作有人休息",
+                            story: "李师傅、王师傅合作一批零件。若王师傅中途休息 5 天，合作 17 天完成；若李师傅中途休息 5 天，合作 18 天完成。两人单独完成各需多少天？",
+                            keywords: ["王师傅休息 5 天", "合作 17 天", "李师傅休息 5 天", "合作 18 天"],
+                            relations: [{label:"实际工作天数",value:"休息谁，谁就少干 5 天"},{label:"总量为 1",value:"两种情形完成的都是同一批"}],
+                            readingTip: "把每人每天效率设为未知量，两种情形各列一个“工作量 = 1”的式子。",
+                            diagram: [{label:"情形一",parts:5,note:"李 17 天 + 王 12 天 = 1"},{label:"情形二",parts:5,tone:"alt",note:"李 13 天 + 王 18 天 = 1"}],
+                            diagramNote: "谁休息 5 天，谁的工作天数就减 5，效率不变。",
+                            equation: "李×17+王×12=1，李×13+王×18=1 ⇒ 李=1/30，王=1/45",
+                            equationTip: "两式相减消元，先求出一人的每天效率，再代回。",
+                            steps: [
+                                "情形一：李干 17 天、王干 17 − 5 = 12 天，李×17 + 王×12 = 1。",
+                                "情形二：李干 18 − 5 = 13 天、王干 18 天，李×13 + 王×18 = 1。",
+                                "两式联立解得 李每天 1/30、王每天 1/45。",
+                                "李单独 1 ÷ (1/30) = 30 天，王单独 1 ÷ (1/45) = 45 天。"
+                            ],
+                            answer: "李师傅单独 30 天，王师傅单独 45 天。"
+                        },
+                        {
+                            label: "工程② · 提前完成",
+                            story: "造纸厂生产一批纸，原计划每天 12 吨，实际每天多生产 3 吨（即 15 吨），结果提前 2 天完成。这批纸有多少吨？",
+                            keywords: ["每天 12 吨", "多生产 3 吨", "提前 2 天"],
+                            relations: [{label:"总量不变",value:"原计划天数 × 12 = 实际天数 × 15"},{label:"提前 2 天",value:"实际天数 = 原计划天数 − 2"}],
+                            readingTip: "总量是同一批纸；先求原计划天数，再求总量。",
+                            diagram: [{label:"原计划",parts:6,note:"12 吨/天 × 计划天数"},{label:"实际",parts:5,tone:"alt",note:"15 吨/天 × (计划−2) 天"}],
+                            diagramNote: "实际每天多 3 吨，这 2 天“省下”的量正好补上少的天数。",
+                            equation: "12 × t = 15 × (t − 2) ⇒ t = 10；总量 12 × 10 = 120",
+                            equationTip: "也可用：实际多产的 3 吨/天 × 实际天数 = 提前 2 天少产的 12×2。",
+                            steps: [
+                                "设原计划 t 天。总量两种算法相等：12t = 15(t − 2)。",
+                                "解得 12t = 15t − 30，3t = 30，t = 10（天）。",
+                                "这批纸 = 12 × 10 = 120（吨）。"
+                            ],
+                            answer: "这批纸有 120 吨。"
+                        },
+                        {
+                            label: "工程③ · 合作的份数差",
+                            story: "生产一批零件，甲单独 4 天完成，乙单独 3 天完成。两人合作完成，甲比乙少做 24 个。这批零件共有多少个？",
+                            keywords: ["甲单独 4 天", "乙单独 3 天", "甲比乙少做 24 个"],
+                            relations: [{label:"效率比",value:"甲 1/4、乙 1/3"},{label:"合作时间相同",value:"做的个数之比 = 效率之比"}],
+                            readingTip: "合作时两人用时相同，所以做的个数比就是效率比 1/4 : 1/3 = 3 : 4。",
+                            diagram: [{label:"甲做",parts:3,note:"3 份"},{label:"乙做",parts:4,tone:"alt",note:"4 份；比甲多 1 份 = 24 个"}],
+                            diagramNote: "甲乙个数比 3 : 4，相差 1 份就是 24 个。",
+                            equation: "1 份 = 24；总数 = (3 + 4) × 24 = 168",
+                            steps: [
+                                "甲、乙效率比 1/4 : 1/3 = 3 : 4，合作用时相同，做的个数比也是 3 : 4。",
+                                "乙比甲多 4 − 3 = 1 份，对应 24 个，所以 1 份 = 24 个。",
+                                "总数 = (3 + 4) × 24 = 168（个）。"
+                            ],
+                            answer: "这批零件共有 168 个。"
+                        }
+                    ]
+                }
+            ]
+        };
+    </script>
+    <script src="../word-problem-tool.js"></script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>趣味数学：速度和与速度差</title>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .visual-area-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 10px;
+            position: relative;
+        }
+
+        /* --- 分组框 --- */
+        .group-box {
+            border: 2px dashed;
+            border-radius: 8px;
+            padding: 4px;
+            margin: 2px;
+            display: grid;
+            gap: 2px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .group-p1 { border-color: #93c5fd; background-color: #eff6ff; }
+        .group-p2 { border-color: #fdba74; background-color: #fff7ed; }
+        .group-sum { border-color: #c084fc; background-color: #faf5ff; }
+        .group-diff { border-color: #86efac; background-color: #f0fdf4; }
+
+        .mode-grazing .group-p1 { border-color: #86efac; background-color: #f0fdf4; }
+        .mode-grazing .group-p2 { border-color: #fdba74; background-color: #fff7ed; }
+        .mode-grazing .group-sum { border-color: #86efac; background-color: #f0fdf4; }
+        .mode-grazing .group-diff { border-color: #86efac; background-color: #f0fdf4; }
+
+        .mode-pool .group-p1 { border-color: #7dd3fc; background-color: #f0f9ff; }
+        .mode-pool .group-p2 { border-color: #fdba74; background-color: #fff7ed; }
+        .mode-pool .group-sum { border-color: #7dd3fc; background-color: #f0f9ff; }
+        .mode-pool .group-diff { border-color: #7dd3fc; background-color: #f0f9ff; }
+
+        /* --- 布局模式 --- */
+        .layout-groups-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 6px;
+            width: 100%;
+            max-height: 100%;
+            overflow-y: auto;
+            padding-bottom: 60px;
+            padding-top: 60px;
+        }
+
+        .layout-groups-linear {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            width: 100%;
+            padding: 60px 40px; 
+            overflow-x: auto; 
+            justify-content: flex-start;
+        }
+        .layout-groups-linear .group-box {
+            display: flex; height: 44px; align-items: center; flex-shrink: 0; min-width: 10px;
+        }
+        .layout-groups-linear .grid-item {
+            flex: 1; height: 100%; width: 24px; border-radius: 2px;
+        }
+
+        .pool-tank-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: center;
+        }
+        .pool-tank {
+            border: 4px solid #94a3b8;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            background: rgba(255,255,255,0.4);
+            padding: 4px;
+            width: 260px; 
+            max-width: 95%;
+            height: 280px; 
+            display: flex; 
+            flex-direction: row;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .pool-section {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-end; 
+            justify-content: center;
+            gap: 1px;
+            padding: 2px;
+            transition: all 0.3s;
+        }
+        .pool-section-left { border-right: 1px dashed rgba(0,0,0,0.1); }
+        
+        .pool-item {
+            width: 100%; height: 12px; border-radius: 1px; transition: opacity 0.1s;
+        }
+
+        .pool-pipes-container { display: flex; gap: 60px; margin-top: -2px; }
+        .pool-outlet { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .pool-outlet-pipe { width: 16px; height: 12px; background: #94a3b8; border-radius: 0 0 4px 4px; }
+        .pool-outlet-drop { font-size: 16px; animation: water-drop 0.8s infinite linear; opacity: 0; line-height: 1; }
+        .pipe-v1 .pool-outlet-pipe { background: #60a5fa; }
+        .pipe-v1 .pool-outlet-drop { color: #3b82f6; }
+        .pipe-v2 .pool-outlet-pipe { background: #fb923c; }
+        .pipe-v2 .pool-outlet-drop { color: #f97316; }
+
+        @keyframes water-drop {
+            0% { transform: translateY(-5px); opacity: 1; }
+            80% { transform: translateY(10px); opacity: 1; }
+            100% { transform: translateY(15px); opacity: 0; }
+        }
+        
+        .pool-inlet-wrapper { position: absolute; top: -55px; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .pool-inlet { font-size: 32px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); line-height: 1; }
+
+        /* --- 方块样式 --- */
+        .grid-item {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            transition: opacity 0.1s;
+        }
+        
+        .bg-p1 { background-color: #3b82f6; } .bg-p2 { background-color: #f97316; } 
+        
+        .mode-tunnel .bg-p1, .mode-tunnel .comp-v1 { background-color: #b45309; border: 1px solid #92400e; } 
+        .mode-tunnel .bg-p2, .mode-tunnel .comp-v2 { background-color: #d97706; border: 1px solid #b45309; }
+        .mode-car .bg-p1, .mode-car .comp-v1 { background-color: #475569; border: 1px solid #334155; } 
+        .mode-car .bg-p2, .mode-car .comp-v2 { background-color: #64748b; }
+        .mode-grazing .bg-p1, .mode-grazing .comp-v1 { background-color: #22c55e; } 
+        .mode-grazing .bg-p2, .mode-grazing .comp-v2 { background-color: #f97316; }
+        
+        .comp-v1 { background-color: #3b82f6; } .comp-v2 { background-color: #f97316; }
+        .mode-pool .comp-v1 { background-color: #0ea5e9; } .mode-pool .comp-v2 { background-color: #f97316; }
+        
+        .group-sum .grid-item { box-shadow: 0 0 0 1px rgba(255,255,255,0.3); }
+        .bg-diff-net { background-color: #22c55e; }
+        .mode-tunnel .bg-diff-net, .mode-car .bg-diff-net { background-color: #475569; }
+        .mode-pool .bg-diff-net { background-color: #0ea5e9; } 
+        .mode-grazing .bg-diff-net { background-color: #15803d; }
+
+        .consumed { opacity: 0.1 !important; filter: grayscale(100%); transform: scale(0.8); }
+        .mode-tunnel .consumed, .mode-car .consumed {
+            background-color: #e2e8f0 !important; opacity: 1 !important; border: none !important;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1); transform: scale(1);
+        }
+        .mode-pool .consumed { opacity: 0 !important; visibility: hidden; }
+        
+        .item-ghost {
+            background-color: #ef4444 !important; 
+            opacity: 0.2; filter: grayscale(0.5); border: 1px dashed #ef4444; color: rgba(0,0,0,0.3);
+        }
+        .mode-pool .item-ghost { background-color: transparent !important; border: 1px dashed #ef4444; opacity: 0.3; }
+        .mode-grazing .item-ghost { background-color: #22c55e !important; border-color: #16a34a; }
+
+        .pool-deep { background-color: #0ea5e9; } .pool-light { background-color: #7dd3fc; } .pool-added { background-color: #f97316 !important; }
+        .item-added-anim { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop-in { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* --- 移动图标 --- */
+        .moving-icon-wrapper {
+            position: absolute;
+            z-index: 50;
+            pointer-events: none;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 140px; 
+            height: 60px;
+        }
+        
+        .icon-label {
+            font-size: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .icon-emoji {
+            font-size: 32px;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.15));
+            line-height: 1;
+        }
+
+        .linear-icon-wrapper { top: -50px; transform: translateX(-50%); }
+        .linear-icon-wrapper.bottom { top: auto; bottom: -50px; }
+        .linear-icon-wrapper .icon-car { transform: scaleX(-1); }
+        .linear-icon-wrapper .icon-car.reverse { transform: scaleX(1); }
+        .linear-icon-wrapper .icon-pickaxe.reverse { transform: scaleX(-1); }
+
+        .grid-icon-p1 { margin-top: -70px; margin-left: -70px; } 
+        .grid-icon-p2 { margin-top: -70px; margin-left: -30px; }
+
+        /* UI */
+        .card-select { border: 2px solid transparent; background: white; }
+        .card-select.selected { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; font-weight: 700; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1); }
+        .mode-btn { background: transparent; color: #64748b; font-weight: 600; border-radius: 6px; padding: 4px; font-size: 13px; }
+        .mode-btn.active { background: white; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-control { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: bold; transition: all 0.1s; border: 1px solid transparent; }
+        .btn-reset { background: white; border-color: #cbd5e1; color: #475569; }
+        .btn-reset:active { background: #f1f5f9; transform: translateY(1px); }
+        .btn-auto { background: #3b82f6; color: white; box-shadow: 0 2px 0 #1d4ed8; }
+        .btn-auto:active { transform: translateY(2px); box-shadow: none; }
+        .btn-auto.playing { background: #ef4444; box-shadow: 0 2px 0 #b91c1c; }
+        .btn-step { background: #22c55e; color: white; box-shadow: 0 2px 0 #15803d; }
+        .btn-step:active { transform: translateY(2px); box-shadow: none; }
+        .btn-merge { flex: 1; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; font-weight: 600; font-size: 12px; }
+        .btn-merge.active { background: #f3e8ff; color: #7c3aed; border-color: #c084fc; }
+        .ruler-text { position: absolute; bottom: -20px; font-size: 10px; color: #94a3b8; transform: translateX(-50%); font-family: monospace; white-space: nowrap; }
+        .ruler-tick { position: absolute; bottom: 0; left: 50%; width: 1px; height: 6px; background: #cbd5e1; }
+        .seg-v1 { background-color: #3b82f6; } .seg-v2 { background-color: #f97316; }
+        
+        /* 输入框样式 */
+        .num-input {
+            width: 40px; text-align: center; font-family: monospace; font-weight: bold; font-size: 18px; color: inherit; background: transparent; border: none; border-bottom: 1px dashed transparent; outline: none; padding: 0;
+        }
+        .num-input:focus { border-bottom-color: currentColor; }
+        /* 去掉 spin button */
+        .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .footer-credit {
+            position: absolute; bottom: 2px; right: 8px; font-size: 10px; color: #cbd5e1; font-weight: bold; pointer-events: none; z-index: 0;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-slate-700 bg-slate-50">
+<a href="../" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9999px;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;color:#475569;font:500 13px/1 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);backdrop-filter:blur(4px);">← 返回首页</a>
+
+
+    <header class="flex justify-between items-center p-2 bg-white border-b border-slate-200 shrink-0 h-14 shadow-sm z-20">
+        <h1 class="text-lg font-bold text-slate-700 tracking-tight ml-2">⏱️ 消耗问题演示器</h1>
+        <div class="flex bg-slate-100 p-1 rounded-lg">
+            <button onclick="changeMode('single')" id="btn-mode-single" class="mode-btn px-3 active">单人</button>
+            <button onclick="changeMode('dual')" id="btn-mode-dual" class="mode-btn px-3">速度和</button>
+            <button onclick="changeMode('diff')" id="btn-mode-diff" class="mode-btn px-3 text-orange-600">速度差</button>
+        </div>
+    </header>
+
+    <section class="shrink-0 p-3 bg-white border-b border-slate-200 flex flex-col gap-3 z-10 shadow-sm">
+        <div class="grid grid-cols-4 gap-2">
+            <div onclick="setScenario('apple')" id="card-apple" class="card-select rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer"><span class="text-xl">🍎</span><span class="text-xs" id="text-scene-apple">吃苹果</span></div>
+            <div onclick="setScenario('grazing')" id="card-grazing" class="card-select rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer"><span class="text-xl">🌿</span><span class="text-xs" id="text-scene-grazing">牛吃草</span></div>
+            <div onclick="setScenario('tunnel')" id="card-tunnel" class="card-select rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer"><span class="text-xl">⛏️</span><span class="text-xs" id="text-scene-tunnel">边挖边盖</span></div>
+            <div onclick="setScenario('car')" id="card-car" class="card-select rounded-lg p-2 flex flex-col items-center justify-center cursor-pointer"><span class="text-xl">🚗</span><span class="text-xs" id="text-scene-car">相遇</span></div>
+        </div>
+
+        <div class="flex gap-3">
+            <div class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 flex items-center justify-between min-w-0">
+                <span class="text-[10px] font-bold text-slate-500 ml-1" id="label-total">总量</span>
+                <div class="flex items-center gap-1">
+                    <button onclick="changeTotal(-10)" id="btn-total-minus" class="w-6 h-6 bg-white rounded shadow-sm border border-slate-200 font-bold">-</button>
+                    <div class="text-center w-12 leading-none flex flex-col items-center">
+                        <input type="number" id="input-total" value="20" class="num-input text-slate-700" onchange="manualInput('total', this.value)" />
+                        <span id="unit-total" class="text-[10px] text-slate-400 block scale-90">个</span>
+                    </div>
+                    <button onclick="changeTotal(10)" id="btn-total-plus" class="w-6 h-6 bg-white rounded shadow-sm border border-slate-200 font-bold">+</button>
+                </div>
+            </div>
+            
+            <div class="flex-1 bg-blue-50 border border-blue-100 rounded-lg p-2 flex items-center justify-between min-w-0">
+                <span class="text-[10px] font-bold text-blue-600 ml-1" id="label-v1">速度</span>
+                <div class="flex items-center gap-1">
+                    <button onclick="changeSpeed(1, -1)" class="w-6 h-6 bg-white rounded shadow-sm border border-blue-200 text-blue-600 font-bold">-</button>
+                    <div class="text-center w-12 leading-none flex flex-col items-center">
+                        <input type="number" id="input-v1" value="4" class="num-input text-blue-600" onchange="manualInput('v1', this.value)" />
+                        <span id="unit-speed1" class="text-[10px] text-blue-400 block scale-90">个/分</span>
+                    </div>
+                    <button onclick="changeSpeed(1, 1)" class="w-6 h-6 bg-white rounded shadow-sm border border-blue-200 text-blue-600 font-bold">+</button>
+                </div>
+            </div>
+
+            <div id="control-speed2" class="hidden flex-1 bg-orange-50 border border-orange-100 rounded-lg p-2 flex items-center justify-between min-w-0">
+                <span class="text-[10px] font-bold text-orange-600 ml-1" id="label-v2">速度2</span>
+                <div class="flex items-center gap-1">
+                    <button onclick="changeSpeed(2, -1)" class="w-6 h-6 bg-white rounded shadow-sm border border-orange-200 text-orange-600 font-bold">-</button>
+                    <div class="text-center w-12 leading-none flex flex-col items-center">
+                        <input type="number" id="input-v2" value="2" class="num-input text-orange-500" onchange="manualInput('v2', this.value)" />
+                        <span id="unit-speed2" class="text-[10px] text-orange-400 block scale-90">个/分</span>
+                    </div>
+                    <button onclick="changeSpeed(2, 1)" class="w-6 h-6 bg-white rounded shadow-sm border border-orange-200 text-orange-600 font-bold">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-stretch gap-2 h-10">
+            <button id="btn-merge-toggle" onclick="toggleMerge()" class="hidden btn-merge rounded-lg px-2 items-center justify-center text-xs shadow-sm border-dashed">
+                分开显示速度
+            </button>
+            <button onclick="resetGame()" class="btn-control btn-reset"><span>↺</span> 重置</button>
+            <button id="btn-auto" onclick="toggleAuto()" class="btn-control btn-auto"><span id="icon-auto">▶</span> 自动</button>
+            <button id="btn-step" onclick="nextStepManually()" class="btn-control btn-step"><span>⏯</span> 下一步</button>
+        </div>
+    </section>
+
+    <main class="flex-1 relative bg-slate-50/50 overflow-hidden flex flex-col">
+        <div id="visual-area" class="visual-area-inner"></div>
+        <div class="h-16 border-t border-slate-200 flex items-center justify-center bg-white text-sm font-mono shrink-0 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 relative">
+            <div id="calc-container" class="flex flex-col md:flex-row items-center justify-center w-full gap-2"></div>
+            <div class="footer-credit">@孙维刚教育研究院</div>
+        </div>
+    </main>
+
+    <script>
+        const scenarios = {
+            apple: { mode: 'mode-apple', layout: 'groups', icon: '🍎', units: { total: '个', time: '分', rate: '个/分' }, text: {single: '吃苹果', dual: '两人吃', diff: '一吃一放'} },
+            grazing: { mode: 'mode-grazing', layout: 'groups', icon: '🌿', units: { total: '块', time: '天', rate: '块/天' }, text: {single: '牛吃草', dual: '多头牛', diff: '边吃边长'} },
+            tunnel: { mode: 'mode-tunnel', layout: 'linear', icon: '', units: { total: 'km', time: '天', rate: 'km/天' }, text: {single: '挖隧道', dual: '两头挖', diff: '边挖边盖'} },
+            car: { mode: 'mode-car', layout: 'linear', icon: '', units: { total: 'km', time: '时', rate: 'km/时' }, text: {single: '行驶', dual: '相遇', diff: '追及'} }
+        };
+
+        let state = { 
+            key: 'apple', mode: 'single', isMerged: false, 
+            total: 20, v1: 4, v2: 2, 
+            cursorHead: 0, cursorTail: 20, 
+            currentTotal: 20, finished: false,
+            autoInterval: null,
+            timeElapsed: 0
+        };
+
+        const els = {
+            visualArea: document.getElementById('visual-area'),
+            inputTotal: document.getElementById('input-total'),
+            unitTotal: document.getElementById('unit-total'),
+            inputV1: document.getElementById('input-v1'),
+            unitSpeed1: document.getElementById('unit-speed1'),
+            inputV2: document.getElementById('input-v2'),
+            unitSpeed2: document.getElementById('unit-speed2'),
+            ctrlSpeed2: document.getElementById('control-speed2'),
+            mergeBtn: document.getElementById('btn-merge-toggle'),
+            labelV1: document.getElementById('label-v1'),
+            labelV2: document.getElementById('label-v2'),
+            calcContainer: document.getElementById('calc-container'),
+            btnModeSingle: document.getElementById('btn-mode-single'),
+            btnModeDual: document.getElementById('btn-mode-dual'),
+            btnModeDiff: document.getElementById('btn-mode-diff'),
+            btnAuto: document.getElementById('btn-auto'),
+            iconAuto: document.getElementById('icon-auto'),
+            btnStep: document.getElementById('btn-step')
+        };
+
+        function init() { setScenario('apple'); }
+
+        function changeMode(mode) {
+            state.mode = mode;
+            state.isMerged = false;
+            updateUIState();
+            resetGame();
+        }
+
+        function updateUIState() {
+            els.btnModeSingle.classList.toggle('active', state.mode === 'single');
+            els.btnModeDual.classList.toggle('active', state.mode === 'dual');
+            els.btnModeDiff.classList.toggle('active', state.mode === 'diff');
+
+            if (state.mode === 'single') {
+                els.ctrlSpeed2.classList.add('hidden'); 
+                els.mergeBtn.classList.add('hidden');
+                els.labelV1.innerText = "速度";
+            } else {
+                els.ctrlSpeed2.classList.remove('hidden'); els.ctrlSpeed2.classList.add('flex');
+                els.mergeBtn.classList.remove('hidden');
+                if (state.mode === 'dual') {
+                    els.labelV1.innerText = "速度1";
+                    els.labelV2.innerText = "速度2";
+                } else {
+                    els.labelV1.innerText = "消耗/追";
+                    els.labelV2.innerText = "增加/逃";
+                }
+                updateMergeBtnUI();
+            }
+            
+            for(let k in scenarios) {
+                document.getElementById(`text-scene-${k}`).innerText = scenarios[k].text[state.mode];
+            }
+        }
+
+        function toggleMerge() { state.isMerged = !state.isMerged; updateMergeBtnUI(); resetGame(); }
+        function updateMergeBtnUI() { els.mergeBtn.innerText = state.isMerged ? "分开显示速度" : "合并显示速度"; els.mergeBtn.classList.toggle('active', state.isMerged); }
+        
+        function setScenario(key) { 
+            state.key = key; 
+            document.querySelectorAll('.card-select').forEach(el => el.classList.remove('selected')); 
+            document.getElementById(`card-${key}`).classList.add('selected'); 
+            const u = scenarios[key].units;
+            els.unitTotal.innerText = u.total; els.unitSpeed1.innerText = u.rate; els.unitSpeed2.innerText = u.rate;
+            resetGame(); 
+        }
+
+        function manualInput(key, val) {
+            let v = parseInt(val);
+            if (isNaN(v)) v = (key==='total'?20:1);
+            if (v < 1) v = 1;
+            if (v > 200) v = 200;
+            
+            if (key === 'total') state.total = v;
+            else if (key === 'v1') state.v1 = v;
+            else if (key === 'v2') state.v2 = v;
+            
+            validateSpeeds();
+            updateInputs();
+            resetGame();
+        }
+
+        function changeTotal(delta) { 
+            let n = state.total + delta; 
+            if (n < 5) n = 5; if (n > 200) n = 200; 
+            state.total = n; 
+            updateInputs(); resetGame(); 
+        }
+
+        function changeSpeed(player, delta) { 
+            let n = (player === 1 ? state.v1 : state.v2) + delta; 
+            if (n < 1) n = 1; if (n > 50) n = 50; 
+            
+            if (player === 1) state.v1 = n; else state.v2 = n;
+            validateSpeeds();
+            updateInputs();
+            resetGame(); 
+        }
+
+        function validateSpeeds() {
+            // Diff mode: V1 must be > V2
+            if (state.mode === 'diff') {
+                if (state.v1 <= state.v2) {
+                    // Force valid state
+                    if (state.v1 > 1) state.v2 = state.v1 - 1;
+                    else { state.v1 = 2; state.v2 = 1; }
+                }
+            }
+        }
+
+        function updateInputs() {
+            els.inputTotal.value = state.total;
+            els.inputV1.value = state.v1;
+            els.inputV2.value = state.v2;
+        }
+
+        function stopAuto() {
+            if (state.autoInterval) {
+                clearInterval(state.autoInterval); state.autoInterval = null;
+                els.btnAuto.classList.remove('playing'); els.iconAuto.innerText = "▶"; els.btnAuto.innerHTML = `<span id="icon-auto">▶</span> 自动`;
+            }
+        }
+        function toggleAuto() {
+            if (state.autoInterval) stopAuto();
+            else {
+                if (state.finished) resetGame();
+                els.btnAuto.classList.add('playing'); els.btnAuto.innerHTML = `<span id="icon-auto">⏸</span> 停止`;
+                state.autoInterval = setInterval(() => { if (state.finished) stopAuto(); else nextStep(); }, 1000); 
+            }
+        }
+        function nextStepManually() { stopAuto(); nextStep(); }
+
+        function resetGame() {
+            stopAuto();
+            state.cursorHead = 0; state.cursorTail = state.total; state.currentTotal = state.total; 
+            state.timeElapsed = 0; state.finished = false;
+            els.btnStep.classList.remove('opacity-50', 'cursor-not-allowed');
+            updateCalcDisplay(); render();
+        }
+
+        function updateCalcDisplay() {
+            const container = els.calcContainer; container.innerHTML = '';
+            const u = scenarios[state.key].units;
+            let html = '';
+
+            // Helper to format float gracefully
+            const fmt = (v) => {
+                if (Math.abs(Math.round(v) - v) < 0.001) return Math.round(v);
+                return v.toFixed(1);
+            };
+
+            if (state.mode === 'single') {
+                html = `<div class="bg-slate-100 px-3 py-1 rounded-full"><span class="text-blue-600 font-bold">${state.total}</span>${u.total} ÷ <span class="text-blue-600 font-bold">${state.v1}</span>${u.rate} = <span class="text-green-600 font-bold">${fmt(state.total/state.v1)}</span>${u.time}</div>`;
+            } 
+            else if (state.mode === 'dual') {
+                if (state.isMerged) {
+                    html = `<div class="bg-slate-100 px-3 py-1 rounded-full"><span class="text-slate-700 font-bold">${state.total}</span>${u.total} ÷ (<span class="text-blue-600 font-bold">${state.v1}</span> + <span class="text-orange-500 font-bold">${state.v2}</span>)${u.rate} = <span class="text-green-600 font-bold">${fmt(state.total/(state.v1+state.v2))}</span>${u.time}</div>`;
+                } else {
+                    let t = state.timeElapsed;
+                    let p1Done = fmt(state.v1 * t);
+                    let p2Done = fmt(state.v2 * t);
+                    html = `
+                    <div class="flex gap-4 items-center">
+                        <div class="text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                            <span class="text-blue-600 font-bold">甲</span>: ${state.v1}×${fmt(t)}=<b>${p1Done}</b>
+                        </div>
+                        <div class="text-xs bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                            <span class="text-orange-500 font-bold">乙</span>: ${state.v2}×${fmt(t)}=<b>${p2Done}</b>
+                        </div>
+                    </div>`;
+                }
+            } 
+            else if (state.mode === 'diff') {
+                if (state.isMerged) {
+                    html = `<div class="bg-slate-100 px-3 py-1 rounded-full"><span class="text-slate-700 font-bold">${state.total}</span>${u.total} ÷ (<span class="text-blue-600 font-bold">${state.v1}</span> - <span class="text-orange-500 font-bold">${state.v2}</span>)${u.rate} = <span class="text-green-600 font-bold">${fmt(state.total/(state.v1-state.v2))}</span>${u.time}</div>`;
+                } else {
+                    // Exact calculation if finished
+                    let t = state.timeElapsed; 
+                    // If finished, timeElapsed is exact time, potentially float
+                    
+                    let p1Dist = fmt(state.v1 * t);
+                    let target = fmt(state.total + (state.v2 * t));
+                    
+                    // Logic: P1 Distance vs Target Distance (Initial + P2)
+                    let op = (parseFloat(p1Dist) >= parseFloat(target) - 0.01) ? '=' : '<';
+                    let status = op === '=' ? '<span class="text-green-600 font-bold">追上</span>' : '...';
+
+                    html = `
+                    <div class="flex gap-2 items-center flex-wrap justify-center text-xs">
+                        <div class="bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                            <span class="text-blue-600 font-bold">甲消耗</span>: ${state.v1}×${fmt(t)}=<b>${p1Dist}</b>
+                        </div>
+                        <span class="text-slate-400 font-bold text-lg">${op}</span>
+                        <div class="bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                            <span class="text-orange-500 font-bold">初始+乙增</span>: ${state.total}+${state.v2}×${fmt(t)}=<b>${target}</b>
+                        </div>
+                        <div class="ml-1">${status}</div>
+                    </div>`;
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        // ... generateGroups SAME as previous ...
+        function generateGroups() {
+            const groups = [];
+            const renderTotal = (state.mode === 'diff' && !state.isMerged) ? state.currentTotal : state.total;
+            const { v1, v2, mode, isMerged } = state;
+            
+            if (mode === 'single') {
+                for (let i = 0; i < renderTotal; i += v1) {
+                    const count = Math.min(v1, renderTotal - i);
+                    const items = [];
+                    for (let j = 0; j < count; j++) items.push({ id: i + j, owner: 'p1' });
+                    groups.push({ type: 'p1', items });
+                }
+            } else if (mode === 'dual' && isMerged) {
+                const speedSum = v1 + v2;
+                for (let i = 0; i < renderTotal; i += speedSum) {
+                    const count = Math.min(speedSum, renderTotal - i);
+                    const items = [];
+                    for (let j = 0; j < count; j++) items.push({ id: i + j, owner: j < v1 ? 'p1' : 'p2' });
+                    groups.push({ type: 'sum', items }); 
+                }
+            } else if (mode === 'dual' && !isMerged) {
+                const splitIndex = Math.round(renderTotal * (v1 / (v1 + v2)));
+                for (let i = 0; i < splitIndex; i += v1) {
+                    const count = Math.min(v1, splitIndex - i);
+                    const items = [];
+                    for (let j = 0; j < count; j++) items.push({ id: i + j, owner: 'p1' });
+                    groups.push({ type: 'p1', items });
+                }
+                const rightGroups = [];
+                let current = renderTotal;
+                while (current > splitIndex) {
+                    const start = Math.max(splitIndex, current - v2);
+                    const count = current - start;
+                    const items = [];
+                    for (let j = 0; j < count; j++) items.push({ id: start + j, owner: 'p2' });
+                    rightGroups.unshift({ type: 'p2', items }); 
+                    current = start;
+                }
+                groups.push(...rightGroups);
+            } else if (mode === 'diff' && isMerged) {
+                const netV = v1 - v2;
+                for (let i = 0; i < renderTotal; i += netV) {
+                    const count = Math.min(netV, renderTotal - i);
+                    const items = [];
+                    for (let j = 0; j < count; j++) items.push({ id: i + j, owner: 'p1' });
+                    groups.push({ type: 'diff', items, ghostCount: v2 });
+                }
+            } else if (mode === 'diff' && !isMerged) {
+                for (let i = 0; i < renderTotal; i += v1) {
+                    const count = Math.min(v1, renderTotal - i);
+                    const items = [];
+                    for (let j = 0; j < count; j++) {
+                        const id = i+j;
+                        const isAdded = id >= state.total;
+                        items.push({ id, owner: isAdded ? 'p2' : 'p1' });
+                    }
+                    groups.push({ type: 'p1', items });
+                }
+            }
+            return groups;
+        }
+
+        function render() {
+            const config = scenarios[state.key];
+            const container = els.visualArea;
+            container.innerHTML = '';
+            
+            const isLinear = config.layout === 'linear';
+            const isPool = config.layout === 'pool'; 
+            const isGroups = config.layout === 'groups' && !isPool;
+            const u = config.units;
+            
+            const getIconLabel = (type) => {
+                if (type === 'v1') return state.v1 + u.rate;
+                if (type === 'v2') return state.v2 + u.rate;
+                if (type === 'sum') return `${state.v1}+${state.v2}=${state.v1+state.v2} ${u.rate}`;
+                if (type === 'diff') return `${state.v1}-${state.v2}=${state.v1-state.v2} ${u.rate}`;
+                return '';
+            }
+
+            if (isGroups || isLinear) {
+                const groups = generateGroups();
+                const wrapper = document.createElement('div');
+                wrapper.className = isLinear ? 'layout-groups-linear' : 'layout-groups-grid';
+                
+                if(isGroups) wrapper.onscroll = () => requestAnimationFrame(updateGridIcons);
+
+                const track = isLinear ? document.createElement('div') : null;
+                if(isLinear) { track.style.display='flex'; track.style.width='100%'; track.style.position='relative'; }
+
+                groups.forEach(group => {
+                    const box = document.createElement('div');
+                    box.className = `group-box group-${group.type}`;
+                    
+                    if (!isLinear) {
+                        const totalItems = group.items.length + (group.ghostCount || 0);
+                        const cols = Math.ceil(Math.sqrt(totalItems));
+                        box.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                    } else {
+                        box.style.flex = `${group.items.length + (group.ghostCount || 0)}`;
+                    }
+                    
+                    group.items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = `grid-item`;
+                        if (group.type === 'sum') div.className += item.owner === 'p1' ? ' comp-v1' : ' comp-v2';
+                        else if (group.type === 'diff') div.classList.add('bg-diff-net'); 
+                        else div.className += item.owner === 'p1' ? ' bg-p1' : ' bg-p2';
+                        
+                        if (item.id >= state.total && state.mode === 'diff') div.classList.add('item-added-anim');
+                        div.id = `item-${item.id}`; div.innerText = config.icon;
+                        box.appendChild(div);
+                    });
+
+                    if (group.ghostCount) {
+                        for(let g=0; g<group.ghostCount; g++) {
+                            const div = document.createElement('div');
+                            div.className = 'grid-item item-ghost';
+                            div.innerText = config.icon;
+                            if(isLinear) div.style.flex = '1';
+                            box.appendChild(div);
+                        }
+                    }
+                    if(isLinear) track.appendChild(box); else wrapper.appendChild(box);
+                });
+                
+                if (isLinear) {
+                    const iconLayer = document.createElement('div');
+                    iconLayer.style.position = 'absolute'; iconLayer.style.top = '0'; iconLayer.style.left = '0'; iconLayer.style.width = '100%'; iconLayer.style.height = '100%'; iconLayer.style.pointerEvents = 'none';
+                    
+                    const createIcon = (type, id, cls, left, label) => {
+                        const w = document.createElement('div'); w.className = `moving-icon-wrapper ${cls}`; w.id = id; w.style.left = left;
+                        w.innerHTML = `<div class="icon-label">${label}</div><div class="icon-emoji ${type}">${state.key === 'car' ? '🚗' : '⛏️'}</div>`;
+                        if(state.isMerged) w.querySelector('.icon-emoji').innerText = state.key === 'car' ? '🚗🚗' : '⛏️⛏️';
+                        return w;
+                    }
+                    const iconType = state.key === 'car' ? 'icon-car' : 'icon-pickaxe';
+                    
+                    let p1Label = getIconLabel('v1');
+                    let p2Label = getIconLabel('v2');
+                    if (state.isMerged) {
+                        if(state.mode==='dual') p1Label = getIconLabel('sum');
+                        if(state.mode==='diff') p1Label = getIconLabel('diff');
+                    }
+
+                    const i1 = createIcon(iconType, 'icon-p1', 'linear-icon-wrapper', '0%', p1Label); iconLayer.appendChild(i1);
+                    if (state.mode === 'dual' && !state.isMerged) {
+                        const i2 = createIcon(iconType, 'icon-p2', 'linear-icon-wrapper', '100%', p2Label); iconLayer.appendChild(i2);
+                        i2.querySelector('.icon-car')?.classList.add('reverse'); i2.querySelector('.icon-pickaxe')?.classList.add('reverse');
+                    }
+                    if (state.mode === 'diff' && !state.isMerged) {
+                        const i2 = createIcon(iconType, 'icon-p2', 'linear-icon-wrapper', '100%', "逃 " + p2Label); 
+                        i2.id = 'icon-p2'; 
+                        iconLayer.appendChild(i2);
+                    }
+
+                    const rStart = document.createElement('div'); rStart.className = 'ruler-text'; rStart.style.left = '0%'; rStart.innerHTML=`0${u.total}<div class="ruler-tick"></div>`;
+                    const rEnd = document.createElement('div'); rEnd.className = 'ruler-text'; rEnd.style.left = '100%'; rEnd.id = 'ruler-end';
+                    const renderTotal = (state.mode === 'diff' && !state.isMerged) ? state.currentTotal : state.total;
+                    rEnd.innerHTML=`${parseInt(renderTotal)}${u.total}<div class="ruler-tick"></div>`;
+                    iconLayer.appendChild(rStart); iconLayer.appendChild(rEnd);
+                    
+                    track.appendChild(iconLayer); wrapper.appendChild(track);
+                }
+                container.appendChild(wrapper);
+            }
+            else if (isPool) {
+                const wrapper = document.createElement('div'); wrapper.className = 'pool-tank-wrapper';
+                
+                // Inlet (Diff)
+                if (state.mode === 'diff') {
+                    const inlet = document.createElement('div'); inlet.className = 'pool-inlet-wrapper';
+                    let inLabel = getIconLabel('v2');
+                    if(!state.isMerged) inlet.innerHTML = `<div class="icon-label">${inLabel}</div><div class="pool-inlet">🚰</div>`;
+                    else inlet.innerHTML = `<div class="pool-inlet" style="opacity:0.3">🚰</div>`;
+                    wrapper.appendChild(inlet);
+                }
+                
+                const tank = document.createElement('div'); tank.className = 'pool-tank';
+                const renderTotal = state.total; 
+                let itemSize = 24; if (renderTotal > 50) itemSize = 18; if (renderTotal > 100) itemSize = 14; if (renderTotal > 150) itemSize = 12;
+                
+                // Split sections for Pool Dual Separate
+                if (state.mode === 'dual' && !state.isMerged) {
+                    const splitIdx = Math.round(state.total * (state.v1 / (state.v1+state.v2)));
+                    const leftSec = document.createElement('div'); leftSec.className = 'pool-section pool-section-left';
+                    const rightSec = document.createElement('div'); rightSec.className = 'pool-section';
+                    leftSec.style.flex = `${splitIdx}`; rightSec.style.flex = `${state.total-splitIdx}`;
+                    
+                    const createItem = (i, owner) => {
+                        const div = document.createElement('div');
+                        div.className = `pool-item ${owner==='p1'?'bg-p1':'bg-p2'}`;
+                        div.id = `item-${i}`;
+                        div.style.width = '100%'; 
+                        return div;
+                    }
+                    for(let i=0; i<splitIdx; i++) leftSec.appendChild(createItem(i, 'p1'));
+                    for(let i=splitIdx; i<state.total; i++) rightSec.appendChild(createItem(i, 'p2'));
+                    tank.appendChild(leftSec); tank.appendChild(rightSec);
+                } else {
+                    for(let i=0; i<renderTotal; i++) {
+                        const div = document.createElement('div'); div.className = 'grid-item pool-item'; div.id = `item-${i}`; div.style.width = `${itemSize}px`; div.style.height = `${itemSize}px`;
+                        let bgClass = 'pool-deep';
+                        if (state.mode === 'diff' && i >= state.total) bgClass = 'pool-added';
+                        else {
+                            let gIdx = Math.floor(i / state.v1);
+                            if (state.mode === 'dual' && state.isMerged) gIdx = Math.floor(i / (state.v1 + state.v2));
+                            else if (state.mode === 'diff' && state.isMerged) gIdx = Math.floor(i / (state.v1 - state.v2));
+                            bgClass = gIdx % 2 !== 0 ? 'pool-deep' : 'pool-light';
+                        }
+                        div.classList.add(bgClass); 
+                        if(i >= state.total && state.mode==='diff') div.classList.add('item-added-anim');
+                        tank.appendChild(div);
+                    }
+                }
+                wrapper.appendChild(tank);
+                
+                const pipeContainer = document.createElement('div'); pipeContainer.className = 'pool-pipes-container';
+                const createPipe = (cls, rate) => `<div class="pool-outlet ${cls}"><div class="pool-outlet-pipe"></div><div class="pool-outlet-drop">💧</div><div class="icon-label mt-1">${rate}</div></div>`;
+                
+                if (state.mode === 'dual' && !state.isMerged) {
+                    pipeContainer.innerHTML = createPipe('pipe-v1', getIconLabel('v1')) + createPipe('pipe-v2', getIconLabel('v2'));
+                } else if (state.mode === 'diff') {
+                    pipeContainer.innerHTML = createPipe('pipe-v1', getIconLabel('v1'));
+                } else {
+                    let label = getIconLabel('v1');
+                    if(state.isMerged) label = state.mode==='dual' ? getIconLabel('sum') : getIconLabel('diff');
+                    pipeContainer.innerHTML = createPipe('pipe-v1', label);
+                }
+                wrapper.appendChild(pipeContainer);
+                container.appendChild(wrapper);
+            }
+            
+            if (isGroups) {
+                const iconLayer = document.createElement('div');
+                iconLayer.style.position = 'absolute'; iconLayer.style.top = '0'; iconLayer.style.left = '0'; iconLayer.style.width = '100%'; iconLayer.style.height = '100%'; iconLayer.style.pointerEvents = 'none';
+                
+                const createGridIcon = (char, id, cls, rate) => {
+                    const w = document.createElement('div'); w.className = `moving-icon-wrapper ${cls}`; w.id = id;
+                    w.innerHTML = `<div class="icon-label">${rate}</div><div class="icon-emoji">${char}</div>`;
+                    return w;
+                };
+                
+                let p1Char = '😋'; let p2Char = '😋';
+                if(state.key === 'grazing') { p1Char = '🐄'; p2Char = '🐄'; }
+                
+                let p1Label = getIconLabel('v1');
+                let p2Label = getIconLabel('v2');
+                if (state.isMerged) {
+                    if(state.mode==='dual') p1Label = getIconLabel('sum');
+                    if(state.mode==='diff') p1Label = getIconLabel('diff');
+                }
+                
+                iconLayer.appendChild(createGridIcon(p1Char, 'icon-p1', 'grid-icon-p1', p1Label));
+                
+                if (state.mode === 'dual' && !state.isMerged) {
+                    iconLayer.appendChild(createGridIcon(p2Char, 'icon-p2', 'grid-icon-p2', p2Label));
+                }
+                if (state.mode === 'diff' && !state.isMerged) {
+                    let diffP2Char = state.key === 'apple' ? '🧺' : '🌱';
+                    iconLayer.appendChild(createGridIcon(diffP2Char, 'icon-p2', 'grid-icon-p2', p2Label));
+                }
+                container.appendChild(iconLayer);
+            }
+            
+            updateVisuals();
+        }
+
+        function nextStep() {
+            if (state.finished) { stopAuto(); return; }
+            
+            // Diff mode precise finishing logic
+            if (state.mode === 'diff' && !state.isMerged) {
+                // Check if step completes it
+                const net = state.v1 - state.v2;
+                const remainingGap = state.cursorTail - state.cursorHead;
+                
+                // If next step catches up
+                if (remainingGap <= net) {
+                    const timeNeeded = remainingGap / net; // e.g. 0.5 step
+                    state.timeElapsed += timeNeeded;
+                    state.cursorHead += state.v1 * timeNeeded;
+                    state.cursorTail += state.v2 * timeNeeded;
+                    state.currentTotal = state.cursorTail; 
+                    finish();
+                } else {
+                    state.timeElapsed += 1;
+                    state.cursorHead += state.v1;
+                    state.cursorTail += state.v2;
+                    state.currentTotal = state.cursorTail;
+                }
+                render(); 
+            }
+            // Standard/Merged logic
+            else {
+                let remaining = state.cursorTail - state.cursorHead;
+                let stepSize = state.v1;
+                if (state.mode === 'dual' && !state.isMerged) stepSize = state.v1 + state.v2; // visual total reduction
+                if (state.isMerged && state.mode === 'dual') stepSize = state.v1 + state.v2;
+                if (state.isMerged && state.mode === 'diff') stepSize = state.v1 - state.v2;
+
+                if (remaining <= stepSize) {
+                   const timeNeeded = remaining / stepSize;
+                   state.timeElapsed += timeNeeded;
+                   
+                   // Apply exact final position
+                   if (state.mode === 'dual' && !state.isMerged) {
+                        state.cursorHead += state.v1 * timeNeeded;
+                        state.cursorTail -= state.v2 * timeNeeded;
+                   } else {
+                        state.cursorHead += stepSize * timeNeeded;
+                   }
+                   finish();
+                } else {
+                    state.timeElapsed += 1;
+                    if (state.mode === 'dual' && !state.isMerged) {
+                        state.cursorHead += state.v1;
+                        state.cursorTail -= state.v2;
+                    } else {
+                        state.cursorHead += stepSize;
+                    }
+                }
+                updateVisuals();
+            }
+            updateCalcDisplay();
+        }
+
+        function finish() { state.finished = true; stopAuto(); els.btnStep.classList.add('opacity-50', 'cursor-not-allowed'); }
+
+        function updateVisuals() {
+            const { cursorHead, cursorTail } = state;
+            const isPool = scenarios[state.key].layout === 'pool';
+
+            if (isPool) {
+                const currentLen = state.total;
+                for (let i = 0; i < currentLen; i++) {
+                    const el = document.getElementById(`item-${i}`);
+                    if (!el) continue;
+                    let isConsumed = false;
+                    if (state.mode === 'dual' && !state.isMerged) {
+                        if (i < cursorHead) isConsumed = true;
+                        if (i >= cursorTail) isConsumed = true;
+                    } else {
+                        if (i < cursorHead) isConsumed = true;
+                    }
+                    if (isConsumed) el.classList.add('consumed'); else el.classList.remove('consumed');
+                }
+            } else {
+                const currentLen = (state.mode === 'diff' && !state.isMerged) ? state.currentTotal : state.total;
+                for (let i = 0; i < currentLen; i++) {
+                    const el = document.getElementById(`item-${i}`);
+                    if (!el) continue;
+                    const isConsumed = (i < cursorHead) || (state.mode !== 'diff' && i >= cursorTail);
+                    if (isConsumed) el.classList.add('consumed'); else el.classList.remove('consumed');
+                }
+                
+                const isLinear = scenarios[state.key].layout === 'linear';
+                if (isLinear) {
+                    const i1 = document.getElementById('icon-p1'); if (i1) i1.style.left = `${Math.min(100, (cursorHead / currentLen) * 100)}%`;
+                    const i2 = document.getElementById('icon-p2'); if (i2) i2.style.left = `${Math.min(100, (cursorTail / currentLen) * 100)}%`;
+                    
+                    if (state.mode === 'diff' && !state.isMerged) {
+                        const rEnd = document.getElementById('ruler-end');
+                        // Update Ruler dynamically for chase
+                        if(rEnd) rEnd.innerHTML = `${Math.round(currentLen)}${scenarios[state.key].units.total}<div class="ruler-tick"></div>`;
+                    }
+                } else {
+                    updateGridIcons();
+                }
+            }
+        }
+
+        function updateGridIcons() {
+            const wrapper = document.querySelector('.layout-groups-grid');
+            if(!wrapper) return;
+            const containerRect = els.visualArea.getBoundingClientRect(); 
+
+            const placeIcon = (id, itemId) => {
+                const icon = document.getElementById(id);
+                // Math.floor to target integer box
+                const item = document.getElementById(`item-${Math.floor(itemId)}`);
+                if (icon && item) {
+                    const rect = item.getBoundingClientRect();
+                    const left = rect.left - containerRect.left + (rect.width / 2);
+                    const top = rect.top - containerRect.top + (rect.height / 2);
+                    icon.style.left = `${left}px`;
+                    icon.style.top = `${top}px`;
+                    icon.style.opacity = '1';
+                } else if(icon) icon.style.opacity = '0';
+            };
+
+            let p1Target = state.cursorHead;
+            if(p1Target >= state.total && state.mode !== 'diff') p1Target = state.total - 1;
+            if(state.mode === 'diff' && p1Target >= state.currentTotal) p1Target = state.currentTotal - 1;
+            
+            placeIcon('icon-p1', p1Target);
+
+            if (state.mode === 'dual' && !state.isMerged) {
+                let p2Target = state.cursorTail - 1; 
+                if(p2Target < 0) p2Target = 0;
+                placeIcon('icon-p2', p2Target);
+            }
+            if (state.mode === 'diff' && !state.isMerged) {
+                let p2Target = state.cursorTail - 1; 
+                placeIcon('icon-p2', p2Target);
+            }
+        }
+
+        function nextStepManually() { stopAuto(); nextStep(); }
+        
+        function nextStep() {
+            if (state.finished) { stopAuto(); return; }
+            
+            // Diff Separate Mode (Chase) - Logic with precise finish
+            if (state.mode === 'diff' && !state.isMerged) {
+                let remaining = state.cursorTail - state.cursorHead;
+                const net = state.v1 - state.v2;
+                
+                if (remaining <= net) {
+                    // Finishes in this step (fractional)
+                    let t = remaining / net;
+                    state.timeElapsed += t;
+                    state.cursorHead += state.v1 * t;
+                    state.cursorTail += state.v2 * t;
+                    state.currentTotal = state.cursorTail;
+                    finish();
+                } else {
+                    // Full step
+                    state.timeElapsed += 1;
+                    state.cursorHead += state.v1;
+                    state.cursorTail += state.v2;
+                    state.currentTotal = state.cursorTail;
+                }
+                render(); // Re-render because track length changed
+                updateCalcDisplay();
+                return;
+            }
+
+            // Standard / Merged Logic
+            let remaining = state.cursorTail - state.cursorHead;
+            let stepSize = state.v1; // default single
+            if (state.mode === 'dual' && !state.isMerged) stepSize = state.v1 + state.v2; // visual total gap reduction speed
+            else if (state.isMerged && state.mode === 'dual') stepSize = state.v1 + state.v2;
+            else if (state.isMerged && state.mode === 'diff') stepSize = state.v1 - state.v2;
+            
+            if (remaining <= stepSize) {
+                let t = remaining / stepSize;
+                state.timeElapsed += t;
+                
+                if (state.mode === 'dual' && !state.isMerged) {
+                    state.cursorHead += state.v1 * t;
+                    state.cursorTail -= state.v2 * t;
+                } else {
+                    state.cursorHead += stepSize * t;
+                }
+                finish();
+            } else {
+                state.timeElapsed += 1;
+                if (state.mode === 'dual' && !state.isMerged) {
+                    state.cursorHead += state.v1;
+                    state.cursorTail -= state.v2;
+                } else {
+                    state.cursorHead += stepSize;
+                }
+            }
+            
+            updateVisuals();
+            updateCalcDisplay();
+        }
+
+        function finish() { state.finished = true; stopAuto(); els.btnStep.classList.add('opacity-50', 'cursor-not-allowed'); }
+
+        init();
+    </script>
+<div style="position:fixed;bottom:0;left:0;width:100%;z-index:9998;box-sizing:border-box;padding:4px 16px;text-align:center;color:#94a3b8;font:11px/1.4 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:rgba(248,250,252,0.85);pointer-events:none;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

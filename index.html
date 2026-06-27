@@ -13,6 +13,10 @@
             --text-color: #333;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--bg-color);
@@ -39,6 +43,56 @@
             font-size: 0.95rem;
             color: #666;
             margin: 0;
+        }
+
+        /* 顶部知识板块导航 */
+        .board-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e5e9f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .board-nav-inner {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            width: 94%;
+            max-width: 1480px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            box-sizing: border-box;
+        }
+        .board-nav a {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 16px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4338ca;
+            font-size: 0.86rem;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+        }
+        .board-nav a:hover {
+            background: #4338ca;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .board-nav a.active {
+            background: #4338ca;
+            color: #fff;
+        }
+
+        /* 板块锚点偏移，避免被吸顶导航遮挡 */
+        .board-anchor {
+            scroll-margin-top: 64px;
         }
 
         .container {
@@ -194,6 +248,28 @@
             color: #94a3b8;
         }
 
+        /* 板块大标题 */
+        .board-title {
+            width: 94%;
+            max-width: 1480px;
+            margin: 30px auto 0;
+            padding: 14px 20px;
+            box-sizing: border-box;
+            background: linear-gradient(90deg, #eef2ff 0%, #f5f7fa 100%);
+            border-radius: 10px;
+            border-left: 6px solid var(--accent-color);
+        }
+        .board-title h2 {
+            font-size: 1.35rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .board-title p {
+            font-size: 0.82rem;
+            color: #6b7280;
+            margin: 4px 0 0;
+        }
+
         /* 分区标题 */
         .section-title {
             width: 94%;
@@ -276,7 +352,23 @@
         <p class="subtitle">孙维刚教育研究院</p>
     </header>
 
-    <!-- ============ 教材知识：数与代数 ============ -->
+    <!-- ============ 顶部知识板块导航 ============ -->
+    <nav class="board-nav">
+        <div class="board-nav-inner">
+            <a href="#board-number">数与代数</a>
+            <a href="#board-geometry">图形与几何</a>
+            <a href="#board-stats">统计与概率</a>
+            <a href="#board-word">应用题</a>
+            <a href="#board-comb">组合·数论·逻辑</a>
+        </div>
+    </nav>
+
+    <!-- ============ 板块一：数与代数 ============ -->
+    <div class="board-title board-anchor" id="board-number">
+        <h2>数与代数</h2>
+        <p>教材知识与进阶计算体系：数感、整数运算、乘除模型、小数、分数、比、方程、巧算与运算律。</p>
+    </div>
+
     <div class="section-title">
         <h3>教材知识 · 数与代数</h3>
         <p>数感、整数运算、乘除模型、小数、分数、比与方程。</p>
@@ -314,8 +406,8 @@
         <a href="/times-as-many" class="tool-card math-op">
             <div class="url-tag">/times-as-many</div>
             <span class="category-label">倍与因数</span>
-            <h2>倍的认识 <span class="update-tag">NEW</span></h2>
-            <p>从几倍到倍数、因数、质数与公倍数。</p>
+            <h2>倍数与整除 <span class="update-tag">NEW</span></h2>
+            <p>从几倍到倍数、因数、整除、质数与公倍数。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>
@@ -324,7 +416,7 @@
         <h3>整数运算与乘除模型</h3>
         <p>加减法、表内乘除、有余数除法和多位数运算。</p>
     </div>
-    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="multi-digit-calc-lab">
+    <div class="container" data-interface-categories="school-number calc-track advanced-calc-number-theory" data-interface-tool-ids="multi-digit-calc-lab integer-skill-drill">
         <a href="/make-ten" class="tool-card math-op">
             <div class="url-tag">/make-ten</div>
             <span class="category-label">20以内加减法</span>
@@ -388,13 +480,37 @@
             <p>把应用题画成每份数、份数、总数。</p>
             <span class="status-badge">进入工具</span>
         </a>
+
+        <a href="/calc" class="tool-card math-law">
+            <div class="url-tag">/calc</div>
+            <span class="category-label">计算训练</span>
+            <h2>计算练习与测试 <span class="update-tag">NEW</span></h2>
+            <p>20个进阶训练选项卡，随机出题并统计正确率。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/fast-calc" class="tool-card math-law">
+            <div class="url-tag">/fast-calc</div>
+            <span class="category-label">速算与巧算</span>
+            <h2>速算原理演示 <span class="update-tag">NEW</span></h2>
+            <p>演示凑整、拆分、基准数和等差求和。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/law_of_operation" class="tool-card math-law">
+            <div class="url-tag">/law_of_operation</div>
+            <span class="category-label">运算定律</span>
+            <h2>运算律直观演示</h2>
+            <p>用面积模型展示乘法分配律等运算律。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
     </div>
 
     <div class="section-title sub-title">
         <h3>小数、分数、比与比例</h3>
         <p>小数运算、分数意义、分数计算、比、百分数和比例。</p>
     </div>
-    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="decimal-calc-lab fraction-meaning-properties fraction-mul-div ratio-percent-proportion">
+    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="decimal-calc-lab fraction-meaning-properties fraction-mul-div ratio-percent-proportion fraction-decimal-mix">
         <a href="/decimal-2" class="tool-card math-op">
             <div class="url-tag">/decimal-2</div>
             <span class="category-label">小数运算</span>
@@ -424,7 +540,7 @@
         <h3>方程与代数初步</h3>
         <p>用天平模型和数量关系进入方程思想。</p>
     </div>
-    <div class="container" data-interface-categories="school-number">
+    <div class="container">
         <a href="/simple-equation" class="tool-card math-op">
             <div class="url-tag">/simple-equation</div>
             <span class="category-label">方程与等式性质</span>
@@ -434,7 +550,12 @@
         </a>
     </div>
 
-    <!-- ============ 教材知识：图形与几何 ============ -->
+    <!-- ============ 板块二：图形与几何 ============ -->
+    <div class="board-title board-anchor" id="board-geometry">
+        <h2>图形与几何</h2>
+        <p>教材知识与进阶几何体系：量感、角、平移旋转对称、周长面积、辅助线与勾股定理。</p>
+    </div>
+
     <div class="section-title">
         <h3>教材知识 · 图形与几何</h3>
         <p>量感、角、平移、旋转与对称。</p>
@@ -443,7 +564,7 @@
         <a href="/length" class="tool-card geometry">
             <div class="url-tag">/length</div>
             <span class="category-label">长度单位</span>
-            <h2>长度单位与进位 <span class="update-tag">NEW</span></h2>
+            <h2>长度单位认识与换算工具 <span class="update-tag">NEW</span></h2>
             <p>用标尺和单位楼梯理解长度换算。</p>
             <span class="status-badge">进入工具</span>
         </a>
@@ -473,7 +594,19 @@
         </a>
     </div>
 
-    <!-- ============ 教材知识：统计与概率 ============ -->
+    <div class="section-title">
+        <h3>进阶知识 · 几何体系</h3>
+        <p>直线型与曲线型几何、立体展开截面、几何变换与勾股定理。</p>
+    </div>
+    <div class="container" data-interface-categories="advanced-geometry">
+    </div>
+
+    <!-- ============ 板块三：统计与概率 ============ -->
+    <div class="board-title board-anchor" id="board-stats">
+        <h2>统计与概率</h2>
+        <p>数据整理、图表表达、平均数与可能性。</p>
+    </div>
+
     <div class="section-title">
         <h3>教材知识 · 统计与概率</h3>
         <p>数据整理、图表表达和平均数。</p>
@@ -496,7 +629,12 @@
         </a>
     </div>
 
-    <!-- ============ 教材知识：综合与实践 ============ -->
+    <!-- ============ 板块四：应用题 ============ -->
+    <div class="board-title board-anchor" id="board-word">
+        <h2>应用题</h2>
+        <p>教材综合与实践、应用题模型，到进阶应用题体系与行程问题。</p>
+    </div>
+
     <div class="section-title">
         <h3>教材知识 · 综合与实践</h3>
         <p>时间、货币与购物场景。</p>
@@ -577,47 +715,123 @@
             <div class="url-tag">/chicken-rabbit</div>
             <span class="category-label">鸡兔同笼</span>
             <h2>鸡兔同笼应用题 <span class="update-tag">NEW</span></h2>
-            <p>用假设替换法可视化鸡兔同笼模型。</p>
+            <p>假设替换、方程法，并新增复杂题型（大小盒、三种昆虫、倍数关系）。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/profit-loss-reverse" class="tool-card applied">
+            <div class="url-tag">/profit-loss-reverse</div>
+            <span class="category-label">盈亏 · 倒推</span>
+            <h2>盈亏与倒推问题 <span class="update-tag">NEW</span></h2>
+            <p>盈亏口诀求份数，倒推从结果反着还原。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/sports-equivalent-substitution" class="tool-card applied">
+            <div class="url-tag">/sports-equivalent-substitution</div>
+            <span class="category-label">体育比赛 · 等量代换</span>
+            <h2>体育比赛与等量代换 <span class="update-tag">NEW</span></h2>
+            <p>循环赛场数与胜负推理，等量关系替换求量。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/promotion" class="tool-card applied">
+            <div class="url-tag">/promotion</div>
+            <span class="category-label">促销 · 经济类</span>
+            <h2>促销与经济类问题 <span class="update-tag">NEW</span></h2>
+            <p>满减、折上折、满组赠送，一步步算清再比价。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/engineering-cow" class="tool-card applied">
+            <div class="url-tag">/engineering-cow</div>
+            <span class="category-label">牛吃草 · 工程</span>
+            <h2>牛吃草与工程问题 <span class="update-tag">NEW</span></h2>
+            <p>原有量加新增量看牛吃草，单位“1”看工程。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>
 
-    <!-- ============ 进阶知识：计算体系 ============ -->
     <div class="section-title">
-        <h3>进阶知识 · 计算体系</h3>
-        <p>巧算、估算、运算律和等差求和。</p>
+        <h3>进阶知识 · 行程体系</h3>
+        <p>路程速度时间、相遇追及、环形跑道、流水行船与比例法解行程。</p>
     </div>
-    <div class="container" data-interface-categories="calc-track advanced-calc-number-theory">
-        <a href="/fast-calc" class="tool-card math-law">
-            <div class="url-tag">/fast-calc</div>
-            <span class="category-label">速算与巧算</span>
-            <h2>速算原理演示 <span class="update-tag">NEW</span></h2>
-            <p>演示凑整、拆分、基准数和等差求和。</p>
+    <div class="container" data-interface-categories="advanced-travel">
+        <a href="/travel-structure" class="tool-card applied">
+            <div class="url-tag">/travel-structure</div>
+            <span class="category-label">速度和 · 速度差</span>
+            <h2>速度和与速度差演示 <span class="update-tag">NEW</span></h2>
+            <p>用消耗模型动画演示单人、速度和、速度差，理解路程总量与时间的关系。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/calc" class="tool-card math-law">
-            <div class="url-tag">/calc</div>
-            <span class="category-label">计算训练</span>
-            <h2>计算练习与测试 <span class="update-tag">NEW</span></h2>
-            <p>20个进阶训练选项卡，随机出题并统计正确率。</p>
+        <a href="/travel-reading" class="tool-card applied">
+            <div class="url-tag">/travel-reading</div>
+            <span class="category-label">行程 · 读题翻译</span>
+            <h2>行程读题翻译训练 <span class="update-tag">NEW</span></h2>
+            <p>从文字中提取关键信息，把自然语言一步步翻译成标准数学条件。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/law_of_operation" class="tool-card math-law">
-            <div class="url-tag">/law_of_operation</div>
-            <span class="category-label">运算定律</span>
-            <h2>运算律直观演示</h2>
-            <p>用面积模型展示乘法分配律等运算律。</p>
+        <a href="/travel-meeting" class="tool-card applied">
+            <div class="url-tag">/travel-meeting</div>
+            <span class="category-label">相遇追及 · 环形跑道</span>
+            <h2>相遇追及与环形跑道演示 <span class="update-tag">NEW</span></h2>
+            <p>支持直线与环形跑道，实时动画演示相遇与追及的动态过程。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/travel-draw1" class="tool-card applied">
+            <div class="url-tag">/travel-draw1</div>
+            <span class="category-label">审题画图 · 基础</span>
+            <h2>审题画线段图·基础 <span class="update-tag">NEW</span></h2>
+            <p>相遇、追及与火车过桥，把文字转化为线段图与物理模型。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/travel-draw2" class="tool-card applied">
+            <div class="url-tag">/travel-draw2</div>
+            <span class="category-label">审题画图 · 进阶</span>
+            <h2>审题画线段图·进阶 <span class="update-tag">NEW</span></h2>
+            <p>多次往返、分段行程与综合问题的专项建模训练。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>
 
-    <div id="new-interface-sections"></div>
+    <!-- ============ 板块五：组合·数论·逻辑 ============ -->
+    <div class="board-title board-anchor" id="board-comb">
+        <h2>组合 · 数论 · 逻辑</h2>
+        <p>进阶计数、排列组合、容斥与抽屉、逻辑推理与策略，以及进阶数论（同余等）。</p>
+    </div>
 
-    <footer>
-        math101.yumath.com &copy; 2026 | 持续更新中
-    </footer>
+    <div class="section-title">
+        <h3>进阶知识 · 计数体系</h3>
+        <p>枚举、加法乘法原理、排列组合、容斥、抽屉原理与递推概率。</p>
+    </div>
+    <div class="container" data-interface-categories="advanced-count">
+    </div>
+
+    <div class="section-title">
+        <h3>进阶知识 · 逻辑</h3>
+        <p>数字谜数阵、逻辑推理、策略统筹、最值与不定方程。</p>
+    </div>
+    <div class="container" data-interface-categories="advanced-combinatorics">
+    </div>
+
+    <div class="section-title">
+        <h3>进阶知识 · 数论（认识与同余）</h3>
+        <p>整除、质数、最大公因数、余数、奇偶、平方数、进制位值，以及同余与周期问题。</p>
+    </div>
+    <div class="container" data-interface-categories="advanced-calc-number-theory" data-interface-tool-ids="divisibility-sieve remainder-parity-lab base-placevalue-lab">
+        <div class="tool-card todo interface">
+            <div class="interface-top">
+                <span class="category-label">4-6</span>
+                <span class="status-badge">预留接口</span>
+            </div>
+            <h2>同余与周期问题</h2>
+            <p>知识点：congruence / period · /congruence</p>
+        </div>
+    </div>
 
     <script>
         const interfaceStatusText = {
@@ -670,27 +884,6 @@
             });
         }
 
-        function renderNewModuleInterfaces(categories) {
-            const holder = document.getElementById("new-interface-sections");
-            const sections = categories
-                .filter(category => category.moduleKind === "new")
-                .map(category => {
-                    const cards = plannedTools(category).map(renderInterfaceCard);
-                    if (!cards.length) return "";
-                    return `
-                        <div class="section-title">
-                            <h3>${escapeHtml(category.name)}</h3>
-                            <p>${escapeHtml(category.domain)} · 后续按此体系补充子工具。</p>
-                        </div>
-                        <div class="container">
-                            ${cards.join("")}
-                        </div>
-                    `;
-                })
-                .join("");
-            holder.innerHTML = sections;
-        }
-
         fetch("/data/tool-roadmap.json")
             .then(response => {
                 if (!response.ok) throw new Error("tool data not found");
@@ -698,12 +891,35 @@
             })
             .then(data => {
                 const categories = data.categories || [];
+                // 所有板块（含进阶几何/行程/计数/组合）均通过 data-interface-categories 就地渲染占位卡片。
                 appendExistingModuleInterfaces(categories);
-                renderNewModuleInterfaces(categories);
             })
             .catch(() => {
                 // 本地直接打开 HTML 时可能无法 fetch JSON；主工具入口保持可用。
             });
+
+        // 顶部导航：平滑滚动 + 滚动高亮当前板块
+        (function setupBoardNav() {
+            const links = Array.from(document.querySelectorAll(".board-nav a"));
+            if (!links.length) return;
+            const sections = links
+                .map(link => document.querySelector(link.getAttribute("href")))
+                .filter(Boolean);
+
+            function setActive(id) {
+                links.forEach(link => {
+                    link.classList.toggle("active", link.getAttribute("href") === `#${id}`);
+                });
+            }
+
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) setActive(entry.target.id);
+                });
+            }, { rootMargin: "-64px 0px -70% 0px", threshold: 0 });
+
+            sections.forEach(section => observer.observe(section));
+        })();
     </script>
 
     <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>

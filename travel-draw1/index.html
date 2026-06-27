@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行程问题思维可视化</title>
+    <script src="../vendor/react.development.js"></script>
+    <script src="../vendor/react-dom.development.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f0f9ff; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .road {
+            background-color: #e2e8f0;
+            border-bottom: 4px solid #94a3b8;
+        }
+        
+        /* 铁轨纹理 */
+        .railway-track {
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, #94a3b8 10px, #94a3b8 14px);
+            height: 20px;
+            border-top: 2px solid #475569;
+            border-bottom: 2px solid #475569;
+            position: relative;
+        }
+
+        /* 播放按钮脉冲 */
+        .pulse-btn {
+            animation: pulse-shadow 2s infinite;
+        }
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+    </style>
+</head>
+<body>
+<a href="../" style="position:fixed;top:12px;left:12px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9999px;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;color:#475569;font:500 13px/1 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,0.08);backdrop-filter:blur(4px);">← 返回首页</a>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // 图标组件
+        const Icons = {
+            MapIcon: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            ),
+            RefreshCw: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            ),
+            Play: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            ),
+            Highlighter: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 11-6 6v3h9l3-3"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path></svg>
+            ),
+            Pencil: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            ),
+            Calculator: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>
+            ),
+            ChevronRight: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="9 18 15 12 9 6"></polyline></svg>
+            ),
+            CheckCircle: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            ),
+            Users: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            ),
+            Train: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="5" y1="19" x2="5" y2="21"></line><line x1="19" y1="19" x2="19" y2="21"></line></svg>
+            ),
+            TrendingUp: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            ),
+            PlayCircle: ({ size = 24, className = "" }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon></svg>
+            )
+        };
+
+        const { Play, PlayCircle, RefreshCw, ChevronRight, Calculator, Highlighter, MapIcon, Pencil, CheckCircle, Users, Train, TrendingUp } = Icons;
+
+        const STEPS = {
+            READ: 0,
+            HIGHLIGHT: 1,
+            ANIMATE: 2,
+            DIAGRAM: 3,
+            FORMULA: 4
+        };
+
+        const STEP_CONFIG = [
+            { id: STEPS.READ, label: "读题", icon: <MapIcon size={16}/> },
+            { id: STEPS.HIGHLIGHT, label: "找重点", icon: <Highlighter size={16}/> },
+            { id: STEPS.ANIMATE, label: "看动画", icon: <Play size={16}/> },
+            { id: STEPS.DIAGRAM, label: "画线段", icon: <Pencil size={16}/> },
+            { id: STEPS.FORMULA, label: "列算式", icon: <Calculator size={16}/> }
+        ];
+
+        // 场景数据配置
+        const SCENARIOS = {
+            MEETING: {
+                id: 'meeting',
+                title: '相遇问题',
+                icon: <Users size={20}/>,
+                maxDiagramStep: 2, // 0, 1, 2 (共3步)
+                params: { v1: 60, v2: 40, t: 4, label1: "小红", label2: "小明", unit: "米/分" },
+                getInstruction: (step, subStep) => {
+                     if(step === STEPS.DIAGRAM) {
+                        if(subStep===0) return "先画一条线段代表全程，标出两端的人。";
+                        if(subStep===1) return "两人“相向而行”，所以画上相对的箭头。";
+                        return "走到中间相遇了，画上旗子，标出两段路程。";
+                    }
+                    return null;
+                }
+            },
+            CATCHUP: {
+                id: 'catchup',
+                title: '追及问题',
+                icon: <TrendingUp size={20}/>,
+                maxDiagramStep: 2, // 0, 1, 2
+                params: { v1: 80, v2: 50, t: 5, label1: "小红", label2: "小明", unit: "米/分" },
+                getInstruction: (step, subStep) => {
+                    if(step === STEPS.ANIMATE) return "先观察初始差距，点击按钮开始追击。";
+                    if(step === STEPS.DIAGRAM) {
+                       if(subStep===0) return "画出起点。小红在后，小明在前。注意看小明前方的那条虚线，那就是差距。";
+                       if(subStep===1) return "两人同时跑到了右边的“追上点”，画出他们的路线。";
+                       return "比较这两条线，下面多出来的部分就是路程差。算算每个人跑了多远？";
+                   }
+                   return null;
+               }
+            },
+            TRAIN: {
+                id: 'train',
+                title: '火车过桥',
+                icon: <Train size={20}/>,
+                maxDiagramStep: 4, // 0, 1, 2, 3, 4 (共5步)
+                params: { v1: 30, v2: 0, t: 20, lenTrain: 150, label1: "火车", label2: "大桥", unit: "米/秒" },
+                getInstruction: (step, subStep) => {
+                    if(step === STEPS.ANIMATE) return "火车过桥的关键在于“车头上桥”到“车尾离桥”。点击开始观察过程。";
+                    if(step === STEPS.DIAGRAM) {
+                       if(subStep===0) return "1. 画一个长方形表示大桥，长度未知（?米）。";
+                       if(subStep===1) return "2. 画火车，开始时车头在桥头（左侧）。";
+                       if(subStep===2) return "3. 画结束时的火车，车尾在桥尾。标出车头运动的箭头。";
+                       if(subStep===3) return "4. 看箭头长度！这是车头走过的总路程：速度×时间。";
+                       return "5. 最后计算桥长：总路程 - 车长。";
+                   }
+                   return null;
+               }
+            }
+        };
+
+        const App = () => {
+            const [scenario, setScenario] = useState('meeting');
+            const [step, setStep] = useState(STEPS.READ);
+            const [time, setTime] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false); 
+            const [diagramSubStep, setDiagramSubStep] = useState(0); 
+            
+            const config = SCENARIOS[scenario.toUpperCase()];
+            const { v1, v2, t, label1, label2, unit, lenTrain } = config.params;
+            
+            const animationRef = useRef(null);
+
+            // 切换场景
+            const switchScenario = (key) => {
+                setScenario(key);
+                setStep(STEPS.READ);
+                setTime(0);
+                setIsPlaying(false);
+                setDiagramSubStep(0);
+                cancelAnimationFrame(animationRef.current);
+            };
+
+            const changeStep = (newStep) => {
+                setStep(newStep);
+                setDiagramSubStep(0);
+                
+                if (newStep < STEPS.ANIMATE) {
+                    setTime(0);
+                    setIsPlaying(false);
+                    cancelAnimationFrame(animationRef.current);
+                } 
+                else if (newStep === STEPS.ANIMATE) {
+                    setTime(0);
+                    // 追及和火车问题不自动播放，等待用户点击
+                    if (scenario === 'catchup' || scenario === 'train') {
+                        setIsPlaying(false);
+                        cancelAnimationFrame(animationRef.current);
+                    } else {
+                        startAnimation();
+                    }
+                }
+                else if (newStep > STEPS.ANIMATE) {
+                    setTime(t);
+                    setIsPlaying(false);
+                    cancelAnimationFrame(animationRef.current);
+                    if (newStep === STEPS.DIAGRAM) {
+                        setDiagramSubStep(0); 
+                    } else if (newStep > STEPS.DIAGRAM) {
+                        setDiagramSubStep(config.maxDiagramStep); 
+                    }
+                }
+            };
+
+            const handleNextClick = () => {
+                // 根据当前模式的最大步骤数判断
+                if (step === STEPS.DIAGRAM && diagramSubStep < config.maxDiagramStep) {
+                    setDiagramSubStep(prev => prev + 1);
+                } else {
+                    changeStep(step + 1);
+                }
+            };
+
+            const startAnimation = () => {
+                setIsPlaying(true);
+                cancelAnimationFrame(animationRef.current);
+                let startTime = null;
+                // 动画速度：火车模式下5倍速播放，其他正常
+                const speedMultiplier = (scenario === 'train') ? 5 : 1;
+                
+                const animate = (timestamp) => {
+                    if (!startTime) startTime = timestamp;
+                    const progress = (timestamp - startTime) / 1000 * speedMultiplier; 
+                    
+                    if (progress < t) {
+                        setTime(progress);
+                        animationRef.current = requestAnimationFrame(animate);
+                    } else {
+                        setTime(t);
+                        setIsPlaying(false);
+                    }
+                };
+                animationRef.current = requestAnimationFrame(animate);
+            };
+
+            // 动态生成引导语
+            const getInstruction = () => {
+                const custom = config.getInstruction(step, diagramSubStep);
+                if (custom) return custom;
+
+                switch(step) {
+                    case STEPS.READ: return "第一步：先通读题目，了解大概意思。";
+                    case STEPS.HIGHLIGHT: return "第二步：圈出重点词。方向？同时？单位？隐含条件？";
+                    case STEPS.ANIMATE: return "第三步：脑海里“播放”过程。注意观察运动状态。";
+                    case STEPS.DIAGRAM: return "第四步：把过程画在纸上。"; // Fallback
+                    case STEPS.FORMULA: return "第五步：根据线段图的长短关系，列出算式。";
+                    default: return "";
+                }
+            };
+
+            const KeyPoint = ({ children, label, type, active }) => {
+                if (!active) return <span>{children}</span>;
+                let colorClasses = "";
+                if (type === 'direction') colorClasses = "bg-orange-100 border-orange-400 text-orange-900"; 
+                if (type === 'time') colorClasses = "bg-blue-100 border-blue-400 text-blue-900"; 
+                if (type === 'unit') colorClasses = "bg-green-100 border-green-400 text-green-900"; 
+                if (type === 'special') colorClasses = "bg-purple-100 border-purple-400 text-purple-900"; 
+                return (
+                    <span className={`relative inline-block border-b-2 px-1 mx-0.5 rounded pb-0.5 cursor-help ${colorClasses} font-bold transition-all duration-500`}>
+                        {children}
+                        <span className={`absolute top-full left-1/2 -translate-x-1/2 text-[10px] font-bold bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap mt-1 border z-10 ${colorClasses.replace('bg-', 'border-').split(' ')[1]}`}>
+                            {label}
+                        </span>
+                    </span>
+                );
+            };
+
+            const renderProblemText = () => {
+                const h = (text, condition) => (
+                    <span className={`${condition ? 'bg-yellow-200 ring-2 ring-yellow-300 rounded px-1' : ''} transition-all duration-300`}>{text}</span>
+                );
+                const isHighlightStep = step === STEPS.HIGHLIGHT;
+                if (scenario === 'meeting') {
+                    return (
+                        <span className="leading-[3rem]"> 
+                            <span className="text-red-600 font-bold">{label1}</span>和<span className="text-blue-600 font-bold">{label2}</span>
+                            <KeyPoint label="时间相同" type="time" active={isHighlightStep}>同时</KeyPoint>
+                            从两地
+                            <KeyPoint label="关键方向" type="direction" active={isHighlightStep}>
+                                {step===STEPS.DIAGRAM && diagramSubStep===1 ? h("相向而行", true) : "相向而行"}
+                            </KeyPoint>
+                            。
+                            {label1}每分走<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{v1}米</KeyPoint>，
+                            {label2}每分走<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{v2}米</KeyPoint>。
+                            经过<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{step===STEPS.ANIMATE ? h(`${t}分钟`, true) : `${t}分钟`}</KeyPoint>
+                            两人{step===STEPS.DIAGRAM && diagramSubStep===2 ? h("相遇", true) : "相遇"}。
+                            两地相距多少米？
+                        </span>
+                    );
+                } else if (scenario === 'catchup') {
+                    return (
+                        <span className="leading-[3rem]">
+                             <span className="text-red-600 font-bold">{label1}</span>和<span className="text-blue-600 font-bold">{label2}</span>
+                             <KeyPoint label="关键方向" type="direction" active={isHighlightStep}>{step===STEPS.DIAGRAM && diagramSubStep===1 ? h("同向而行", true) : "同向而行"}</KeyPoint>。
+                             {label1}速度<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{v1}米/分</KeyPoint>，
+                             {label2}速度<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{v2}米/分</KeyPoint>。
+                             {label1}在{label2}后面，经过<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{step===STEPS.ANIMATE ? h(`${t}分钟`, true) : `${t}分钟`}</KeyPoint>，
+                             {label1}{step===STEPS.DIAGRAM && diagramSubStep===2 ? h("追上", true) : "追上"}了{label2}。
+                             两人原来相距多少米？
+                        </span>
+                    );
+                } else if (scenario === 'train') {
+                     return (
+                        <span className="leading-[3rem]">
+                             一列<span className="text-red-600 font-bold">火车</span>穿过<span className="text-blue-600 font-bold">大桥</span>。
+                             火车<KeyPoint label="不可忽略" type="special" active={isHighlightStep}>车长{lenTrain}米</KeyPoint>，
+                             速度<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{v1}米/秒</KeyPoint>。
+                             火车<KeyPoint label="车尾离桥" type="special" active={isHighlightStep}>{step===STEPS.DIAGRAM && diagramSubStep>=2 ? h("完全通过", true) : "完全通过"}</KeyPoint>
+                             大桥用了<KeyPoint label="单位一致" type="unit" active={isHighlightStep}>{step===STEPS.ANIMATE ? h(`${t}秒`, true) : `${t}秒`}</KeyPoint>。
+                             求大桥的长度。
+                        </span>
+                    );
+                }
+            };
+
+            const renderAnimation = () => {
+                const commonViewBox = "-50 -50 700 250";
+
+                if (scenario === 'meeting') {
+                    const leftPos = (v1 * time) / (v1*t + v2*t) * 100;
+                    const rightPos = (v2 * time) / (v1*t + v2*t) * 100;
+                    return (
+                        <div className="h-48 relative road rounded-lg overflow-hidden flex items-center justify-center border-2 border-gray-300">
+                             <div className="absolute top-0 bottom-0 left-0 bg-red-100/50" style={{ width: `${leftPos}%` }}></div>
+                             <div className="absolute top-0 bottom-0 right-0 bg-blue-100/50" style={{ width: `${rightPos}%` }}></div>
+                             <div className="absolute top-1/2 left-0 w-full border-t border-dashed border-gray-400"></div>
+                             <div className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col items-center transition-none" style={{ left: `${leftPos}%`, transform: 'translate(-50%, -50%)' }}>
+                                 <span className="text-4xl transform scale-x-[-1] block">👧🏻</span>
+                                 <div className="text-xs bg-white/80 rounded px-1 shadow mt-1">{(v1*time).toFixed(0)}m</div>
+                             </div>
+                             <div className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col items-center transition-none" style={{ right: `${rightPos}%`, transform: 'translate(50%, -50%)' }}>
+                                 <span className="text-4xl block">👦🏻</span>
+                                 <div className="text-xs bg-white/80 rounded px-1 shadow mt-1">{(v2*time).toFixed(0)}m</div>
+                             </div>
+                             {time >= t && (
+                                 <div className="absolute left-[60%] top-4 transform -translate-x-1/2 bg-yellow-400 text-xs px-2 py-1 rounded font-bold shadow animate-bounce">相遇</div>
+                             )}
+                        </div>
+                    );
+                } else if (scenario === 'catchup') {
+                    const maxDist = v1 * t; 
+                    const startDiff = (v1 - v2) * t;
+                    const p1Pct = (v1 * time) / maxDist * 100;
+                    const p2Pct = (v2 * time) / maxDist * 100;
+                    const startDiffPct = (startDiff / maxDist) * 100;
+                    const p2VisualPos = startDiffPct + p2Pct;
+                    return (
+                         <div className="h-48 relative bg-gray-100 rounded-lg overflow-hidden flex flex-col justify-center border-2 border-gray-300 pl-8 pr-4"> {/* Added padding */}
+                            {!isPlaying && time === 0 && (
+                                <div className="absolute inset-0 z-30 flex items-center justify-center"> {/* Removed backdrop-blur/bg */}
+                                    <button onClick={startAnimation} className="pulse-btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-xl flex items-center gap-2 transform hover:scale-105 transition-all">
+                                        <PlayCircle size={24} /> 开始追击
+                                    </button>
+                                </div>
+                            )}
+                            <div className="h-1/2 border-b border-dashed border-gray-300 relative w-full flex items-center">
+                                <div className="absolute left-0 top-2 text-xs text-blue-500 font-bold px-2 z-10 -ml-8">小明 (慢)</div> {/* Adjusted label pos */}
+                                <div className="absolute top-1/2 left-0 h-4 border-l-2 border-dotted border-gray-400"></div>
+                                <div className="absolute top-1/2 left-0 h-0.5 bg-gray-300 border-b-2 border-dotted border-gray-400" style={{width: `${startDiffPct}%`}}></div>
+                                <div className="absolute top-1/2 h-4 border-l-2 border-dotted border-gray-400" style={{left: `${startDiffPct}%`}}></div>
+                                {time === 0 && (
+                                    <div className="absolute top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm" style={{left: `${startDiffPct/2}%`, transform: 'translate(-50%, -50%)'}}>? 米 (差距)</div>
+                                )}
+                                <div className="absolute top-1/2 h-2 bg-blue-200" style={{left: `${startDiffPct}%`, width: `${p2Pct}%`}}></div>
+                                <div className="absolute top-1/2 -translate-y-1/2 transition-none z-20" style={{ left: `${p2VisualPos}%`, transform: 'translateX(-50%)' }}>
+                                    <span className="text-4xl block transform scale-x-[-1] opacity-80">👦🏻</span>
+                                </div>
+                            </div>
+                            <div className="h-1/2 relative w-full flex items-center">
+                                <div className="absolute left-0 top-2 text-xs text-red-500 font-bold px-2 z-10 -ml-8">小红 (快)</div> {/* Adjusted label pos */}
+                                <div className="absolute top-1/2 left-0 h-2 bg-red-200" style={{width: `${p1Pct}%`}}></div>
+                                <div className="absolute top-1/2 -translate-y-1/2 transition-none z-20" style={{ left: `${p1Pct}%`, transform: 'translateX(-50%)' }}>
+                                    <span className="text-4xl block transform scale-x-[-1]">👧🏻</span>
+                                </div>
+                            </div>
+                            {time >= t && (
+                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-yellow-400 text-xs px-2 py-1 rounded font-bold shadow animate-bounce z-40">追上啦!</div>
+                            )}
+                        </div>
+                    );
+                } else if (scenario === 'train') {
+                    const bridgeW = 45; // %
+                    const trainW = 15;  // %
+                    const bridgeLeft = (100 - bridgeW) / 2; // 27.5%
+                    const startHeadPos = bridgeLeft;
+                    const endHeadPos = bridgeLeft + bridgeW + trainW;
+                    const currentHeadPos = startHeadPos + (time / t) * (endHeadPos - startHeadPos);
+
+                    return (
+                        <div className="h-48 relative bg-green-50 rounded-lg overflow-hidden flex flex-col items-center justify-center border-2 border-gray-300">
+                             {!isPlaying && time === 0 && (
+                                <div className="absolute inset-0 z-30 flex items-center justify-center"> {/* Removed backdrop-blur/bg */}
+                                    <button onClick={startAnimation} className="pulse-btn bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold shadow-xl flex items-center gap-2 transform hover:scale-105 transition-all">
+                                        <PlayCircle size={24} /> 启动火车
+                                    </button>
+                                </div>
+                            )}
+                            <div className="w-full railway-track absolute top-1/2 -translate-y-1/2"></div>
+                            <div className="absolute top-1/2 -translate-y-1/2 h-20 bg-blue-100 border-x-4 border-gray-400 flex items-end justify-center pb-1 z-0"
+                                 style={{ left: `${bridgeLeft}%`, width: `${bridgeW}%` }}>
+                                <div className="text-blue-800 font-bold text-sm mb-8 bg-white/50 px-2 rounded">🌉 大桥 (?米)</div> {/* Changed to ?米 */}
+                                <div className="absolute bottom-0 w-full flex justify-around">
+                                    <div className="w-3 h-6 bg-gray-400"></div><div className="w-3 h-6 bg-gray-400"></div><div className="w-3 h-6 bg-gray-400"></div>
+                                </div>
+                            </div>
+                            <div className="absolute h-8 bg-red-600 rounded flex items-center justify-end px-1 shadow-lg transition-none z-10 border border-red-800"
+                                 style={{ 
+                                     width: `${trainW}%`, 
+                                     left: `${currentHeadPos}%`, 
+                                     transform: 'translate(-100%, -50%)', 
+                                     top: '50%'
+                                 }}
+                            >
+                                <span className="text-white text-lg mr-1">🚂</span>
+                                <span className="text-white text-[10px] absolute -top-5 right-0 bg-red-600 px-1 rounded shadow whitespace-nowrap">车头</span>
+                                <span className="text-white text-[10px] absolute -bottom-5 left-0 bg-red-600 px-1 rounded shadow whitespace-nowrap">车尾</span>
+                            </div>
+                            {time === 0 && (
+                                <div className="absolute top-4 left-[20%] bg-red-500 text-white text-xs px-2 py-1 rounded shadow font-bold animate-bounce">
+                                    开始计时：车头上桥
+                                </div>
+                            )}
+                             {time >= t && (
+                                <div className="absolute top-4 right-[10%] bg-blue-500 text-white text-xs px-2 py-1 rounded shadow font-bold animate-bounce">
+                                    结束计时：车尾离桥
+                                </div>
+                            )}
+                        </div>
+                    )
+                }
+            };
+
+            const renderDiagram = () => {
+                const svgWidth = 600;
+                const commonViewBox = "-50 -50 700 250";
+                
+                if (scenario === 'meeting') {
+                    const meetX = (v1/(v1+v2)) * svgWidth;
+                    return (
+                         <svg viewBox={commonViewBox} className="w-full h-auto overflow-visible">
+                            <defs>
+                                <marker id="arrow-r" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#dc2626" /></marker>
+                                <marker id="arrow-b" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#2563eb" /></marker>
+                            </defs>
+                            <g className="fade-in">
+                                <line x1="10" y1="80" x2={svgWidth-10} y2="80" stroke="#333" strokeWidth="2"/>
+                                <line x1="10" y1="75" x2="10" y2="85" stroke="#333" strokeWidth="2"/>
+                                <text x="10" y="55" textAnchor="middle" fill="#dc2626" fontWeight="bold" fontSize="16">小红</text>
+                                <line x1={svgWidth-10} y1="75" x2={svgWidth-10} y2="85" stroke="#333" strokeWidth="2"/>
+                                <text x={svgWidth-10} y="55" textAnchor="middle" fill="#2563eb" fontWeight="bold" fontSize="16">小明</text>
+                            </g>
+                            {diagramSubStep >= 1 && (
+                                <g className="fade-in">
+                                    <line x1="30" y1="70" x2="100" y2="70" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrow-r)" />
+                                    <line x1={svgWidth-30} y1="70" x2={svgWidth-100} y2="70" stroke="#2563eb" strokeWidth="2" markerEnd="url(#arrow-b)" />
+                                    <text x={svgWidth/2} y="110" textAnchor="middle" fill="#999" fontSize="14">(相向而行)</text>
+                                </g>
+                            )}
+                            {diagramSubStep >= 2 && (
+                                <g className="fade-in">
+                                    <path transform={`translate(${meetX}, 65)`} d="M0 0 L0 15 M0 0 L15 5 L0 10 Z" fill="#eab308" stroke="#ca8a04"/>
+                                    <text x={meetX/2} y="100" textAnchor="middle" fill="#dc2626" fontSize="14">{v1}×{t}={v1*t}</text>
+                                    <text x={svgWidth-(svgWidth-meetX)/2} y="100" textAnchor="middle" fill="#2563eb" fontSize="14">{v2}×{t}={v2*t}</text>
+                                </g>
+                            )}
+                        </svg>
+                    );
+                } else if (scenario === 'catchup') {
+                    const longLineW = svgWidth - 100; 
+                    const shortLineW = (v2/v1) * longLineW; 
+                    const diffW = longLineW - shortLineW;
+                    const startX = 50;
+                    
+                    return (
+                        <svg viewBox={commonViewBox} className="w-full h-auto overflow-visible">
+                            <defs>
+                                <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#dc2626" /></marker>
+                                <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2563eb" /></marker>
+                            </defs>
+                            <g className="fade-in">
+                                <text x={startX} y="80" fill="#dc2626" fontSize="14" fontWeight="bold">小红(快)</text>
+                                <line x1={startX} y1="85" x2={startX} y2="95" stroke="#333" strokeWidth="2"/> 
+                                
+                                {/* 小明起点，和路程差线段 */}
+                                <text x={startX+diffW} y="35" fill="#2563eb" fontSize="14" fontWeight="bold">小明(慢)</text>
+                                <line x1={startX+diffW} y1="40" x2={startX+diffW} y2="50" stroke="#333" strokeWidth="2"/> 
+                                
+                                {/* 虚线表示路程差 - 在小明前方(左侧)补全 */}
+                                <line x1={startX} y1="45" x2={startX+diffW} y2="45" stroke="#eab308" strokeWidth="2" strokeDasharray="6,4"/>
+                                <text x={startX+diffW/2} y="35" fill="#eab308" fontWeight="bold" fontSize="14" textAnchor="middle">? (路程差)</text>
+                                <line x1={startX} y1="40" x2={startX} y2="50" stroke="#999" strokeWidth="1" strokeDasharray="2"/> {/* 辅助对齐线 */}
+                            </g>
+                            {diagramSubStep >= 1 && (
+                                <g className="fade-in">
+                                    <line x1={startX+longLineW} y1="20" x2={startX+longLineW} y2="100" stroke="#999" strokeDasharray="4"/>
+                                    <text x={startX+longLineW} y="125" textAnchor="middle" fontSize="12" fill="#666">追上点</text>
+                                    <line x1={startX+diffW} y1="45" x2={startX+longLineW} y2="45" stroke="#2563eb" strokeWidth="2" markerEnd="url(#arrow-blue)"/>
+                                    <line x1={startX} y1="90" x2={startX+longLineW} y2="90" stroke="#dc2626" strokeWidth="2" markerEnd="url(#arrow-red)"/>
+                                    <text x={startX+longLineW+10} y="70" fontSize="12" fill="#999" style={{writingMode: 'vertical-rl'}}>同向而行</text>
+                                </g>
+                            )}
+                            {diagramSubStep >= 2 && (
+                                <g className="fade-in">
+                                    <text x={startX+diffW + shortLineW/2} y="30" textAnchor="middle" fill="#2563eb" fontSize="12">{v2}×{t}={v2*t}</text>
+                                    <text x={startX + longLineW/2} y="130" textAnchor="middle" fill="#dc2626" fontSize="12">{v1}×{t}={v1*t}</text>
+                                </g>
+                            )}
+                        </svg>
+                    )
+                } else if (scenario === 'train') {
+                    // 火车过桥 5步法
+                    // 总宽 600
+                    const bridgeW = 350; // 桥画长一点
+                    const trainW = 100; // 车长
+                    const startX = 50;
+                    const yPos = 80;
+
+                    return (
+                        <svg viewBox={commonViewBox} className="w-full h-auto overflow-visible">
+                            <defs>
+                                <marker id="arrow-train" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                                </marker>
+                            </defs>
+
+                            {/* Step 0: 画大桥 */}
+                            <g className="fade-in">
+                                <rect x={startX} y={yPos-15} width={bridgeW} height="30" fill="#bfdbfe" stroke="#2563eb" strokeWidth="2"/>
+                                <text x={startX + bridgeW/2} y={yPos+5} textAnchor="middle" fill="#1e40af" fontWeight="bold" fontSize="16">大桥 (?米)</text>
+                            </g>
+                            
+                            {/* Step 1: 画初始火车 (左侧) */}
+                            {diagramSubStep >= 1 && (
+                                <g className="fade-in">
+                                    <rect x={startX-trainW} y={yPos-10} width={trainW} height="20" fill="#fecaca" stroke="#dc2626" strokeWidth="2"/>
+                                    <text x={startX - trainW/2} y={yPos+5} textAnchor="middle" fill="#991b1b" fontSize="12" fontWeight="bold">开始</text>
+                                    {/* 标车头 */}
+                                    <circle cx={startX} cy={yPos-10} r="3" fill="red"/>
+                                </g>
+                            )}
+
+                            {/* Step 2: 画结束火车 + 箭头 */}
+                            {diagramSubStep >= 2 && (
+                                <g className="fade-in">
+                                    {/* 结束火车 (虚线) */}
+                                    <rect x={startX+bridgeW} y={yPos-10} width={trainW} height="20" fill="none" stroke="#dc2626" strokeWidth="2" strokeDasharray="5,5"/>
+                                    <text x={startX + bridgeW + trainW/2} y={yPos+5} textAnchor="middle" fill="#991b1b" fontSize="12" fontWeight="bold">结束</text>
+                                    {/* 标车头 */}
+                                    <circle cx={startX+bridgeW+trainW} cy={yPos-10} r="3" fill="red"/>
+                                    
+                                    {/* 运动轨迹箭头 (从Start Head 到 End Head) */}
+                                    <line x1={startX} y1={yPos-30} x2={startX+bridgeW+trainW} y2={yPos-30} stroke="#666" strokeWidth="2" markerEnd="url(#arrow-train)"/>
+                                    <line x1={startX} y1={yPos-35} x2={startX} y2={yPos-25} stroke="#666" strokeWidth="2"/>
+                                    <line x1={startX+bridgeW+trainW} y1={yPos-35} x2={startX+bridgeW+trainW} y2={yPos-25} stroke="#666" strokeWidth="2"/>
+                                </g>
+                            )}
+
+                            {/* Step 3: 标注总路程算式 */}
+                            {diagramSubStep >= 3 && (
+                                <g className="fade-in">
+                                    <text x={startX + (bridgeW+trainW)/2} y={yPos-40} textAnchor="middle" fontWeight="bold" fontSize="16" fill="#333">
+                                        总路程 = {v1} × {t} = {v1*t} (米)
+                                    </text>
+                                </g>
+                            )}
+
+                            {/* Step 4: 计算桥长 */}
+                            {diagramSubStep >= 4 && (
+                                <g className="fade-in">
+                                    <path d={`M ${startX} ${yPos+25} Q ${startX+bridgeW/2} ${yPos+45} ${startX+bridgeW} ${yPos+25}`} fill="none" stroke="#2563eb" strokeWidth="2"/>
+                                    <text x={startX+bridgeW/2} y={yPos+60} textAnchor="middle" fill="#2563eb" fontWeight="bold" fontSize="16">
+                                        桥长 = 总路程 - 车长({lenTrain})
+                                    </text>
+                                </g>
+                            )}
+                        </svg>
+                    )
+                }
+            };
+
+            const renderFormula = () => {
+                if(scenario === 'meeting') {
+                    return (
+                        <div className="text-xl font-mono font-bold text-slate-800">
+                             <span className="text-red-600">{v1*t}</span> + <span className="text-blue-600">{v2*t}</span> = <span className="text-green-600">{(v1+v2)*t}</span> (米)
+                             <div className="text-sm text-slate-500 mt-2 font-sans font-normal">小红路程 + 小明路程 = 总路程</div>
+                        </div>
+                    )
+                } else if (scenario === 'catchup') {
+                    return (
+                        <div className="text-xl font-mono font-bold text-slate-800">
+                             <span className="text-red-600">{v1*t}</span> - <span className="text-blue-600">{v2*t}</span> = <span className="text-yellow-600">{(v1-v2)*t}</span> (米)
+                             <div className="text-sm text-slate-500 mt-2 font-sans font-normal">快车路程 - 慢车路程 = 初始距离（路程差）</div>
+                        </div>
+                    )
+                } else if (scenario === 'train') {
+                     return (
+                        <div className="text-xl font-mono font-bold text-slate-800">
+                             <span className="text-gray-800">{v1*t}</span> (总路程) - <span className="text-red-600">{lenTrain}</span> (车长) = <span className="text-blue-600">{v1*t - lenTrain}</span> (桥长)
+                             <div className="text-sm text-slate-500 mt-2 font-sans font-normal">速度 × 时间 = 车长 + 桥长</div>
+                        </div>
+                    )
+                }
+            }
+
+            return (
+                <div className="min-h-screen p-4 flex flex-col items-center bg-slate-50">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl overflow-hidden border border-slate-200 flex flex-col min-h-[650px]">
+                        <div className="flex border-b border-slate-200 bg-slate-50">
+                            {Object.values(SCENARIOS).map(s => (
+                                <button key={s.id} onClick={() => switchScenario(s.id)} className={`flex-1 py-3 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${scenario === s.id ? 'bg-white text-blue-600 border-t-2 border-blue-600' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                    {s.icon} {s.title}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="bg-white border-b border-slate-200 p-2">
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {STEP_CONFIG.map((s) => (
+                                    <button key={s.id} onClick={() => changeStep(s.id)} className={`px-3 py-2 rounded-lg text-xs md:text-sm font-bold flex items-center gap-1 transition-all ${step === s.id ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                        {step > s.id ? <CheckCircle size={14} /> : s.icon} {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-6 text-center border-b border-dashed border-slate-200 bg-slate-50/50">
+                            <div className="text-lg md:text-xl text-slate-800 leading-relaxed font-serif">
+                                {renderProblemText()}
+                            </div>
+                        </div>
+                        <div className="flex-1 p-6 relative flex flex-col justify-center min-h-[400px]">
+                            {step === STEPS.ANIMATE && (
+                                <div className="mb-4 fade-in w-full">
+                                    {renderAnimation()}
+                                    <div className="text-center mt-2"><span className="text-slate-400 font-mono text-sm bg-slate-100 px-2 py-1 rounded">t = {time.toFixed(1)} {scenario==='train'?'秒':'分'}</span></div>
+                                </div>
+                            )}
+                            {step >= STEPS.DIAGRAM && (
+                                <div className="fade-in bg-white p-4 border border-slate-200 rounded-lg shadow-sm relative mt-2">
+                                    <div className="absolute -top-3 left-4 bg-white text-slate-500 px-2 text-sm font-bold flex items-center border border-slate-200 rounded shadow-sm">
+                                        <Pencil size={14} className="mr-1"/> 线段图绘制
+                                    </div>
+                                    <div className="w-full pt-4 overflow-visible flex justify-center">
+                                        {renderDiagram()}
+                                    </div>
+                                    {step === STEPS.DIAGRAM && (
+                                        <div className="flex justify-center gap-2 mt-4">
+                                            {/* 动态生成步骤指示器 */}
+                                            {Array.from({length: config.maxDiagramStep + 1}).map((_, i) => (
+                                                <div key={i} className={`h-1.5 w-6 rounded-full transition-colors ${diagramSubStep >= i ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                             {step === STEPS.FORMULA && (
+                                <div className="mt-4 bg-yellow-50 p-6 rounded-lg border border-yellow-200 fade-in text-center">
+                                    <div className="text-sm text-slate-500 mb-2">根据线段图关系可得：</div>
+                                    {renderFormula()}
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
+                            <div className="text-slate-600 text-sm font-medium flex items-center flex-1 mr-4">
+                                <span className="mr-2 text-xl">💡</span> 
+                                <span>{getInstruction()}</span>
+                            </div>
+                            {step < STEPS.FORMULA ? (
+                                <button onClick={handleNextClick} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                                    {(step === STEPS.DIAGRAM && diagramSubStep < config.maxDiagramStep) ? '画下一步' : '下一步'} <ChevronRight size={18}/>
+                                </button>
+                            ) : (
+                                <button onClick={() => switchScenario(scenario)} className="bg-slate-600 hover:bg-slate-700 text-white px-5 py-2 rounded-full font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                                    再来一次 <RefreshCw size={18}/>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<div style="position:fixed;bottom:0;left:0;width:100%;z-index:9998;box-sizing:border-box;padding:4px 16px;text-align:center;color:#94a3b8;font:11px/1.4 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:rgba(248,250,252,0.85);pointer-events:none;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

@@ -20,7 +20,6 @@
         /* 硬币翻转 */
         .coin3d { transform-style: preserve-3d; transition: transform .7s cubic-bezier(.3,.7,.4,1); }
         .coin-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-        .coin-back { transform: rotateY(180deg); }
         /* 骰子滚动抖动 */
         .shake { animation: shake .5s ease; }
         @keyframes shake { 0%,100% { transform: rotate(0); } 20% { transform: rotate(-14deg) translateY(-6px); } 40% { transform: rotate(12deg); } 60% { transform: rotate(-8deg) translateY(-3px); } 80% { transform: rotate(6deg); } }
@@ -28,14 +27,14 @@
         .wheel-spin { transition: transform 2.4s cubic-bezier(.17,.67,.2,1); }
         .spin-btn { animation: none; }
         /* 3D 骰子立方体 */
-        .dice-stage { perspective: 640px; }
-        .cube { position: relative; transform-style: preserve-3d; transition: transform 1.15s cubic-bezier(.28,.5,.3,1); }
-        .cube.tumbling { transition: transform 1.15s cubic-bezier(.5,.05,.25,1); }
-        .cube-face { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; padding: 12px; box-sizing: border-box; border-radius: 14px; background: linear-gradient(145deg, #ffffff, #eef1f6); border: 2px solid #d7dce5; box-shadow: inset 0 0 8px rgba(0,0,0,.06); }
+        .dice-stage { perspective: 700px; perspective-origin: 50% 45%; }
+        /* 下坠弹跳：只作用在这层（2D 位移，不含 scale，避免压平 3D） */
+        .dice-drop { animation: diceDrop 1.1s cubic-bezier(.3,.6,.4,1) both; }
+        @keyframes diceDrop { 0% { transform: translateY(-130px); } 55% { transform: translateY(8px); } 72% { transform: translateY(-12px); } 86% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+        /* 立方体本体：单独一层做 3D 旋转 */
+        .cube { position: relative; transform-style: preserve-3d; transition: transform 1.1s cubic-bezier(.34,.4,.28,1); }
+        .cube-face { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; padding: 12px; box-sizing: border-box; border-radius: 14px; background: linear-gradient(145deg, #ffffff, #eaeef5); border: 2px solid #d0d6e0; box-shadow: inset 0 0 10px rgba(30,41,59,.10); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
         .pip { align-self: center; justify-self: center; width: 62%; height: 62%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4b5563, #1f2937); box-shadow: inset 0 -2px 3px rgba(0,0,0,.4); }
-        /* 落体下坠 + 弹跳 */
-        .dice-drop { animation: diceDrop 1.15s cubic-bezier(.3,.6,.4,1) both; }
-        @keyframes diceDrop { 0% { transform: translateY(-120px) scale(.7); opacity: .5; } 55% { transform: translateY(10px) scale(1.04); opacity: 1; } 72% { transform: translateY(-14px) scale(.98); } 86% { transform: translateY(4px) scale(1.01); } 100% { transform: translateY(0) scale(1); } }
     </style>
 </head>
 <body>
@@ -202,10 +201,10 @@
             { key: 'H', label: '正面（图案）', short: '徽', color: '#d4a017', theoryNum: 1, theoryDen: 2 },
             { key: 'T', label: '反面（数字1）', short: '1', color: '#b8860b', theoryNum: 1, theoryDen: 2 }
         ];
-        // 硬币金属质感（正反面共用）
-        const CoinFace = ({ children, ariaHidden }) => (
-            <div className="coin-face absolute inset-0 rounded-full flex items-center justify-center shadow-lg" aria-hidden={ariaHidden}
-                style={{ background: 'radial-gradient(circle at 34% 28%, #fdf3c4 0%, #f4d160 34%, #d9a520 72%, #a9791a 100%)', border: '5px solid #b8860b', boxShadow: 'inset 0 0 0 4px rgba(255,255,255,.28), inset 0 -6px 12px rgba(120,80,10,.35), 0 6px 14px rgba(0,0,0,.25)' }}>
+        // 硬币金属质感（正反面共用）。back=true 时旋到背面。
+        const CoinFace = ({ children, back }) => (
+            <div className="coin-face absolute inset-0 rounded-full flex items-center justify-center"
+                style={{ transform: back ? 'rotateY(180deg)' : 'rotateY(0deg)', background: 'radial-gradient(circle at 34% 28%, #fdf3c4 0%, #f4d160 34%, #d9a520 72%, #a9791a 100%)', border: '5px solid #b8860b', boxShadow: 'inset 0 0 0 4px rgba(255,255,255,.28), inset 0 -6px 12px rgba(120,80,10,.35), 0 6px 14px rgba(0,0,0,.25)' }}>
                 {children}
             </div>
         );
@@ -250,15 +249,13 @@
                                             <circle cx="48" cy="48" r="9" fill="#fdf3c4" stroke="#8a6414" strokeWidth="2" />
                                         </svg>
                                     </CoinFace>
-                                    {/* 反面：面值数字 1 */}
-                                    <div className="coin-back absolute inset-0">
-                                        <CoinFace ariaHidden={false}>
-                                            <div className="flex flex-col items-center leading-none">
-                                                <span className="text-6xl font-black" style={{ color: '#7a5510', textShadow: '0 1px 0 rgba(255,255,255,.4)' }}>1</span>
-                                                <span className="text-xs font-bold tracking-widest mt-1" style={{ color: '#8a6414' }}>元 · YUAN</span>
-                                            </div>
-                                        </CoinFace>
-                                    </div>
+                                    {/* 反面：面值数字 1（旋到背面） */}
+                                    <CoinFace back>
+                                        <div className="flex flex-col items-center leading-none">
+                                            <span className="text-6xl font-black" style={{ color: '#7a5510', textShadow: '0 1px 0 rgba(255,255,255,.4)' }}>1</span>
+                                            <span className="text-xs font-bold tracking-widest mt-1" style={{ color: '#8a6414' }}>元 · YUAN</span>
+                                        </div>
+                                    </CoinFace>
                                 </div>
                             </div>
                             <div className="text-center mb-4 h-6">
@@ -310,16 +307,18 @@
                 })}
             </div>
         );
-        const DiceCube = ({ rot, tumbling }) => (
+        const DiceCube = ({ rot }) => (
             <div className="dice-stage" style={{ width: CUBE, height: CUBE }}>
-                <div className={`cube ${tumbling ? 'tumbling' : ''}`} style={{ width: CUBE, height: CUBE, transform: `translateZ(-${CUBE / 2}px) rotateX(${rot.x}deg) rotateY(${rot.y}deg)` }}>
+                <div className="cube" style={{ width: CUBE, height: CUBE, transform: `translateZ(-${CUBE / 2}px) rotateX(${rot.x}deg) rotateY(${rot.y}deg)` }}>
                     {[1, 2, 3, 4, 5, 6].map(n => <CubeFace key={n} n={n} />)}
                 </div>
             </div>
         );
+        // 落地后保留的轻微倾斜，让立方体有立体感（不改变正对相机的面）
+        const REST_TILT = { x: -18, y: 0 };
         const DiceDemo = () => {
             const { counts, log, total, record, recordMany, clear } = useTrials(DICE);
-            const [rot, setRot] = useState({ x: -20, y: 22 });   // 初始略微倾斜，能看出是立方体
+            const [rot, setRot] = useState({ x: REST_TILT.x - 12, y: 26 }); // 初始略微倾斜，能看出是立方体
             const [rolling, setRolling] = useState(false);
             const [dropKey, setDropKey] = useState(0);           // 触发下坠动画
             const spins = useRef({ x: 0, y: 0 });
@@ -330,10 +329,11 @@
                 setDropKey(k => k + 1);
                 const result = randInt(6) + 1;
                 const orient = RESULT_ORIENT[result];
-                // 在结果朝向的基础上多翻几整圈，做出“翻滚”过程
-                spins.current.x += 360 * (2 + randInt(2));
-                spins.current.y += 360 * (2 + randInt(2));
-                setRot({ x: spins.current.x + orient.x, y: spins.current.y + orient.y });
+                // 每次多翻几整圈做出“翻滚”过程；整圈不改变最终朝向，
+                // 最终停在 该结果朝向 + 轻微静止倾斜，所以每次点数都会真正变化。
+                spins.current.x += 360 * (2 + randInt(3));
+                spins.current.y += 360 * (2 + randInt(3));
+                setRot({ x: spins.current.x + orient.x + REST_TILT.x, y: spins.current.y + orient.y + REST_TILT.y });
                 setTimeout(() => {
                     record(String(result));
                     setRolling(false);
@@ -351,7 +351,7 @@
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col items-center justify-center">
                             <div className="h-44 flex items-center justify-center mb-2">
                                 <div key={dropKey} className={rolling ? 'dice-drop' : ''}>
-                                    <DiceCube rot={rot} tumbling={rolling} />
+                                    <DiceCube rot={rot} />
                                 </div>
                             </div>
                             <div className="text-center mb-4 h-6">
@@ -405,33 +405,76 @@
             </div>
         );
 
-        /* ============ ③ 转盘（可自定义区域·文字·占比·颜色） ============ */
+        /* ---------- 百分比编辑公用 ---------- */
+        // 百分比步进器（0~100，步长可调）
+        const PctStepper = ({ value, onChange, step = 5, disabled }) => (
+            <div className="inline-flex items-center rounded-lg border border-slate-200 overflow-hidden">
+                <button onClick={() => onChange(Math.max(0, value - step))} disabled={disabled || value <= 0} className="w-7 h-8 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-40">−</button>
+                <div className="flex items-center border-x border-slate-200">
+                    <input type="number" value={value} min={0} max={100} disabled={disabled}
+                        onChange={e => { const v = Math.round(+e.target.value); if (!isNaN(v)) onChange(Math.max(0, Math.min(100, v))); }}
+                        className="w-11 h-8 text-center outline-none" />
+                    <span className="pr-1 text-slate-400 text-sm">%</span>
+                </div>
+                <button onClick={() => onChange(Math.min(100, value + step))} disabled={disabled || value >= 100} className="w-7 h-8 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-40">＋</button>
+            </div>
+        );
+        // 生成 n 个和为 100 的随机整数百分比（每份至少 1%）
+        const randomPercents = n => {
+            if (n <= 0) return [];
+            if (n === 1) return [100];
+            // 随机切割 100，保证每份 ≥1
+            const cuts = [];
+            while (cuts.length < n - 1) {
+                const c = 1 + randInt(99);
+                if (!cuts.includes(c)) cuts.push(c);
+            }
+            cuts.sort((a, b) => a - b);
+            const parts = [];
+            let prev = 0;
+            cuts.forEach(c => { parts.push(c - prev); prev = c; });
+            parts.push(100 - prev);
+            // 保证每份至少 1%（切割已保证），返回
+            return parts;
+        };
+        // 合计与校验条
+        const PctSummary = ({ sum, accent }) => {
+            const ok = sum === 100;
+            return (
+                <span className={`inline-flex items-center gap-1.5 text-sm font-semibold ${ok ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {ok ? '✓' : '⚠'} 合计 {sum}%
+                    {!ok && <span className="text-rose-500 font-normal">（需正好 100%，当前{sum > 100 ? '多' : '少'} {Math.abs(100 - sum)}%）</span>}
+                </span>
+            );
+        };
+
+        /* ============ ③ 转盘（可自定义区域·文字·百分比·颜色） ============ */
         const WHEEL_PRESETS = [
             {
-                name: '4 等分（一样大）',
+                name: '4 等分（各 25%）',
                 make: () => [
-                    { id: uid(), label: '红', color: '#ef4444', weight: 1 },
-                    { id: uid(), label: '黄', color: '#eab308', weight: 1 },
-                    { id: uid(), label: '绿', color: '#22c55e', weight: 1 },
-                    { id: uid(), label: '蓝', color: '#3b82f6', weight: 1 }
+                    { id: uid(), label: '红', color: '#ef4444', pct: 25 },
+                    { id: uid(), label: '黄', color: '#eab308', pct: 25 },
+                    { id: uid(), label: '绿', color: '#22c55e', pct: 25 },
+                    { id: uid(), label: '蓝', color: '#3b82f6', pct: 25 }
                 ]
             },
             {
-                name: '不等分（大小不同）',
+                name: '不等分',
                 make: () => [
-                    { id: uid(), label: '红', color: '#ef4444', weight: 3 },
-                    { id: uid(), label: '黄', color: '#eab308', weight: 2 },
-                    { id: uid(), label: '绿', color: '#22c55e', weight: 2 },
-                    { id: uid(), label: '蓝', color: '#3b82f6', weight: 1 }
+                    { id: uid(), label: '红', color: '#ef4444', pct: 40 },
+                    { id: uid(), label: '黄', color: '#eab308', pct: 25 },
+                    { id: uid(), label: '绿', color: '#22c55e', pct: 25 },
+                    { id: uid(), label: '蓝', color: '#3b82f6', pct: 10 }
                 ]
             },
             {
                 name: '大奖抽奖盘',
                 make: () => [
-                    { id: uid(), label: '谢谢参与', color: '#94a3b8', weight: 12 },
-                    { id: uid(), label: '小奖', color: '#22c55e', weight: 6 },
-                    { id: uid(), label: '中奖', color: '#3b82f6', weight: 3 },
-                    { id: uid(), label: '大奖', color: '#f59e0b', weight: 1 }
+                    { id: uid(), label: '谢谢参与', color: '#94a3b8', pct: 55 },
+                    { id: uid(), label: '小奖', color: '#22c55e', pct: 30 },
+                    { id: uid(), label: '中奖', color: '#3b82f6', pct: 12 },
+                    { id: uid(), label: '大奖', color: '#f59e0b', pct: 3 }
                 ]
             }
         ];
@@ -442,22 +485,24 @@
         const WheelDemo = () => {
             const [sectors, setSectors] = useState(() => WHEEL_PRESETS[0].make());
             const [editing, setEditing] = useState(false);
-            const totalWeight = sectors.reduce((s, x) => s + x.weight, 0);
+            const totalPct = sectors.reduce((s, x) => s + x.pct, 0);
+            const valid = totalPct === 100;
 
-            // 每个扇形的角度区间
+            // 每个扇形的角度区间（按百分比划分，无效时按当前和临时归一，仅用于显示）
             const arcs = useMemo(() => {
+                const denom = totalPct || 1;
                 let acc = 0;
                 return sectors.map(s => {
-                    const start = acc / totalWeight * 360;
-                    acc += s.weight;
-                    const end = acc / totalWeight * 360;
+                    const start = acc / denom * 360;
+                    acc += s.pct;
+                    const end = acc / denom * 360;
                     return { ...s, start, end, mid: (start + end) / 2 };
                 });
-            }, [sectors, totalWeight]);
+            }, [sectors, totalPct]);
 
             const outcomes = sectors.map(s => ({
                 key: s.id, label: s.label || '（空）', short: s.label || '·', color: s.color,
-                theoryNum: s.weight, theoryDen: totalWeight
+                theoryNum: s.pct, theoryDen: 100
             }));
             const { counts, log, total, record, recordMany, clear } = useTrials(outcomes);
 
@@ -469,13 +514,15 @@
             const applySectors = next => { setSectors(next); clear(); };
             const loadPreset = i => { if (spinning) return; applySectors(WHEEL_PRESETS[i].make()); };
             const updateSector = (id, patch) => applySectors(sectors.map(s => s.id === id ? { ...s, ...patch } : s));
-            const addSector = () => { if (sectors.length >= 8) return; applySectors([...sectors, { id: uid(), label: `区域${sectors.length + 1}`, color: PALETTE[sectors.length % PALETTE.length], weight: 1 }]); };
+            const addSector = () => { if (sectors.length >= 8) return; applySectors([...sectors, { id: uid(), label: `区域${sectors.length + 1}`, color: PALETTE[sectors.length % PALETTE.length], pct: 0 }]); };
             const removeSector = id => { if (sectors.length <= 2) return; applySectors(sectors.filter(s => s.id !== id)); };
+            const randomize = () => { const ps = randomPercents(sectors.length); applySectors(sectors.map((s, i) => ({ ...s, pct: ps[i] }))); };
+            const equalize = () => { const n = sectors.length, base = Math.floor(100 / n); const ps = Array(n).fill(base); ps[0] += 100 - base * n; applySectors(sectors.map((s, i) => ({ ...s, pct: ps[i] }))); };
 
             const spinOnce = () => {
-                if (spinning) return;
+                if (spinning || !valid) return;
                 setSpinning(true);
-                const idx = weightedPick(sectors.map(s => s.weight));
+                const idx = weightedPick(sectors.map(s => s.pct));
                 const target = arcs[idx];
                 // 指针固定在顶部，转盘需转到该扇形中点对准顶部
                 const landing = 360 - target.mid;
@@ -487,14 +534,14 @@
                     setSpinning(false);
                 }, 2450);
             };
-            const many = m => { recordMany(Array.from({ length: m }, () => sectors[weightedPick(sectors.map(s => s.weight))].id)); };
+            const many = m => { if (!valid) return; recordMany(Array.from({ length: m }, () => sectors[weightedPick(sectors.map(s => s.pct))].id)); };
 
             const size = 260, cx = size / 2, cy = size / 2, r = size / 2 - 6;
             const last = log[log.length - 1];
             return (
                 <section className="fade-in">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
-                        <p className="text-lg leading-relaxed m-0">转盘停在哪个区域，取决于<b className="text-fuchsia-600">扇形的大小（占比）</b>。占比越大，指针停在它上面的可能性就越大。你可以<b className="text-fuchsia-600">自己编辑</b>区域、文字和占比。</p>
+                        <p className="text-lg leading-relaxed m-0">转盘停在哪个区域，取决于<b className="text-fuchsia-600">扇形的大小（百分比）</b>。百分比越大，指针停在它上面的可能性就越大。你可以<b className="text-fuchsia-600">自己编辑</b>区域、文字和百分比（合计要正好 100%）。</p>
                         <div className="flex flex-wrap gap-2 mt-3">
                             <span className="text-sm text-slate-400 self-center mr-1">快速套用：</span>
                             {WHEEL_PRESETS.map((p, i) => (
@@ -504,29 +551,31 @@
                         </div>
                     </div>
 
-                    <EditorShell open={editing} setOpen={setEditing} disabled={spinning} accent="#c026d3" title="编辑转盘区域（文字 · 占比 · 颜色）">
+                    <EditorShell open={editing} setOpen={setEditing} disabled={spinning} accent="#c026d3" title="编辑转盘区域（文字 · 百分比 · 颜色）">
                         <div className="space-y-2">
-                            {sectors.map((s, i) => {
-                                const p = totalWeight ? s.weight / totalWeight : 0;
-                                return (
-                                    <div key={s.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-2">
-                                        <span className="w-6 h-6 rounded-full shrink-0" style={{ background: s.color }} />
-                                        <input value={s.label} maxLength={6} onChange={e => updateSector(s.id, { label: e.target.value })}
-                                            placeholder={`区域${i + 1}`} className="flex-1 min-w-[90px] px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-fuchsia-300" />
-                                        <label className="text-xs text-slate-500 flex items-center gap-1.5">占比<NumStepper value={s.weight} onChange={w => updateSector(s.id, { weight: w })} /></label>
-                                        <span className="text-xs text-fuchsia-600 w-14 text-right font-semibold">{pct1(p)}%</span>
-                                        <ColorDots value={s.color} onChange={c => updateSector(s.id, { color: c })} />
-                                        <button onClick={() => removeSector(s.id)} disabled={sectors.length <= 2} title="删除该区域"
-                                            className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-30">✕</button>
-                                    </div>
-                                );
-                            })}
+                            {sectors.map((s, i) => (
+                                <div key={s.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-2">
+                                    <span className="w-6 h-6 rounded-full shrink-0" style={{ background: s.color }} />
+                                    <input value={s.label} maxLength={6} onChange={e => updateSector(s.id, { label: e.target.value })}
+                                        placeholder={`区域${i + 1}`} className="flex-1 min-w-[90px] px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-fuchsia-300" />
+                                    <label className="text-xs text-slate-500 flex items-center gap-1.5">概率<PctStepper value={s.pct} onChange={v => updateSector(s.id, { pct: v })} /></label>
+                                    <ColorDots value={s.color} onChange={c => updateSector(s.id, { color: c })} />
+                                    <button onClick={() => removeSector(s.id)} disabled={sectors.length <= 2} title="删除该区域"
+                                        className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-30">✕</button>
+                                </div>
+                            ))}
                         </div>
-                        <div className="flex items-center justify-between mt-3">
-                            <button onClick={addSector} disabled={sectors.length >= 8} className="px-3 py-1.5 rounded-lg border border-fuchsia-200 text-fuchsia-600 text-sm hover:bg-fuchsia-50 disabled:opacity-40">＋ 添加区域</button>
-                            <span className="text-xs text-slate-400">占比合计 {totalWeight} 份 · 最多 8 个区域 · 修改后统计会重置</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={addSector} disabled={sectors.length >= 8} className="px-3 py-1.5 rounded-lg border border-fuchsia-200 text-fuchsia-600 text-sm hover:bg-fuchsia-50 disabled:opacity-40">＋ 添加区域</button>
+                                <button onClick={randomize} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50">🎲 随机百分比</button>
+                                <button onClick={equalize} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50">⚖ 平均分</button>
+                            </div>
+                            <PctSummary sum={totalPct} />
                         </div>
+                        <p className="text-xs text-slate-400 mt-2">最多 8 个区域 · 各区域百分比合计必须正好 100% 才能转 · 修改后统计会重置</p>
                     </EditorShell>
+                    {!valid && <div className="rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-sm px-4 py-2.5 mb-5">⚠ 当前各区域百分比合计为 <b>{totalPct}%</b>，请调整到正好 <b>100%</b> 后再转动转盘。</div>}
                     <div className="grid md:grid-cols-2 gap-5">
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col items-center justify-center">
                             <div className="relative mb-3" style={{ width: size, height: size + 14 }}>
@@ -558,7 +607,7 @@
                                 {last && !spinning && <span className="pop inline-block text-lg font-bold" style={{ color: last.color }}>指向了「{last.label}」！</span>}
                                 {spinning && <span className="text-slate-400">转盘旋转中…</span>}
                             </div>
-                            <RunControls onceLabel="转一次 🎡" onOnce={spinOnce} onMany={many} onClear={clear} busy={spinning} total={total} />
+                            <RunControls onceLabel="转一次 🎡" onOnce={spinOnce} onMany={many} onClear={clear} busy={spinning || !valid} total={total} />
                         </div>
                         <StatsPanel outcomes={outcomes} counts={counts} total={total} />
                     </div>
@@ -567,122 +616,102 @@
             );
         };
 
-        /* ============ ④ 抽盲盒（可自定义内容物·数量·概率） ============ */
+        /* ============ ④ 抽盲盒（可自定义内容物·抽中概率%） ============ */
         const EMOJI_CHOICES = ['⭐', '💖', '🌙', '👑', '💎', '🎀', '🍬', '🧸', '🚀', '🌈', '🍀', '🐱'];
         const DEFAULT_BOX = () => [
-            { id: uid(), label: '星星款', emoji: '⭐', color: '#f59e0b', count: 6 },
-            { id: uid(), label: '爱心款', emoji: '💖', color: '#ec4899', count: 4 },
-            { id: uid(), label: '月亮款', emoji: '🌙', color: '#6366f1', count: 3 },
-            { id: uid(), label: '皇冠款', emoji: '👑', color: '#eab308', count: 2 },
-            { id: uid(), label: '钻石·隐藏款', emoji: '💎', color: '#06b6d4', count: 1 }
+            { id: uid(), label: '星星款', emoji: '⭐', color: '#f59e0b', pct: 40 },
+            { id: uid(), label: '爱心款', emoji: '💖', color: '#ec4899', pct: 25 },
+            { id: uid(), label: '月亮款', emoji: '🌙', color: '#6366f1', pct: 20 },
+            { id: uid(), label: '皇冠款', emoji: '👑', color: '#eab308', pct: 10 },
+            { id: uid(), label: '钻石·隐藏款', emoji: '💎', color: '#06b6d4', pct: 5 }
         ];
-        // 按每款数量铺开并洗牌，得到一整箱（不放回）
-        const buildBag = items => {
-            const bag = [];
-            items.forEach(it => { for (let i = 0; i < it.count; i++) bag.push(it.id); });
-            for (let i = bag.length - 1; i > 0; i--) {
-                const j = randInt(i + 1);
-                [bag[i], bag[j]] = [bag[j], bag[i]];
-            }
-            return bag;
-        };
         const BlindBoxDemo = () => {
             const [items, setItems] = useState(DEFAULT_BOX);
             const [editing, setEditing] = useState(false);
-            const boxTotal = items.reduce((s, x) => s + x.count, 0);
-            // bag 必须由当前 items 装成，id 保持一致（下方 useState 用同一份 items 初始化）
+            const totalPct = items.reduce((s, x) => s + x.pct, 0);
+            const valid = totalPct === 100;
 
             const outcomes = items.map(it => ({
                 key: it.id, label: it.label || '（未命名）', short: it.emoji, color: it.color,
-                theoryNum: it.count, theoryDen: boxTotal
+                theoryNum: it.pct, theoryDen: 100
             }));
             const { counts, log, total, record, recordMany, clear } = useTrials(outcomes);
-            const [bag, setBag] = useState(() => buildBag(items));
             const [drawn, setDrawn] = useState(null);
             const [opening, setOpening] = useState(false);
-            const remain = bag.length;
 
-            // 编辑内容物后：重置统计并换上按新配置装好的新箱
-            const applyItems = next => { setItems(next); clear(); setBag(buildBag(next)); setDrawn(null); };
+            // 编辑内容物后重置统计（结果集变了）
+            const applyItems = next => { setItems(next); clear(); setDrawn(null); };
             const updateItem = (id, patch) => applyItems(items.map(it => it.id === id ? { ...it, ...patch } : it));
             const addItem = () => {
                 if (items.length >= 8) return;
                 const emoji = EMOJI_CHOICES[items.length % EMOJI_CHOICES.length];
-                applyItems([...items, { id: uid(), label: `第${items.length + 1}款`, emoji, color: PALETTE[items.length % PALETTE.length], count: 1 }]);
+                applyItems([...items, { id: uid(), label: `第${items.length + 1}款`, emoji, color: PALETTE[items.length % PALETTE.length], pct: 0 }]);
             };
             const removeItem = id => { if (items.length <= 2) return; applyItems(items.filter(it => it.id !== id)); };
+            const randomize = () => { const ps = randomPercents(items.length); applyItems(items.map((it, i) => ({ ...it, pct: ps[i] }))); };
+            const equalize = () => { const n = items.length, base = Math.floor(100 / n); const ps = Array(n).fill(base); ps[0] += 100 - base * n; applyItems(items.map((it, i) => ({ ...it, pct: ps[i] }))); };
 
+            // 按概率抽取（放回）
+            const pickKey = () => items[weightedPick(items.map(it => it.pct))].id;
             const drawOne = () => {
-                if (opening) return;
+                if (opening || !valid) return;
                 setOpening(true);
                 setDrawn(null);
                 setTimeout(() => {
-                    let b = bag;
-                    if (b.length === 0) b = buildBag(items);     // 抽完自动换新箱
-                    const key = b[0];
-                    setBag(b.slice(1));
+                    const key = pickKey();
                     setDrawn(key);
                     record(key);
                     setOpening(false);
                 }, 550);
             };
-            // 批量抽：连续从箱里取，空了就换新箱
-            const many = m => {
-                let b = [...bag];
-                const keys = [];
-                for (let i = 0; i < m; i++) {
-                    if (b.length === 0) b = buildBag(items);
-                    keys.push(b.shift());
-                }
-                setBag(b);
-                recordMany(keys);
-                setDrawn(keys[keys.length - 1]);
-            };
-            const resetAll = () => { clear(); setBag(buildBag(items)); setDrawn(null); };
-            const newBox = () => { if (!opening) setBag(buildBag(items)); };
+            const many = m => { if (!valid) return; const keys = Array.from({ length: m }, pickKey); recordMany(keys); setDrawn(keys[keys.length - 1]); };
+            const resetAll = () => { clear(); setDrawn(null); };
 
             const drawnItem = drawn ? items.find(x => x.id === drawn) : null;
             return (
                 <section className="fade-in">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
-                        <p className="text-lg leading-relaxed m-0">一箱盲盒共 <b>{boxTotal}</b> 个，不同款数量不同。<b className="text-cyan-600">数量越少</b>的款（比如隐藏款），抽到的可能性就<b>越小</b>。你可以<b className="text-cyan-600">自己编辑</b>内容物、数量和抽中概率。</p>
+                        <p className="text-lg leading-relaxed m-0">每一款盲盒都有自己的<b className="text-cyan-600">抽中概率</b>。概率越小的款（比如隐藏款），抽到的可能性就<b>越小</b>。你可以<b className="text-cyan-600">自己编辑</b>内容物和抽中概率（合计要正好 100%）。</p>
                     </div>
 
-                    <EditorShell open={editing} setOpen={setEditing} disabled={opening} accent="#0891b2" title="编辑盲盒内容物（名称 · 图标 · 数量 · 概率）">
+                    <EditorShell open={editing} setOpen={setEditing} disabled={opening} accent="#0891b2" title="编辑盲盒内容物（名称 · 图标 · 抽中概率）">
                         <div className="space-y-2">
-                            {items.map((it, i) => {
-                                const p = boxTotal ? it.count / boxTotal : 0;
-                                return (
-                                    <div key={it.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-2">
-                                        <select value={it.emoji} onChange={e => updateItem(it.id, { emoji: e.target.value })}
-                                            className="text-xl h-9 px-1 rounded-lg border border-slate-200 bg-white outline-none">
-                                            {(EMOJI_CHOICES.includes(it.emoji) ? EMOJI_CHOICES : [it.emoji, ...EMOJI_CHOICES]).map(e => <option key={e} value={e}>{e}</option>)}
-                                        </select>
-                                        <input value={it.label} maxLength={8} onChange={e => updateItem(it.id, { label: e.target.value })}
-                                            placeholder={`第${i + 1}款`} className="flex-1 min-w-[90px] px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-cyan-300" />
-                                        <label className="text-xs text-slate-500 flex items-center gap-1.5">数量<NumStepper value={it.count} onChange={c => updateItem(it.id, { count: c })} /></label>
-                                        <span className="text-xs text-cyan-600 w-20 text-right font-semibold">{probFraction(it.count, boxTotal)} ≈ {pct1(p)}%</span>
-                                        <ColorDots value={it.color} onChange={c => updateItem(it.id, { color: c })} />
-                                        <button onClick={() => removeItem(it.id)} disabled={items.length <= 2} title="删除该款"
-                                            className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-30">✕</button>
-                                    </div>
-                                );
-                            })}
+                            {items.map((it, i) => (
+                                <div key={it.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/60 p-2">
+                                    <select value={it.emoji} onChange={e => updateItem(it.id, { emoji: e.target.value })}
+                                        className="text-xl h-9 px-1 rounded-lg border border-slate-200 bg-white outline-none">
+                                        {(EMOJI_CHOICES.includes(it.emoji) ? EMOJI_CHOICES : [it.emoji, ...EMOJI_CHOICES]).map(e => <option key={e} value={e}>{e}</option>)}
+                                    </select>
+                                    <input value={it.label} maxLength={8} onChange={e => updateItem(it.id, { label: e.target.value })}
+                                        placeholder={`第${i + 1}款`} className="flex-1 min-w-[90px] px-2 py-1.5 rounded-lg border border-slate-200 outline-none focus:border-cyan-300" />
+                                    <label className="text-xs text-slate-500 flex items-center gap-1.5">概率<PctStepper value={it.pct} onChange={v => updateItem(it.id, { pct: v })} /></label>
+                                    <ColorDots value={it.color} onChange={c => updateItem(it.id, { color: c })} />
+                                    <button onClick={() => removeItem(it.id)} disabled={items.length <= 2} title="删除该款"
+                                        className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-30">✕</button>
+                                </div>
+                            ))}
                         </div>
-                        <div className="flex items-center justify-between mt-3">
-                            <button onClick={addItem} disabled={items.length >= 8} className="px-3 py-1.5 rounded-lg border border-cyan-200 text-cyan-600 text-sm hover:bg-cyan-50 disabled:opacity-40">＋ 添加一款</button>
-                            <span className="text-xs text-slate-400">一箱共 {boxTotal} 个 · 最多 8 款 · 修改后统计会重置</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={addItem} disabled={items.length >= 8} className="px-3 py-1.5 rounded-lg border border-cyan-200 text-cyan-600 text-sm hover:bg-cyan-50 disabled:opacity-40">＋ 添加一款</button>
+                                <button onClick={randomize} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50">🎲 随机概率</button>
+                                <button onClick={equalize} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-50">⚖ 平均分</button>
+                            </div>
+                            <PctSummary sum={totalPct} />
                         </div>
+                        <p className="text-xs text-slate-400 mt-2">最多 8 款 · 各款概率合计必须正好 100% 才能抽 · 按概率放回抽取 · 修改后统计会重置</p>
                     </EditorShell>
 
+                    {!valid && <div className="rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-sm px-4 py-2.5 mb-5">⚠ 当前各款概率合计为 <b>{totalPct}%</b>，请调整到正好 <b>100%</b> 后再抽盲盒。</div>}
+
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-5">
-                        <div className="text-sm text-slate-500 mb-2">这一箱里的款式与数量：</div>
+                        <div className="text-sm text-slate-500 mb-2">这一套盲盒的款式与抽中概率：</div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
                             {items.map(it => (
                                 <div key={it.id} className="rounded-xl border border-slate-200 p-2 text-center" style={{ background: it.color + '14' }}>
                                     <div className="text-2xl">{it.emoji}</div>
                                     <div className="text-xs font-semibold text-slate-600 mt-1 truncate">{it.label || '（未命名）'}</div>
-                                    <div className="text-xs" style={{ color: it.color }}><b>{it.count}</b> 个 · {probFraction(it.count, boxTotal)}</div>
+                                    <div className="text-xs font-bold" style={{ color: it.color }}>{it.pct}%</div>
                                 </div>
                             ))}
                         </div>
@@ -701,11 +730,10 @@
                                         : <div className="text-6xl opacity-60">🎁</div>}
                             </div>
                             <div className="text-center mb-4 h-5 text-sm text-slate-500">
-                                本箱还剩 <b className="text-slate-700">{remain}</b> / {boxTotal} 个
-                                <button onClick={newBox} disabled={opening} className="ml-2 text-cyan-600 hover:underline disabled:opacity-40">换新的一箱</button>
+                                {drawnItem && !opening ? <span>抽中「{drawnItem.label || '（未命名）'}」（概率 {drawnItem.pct}%）</span> : '点下方按钮抽一个盲盒'}
                             </div>
-                            <RunControls onceLabel="抽一个 🎁" onOnce={drawOne} onMany={many} onClear={resetAll} busy={opening} total={total} />
-                            <p className="text-xs text-slate-400 mt-3 text-center">不放回抽取：抽走就少一个；抽完一整箱会自动换新箱。</p>
+                            <RunControls onceLabel="抽一个 🎁" onOnce={drawOne} onMany={many} onClear={resetAll} busy={opening || !valid} total={total} />
+                            <p className="text-xs text-slate-400 mt-3 text-center">按概率放回抽取：每次都独立，不影响下一次。</p>
                         </div>
                         <StatsPanel outcomes={outcomes} counts={counts} total={total} />
                     </div>
@@ -717,8 +745,8 @@
         const TABS = [
             { id: 'coin', title: '① 抛硬币', hint: '图案 / 数字1', color: 'bg-amber-500' },
             { id: 'dice', title: '② 扔骰子', hint: '立体骰子翻滚', color: 'bg-emerald-600' },
-            { id: 'wheel', title: '③ 抽奖转盘', hint: '可自定义区域', color: 'bg-fuchsia-600' },
-            { id: 'box', title: '④ 抽盲盒', hint: '可自定义内容', color: 'bg-cyan-600' }
+            { id: 'wheel', title: '③ 抽奖转盘', hint: '自定义%·合计100', color: 'bg-fuchsia-600' },
+            { id: 'box', title: '④ 抽盲盒', hint: '自定义%·合计100', color: 'bg-cyan-600' }
         ];
 
         const App = () => {

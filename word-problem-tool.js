@@ -4,7 +4,8 @@
     const config = window.WORD_PROBLEM_TOOL;
     if (!config || !Array.isArray(config.tabs) || !config.tabs.length) return;
 
-    const state = { tab: 0, problem: 0, step: 1 };
+    const initialStep = () => config.requireAnswerReveal ? 0 : 1;
+    const state = { tab: 0, problem: 0, step: initialStep() };
     const $ = id => document.getElementById(id);
     const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -13,6 +14,7 @@
     const currentProblem = () => currentTab().problems[state.problem];
 
     function highlightedStory(problem) {
+        if (config.highlightKeywords === false) return esc(problem.story);
         const keywords = [...(problem.keywords || [])].sort((a, b) => b.length - a.length);
         if (!keywords.length) return esc(problem.story);
         const positions = [];
@@ -98,7 +100,8 @@
 
     function renderSolution(problem) {
         return `
-            <h2>分步解答与检验</h2>
+            <h2>${esc(config.solutionTitle || "分步解答与检验")}</h2>
+            ${config.sourceAnswerMode ? `<p class="source-analysis"><b>【分析】</b>${esc(problem.readingTip || "")}</p><p class="source-detail"><b>【详解】</b></p>` : ""}
             <ol class="solution">${problem.steps.map(step => `<li>${esc(step)}</li>`).join("")}</ol>
             <div class="answer">答：${esc(problem.answer)}</div>
         `;
@@ -106,7 +109,20 @@
 
     function renderContent() {
         const problem = currentProblem();
-        const renderers = [renderRelations, renderDiagram, renderEquation, renderSolution];
+        if (state.step === 0) {
+            $("content").innerHTML = `
+                <div class="answer-gate">
+                    <div class="answer-gate-icon">?</div>
+                    <h2>先独立读题和思考</h2>
+                    <p>答案解析暂未显示。想好条件、问题和可能的列式后，再点击“解析答案”。</p>
+                    <button class="button primary" id="revealBtn">解析答案</button>
+                </div>
+            `;
+            return;
+        }
+        const renderers = config.showDiagram === false
+            ? [renderRelations, renderEquation, renderSolution]
+            : [renderRelations, renderDiagram, renderEquation, renderSolution];
         $("content").innerHTML = renderers[state.step - 1](problem);
     }
 
@@ -121,26 +137,32 @@
     }
 
     function renderSteps() {
-        const names = ["读题找关系", "画图整理", "列式分析", "解答检验"];
+        const defaultNames = config.showDiagram === false
+            ? ["读题找关系", "根据答案列式", "原题解析与答案"]
+            : ["读题找关系", "画图整理", "列式分析", "解答检验"];
+        const names = config.stepNames || defaultNames;
+        $("steps").style.gridTemplateColumns = `repeat(${names.length}, 1fr)`;
         $("steps").innerHTML = names.map((name, index) => {
             const step = index + 1;
             const status = step === state.step ? "active" : step < state.step ? "done" : "";
-            return `<button class="step ${status}" data-step="${step}">${step}. ${name}</button>`;
+            return `<button class="step ${status}" data-step="${step}" ${state.step === 0 ? "disabled" : ""}>${step}. ${name}</button>`;
         }).join("");
-        $("prevBtn").disabled = state.step === 1;
-        $("nextBtn").textContent = state.step === 4 ? "下一题" : "下一步";
+        $("prevBtn").disabled = state.step <= 1;
+        $("nextBtn").textContent = state.step === 0 ? "解析答案" : state.step === names.length ? "下一题" : "下一步";
     }
 
     function bindDynamicEvents() {
         document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => {
-            state.tab = Number(button.dataset.tab); state.problem = 0; state.step = 1; render();
+            state.tab = Number(button.dataset.tab); state.problem = 0; state.step = initialStep(); render();
         }));
         document.querySelectorAll("[data-problem]").forEach(button => button.addEventListener("click", () => {
-            state.problem = Number(button.dataset.problem); state.step = 1; render();
+            state.problem = Number(button.dataset.problem); state.step = initialStep(); render();
         }));
         document.querySelectorAll("[data-step]").forEach(button => button.addEventListener("click", () => {
             state.step = Number(button.dataset.step); render();
         }));
+        const revealButton = $("revealBtn");
+        if (revealButton) revealButton.addEventListener("click", () => { state.step = 1; render(); });
     }
 
     function render() {
@@ -157,10 +179,12 @@
 
     $("prevBtn").addEventListener("click", () => { state.step = Math.max(1, state.step - 1); render(); });
     $("nextBtn").addEventListener("click", () => {
-        if (state.step < 4) state.step += 1;
+        const stepCount = (config.stepNames || (config.showDiagram === false ? [1, 2, 3] : [1, 2, 3, 4])).length;
+        if (state.step === 0) state.step = 1;
+        else if (state.step < stepCount) state.step += 1;
         else {
             state.problem = (state.problem + 1) % currentTab().problems.length;
-            state.step = 1;
+            state.step = initialStep();
         }
         render();
     });
@@ -168,7 +192,7 @@
         const length = currentTab().problems.length;
         let next = state.problem;
         while (length > 1 && next === state.problem) next = Math.floor(Math.random() * length);
-        state.problem = next; state.step = 1; render();
+        state.problem = next; state.step = initialStep(); render();
     });
 
     render();

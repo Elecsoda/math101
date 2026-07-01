@@ -201,7 +201,7 @@
             </svg>
         </a>
         <h1>计算练习与测试</h1>
-        <p class="subtitle">按计算能力进阶链随机出题，每个训练项独立统计本轮表现</p>
+        <p class="subtitle">按口算、估算、竖式和脱式列式分类练习，每项独立统计</p>
     </header>
 
     <nav class="tabs" id="tabs" aria-label="计算训练选项卡"></nav>
@@ -217,7 +217,7 @@
             </div>
 
             <div class="question-card" id="questionCard">
-                <div class="label">随机测试题</div>
+                <div class="label" id="questionLabel">随机测试题</div>
                 <div class="formula"><span id="formula"></span><span>&nbsp;=&nbsp;</span><span class="qmark">?</span></div>
                 <div class="meta" id="questionMeta"></div>
                 <div class="answer-row">
@@ -284,7 +284,58 @@ function q(data) {
     return Object.assign({ format: "integer", meta: "" }, data);
 }
 
+const homeworkQuestion = (text, answer, source, extra = {}) => q({
+    text,
+    answer,
+    meta: "精选计算练习",
+    hint: extra.hint || "先判断运算类型，再按对应的计算法则完成。",
+    solution: extra.solution || `${text} = ${typeof answer === "object" ? (answer.q !== undefined ? `${answer.q} 余 ${answer.r}` : fmtF(answer)) : answer}。`,
+    ...extra
+});
+
+const HOMEWORK_SETS = {
+    oral: [
+        ["240 + 360", 600, 41], ["40 × 20", 800, 41], ["0.4 + 8.6", 9, 41, { format: "decimal" }], ["6 × 11 + 0", 66, 41],
+        ["79 × 11 × 0", 0, 41], ["3.14 × 1000", 3140, 41, { format: "decimal" }], ["563 ÷ 10", 56.3, 41, { format: "decimal" }], ["2.5 - 0.9", 1.6, 41, { format: "decimal" }],
+        ["60 × 80", 4800, 42], ["50 × 40", 2000, 42], ["300 × 20", 6000, 42], ["240 × 20", 4800, 42],
+        ["60 × 700", 42000, 42], ["500 × 80", 40000, 42], ["25 × 40", 1000, 42], ["125 × 40", 5000, 42],
+        ["20 × 400", 8000, 43], ["12 ÷ 18", frac(2, 3), 43, { format: "fraction" }], ["2.5 + 2.5", 5, 43, { format: "decimal" }],
+        ["125 × 80", 10000, 43], ["17 ÷ 34", frac(1, 2), 43, { format: "fraction" }], ["89.6 - 9.5", 80.1, 43, { format: "decimal" }],
+        ["9 × 9", 81, 59], ["63 ÷ 9", 7, 59], ["64 ÷ 8", 8, 59], ["3 × 6", 18, 59], ["100 - 60", 40, 59],
+        ["3 × 9", 27, 59], ["45 - 8", 37, 59], ["6 × 7", 42, 59], ["52 - 9", 43, 59],
+        ["730 + 40", 770, 60], ["390 + 40", 430, 60], ["480 + 50", 530, 60], ["550 + 30", 580, 60], ["780 + 60", 840, 60],
+        ["640 + 70", 710, 60], ["200 + 70", 270, 60], ["860 + 80", 940, 60], ["770 + 90", 860, 60]
+    ],
+    estimate: [
+        ["393 × 42（估算）", 16000, 42], ["78 × 294（估算）", 24000, 42],
+        ["82 × 68（估算）", 5600, 42], ["403 × 52（估算）", 20000, 42]
+    ],
+    column: [
+        ["506 × 5", 2530, 44], ["613 - 258", 355, 44], ["197 × 3", 591, 44], ["526 + 475", 1001, 44],
+        ["307 × 7", 2149, 45], ["928 ÷ 3", { q: 309, r: 1 }, 45, { format: "remainder" }],
+        ["342 ÷ 3", 114, 46], ["804 ÷ 5", { q: 160, r: 4 }, 46, { format: "remainder" }], ["2040 ÷ 6", 340, 46]
+    ],
+    mixed: [
+        ["83 - (43 - 19)", 59, 47], ["360 ÷ (20 × 3)", 6, 48], ["800 ÷ (20 × 2)", 20, 48],
+        ["450 ÷ (30 × 3)", 5, 48], ["150 ÷ 5 ÷ 6", 5, 48], ["412 ÷ 4 × 9", 927, 52],
+        ["18 + 25 + 30 + 36 + 22", 131, 53], ["21 × 9 + 19 × 9", 360, 54],
+        ["(163 + 285) ÷ 4", 112, 55], ["102 × 28 - 87", 2769, 56]
+    ]
+};
+
+const makeHomeworkTab = (id, name, set, color, hint) => ({
+    id, name, grade: "专项题库", node: `计算练习 · ${name.replace("专项·", "")}`, color,
+    make() {
+        const [text, answer, source, extra = {}] = pick(set);
+        return homeworkQuestion(text, answer, source, { hint, ...extra });
+    }
+});
+
 const TABS = [
+    makeHomeworkTab("hw-oral", "专项·口算", HOMEWORK_SETS.oral, "#0369a1", "口算时先观察数的特点，能凑整或利用乘法口诀的先口算。"),
+    makeHomeworkTab("hw-estimate", "专项·估算", HOMEWORK_SETS.estimate, "#0e7490", "把因数看作接近的整十或整百数，再相乘。"),
+    makeHomeworkTab("hw-column", "专项·竖式", HOMEWORK_SETS.column, "#4338ca", "相同数位对齐；乘除从高位或个位按对应法则逐步计算。"),
+    makeHomeworkTab("hw-mixed", "专项·脱式列式", HOMEWORK_SETS.mixed, "#7e22ce", "有括号先算括号，同级运算从左到右，乘除优先于加减。"),
     {
         id: "add-sub-10", name: "10以内加减", grade: "1年级", node: "m-add-sub-10", color: "#0284c7",
         make() {
@@ -560,6 +611,7 @@ function render() {
     renderTabs();
     $("tabMeta").textContent = `${tab.grade} · ${tab.node}`;
     $("tabTitle").textContent = tab.name;
+    $("questionLabel").textContent = tab.id.startsWith("hw-") ? "专项随机练习" : "随机测试题";
     $("formula").textContent = question.text;
     $("questionMeta").textContent = question.meta || "";
     $("questionCard").className = `question-card ${state.result || ""}`;

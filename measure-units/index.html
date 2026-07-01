@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单位换算与大小比较 | Math101</title>
+    <script src="../vendor/react.development.js"></script>
+    <script src="../vendor/react-dom.development.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <style>
+        :root { --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --brand:#4f46e5; --soft:#eef2ff; }
+        * { box-sizing: border-box; }
+        body { margin:0; min-height:100vh; color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:radial-gradient(circle at 10% 0,#ede9fe 0,transparent 32%),radial-gradient(circle at 95% 20%,#cffafe 0,transparent 28%),#f8fafc; }
+        button,input,select { font:inherit; }
+        button { cursor:pointer; }
+        .page { width:min(1040px,calc(100% - 28px)); margin:auto; padding:28px 0 40px; }
+        .header { position:relative; text-align:center; margin-bottom:24px; }
+        .home { position:absolute; left:0; top:0; width:42px; height:42px; display:grid; place-items:center; border:1px solid var(--line); border-radius:13px; background:#fff; color:var(--muted); text-decoration:none; box-shadow:0 4px 16px #47556914; }
+        h1 { margin:0; font-size:clamp(27px,5vw,38px); letter-spacing:-1px; }
+        .header p { margin:7px 42px 0; color:var(--muted); }
+        .mode-tabs,.category-tabs { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; }
+        .mode-tabs { margin-bottom:16px; }
+        .tab { border:1px solid var(--line); background:#fff; color:#475569; border-radius:999px; padding:10px 18px; font-weight:700; transition:.2s; }
+        .tab:hover { transform:translateY(-1px); border-color:#a5b4fc; }
+        .tab.active { color:#fff; background:var(--brand); border-color:var(--brand); box-shadow:0 7px 18px #4f46e538; }
+        .category-tabs { padding:14px; margin-bottom:18px; background:#ffffffb8; border:1px solid #fff; border-radius:18px; backdrop-filter:blur(8px); }
+        .category { border:0; border-radius:12px; padding:8px 13px; background:transparent; color:#64748b; font-weight:650; }
+        .category.active { background:var(--cat-soft); color:var(--cat); box-shadow:inset 0 0 0 1px var(--cat-border); }
+        .card { background:#fffffff2; border:1px solid #fff; border-radius:24px; box-shadow:0 18px 50px #33415514; }
+        .converter { padding:clamp(20px,5vw,40px); }
+        .converter-grid { display:grid; grid-template-columns:1fr 70px 1fr; gap:16px; align-items:end; }
+        .field label { display:block; margin:0 0 9px 3px; color:var(--muted); font-size:14px; font-weight:700; }
+        .field-box { display:flex; overflow:hidden; border:2px solid var(--line); border-radius:16px; background:#fff; transition:.2s; }
+        .field-box:focus-within { border-color:var(--cat); box-shadow:0 0 0 4px var(--cat-soft); }
+        .field input { min-width:0; width:100%; border:0; outline:0; padding:16px; font-size:24px; font-weight:750; color:var(--ink); background:transparent; }
+        .field input.result { color:var(--cat); }
+        .field select { width:116px; border:0; border-left:1px solid var(--line); outline:0; padding:0 10px; color:#475569; background:#f8fafc; font-weight:700; }
+        .swap { width:54px; height:54px; margin:0 auto 2px; border:0; border-radius:50%; background:var(--cat-soft); color:var(--cat); font-size:25px; transition:.25s; }
+        .swap:hover { transform:rotate(180deg); }
+        .equation { margin-top:28px; padding:20px; border-radius:18px; text-align:center; background:var(--cat-soft); color:#475569; }
+        .equation strong { display:block; color:var(--cat); font-size:clamp(22px,4vw,31px); margin-bottom:7px; overflow-wrap:anywhere; }
+        .relation { margin-top:18px; display:flex; flex-wrap:wrap; justify-content:center; gap:9px; color:#64748b; font-size:14px; }
+        .relation span { padding:7px 11px; background:#f8fafc; border:1px solid var(--line); border-radius:10px; }
+        .practice { padding:clamp(20px,5vw,38px); }
+        .practice-top { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:24px; }
+        .score { display:flex; gap:9px; }
+        .score span { padding:7px 11px; border-radius:999px; background:#f1f5f9; color:#64748b; font-size:14px; font-weight:700; }
+        .question-type { color:var(--cat); background:var(--cat-soft); padding:7px 12px; border-radius:999px; font-weight:750; font-size:14px; }
+        .question { display:grid; grid-template-columns:1fr 82px 1fr; gap:14px; align-items:center; min-height:180px; }
+        .quantity { padding:24px 12px; text-align:center; background:#f8fafc; border:2px solid var(--line); border-radius:20px; font-size:clamp(24px,5vw,38px); font-weight:800; }
+        .quantity small { display:block; margin-top:7px; color:#94a3b8; font-size:13px; font-weight:600; }
+        .question-mark { text-align:center; color:#cbd5e1; font-size:46px; font-weight:900; }
+        .choices { display:flex; justify-content:center; gap:14px; margin-top:24px; }
+        .choice { width:68px; height:58px; border:2px solid var(--line); border-radius:16px; background:#fff; color:#475569; font-size:29px; font-weight:900; transition:.18s; }
+        .choice:hover:not(:disabled) { transform:translateY(-3px); border-color:var(--cat); color:var(--cat); }
+        .choice.chosen-right { background:#dcfce7; border-color:#22c55e; color:#15803d; }
+        .choice.chosen-wrong { background:#ffe4e6; border-color:#fb7185; color:#be123c; }
+        .feedback { min-height:86px; margin-top:20px; text-align:center; }
+        .feedback .message { font-size:20px; font-weight:800; }
+        .feedback .explain { margin-top:7px; color:var(--muted); }
+        .next { margin-top:14px; border:0; border-radius:999px; padding:10px 24px; color:#fff; background:var(--brand); font-weight:750; box-shadow:0 6px 16px #4f46e533; }
+        .tip { margin-top:16px; color:#94a3b8; text-align:center; font-size:13px; }
+        footer { padding-top:26px; color:#94a3b8; text-align:center; font-size:13px; }
+        @media (max-width:700px) {
+            .converter-grid { grid-template-columns:1fr; }
+            .swap { transform:rotate(90deg); margin:0 auto; }
+            .swap:hover { transform:rotate(270deg); }
+            .question { grid-template-columns:1fr; gap:8px; }
+            .question-mark { line-height:35px; }
+            .quantity { padding:16px 10px; }
+            .practice-top { align-items:flex-start; }
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+    const { useMemo, useState } = React;
+
+    const GROUPS = {
+        length: { name:'长度', icon:'📏', color:'#2563eb', soft:'#eff6ff', border:'#bfdbfe', base:'米', units:[
+            {name:'毫米', symbol:'mm', factor:0.001}, {name:'厘米', symbol:'cm', factor:0.01}, {name:'分米', symbol:'dm', factor:0.1}, {name:'米', symbol:'m', factor:1}, {name:'千米', symbol:'km', factor:1000}
+        ]},
+        area: { name:'面积', icon:'◫', color:'#7c3aed', soft:'#f5f3ff', border:'#ddd6fe', base:'平方米', units:[
+            {name:'平方毫米',symbol:'mm²',factor:0.000001}, {name:'平方厘米',symbol:'cm²',factor:0.0001}, {name:'平方分米',symbol:'dm²',factor:0.01}, {name:'平方米',symbol:'m²',factor:1}, {name:'公顷',symbol:'ha',factor:10000}, {name:'平方千米',symbol:'km²',factor:1000000}
+        ]},
+        volume: { name:'体积', icon:'▱', color:'#0891b2', soft:'#ecfeff', border:'#a5f3fc', base:'升', units:[
+            {name:'立方毫米',symbol:'mm³',factor:0.000001}, {name:'立方厘米',symbol:'cm³',factor:0.001}, {name:'毫升',symbol:'mL',factor:0.001}, {name:'立方分米',symbol:'dm³',factor:1}, {name:'升',symbol:'L',factor:1}, {name:'立方米',symbol:'m³',factor:1000}
+        ]},
+        time: { name:'时间', icon:'⏱', color:'#d97706', soft:'#fffbeb', border:'#fde68a', base:'秒', units:[
+            {name:'秒',symbol:'秒',factor:1}, {name:'分',symbol:'分',factor:60}, {name:'时',symbol:'时',factor:3600}, {name:'天',symbol:'天',factor:86400}, {name:'周',symbol:'周',factor:604800}
+        ]},
+        mass: { name:'质量', icon:'⚖', color:'#059669', soft:'#ecfdf5', border:'#a7f3d0', base:'克', units:[
+            {name:'毫克',symbol:'mg',factor:0.001}, {name:'克',symbol:'g',factor:1}, {name:'千克',symbol:'kg',factor:1000}, {name:'吨',symbol:'t',factor:1000000}
+        ]},
+        money: { name:'金钱', icon:'¥', color:'#e11d48', soft:'#fff1f2', border:'#fecdd3', base:'分', units:[
+            {name:'分',symbol:'分',factor:1}, {name:'角',symbol:'角',factor:10}, {name:'元',symbol:'元',factor:100}
+        ]}
+    };
+
+    const QUESTIONS = [
+        ['mass',800,'克',2,'千克'], ['mass',3,'千克',3000,'克'], ['mass',2.5,'吨',2400,'千克'], ['mass',500,'毫克',1,'克'],
+        ['length',90,'厘米',1,'米'], ['length',4,'千米',3900,'米'], ['length',6,'分米',60,'厘米'], ['length',25,'毫米',2,'厘米'],
+        ['area',1,'平方米',90,'平方分米'], ['area',3,'公顷',30000,'平方米'], ['area',8000,'平方米',1,'公顷'], ['area',5,'平方分米',500,'平方厘米'],
+        ['volume',2,'升',1800,'毫升'], ['volume',500,'立方厘米',0.5,'升'], ['volume',3,'立方米',2900,'升'], ['volume',60,'毫升',70,'立方厘米'],
+        ['time',2,'时',100,'分'], ['time',3,'天',72,'时'], ['time',90,'秒',2,'分'], ['time',1,'周',8,'天'],
+        ['money',8,'元',70,'角'], ['money',50,'角',5,'元'], ['money',6,'角',65,'分'], ['money',12,'元',1200,'分']
+    ];
+
+    const fmt = (n) => {
+        if (!Number.isFinite(n)) return '—';
+        if (Math.abs(n) < 1e-9) return '0';
+        const rounded = Math.round((n + Number.EPSILON) * 1e9) / 1e9;
+        if (Math.abs(rounded) >= 1e9 || Math.abs(rounded) < 1e-6) return rounded.toExponential(6).replace(/\.0+e/,'e').replace(/(\.\d*?)0+e/,'$1e');
+        return rounded.toLocaleString('zh-CN',{maximumFractionDigits:9});
+    };
+    const findUnit = (key,name) => GROUPS[key].units.find(u => u.name === name);
+    const signFor = (a,b) => Math.abs(a-b) <= Math.max(1,Math.abs(a),Math.abs(b))*1e-10 ? '=' : (a>b?'>':'<');
+
+    function CategoryTabs({active,onChange,includeAll=false}) {
+        return <div className="category-tabs">
+            {includeAll && <button className={'category '+(active==='all'?'active':'')} style={{'--cat':'#4f46e5','--cat-soft':'#eef2ff','--cat-border':'#c7d2fe'}} onClick={()=>onChange('all')}>✨ 综合</button>}
+            {Object.entries(GROUPS).map(([key,g]) => <button key={key} className={'category '+(active===key?'active':'')} style={{'--cat':g.color,'--cat-soft':g.soft,'--cat-border':g.border}} onClick={()=>onChange(key)}>{g.icon} {g.name}</button>)}
+        </div>;
+    }
+
+    function Converter({groupKey,setGroupKey}) {
+        const group=GROUPS[groupKey];
+        const [values,setValues]=useState({});
+        const [units,setUnits]=useState({});
+        const value=values[groupKey] ?? '1';
+        const from=units[groupKey]?.from ?? group.units[0].name;
+        const to=units[groupKey]?.to ?? group.units[Math.min(3,group.units.length-1)].name;
+        const fromU=findUnit(groupKey,from), toU=findUnit(groupKey,to);
+        const number=Number(value), result=value!=='' && Number.isFinite(number) ? number*fromU.factor/toU.factor : NaN;
+        const setUnit=(side,next)=>setUnits(s=>({...s,[groupKey]:{from,to,...s[groupKey],[side]:next}}));
+        const swap=()=>{ setUnits(s=>({...s,[groupKey]:{from:to,to:from}})); if(Number.isFinite(result)) setValues(v=>({...v,[groupKey]:String(result)})); };
+        const ratio=fromU.factor/toU.factor;
+        return <>
+            <CategoryTabs active={groupKey} onChange={setGroupKey}/>
+            <section className="card converter" style={{'--cat':group.color,'--cat-soft':group.soft}}>
+                <div className="converter-grid">
+                    <div className="field"><label>原来的量</label><div className="field-box">
+                        <input type="number" inputMode="decimal" value={value} onChange={e=>setValues(v=>({...v,[groupKey]:e.target.value}))} aria-label="要换算的数值"/>
+                        <select value={from} onChange={e=>setUnit('from',e.target.value)} aria-label="原单位">{group.units.map(u=><option key={u.name}>{u.name}</option>)}</select>
+                    </div></div>
+                    <button className="swap" onClick={swap} title="交换单位" aria-label="交换单位">⇄</button>
+                    <div className="field"><label>换算结果</label><div className="field-box">
+                        <input className="result" value={fmt(result)} readOnly aria-label="换算结果"/>
+                        <select value={to} onChange={e=>setUnit('to',e.target.value)} aria-label="目标单位">{group.units.map(u=><option key={u.name}>{u.name}</option>)}</select>
+                    </div></div>
+                </div>
+                <div className="equation">
+                    <strong>{value===''?'—':value} {fromU.symbol} = {fmt(result)} {toU.symbol}</strong>
+                    {from===to ? '单位相同，数值不变。' : `因为 1 ${fromU.name} = ${fmt(ratio)} ${toU.name}，所以用 ${value||'—'} × ${fmt(ratio)}。`}
+                </div>
+                <div className="relation">{group.units.slice(0,-1).map((u,i)=>{const next=group.units[i+1]; return <span key={u.name}>1 {next.name} = {fmt(next.factor/u.factor)} {u.name}</span>})}</div>
+            </section>
+        </>;
+    }
+
+    const pickQuestion=(filter,previous=-1)=>{
+        const pool=QUESTIONS.map((q,i)=>({q,i})).filter(x=>(filter==='all'||x.q[0]===filter)&&x.i!==previous);
+        return pool[Math.floor(Math.random()*pool.length)] || {q:QUESTIONS[0],i:0};
+    };
+
+    function Practice({filter,setFilter}) {
+        const [current,setCurrent]=useState(()=>pickQuestion('all'));
+        const [chosen,setChosen]=useState(null);
+        const [correct,setCorrect]=useState(0);
+        const [total,setTotal]=useState(0);
+        const [streak,setStreak]=useState(0);
+        const q=current.q, group=GROUPS[q[0]];
+        const leftBase=q[1]*findUnit(q[0],q[2]).factor, rightBase=q[3]*findUnit(q[0],q[4]).factor;
+        const answer=signFor(leftBase,rightBase);
+        const choose=(sign)=>{ if(chosen) return; setChosen(sign); setTotal(n=>n+1); if(sign===answer){setCorrect(n=>n+1);setStreak(n=>n+1)}else setStreak(0); };
+        const next=(newFilter=filter)=>{setCurrent(pickQuestion(newFilter,current.i));setChosen(null)};
+        const changeFilter=(key)=>{setFilter(key);next(key)};
+        return <>
+            <CategoryTabs active={filter} onChange={changeFilter} includeAll/>
+            <section className="card practice" style={{'--cat':group.color,'--cat-soft':group.soft}}>
+                <div className="practice-top"><span className="question-type">{group.icon} {group.name}比较</span><div className="score"><span>答对 {correct}/{total}</span><span>连对 🔥 {streak}</span></div></div>
+                <div className="question">
+                    <div className="quantity">{fmt(q[1])} {q[2]}<small>左边</small></div>
+                    <div className="question-mark">{chosen || '？'}</div>
+                    <div className="quantity">{fmt(q[3])} {q[4]}<small>右边</small></div>
+                </div>
+                <div className="choices" aria-label="选择比较符号">{['>','=','<'].map(s=><button key={s} disabled={!!chosen} onClick={()=>choose(s)} className={'choice '+(chosen===s?(s===answer?'chosen-right':'chosen-wrong'):'')}>{s}</button>)}</div>
+                <div className="feedback">
+                    {!chosen && <div className="tip">先换成相同单位，再比较数值大小</div>}
+                    {chosen && <><div className="message" style={{color:chosen===answer?'#15803d':'#be123c'}}>{chosen===answer?'✓ 答对了！':'✗ 再看一看，正确符号是 '+answer}</div>
+                        <div className="explain">统一换成“{group.base}”：{fmt(leftBase)} {group.base} {answer} {fmt(rightBase)} {group.base}</div>
+                        <button className="next" onClick={()=>next()}>下一题</button></>}
+                </div>
+            </section>
+        </>;
+    }
+
+    function App(){
+        const [mode,setMode]=useState('convert');
+        const [group,setGroup]=useState('length');
+        const [filter,setFilter]=useState('all');
+        return <main className="page">
+            <header className="header"><a className="home" href="../" title="返回首页" aria-label="返回首页">⌂</a><h1>单位换算实验室</h1><p>统一单位，换算有理；先换再比，大小清晰</p></header>
+            <nav className="mode-tabs"><button className={'tab '+(mode==='convert'?'active':'')} onClick={()=>setMode('convert')}>🔄 单位换算</button><button className={'tab '+(mode==='practice'?'active':'')} onClick={()=>setMode('practice')}>⚔️ 大小比较练习</button></nav>
+            {mode==='convert'?<Converter groupKey={group} setGroupKey={setGroup}/>:<Practice filter={filter} setFilter={setFilter}/>} 
+            <footer>©孙维刚教育研究院 小宇老师 版权所有</footer>
+        </main>;
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

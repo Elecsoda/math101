@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重叠问题与容斥原理 | Math101</title>
+    <script src="../vendor/react.development.js"></script>
+    <script src="../vendor/react-dom.development.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <style>
+        :root { --ink:#172033; --muted:#64748b; --line:#e2e8f0; --blue:#2563eb; --orange:#f97316; }
+        * { box-sizing:border-box; }
+        body { margin:0; min-height:100vh; color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:radial-gradient(circle at 5% 0,#dbeafe,transparent 30%),radial-gradient(circle at 100% 20%,#ffedd5,transparent 28%),#f8fafc; }
+        button,input,select { font:inherit; }
+        button { cursor:pointer; }
+        .page { width:min(1100px,calc(100% - 28px)); margin:auto; padding:28px 0 42px; }
+        .hero { position:relative; text-align:center; margin-bottom:22px; }
+        .home { position:absolute; left:0; top:0; display:grid; place-items:center; width:42px; height:42px; border:1px solid var(--line); border-radius:13px; background:#fff; color:var(--muted); text-decoration:none; box-shadow:0 5px 18px #33415518; }
+        h1 { margin:0; font-size:clamp(28px,5vw,39px); letter-spacing:-1px; }
+        .hero p { margin:7px 45px 0; color:var(--muted); }
+        .tabs { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px; }
+        .tab { padding:11px 20px; border:1px solid var(--line); border-radius:999px; background:#fff; color:#475569; font-weight:750; transition:.2s; }
+        .tab:hover { transform:translateY(-2px); }
+        .tab.active { color:#fff; background:#4f46e5; border-color:#4f46e5; box-shadow:0 8px 20px #4f46e53d; }
+        .layout { display:grid; grid-template-columns:280px 1fr; gap:18px; align-items:start; }
+        .card { border:1px solid #fff; border-radius:24px; background:#fffffff2; box-shadow:0 16px 45px #33415512; }
+        .controls { padding:20px; position:sticky; top:14px; }
+        .controls h2 { margin:0 0 4px; font-size:19px; }
+        .controls .intro { margin:0 0 20px; color:var(--muted); font-size:13px; line-height:1.6; }
+        .control { margin-top:17px; }
+        .control-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; color:#475569; font-size:14px; font-weight:700; }
+        .number { min-width:66px; padding:5px 8px; border:1px solid var(--line); border-radius:9px; color:#3730a3; background:#f8fafc; text-align:center; font-weight:800; }
+        input[type=range] { width:100%; accent-color:#4f46e5; }
+        select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:11px; color:#475569; background:#fff; font-weight:650; }
+        .stage { padding:clamp(16px,3vw,28px); overflow:hidden; }
+        .stage-title { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; margin-bottom:16px; }
+        .stage-title h2 { margin:0; font-size:22px; }
+        .stage-title p { margin:5px 0 0; color:var(--muted); line-height:1.5; }
+        .badge { flex:none; padding:6px 11px; border-radius:999px; background:#eef2ff; color:#4f46e5; font-size:13px; font-weight:800; }
+        .visual { overflow-x:auto; border:1px solid var(--line); border-radius:19px; background:linear-gradient(#fff,#f8fafc); }
+        .visual svg { display:block; width:100%; min-width:620px; }
+        .formula { margin-top:18px; padding:18px; border-radius:18px; background:#eef2ff; text-align:center; }
+        .formula .main { color:#4338ca; font-size:clamp(20px,4vw,30px); font-weight:900; overflow-wrap:anywhere; }
+        .formula .words { margin-top:6px; color:#64748b; }
+        .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:11px; margin-top:14px; }
+        .step { padding:13px; border:1px solid var(--line); border-radius:15px; background:#fff; color:#64748b; font-size:13px; line-height:1.55; }
+        .step b { display:block; margin-bottom:3px; color:#334155; font-size:14px; }
+        .step em { color:#4f46e5; font-style:normal; font-weight:800; }
+        .legend { display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top:12px; color:#64748b; font-size:13px; }
+        .legend i { display:inline-block; width:11px; height:11px; margin-right:5px; border-radius:3px; vertical-align:-1px; }
+        .data-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-top:14px; }
+        .data { padding:13px 8px; border:1px solid var(--line); border-radius:14px; background:#fff; text-align:center; }
+        .data strong { display:block; color:#334155; font-size:21px; }
+        .data span { color:#94a3b8; font-size:12px; }
+        .rule { margin-top:18px; padding:18px; border-left:5px solid #f97316; border-radius:5px 16px 16px 5px; background:#fff7ed; color:#9a3412; line-height:1.7; }
+        .rule strong { color:#c2410c; }
+        footer { padding-top:27px; text-align:center; color:#94a3b8; font-size:13px; }
+        @media(max-width:800px){
+            .layout { grid-template-columns:1fr; }
+            .controls { position:static; }
+            .steps { grid-template-columns:1fr; }
+            .data-grid { grid-template-columns:repeat(2,1fr); }
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+    const { useState } = React;
+    const fmt = n => Number(n).toLocaleString('zh-CN',{maximumFractionDigits:2});
+
+    function Range({label,value,setValue,min,max,step=1,suffix=''}) {
+        return <div className="control">
+            <div className="control-head"><span>{label}</span><span className="number">{fmt(value)}{suffix}</span></div>
+            <input type="range" min={min} max={max} step={step} value={value} onChange={e=>setValue(Number(e.target.value))}/>
+        </div>;
+    }
+
+    function BoardVisual({count,length,overlap}) {
+        const W=900,pad=48,step=length-overlap,total=count*length-(count-1)*overlap;
+        const scale=(W-pad*2)/total, plankW=length*scale, row=39,top=35,barH=58;
+        const H=top+(count-1)*row+barH+85;
+        const colors=['#60a5fa','#34d399','#fbbf24','#fb7185','#a78bfa','#22d3ee','#fb923c','#4ade80'];
+        return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${count}块木板，每块${length}米，每处重叠${overlap}米`}>
+            <defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#fef3c7"/><line x1="0" y1="0" x2="0" y2="8" stroke="#f97316" strokeWidth="3"/></pattern><marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4f46e5"/></marker></defs>
+            {Array.from({length:count},(_,i)=>{
+                const x=pad+i*step*scale,y=top+i*row;
+                return <g key={i}><rect x={x} y={y} width={plankW} height={barH} rx="8" fill={colors[i]} opacity=".86" stroke="#334155" strokeWidth="1.5"/><text x={x+plankW/2} y={y+25} textAnchor="middle" fontSize="16" fontWeight="800" fill="#172033">第 {i+1} 块</text><text x={x+plankW/2} y={y+45} textAnchor="middle" fontSize="13" fill="#334155">{fmt(length)} 米</text></g>
+            })}
+            {Array.from({length:count-1},(_,i)=>{
+                const x=pad+(i+1)*step*scale,y=top+(i+1)*row;
+                return <g key={'o'+i}><rect x={x} y={y} width={Math.max(1,overlap*scale)} height={barH-row} fill="url(#hatch)" stroke="#ea580c" strokeDasharray="4 3"/><text x={x+overlap*scale/2} y={y-7} textAnchor="middle" fontSize="12" fontWeight="800" fill="#c2410c">重叠 {fmt(overlap)} 米</text></g>
+            })}
+            <line x1={pad} y1={H-35} x2={W-pad} y2={H-35} stroke="#4f46e5" strokeWidth="2" markerStart="url(#arrow)" markerEnd="url(#arrow)"/>
+            <text x={W/2} y={H-48} textAnchor="middle" fontSize="18" fontWeight="900" fill="#4338ca">实际总长 {fmt(total)} 米</text>
+            <line x1={pad} y1={H-62} x2={pad} y2={H-23} stroke="#4f46e5"/><line x1={W-pad} y1={H-62} x2={W-pad} y2={H-23} stroke="#4f46e5"/>
+        </svg>;
+    }
+
+    function Boards() {
+        const [count,setCount]=useState(4),[length,setLength]=useState(6),[overlapRaw,setOverlap]=useState(1);
+        const overlap=Math.min(overlapRaw,length-0.5), total=count*length-(count-1)*overlap;
+        return <div className="layout">
+            <aside className="card controls"><h2>调整木板</h2><p className="intro">拖动参数，图形和算式会一起变化。相邻两块木板之间才算一处重叠。</p>
+                <Range label="木板块数" value={count} setValue={setCount} min={2} max={8} suffix=" 块"/>
+                <Range label="每块长度" value={length} setValue={v=>{setLength(v);if(overlapRaw>=v)setOverlap(v-.5)}} min={2} max={10} step={0.5} suffix=" 米"/>
+                <Range label="每处重叠" value={overlap} setValue={setOverlap} min={0.5} max={Math.max(.5,length-.5)} step={0.5} suffix=" 米"/>
+            </aside>
+            <section className="card stage"><div className="stage-title"><div><h2>重叠木板的总长度</h2><p>先把每块长度相加，再减去被重复计算的重叠部分。</p></div><span className="badge">动态图示</span></div>
+                <div className="visual"><BoardVisual count={count} length={length} overlap={overlap}/></div>
+                <div className="legend"><span><i style={{background:'#60a5fa'}}></i>每一块木板</span><span><i style={{background:'repeating-linear-gradient(45deg,#f97316 0 2px,#fef3c7 2px 5px)'}}></i>被算了两次的重叠</span></div>
+                <div className="formula"><div className="main">{count} × {fmt(length)} − ({count} − 1) × {fmt(overlap)} = {fmt(total)}（米）</div><div className="words">总长 = 每块长度之和 − 重叠处数 × 每处重叠长度</div></div>
+                <div className="steps"><div className="step"><b>① 不重叠时</b>{count} 块共有 <em>{fmt(count*length)} 米</em></div><div className="step"><b>② 数重叠处</b>{count} 块首尾相接，只有 <em>{count-1} 处</em>重叠</div><div className="step"><b>③ 去掉重复</b>减去 {count-1} × {fmt(overlap)} = <em>{fmt((count-1)*overlap)} 米</em></div></div>
+                <div className="rule"><strong>易错提醒：</strong>木板有 {count} 块，重叠处只有 {count-1} 处。就像排队时，{count} 个人之间只有 {count-1} 个间隔。</div>
+            </section>
+        </div>;
+    }
+
+    const THEMES={
+        sports:{a:'喜欢足球',b:'喜欢篮球',both:'两项都喜欢',outside:'两项都不喜欢'},
+        clubs:{a:'参加绘画组',b:'参加书法组',both:'两组都参加',outside:'两组都没参加'},
+        trips:{a:'去过北京',b:'去过上海',both:'两地都去过',outside:'两地都没去过'}
+    };
+
+    function VennVisual({a,b,both,neither,theme}) {
+        const t=THEMES[theme],onlyA=a-both,onlyB=b-both,total=a+b-both+neither;
+        return <svg viewBox="0 0 750 430" role="img" aria-label="两集合韦恩图">
+            <rect x="35" y="35" width="680" height="350" rx="20" fill="#f8fafc" stroke="#94a3b8" strokeWidth="2"/>
+            <text x="55" y="67" fontSize="16" fontWeight="800" fill="#475569">全班共 {total} 人</text>
+            <circle cx="290" cy="220" r="145" fill="#60a5fa" fillOpacity=".43" stroke="#2563eb" strokeWidth="3"/>
+            <circle cx="460" cy="220" r="145" fill="#fb923c" fillOpacity=".43" stroke="#ea580c" strokeWidth="3"/>
+            <text x="220" y="105" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1d4ed8">A：{t.a}（{a}人）</text>
+            <text x="530" y="105" textAnchor="middle" fontSize="16" fontWeight="800" fill="#c2410c">B：{t.b}（{b}人）</text>
+            <g><circle cx="235" cy="220" r="38" fill="#fff" fillOpacity=".82"/><text x="235" y="215" textAnchor="middle" fontSize="28" fontWeight="900" fill="#1d4ed8">{onlyA}</text><text x="235" y="239" textAnchor="middle" fontSize="13" fill="#475569">只在 A</text></g>
+            <g><circle cx="375" cy="220" r="45" fill="#fff" fillOpacity=".9" stroke="#7c3aed" strokeDasharray="4 3"/><text x="375" y="215" textAnchor="middle" fontSize="29" fontWeight="900" fill="#7c3aed">{both}</text><text x="375" y="239" textAnchor="middle" fontSize="13" fill="#475569">重叠部分</text></g>
+            <g><circle cx="515" cy="220" r="38" fill="#fff" fillOpacity=".82"/><text x="515" y="215" textAnchor="middle" fontSize="28" fontWeight="900" fill="#c2410c">{onlyB}</text><text x="515" y="239" textAnchor="middle" fontSize="13" fill="#475569">只在 B</text></g>
+            <g><rect x="565" y="325" width="125" height="43" rx="12" fill="#e2e8f0"/><text x="627" y="344" textAnchor="middle" fontSize="18" fontWeight="900" fill="#475569">{neither}</text><text x="627" y="360" textAnchor="middle" fontSize="11" fill="#64748b">圈外：{t.outside}</text></g>
+        </svg>;
+    }
+
+    function Venn() {
+        const [theme,setTheme]=useState('sports'),[a,setA]=useState(22),[b,setB]=useState(18),[bothRaw,setBoth]=useState(7),[neither,setNeither]=useState(4);
+        const both=Math.min(bothRaw,a,b),onlyA=a-both,onlyB=b-both,union=a+b-both,total=union+neither,t=THEMES[theme];
+        const updateA=v=>{setA(v);if(bothRaw>v)setBoth(v)},updateB=v=>{setB(v);if(bothRaw>v)setBoth(v)};
+        return <div className="layout">
+            <aside className="card controls"><h2>设置调查数据</h2><p className="intro">两个圈分别表示两个集合，中间交叠处表示两种情况都满足。</p>
+                <div className="control"><div className="control-head"><span>题目场景</span></div><select value={theme} onChange={e=>setTheme(e.target.value)}><option value="sports">体育爱好</option><option value="clubs">兴趣小组</option><option value="trips">旅行经历</option></select></div>
+                <Range label={`A：${t.a}`} value={a} setValue={updateA} min={5} max={40} suffix=" 人"/>
+                <Range label={`B：${t.b}`} value={b} setValue={updateB} min={5} max={40} suffix=" 人"/>
+                <Range label={t.both} value={both} setValue={setBoth} min={0} max={Math.min(a,b)} suffix=" 人"/>
+                <Range label={t.outside} value={neither} setValue={setNeither} min={0} max={20} suffix=" 人"/>
+            </aside>
+            <section className="card stage"><div className="stage-title"><div><h2>韦恩图里的容斥原理</h2><p>A 和 B 的人数相加时，中间的重叠区域被数了两遍，所以要减去一次。</p></div><span className="badge">实时韦恩图</span></div>
+                <div className="visual"><VennVisual a={a} b={b} both={both} neither={neither} theme={theme}/></div>
+                <div className="data-grid"><div className="data"><strong>{onlyA}</strong><span>只属于 A</span></div><div className="data"><strong>{both}</strong><span>同时属于 A、B</span></div><div className="data"><strong>{onlyB}</strong><span>只属于 B</span></div><div className="data"><strong>{neither}</strong><span>两个集合之外</span></div></div>
+                <div className="formula"><div className="main">{a} + {b} − {both} = {union}（人）</div><div className="words">至少满足一项 = A 的人数 + B 的人数 − 两项都满足的人数</div></div>
+                <div className="steps"><div className="step"><b>① 先相加</b>{a} + {b} = <em>{a+b}</em>，但重叠的 {both} 人被数了两次</div><div className="step"><b>② 减一次重叠</b>{a+b} − {both} = <em>{union}</em> 人至少满足一项</div><div className="step"><b>③ 加上圈外</b>{union} + {neither} = <em>{total}</em> 人，这是全班人数</div></div>
+                <div className="rule"><strong>容斥的核心：</strong>重复的要减掉，漏掉的要补回来。两个集合时：<strong>A∪B = A + B − A∩B</strong>。</div>
+            </section>
+        </div>;
+    }
+
+    function App(){
+        const [tab,setTab]=useState('boards');
+        return <main className="page"><header className="hero"><a className="home" href="../" aria-label="返回首页" title="返回首页">⌂</a><h1>重叠问题与容斥原理</h1><p>把“重复计算”画出来，看懂为什么有时要减一次</p></header>
+            <nav className="tabs"><button className={'tab '+(tab==='boards'?'active':'')} onClick={()=>setTab('boards')}>🪵 重叠木板</button><button className={'tab '+(tab==='venn'?'active':'')} onClick={()=>setTab('venn')}>◉ 韦恩图与容斥</button></nav>
+            {tab==='boards'?<Boards/>:<Venn/>}<footer>©孙维刚教育研究院 小宇老师 版权所有</footer></main>;
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

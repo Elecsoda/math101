@@ -400,7 +400,7 @@
           "id": "measure-unit-converter",
           "name": "测量单位换算",
           "grade": "3",
-          "status": "planned",
+          "status": "ready",
           "route": "/measure-units",
           "knowledgeNodeIds": [
             "measure-units"
@@ -1084,14 +1084,15 @@
       "sourceGroupIds": [
         "adv-count"
       ],
-      "coverage": "planned",
-      "coveredNodeIds": [],
+      "coverage": "partial",
+      "coveredNodeIds": [
+        "inclusion-exclusion"
+      ],
       "missingNodeIds": [
         "enumeration",
         "addition-principle",
         "multiplication-principle",
         "permutation-combination",
-        "inclusion-exclusion",
         "pigeonhole",
         "geo-counting",
         "recursion",
@@ -1120,14 +1121,27 @@
           ]
         },
         {
-          "id": "permutation-inclusion",
-          "name": "排列组合与容斥",
+          "id": "overlap-inclusion",
+          "name": "重叠问题与容斥原理",
+          "grade": "4-6",
+          "status": "ready",
+          "route": "/overlap-inclusion",
+          "knowledgeNodeIds": [
+            "inclusion-exclusion"
+          ],
+          "tabs": [
+            "重叠木板",
+            "韦恩图与容斥"
+          ]
+        },
+        {
+          "id": "permutation-combination",
+          "name": "排列与组合",
           "grade": "4-6",
           "status": "planned",
-          "route": "/permutation-inclusion",
+          "route": "/permutation-combination",
           "knowledgeNodeIds": [
-            "permutation-combination",
-            "inclusion-exclusion"
+            "permutation-combination"
           ]
         },
         {

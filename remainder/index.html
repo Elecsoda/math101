@@ -82,9 +82,81 @@
             return { digits, n, rows, quotient, remainder: cur, quotientStr: String(Math.floor(dividend / divisor)) };
         }
 
-        // 竖式总步骤数：每个有效行 = 2 步（写商+积 / 减得余+下拉）
-        function demoMaxStep(dividend, divisor) {
-            return longDivPlan(dividend, divisor).rows.length * 2;
+        // ============ 分一分·分步剧本（stages）============
+        // 把"分小棒"拆成学生能一步步看懂的镜头。每个 stage 描述"此刻"的完整场景，
+        // 关键新增：位不够分时给出明显提示，并把"拆捆→散点/成捆落到下一位"变成看得见的一步。
+        // stage.type:
+        //   'layout'   摆出整个被除数
+        //   'tooSmall' 当前最高位不够分：高亮 + 大提示 + 拆开落到下一位（散点/成捆，按来源着色）
+        //   'split'    把当前位平均分成 divisor 份（写商）
+        //   'leftover' 看剩多少；若还有下一位，拆开落下去
+        // stage.rowIdx / half: 对应竖式的第几行、上/下半步（写商 or 减法+下拉），用于两栏同步。
+        function buildStages(dividend, divisor) {
+            const plan = longDivPlan(dividend, divisor);
+            const { digits, n, rows } = plan;
+
+            // lanes[power] = { native, carried, carriedFrom }
+            //   native      = 本来就属于这一位的件数
+            //   carried     = 从更高位拆下来、落到这一位的件数（画成本位形状，但用来源颜色着色）
+            //   carriedFrom = carried 来自哪一位（用于着色 / 文案），无则为 null
+            function freshLanes() {
+                const L = {};
+                for (let p = 0; p < n; p++) L[n - 1 - p] = { native: digits[p], carried: 0, carriedFrom: null };
+                return L;
+            }
+            const clone = (L) => { const o = {}; for (const k in L) o[k] = { ...L[k] }; return o; };
+            const totalAt = (L, p) => (L[p] ? L[p].native + L[p].carried : 0);
+
+            let lanes = freshLanes();
+            const stages = [{ type: 'layout', lanes: clone(lanes) }];
+
+            let prevAtCol = -1;
+            rows.forEach((r, ri) => {
+                // —— 被跳过的高位：逐个给"不够分→拆"镜头 ——
+                for (let col = prevAtCol + 1; col < r.atCol; col++) {
+                    const p = n - 1 - col;
+                    const have = totalAt(lanes, p);         // 这一位现在有多少（含上位拆下）
+                    // 拆：这一位每件换成 10 件下一位，全部落到下一位（本位清空）
+                    const np = p - 1;
+                    const before = clone(lanes);            // 拆之前（用于"untie"动画的起点）
+                    lanes[np].carried += have * 10;
+                    lanes[np].carriedFrom = p;
+                    lanes[p].native = 0; lanes[p].carried = 0; lanes[p].carriedFrom = null;
+                    stages.push({
+                        type: 'tooSmall', col, power: p, rowIdx: ri, half: 0,
+                        have, divisor, toPower: np,
+                        before, lanes: clone(lanes),
+                    });
+                }
+                // —— 分本位 ——
+                const p = n - 1 - r.atCol;
+                stages.push({
+                    type: 'split', col: r.atCol, power: p, rowIdx: ri, half: 0,
+                    partial: r.partial, qd: r.qd, rem: r.rem, native: digits[r.atCol],
+                    carried: totalAt(lanes, p) - digits[r.atCol],
+                    carriedFrom: lanes[p].carried > 0 ? lanes[p].carriedFrom : null,
+                    lanes: clone(lanes),
+                });
+                // —— 看剩余：若还有下一位，拆开落下去 ——
+                const before = clone(lanes);
+                // 本位分完：清空本位，余数 r.rem 拆成下一位（若有）
+                lanes[p].native = 0; lanes[p].carried = 0; lanes[p].carriedFrom = null;
+                let carriedInfo = null;
+                if (r.nextDigit !== null) {
+                    const np = p - 1;
+                    lanes[np].carried += r.rem * 10;
+                    lanes[np].carriedFrom = p;
+                    carriedInfo = { rem: r.rem, toPower: np, nextDigit: r.nextDigit, combined: r.rem * 10 + r.nextDigit };
+                }
+                stages.push({
+                    type: 'leftover', col: r.atCol, power: p, rowIdx: ri, half: 1,
+                    partial: r.partial, qd: r.qd, rem: r.rem,
+                    nextDigit: r.nextDigit, carriedInfo,
+                    before, lanes: clone(lanes),
+                });
+                prevAtCol = r.atCol;
+            });
+            return { plan, stages, n };
         }
 
         // ============ 竖式网格渲染（核心：位值对齐） ============
@@ -121,16 +193,20 @@
                 </div>
             );
 
-            // —— 被除数行（除数 + 除号 + 被除数）——
+            // —— 被除数行（除数 ⌐ 被除数）——
+            // 人教版长除号："⌐"形——除数右侧一条竖线，向右上方转折成一条盖在被除数上方的横线，
+            // 两条线在左上角相连。这里让竖线占满 lead 列右缘、横线盖住所有被除数列，并在转角相接。
             const dividendRow = (
                 <div style={gridStyle} className="ld relative">
-                    <div style={{ gridColumnStart: 1 }} className="text-2xl text-right pr-1 leading-9 text-emerald-600 font-semibold flex items-center justify-end">
+                    <div style={{ gridColumnStart: 1 }} className="text-2xl leading-9 text-emerald-600 font-semibold flex items-center justify-end relative pr-2">
                         {divisor}
-                        {/* 长除号的竖线 */}
-                        <span className="ml-1 self-stretch border-l-2 border-gray-700" />
+                        {/* 竖线：紧贴 lead 列右缘，顶端与横线相接 */}
+                        <span className="absolute right-0 top-0 bottom-0 border-l-2 border-gray-800" />
+                        {/* 转角小圆弧的替代：左端一小段横线，与被除数上方横线连成一条 */}
                     </div>
                     {digits.map((d, i) => (
-                        <div key={i} className="text-2xl text-center leading-9 text-indigo-600 border-t-2 border-gray-700"
+                        <div key={i}
+                             className={"text-2xl text-center leading-9 text-indigo-600 border-t-2 border-gray-800 " + (i === 0 ? 'rounded-tl-sm' : '')}
                              style={{ gridColumnStart: i + 2 }}>{d}</div>
                     ))}
                 </div>
@@ -142,11 +218,10 @@
                 const prodStep = ri * 2 + 1;   // 写商 + 写积
                 const subStep  = ri * 2 + 2;   // 画线 + 写余 + 下拉
 
-                // 积行：右端落在 atCol，左侧加"−"
+                // 积行：右端落在 atCol（人教版不写减号，减数直接对位写在下方）
                 if (step >= prodStep) {
                     body.push(
                         <div key={'p' + ri} style={gridStyle} className="ld fade-in">
-                            <div style={{ gridColumnStart: 1 }} className="text-2xl text-right pr-1 leading-9 text-rose-400">−</div>
                             {String(r.prod).split('').map((ch, k) => {
                                 const col = r.atCol - (String(r.prod).length - 1 - k); // 右对齐到 atCol
                                 return <div key={k} className="text-2xl text-center leading-9 text-rose-500"
@@ -202,100 +277,285 @@
             );
         };
 
-        // ============ 小棒分物（拆捆）——与竖式同步 ============
-        // 以"位值小棒"表示被除数：用整捆 / 散根表达每一位。
-        // 把当前位的小棒平均分成"除数"份，分不完的拆成下一位继续。
-        // 这里用最高位起的"两位数÷一位数"做清晰的拆捆动画；位数更高时用通用的"单位块"示意。
+        // ============ 小棒分物（打捆·连续场景）——与竖式同步 ============
+        // 用"位值点"表示被除数，且不同数位的样子不同：
+        //   个位 = 一个散点；十位 = 10 个点打成一竖捆；百位 = 100 个点打成一个方块（10×10）。
+        // 整个被除数的所有点从头到尾都在同一个场景里，学生能看清"从哪边（最高位）开始分"。
+        // 每一步只高亮当前正在分的那一位：先分它、看剩下什么、把剩下的"拆捆"落到下一位，连续进行。
         const PLACE_NAMES = ['个', '十', '百', '千', '万'];
+        const PLACE_COLOR = [
+            { dot: 'bg-sky-500',     ring: 'border-sky-400',     soft: 'bg-sky-50',     text: 'text-sky-600'     }, // 个
+            { dot: 'bg-emerald-500', ring: 'border-emerald-400', soft: 'bg-emerald-50', text: 'text-emerald-600' }, // 十
+            { dot: 'bg-amber-500',   ring: 'border-amber-400',   soft: 'bg-amber-50',   text: 'text-amber-600'   }, // 百
+            { dot: 'bg-violet-500',  ring: 'border-violet-400',  soft: 'bg-violet-50',  text: 'text-violet-600'  }, // 千
+            { dot: 'bg-rose-500',    ring: 'border-rose-400',    soft: 'bg-rose-50',    text: 'text-rose-600'     }, // 万
+        ];
 
-        // 单位块：一个代表 10^power 的方块，颜色随数位
-        const UnitBlock = ({ power, big }) => {
-            const colors = ['bg-sky-400', 'bg-emerald-400', 'bg-amber-400', 'bg-violet-400', 'bg-rose-400'];
-            const sz = big ? 'w-3 h-3' : 'w-5 h-5';
-            return <div className={"rounded-sm pop smooth-transition " + sz + ' ' + (colors[power] || 'bg-gray-400')} />;
+        // 一个"位值件"：按数位画出不同样子的一件。
+        //   个位 = 一个散点；十位 = 10 个点打成一竖捆；百位 = 100 个点打成一个方块（10×10）；
+        //   千/万位 = 在方块上叠标数值（超过百位后逐点画不现实，改用带数值的大方块，仍是"打捆"含义）。
+        // shape 决定画成"整捆/方块"还是"散点"；tint 决定颜色属于哪个数位（用于区分"这点是从哪一位拆下来的"）。
+        const PlacePiece = ({ power, dim, breaking, loose, tint }) => {
+            const shapePower = loose ? 0 : power;                 // loose=散点形状
+            const c = PLACE_COLOR[Math.min(tint != null ? tint : power, 4)]; // tint=颜色所属数位
+            const cls = "smooth-transition " + (dim ? 'opacity-30 ' : '') + (breaking ? 'shake ' : '');
+            if (shapePower === 0) {
+                // 散点：ring 描边让不同来源的散点更易区分
+                return <span className={"inline-block w-3 h-3 rounded-full border " + c.dot + ' ' + c.ring + ' ' + cls} />;
+            }
+            if (shapePower === 1) {
+                return (
+                    <span className={"inline-flex flex-col items-center gap-[1px] px-[3px] py-[2px] rounded border " + c.ring + ' ' + c.soft + ' ' + cls} title="10">
+                        {Array.from({ length: 10 }).map((_, k) => <span key={k} className={"w-2 h-2 rounded-full " + c.dot} />)}
+                    </span>
+                );
+            }
+            if (shapePower === 2) {
+                return (
+                    <span className={"inline-grid grid-cols-10 gap-[1px] p-[2px] rounded border-2 " + c.ring + ' ' + c.soft + ' ' + cls} title="100">
+                        {Array.from({ length: 100 }).map((_, k) => <span key={k} className={"w-[3px] h-[3px] rounded-[1px] " + c.dot} />)}
+                    </span>
+                );
+            }
+            // 千位及以上：带数值标注的大方块（代表打成更大的一捆）
+            return (
+                <span className={"inline-flex items-center justify-center rounded border-2 font-bold text-white w-8 h-8 text-[11px] " + c.dot + ' ' + c.ring + ' ' + cls}
+                      title={String(Math.pow(10, power))}>
+                    {power === 3 ? '千' : (power === 4 ? '万' : '10^' + power)}
+                </span>
+            );
         };
 
-        // 把数 n 拆成每个数位的"块"数组，从高位到低位
-        function toPlaceBlocks(n) {
-            const s = String(n);
-            return s.split('').map((d, i) => ({ power: s.length - 1 - i, count: +d }));
-        }
+        // 渲染一组同数位的件；数量过多时用"一件 ×N"的紧凑形式，避免 DOM 爆炸。
+        const PIECE_CAP = 24; // 单条泳道最多逐件画多少个
+        const PieceGroup = ({ power, count, breaking, loose, tint }) => {
+            if (count <= 0) return null;
+            if (count <= PIECE_CAP) {
+                return <>{Array.from({ length: count }).map((_, k) => <PlacePiece key={k} power={power} breaking={breaking} loose={loose} tint={tint} />)}</>;
+            }
+            // 过多：画一件示意 + 数量
+            return (
+                <span className="inline-flex items-center gap-1">
+                    <PlacePiece power={power} breaking={breaking} loose={loose} tint={tint} />
+                    <span className="text-sm font-bold text-gray-500">× {count}</span>
+                </span>
+            );
+        };
 
-        // 分物演示：展示"当前要分的这一位有多少块，平均分成 divisor 份，每份几块，剩几块拆到下一位"
+        // 一条"数位泳道"：标题 + 一排位值件；支持高亮 / 变暗
+        const PlaceLane = ({ power, children, active, faded, note }) => {
+            const c = PLACE_COLOR[Math.min(power, 4)];
+            return (
+                <div className={"smooth-transition rounded-xl px-3 py-2 border-2 " +
+                    (active ? c.ring + ' ' + c.soft + ' shadow-sm' : 'border-transparent ') +
+                    (faded ? ' opacity-40' : '')}>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className={"text-xs font-bold " + c.text}>{PLACE_NAMES[power] || `10^${power}`}位</span>
+                        {active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500 text-white">正在分</span>}
+                        {note && <span className="text-[10px] text-gray-400">{note}</span>}
+                    </div>
+                    <div className="flex flex-wrap items-start gap-1.5 min-h-[1.75rem]">{children}</div>
+                </div>
+            );
+        };
+
+        const nameOf = (p) => PLACE_NAMES[p] || `10^${p}`;
+        const unitOf = (p) => (p === 0 ? '' : nameOf(p));   // 个位说"个"，十位说"个十"…
+
+        // 一条数位泳道：画本位原有件(native) + 从上位拆下来的件(carried，用来源颜色着色)
+        const LaneRow = ({ power, lane, active, faded, note, breaking }) => {
+            const c = PLACE_COLOR[Math.min(power, 4)];
+            const total = lane.native + lane.carried;
+            return (
+                <div className={"smooth-transition rounded-xl px-3 py-2 border-2 " +
+                    (active ? c.ring + ' ' + c.soft + ' shadow-sm' : 'border-transparent ') +
+                    (faded ? ' opacity-40' : '')}>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className={"text-xs font-bold " + c.text}>{nameOf(power)}位</span>
+                        {active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500 text-white">正在分</span>}
+                        {note && <span className="text-[10px] text-gray-500">{note}</span>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 min-h-[1.75rem]">
+                        <PieceGroup power={power} count={lane.native} breaking={breaking} />
+                        {lane.carried > 0 && lane.native > 0 && <span className="text-gray-300 text-xs px-0.5">+</span>}
+                        {/* 从上位拆下来的件：本位形状，但用来源数位的颜色，让学生一眼看出"这是上面拆下来的" */}
+                        <PieceGroup power={power} count={lane.carried} tint={lane.carriedFrom} breaking={breaking} />
+                        {total === 0 && <span className="text-[11px] text-gray-300">（空）</span>}
+                    </div>
+                </div>
+            );
+        };
+
+        // 分物演示（分步剧本）：整个被除数常驻，逐位高亮；不够分给大提示，拆捆过程看得见。
         const SharingViz = ({ dividend, divisor, step }) => {
-            const plan = longDivPlan(dividend, divisor);
-            const { rows } = plan;
-            // 当前进行到第几个有效行（每行 2 步）
-            const activeRow = Math.min(rows.length - 1, Math.floor((step - 1) / 2));
-            const phase = step === 0 ? 'idle' : ((step - 1) % 2 === 0 ? 'split' : 'leftover');
-            const big = dividend > 999;
+            const { plan, stages, n } = buildStages(dividend, divisor);
+            const s = stages[Math.min(step, stages.length - 1)];
+            const activePower = (s.type === 'layout') ? (n - 1) : s.power;
+            // 拆的两步（tooSmall / leftover 且要拆到下一位）：顶部场景先显示"拆之前"（本位小棒还在），
+            // 拆的过程在下方提示里演示；到了下一步场景才显示合并后的状态——两步之间是连续变化，
+            // 学生看得见"怎么从上一步变成下一步的"。
+            const showBefore = (s.type === 'tooSmall') || (s.type === 'leftover' && s.carriedInfo);
+            const sceneLanes = showBefore ? s.before : s.lanes;
 
-            if (step === 0) {
-                // 初始：摆出被除数的位值块
-                const blocks = toPlaceBlocks(dividend);
+            // —— 顶部：整体被除数场景（所有数位常驻，只高亮当前位）——
+            const scene = (
+                <div className="w-full flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-xs text-gray-400">被除数 <b className="text-indigo-600">{dividend}</b> 的所有点</span>
+                        <span className="text-[10px] text-gray-400">从最高位（左边）开始分 →</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        {Array.from({ length: n }).map((_, idx) => {
+                            const power = n - 1 - idx;
+                            const lane = sceneLanes[power];
+                            const active = power === activePower && step > 0;
+                            const breaking = active && (s.type === 'tooSmall'); // 正在拆这一位
+                            const tooSmallActive = active && s.type === 'tooSmall';
+                            const note = tooSmallActive
+                                ? `不够分（${lane.native + lane.carried} < ${divisor}）→ 要拆开`
+                                : (lane.carried > 0
+                                    ? `${lane.native} + 上位拆下的 ${lane.carried} = ${lane.native + lane.carried}`
+                                    : (lane.native + lane.carried > 0 ? `${lane.native + lane.carried} 个` : (step > 0 ? '已分完 ✓' : null)));
+                            return (
+                                <LaneRow key={power} power={power} lane={lane}
+                                    active={active} breaking={breaking}
+                                    faded={step > 0 && !active && (lane.native + lane.carried === 0)}
+                                    note={note} />
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+
+            if (s.type === 'layout') {
                 return (
-                    <div className="flex flex-col gap-3 items-center">
-                        <div className="text-sm text-gray-500 text-center">先把 <b className="text-indigo-600">{dividend}</b> 按数位摆出来</div>
-                        <div className="flex gap-3 flex-wrap justify-center">
-                            {blocks.map((b, i) => (
-                                <div key={i} className="flex flex-col items-center gap-1">
-                                    <div className="flex flex-wrap gap-1 justify-center max-w-[120px] min-h-[1.5rem]">
-                                        {Array.from({ length: b.count }).map((_, k) => <UnitBlock key={k} power={b.power} big={big} />)}
-                                    </div>
-                                    <div className="text-xs text-gray-400">{PLACE_NAMES[b.power] || `10^${b.power}`}位 · {b.count}</div>
-                                </div>
-                            ))}
+                    <div className="flex flex-col gap-3 items-center w-full">
+                        {scene}
+                        <div className="text-xs text-gray-400 text-center px-2">
+                            数学约定：<b>从最高位开始分</b>——先分大单位（{nameOf(n-1)}位），分不完的<b>拆开</b>换成下一位继续。
                         </div>
-                        <div className="text-xs text-gray-400 text-center px-2">数学约定：<b>从最高位开始分</b>——先分大单位，分不完的再拆小。</div>
                     </div>
                 );
             }
 
-            const r = rows[activeRow];
-            const placePower = plan.n - 1 - r.atCol;           // 当前除到的数位
-            const placeName = PLACE_NAMES[placePower] || `10^${placePower}`;
-            const sharePer = r.qd;                              // 每份分得（这一位的商）
-            const leftover = r.rem;                             // 这一位分完剩下的（要拆到下一位）
-
-            return (
-                <div className="flex flex-col gap-3 items-center">
-                    <div className="text-sm text-gray-500 text-center">
-                        现在分 <b className="text-indigo-600">{placeName}位</b>：把 <b>{r.partial}</b>（{placeName}）平均分成 <b className="text-emerald-600">{divisor}</b> 份
-                    </div>
-                    {/* divisor 个盘子，每盘 sharePer 块 */}
-                    <div className="flex flex-wrap gap-2 justify-center">
-                        {Array.from({ length: Math.min(divisor, 12) }).map((_, gi) => (
-                            <div key={gi} className="border-2 border-emerald-400 bg-emerald-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center"
-                                 style={{ minWidth: 44 }}>
-                                {Array.from({ length: sharePer }).map((__, k) => <UnitBlock key={k} power={placePower} big={big} />)}
+            // —— 不够分：大提示 + 拆捆过程 ——
+            if (s.type === 'tooSmall') {
+                const cFrom = PLACE_COLOR[Math.min(s.power, 4)];
+                return (
+                    <div className="flex flex-col gap-3 items-center w-full">
+                        {scene}
+                        <div className="w-full rounded-xl border-2 border-rose-300 bg-rose-50 p-3 flex flex-col items-center gap-2 fade-in">
+                            <div className="flex items-center gap-2 text-rose-600 font-bold text-base">
+                                <span className="text-xl">⚠️</span>
+                                {nameOf(s.power)}位不够分！（{s.have} &lt; 除数 {s.divisor}）
                             </div>
-                        ))}
-                        {divisor > 12 && <div className="self-center text-gray-400 text-sm">…共 {divisor} 份</div>}
-                    </div>
-                    <div className="text-center text-sm">
-                        每份分到 <b className="text-blue-600">{sharePer}</b> 个{placeName}（写在商的{placeName}位）
-                    </div>
-                    {/* 剩余 / 拆捆 */}
-                    {phase === 'leftover' && (
-                        <div className="flex flex-col items-center gap-1 fade-in">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-rose-500">剩</span>
-                                <div className="border-2 border-dashed border-rose-300 bg-rose-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center min-w-[2.5rem] items-center">
-                                    {leftover > 0
-                                        ? Array.from({ length: Math.min(leftover, 20) }).map((_, k) => <UnitBlock key={k} power={placePower} big={big} />)
-                                        : <span className="text-rose-300 text-xs px-1">0</span>}
+                            <div className="text-sm text-gray-600 text-center">
+                                {s.have} 个{unitOf(s.power)}平均分成 {s.divisor} 份，每份连 1 个都分不到。
+                                <br/>只能把它<b className="text-rose-600">拆开</b>：每 1 个{nameOf(s.power)}换成 <b>10</b> 个{nameOf(s.toPower)}，
+                                全部落到<b className={PLACE_COLOR[Math.min(s.toPower,4)].text}>{nameOf(s.toPower)}位</b>去。
+                            </div>
+                            {/* 拆捆演示：左边原来的成捆件 → 右边散开的件（用同一来源颜色，学生看清是"它变的"）*/}
+                            <div className="flex items-center gap-3 flex-wrap justify-center">
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className="flex flex-wrap gap-1 justify-center">
+                                        <PieceGroup power={s.power} count={s.have} breaking />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">{s.have} 个{nameOf(s.power)}（打捆）</span>
                                 </div>
-                                <span className="text-sm text-rose-500">{leftover} 个{placeName}</span>
+                                <span className="text-2xl text-rose-400">→</span>
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className="flex flex-wrap gap-1 justify-center max-w-[220px]">
+                                        <PieceGroup power={s.toPower} count={s.have * 10} tint={s.power} />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">拆成 {s.have * 10} 个{nameOf(s.toPower)}</span>
+                                </div>
                             </div>
-                            {r.nextDigit !== null
-                                ? <div className="text-xs text-gray-500 text-center px-2">
-                                    {leftover} 个{placeName}不够再分，<b>拆开换成下一位</b>，和下一位的 {r.nextDigit} 合起来接着分。
-                                  </div>
-                                : (leftover > 0
-                                    ? <div className="text-xs text-rose-500 text-center px-2">没有更低的数位了，这 {leftover} 就是<b>余数</b>（{leftover} &lt; {divisor}）。</div>
-                                    : <div className="text-xs text-emerald-600 text-center">正好分完。</div>)}
+                            <div className="text-xs text-gray-500 text-center">
+                                （拆完后 <b className={cFrom.text}>{nameOf(s.power)}位</b>就空了；这 {s.have*10} 个仍用
+                                <b className={cFrom.text}>{nameOf(s.power)}位的颜色</b>落到 {nameOf(s.toPower)}位，和原有的合在一起——
+                                点<b>下一步</b>就能看到它们并到 {nameOf(s.toPower)}位、开始分。）
+                            </div>
                         </div>
-                    )}
+                    </div>
+                );
+            }
+
+            const unit = unitOf(s.power);
+            const placeName = nameOf(s.power);
+            const cActive = PLACE_COLOR[Math.min(s.power, 4)];
+
+            // —— split：把当前位的所有件"每 divisor 个一组"地圈起来，看能圈出几组、还剩几个 ——
+            // 关键：把这一位全部 partial 件都摆出来（含上位拆下的），按 divisor 个一组画满 qd 组，
+            // 剩下的 rem 件单独摆在旁边，学生能一眼看到"总数 / 几组 / 剩几个"。
+            if (s.type === 'split') {
+                const GROUP_CAP = 24;                       // 最多逐组画多少组，超出用紧凑说明
+                const drawGroups = s.qd <= GROUP_CAP;
+                return (
+                    <div className="flex flex-col gap-3 items-center w-full">
+                        {scene}
+                        <div className="w-full border-t border-dashed border-gray-200" />
+                        <div className="w-full flex flex-col gap-2 items-center">
+                            <div className="text-sm text-gray-600 text-center">
+                                分 <b className={cActive.text}>{placeName}位</b>：把这 <b>{s.partial}</b> 个{unit}
+                                {s.carried > 0 && <span className="text-gray-400">（{s.native} 原有 + {s.carried} 上位拆下）</span>}
+                                ，每 <b className="text-emerald-600">{divisor}</b> 个圈成一组
+                            </div>
+                            <div className="flex flex-wrap gap-2 justify-center items-center">
+                                {drawGroups
+                                    ? Array.from({ length: s.qd }).map((_, gi) => (
+                                        <div key={gi} className="border-2 border-emerald-400 bg-emerald-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center items-start"
+                                             style={{ minWidth: 42, minHeight: 30 }}>
+                                            <PieceGroup power={s.power} count={divisor} />
+                                        </div>
+                                      ))
+                                    : <div className="text-sm text-gray-500 px-3 py-2 rounded-lg bg-emerald-50 border-2 border-emerald-300">
+                                        每组 {divisor} 个，共圈出 <b className="text-blue-600">{s.qd}</b> 组
+                                      </div>}
+                                {/* 剩下不够一组的件，单独摆出来 */}
+                                {s.rem > 0 && (
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className="border-2 border-dashed border-rose-300 bg-rose-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center items-center min-h-[30px]" style={{ minWidth: 42 }}>
+                                            <PieceGroup power={s.power} count={s.rem} />
+                                        </div>
+                                        <span className="text-[10px] text-rose-500">剩 {s.rem} 个</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="text-center text-sm">
+                                圈出 <b className="text-blue-600">{s.qd}</b> 组{s.rem > 0 && <>、还剩 <b className="text-rose-500">{s.rem}</b> 个</>}
+                                {' → '}组数 <b className="text-blue-600">{s.qd}</b> 写在商的<b className={cActive.text}>{placeName}位</b>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // —— leftover：看剩多少；若还有下一位则拆开落下去 ——
+            const ci = s.carriedInfo;
+            return (
+                <div className="flex flex-col gap-3 items-center w-full">
+                    {scene}
+                    <div className="w-full border-t border-dashed border-gray-200" />
+                    <div className="w-full flex flex-col items-center gap-1.5 fade-in">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-rose-500">分完，剩</span>
+                            <div className="border-2 border-dashed border-rose-300 bg-rose-50 rounded-lg p-1.5 flex flex-wrap gap-1 justify-center items-center min-h-[1.9rem] min-w-[2.5rem]">
+                                {s.rem > 0
+                                    ? <PieceGroup power={s.power} count={s.rem} breaking={!!ci} />
+                                    : <span className="text-rose-300 text-xs px-1">0</span>}
+                            </div>
+                            <span className="text-sm text-rose-500">{s.rem} 个{unit}</span>
+                        </div>
+                        {ci
+                            ? <div className="text-xs text-gray-500 text-center px-2">
+                                这 {s.rem} 个{unit}不够再分 → <b>拆开</b>，每个换成 10 个{nameOf(ci.toPower)}，
+                                落到<b className={PLACE_COLOR[Math.min(ci.toPower,4)].text}>{nameOf(ci.toPower)}位</b>和原有的 {ci.nextDigit} 个合起来
+                                （共 {ci.combined} 个），下一步接着分。
+                              </div>
+                            : (s.rem > 0
+                                ? <div className="text-xs text-rose-500 text-center px-2">没有更低的数位了，这 {s.rem} 就是<b>余数</b>（{s.rem} &lt; {divisor}）。</div>
+                                : <div className="text-xs text-emerald-600 text-center">正好分完，没有余数。</div>)}
+                    </div>
                 </div>
             );
         };
@@ -361,17 +621,23 @@
             const [prob, setProb] = useState(() => genProblem('t1'));
             const [step, setStep] = useState(0);
             const { dividend, divisor, q, r } = prob;
-            const maxStep = demoMaxStep(dividend, divisor);
+            const { stages } = buildStages(dividend, divisor);
+            const maxStep = stages.length - 1;
+            const cur = stages[Math.min(step, maxStep)];
+
+            // 竖式只在 split/leftover 时推进；tooSmall 不写竖式（该位不写商）。
+            // gridStep = 已完成的竖式半步数 = 当前 stage 对应行的 (row*2 + half+1)，tooSmall 取该行前的状态(row*2)。
+            const gridStep = step === 0 ? 0
+                : (cur.type === 'tooSmall' ? cur.rowIdx * 2 : cur.rowIdx * 2 + (cur.half === 0 ? 1 : 2));
 
             const newProblem = (lv = level) => { setProb(genProblem(lv)); setStep(0); };
             const onLevel = (lv) => { setLevel(lv); newProblem(lv); };
 
-            const hint = step === 0
-                ? '从最高位开始分：先分大单位，分不完的拆成小单位'
+            const hint = step === 0 ? '从最高位开始分：先分大单位，分不完的拆成小单位'
                 : step >= maxStep ? '分完啦！分不动的就是余数'
-                : ((step - 1) % 2 === 0
-                    ? '这一位平均分成几份、每份几个？把份数写到商上'
-                    : '减一减看剩多少，剩的拆开和下一位合起来接着分');
+                : cur.type === 'tooSmall' ? '这一位不够分！先把它拆开，换成 10 个下一位落下去'
+                : cur.type === 'split' ? '这一位平均分成几份、每份几个？把份数写到商上'
+                : '减一减看剩多少，剩的拆开和下一位合起来接着分';
 
             return (
                 <div className="fade-in flex flex-col items-center gap-5">
@@ -382,13 +648,13 @@
                     </div>
 
                     <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start justify-center w-full">
-                        <div className="bg-white rounded-xl shadow p-5 w-full lg:w-[360px]">
+                        <div className="bg-white rounded-xl shadow p-5 w-full lg:w-[380px]">
                             <div className="text-center font-semibold text-gray-700 mb-3">① 分一分（直观）</div>
                             <SharingViz dividend={dividend} divisor={divisor} step={step} />
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="text-center font-semibold text-gray-700 mb-3">② 写竖式（算法）</div>
-                            <LongDivisionGrid dividend={dividend} divisor={divisor} step={step} />
+                            <LongDivisionGrid dividend={dividend} divisor={divisor} step={gridStep} />
                         </div>
                     </div>
 

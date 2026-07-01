@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量角器与角度测量 | Math101</title>
+    <script src="../vendor/react.production.min.js"></script>
+    <script src="../vendor/react-dom.production.min.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .stage-svg { touch-action: none; user-select: none; -webkit-user-select: none; }
+        .grab { cursor: grab; }
+        .grab:active { cursor: grabbing; }
+        .rot { cursor: crosshair; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+        // ===== 角度约定 =====
+        // 屏幕坐标：x 向右，y 向下。以下所有"角度"都用这套屏幕坐标下的
+        // atan2(dy, dx)（度，[-180,180)），顺时针为正——这样量角器在屏幕上
+        // 顺时针旋转时旋转角就增大，直觉一致。
+        const toRad = (d) => d * Math.PI / 180;
+        const round1 = (n) => Math.round(n * 10) / 10;
+        // 把任意角规整到 (-180, 180]
+        const norm180 = (d) => { d = ((d % 360) + 360) % 360; return d > 180 ? d - 360 : d; };
+        // 把任意角规整到 [0, 360)
+        const norm360 = (d) => ((d % 360) + 360) % 360;
+        // 屏幕坐标下由方向向量求角度（度），顺时针为正
+        const dirDeg = (dx, dy) => Math.atan2(dy, dx) * 180 / Math.PI;
+
+        const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+        const randInt = (lo, hi) => Math.floor(rand(lo, hi + 1));
+
+        // ===========================================================
+        // 生成一道"待测的角"：任意位置 / 任意朝向 / 任意大小
+        // vertex: 顶点；base: 第一条边（读 0 的那条）的屏幕方向角；
+        // measure: 两边夹角（真实答案，整度）；armLen: 边画多长（干扰项，与度数无关）
+        // ===========================================================
+        const makeAngle = (W, H, level) => {
+            // level: 'easy' 整十度；'normal' 任意整度；含钝角
+            let measure;
+            if (level === 'easy') measure = randInt(2, 16) * 10;          // 20~160，整十
+            else measure = randInt(15, 165);                              // 15~165，任意整度
+            // 顶点放在画面中间区域，留出边和量角器的活动空间
+            const vx = rand(W * 0.34, W * 0.66);
+            const vy = rand(H * 0.40, H * 0.66);
+            const base = rand(-180, 180);          // 第一条边朝向，任意
+            // 第二条边 = 第一条边 顺时针/逆时针 张开 measure 度（随机方向，读数时取绝对夹角）
+            const sign = Math.random() < 0.5 ? 1 : -1;
+            const other = base + sign * measure;
+            // 两条边长度不同，强调"角的大小与边长无关"
+            const armLen1 = rand(120, 190);
+            const armLen2 = rand(120, 190);
+            return { vx, vy, base, other, measure, armLen1, armLen2 };
+        };
+
+        // ===========================================================
+        // 量角器组件（画在给定的 SVG 坐标系里）
+        // 由外部状态 px,py（中心）与 rot（旋转角，度）驱动。
+        // 平边（0-180 直径）默认水平，rot=0 时 0 在右、180 在左。
+        // 旋转后整体绕中心转 rot 度。
+        // ===========================================================
+        const R = 172;                 // 量角器半径
+        const INNER_HOLE = 8;          // 中心孔
+        const Protractor = ({ px, py, rot, opacity, onGrabBody, onGrabRotate }) => {
+            // 生成刻度（本地坐标：中心在原点，0 在 +x，逆刻度沿上半圆到 180 在 -x）
+            // 注意屏幕 y 向下，量角器的半圆朝"上"意味着 y 为负。
+            const ticks = [];
+            for (let i = 0; i <= 180; i++) {
+                const big = i % 10 === 0, mid = i % 5 === 0;
+                const rr = big ? R - 20 : (mid ? R - 13 : R - 7);
+                const a = -i;   // 上半圆：i 从 0(右) 逆时针到 180(左)，屏幕上 y 取负
+                const c = Math.cos(toRad(a)), s = Math.sin(toRad(a));
+                ticks.push(<line key={'t' + i}
+                    x1={R * c} y1={R * s} x2={rr * c} y2={rr * s}
+                    stroke={big ? '#334155' : '#94a3b8'} strokeWidth={big ? 1.5 : 0.8} />);
+                if (big) {
+                    // 双圈读数：外圈（红）从左端 0 起 = 180-i；内圈（蓝）从右端 0 起 = i
+                    const or = R - 34, ir = R - 50;
+                    ticks.push(<text key={'o' + i} x={or * c} y={or * s}
+                        textAnchor="middle" dominantBaseline="central" fontSize="11"
+                        fontWeight="600" fill="#dc2626">{180 - i}</text>);
+                    ticks.push(<text key={'in' + i} x={ir * c} y={ir * s}
+                        textAnchor="middle" dominantBaseline="central" fontSize="10"
+                        fontWeight="600" fill="#2563eb">{i}</text>);
+                }
+            }
+            // 半圆外框路径（本地坐标）：从 (R,0) 沿上半圆(y为负)到 (-R,0) 再闭合底边。
+            // 屏幕 y 向下，走"上半圆"要用 sweep=0（逆时针）。
+            const semi = `M ${R} 0 A ${R} ${R} 0 0 0 ${-R} 0 Z`;
+
+            return (
+                <g transform={`translate(${px} ${py}) rotate(${rot})`} opacity={opacity}>
+                    {/* 半透明盘体：可拖动整体平移 */}
+                    <path d={semi} fill="#bfdbfe" fillOpacity="0.32" stroke="#2563eb"
+                        strokeWidth="2" className="grab"
+                        onMouseDown={onGrabBody} onTouchStart={onGrabBody} />
+                    {/* 底边基准线（0-180 直径） */}
+                    <line x1={-R} y1="0" x2={R} y2="0" stroke="#1d4ed8" strokeWidth="1.6" />
+                    {ticks}
+                    {/* 中心十字 + 中心孔（对准顶点用） */}
+                    <line x1={-14} y1="0" x2={14} y2="0" stroke="#1d4ed8" strokeWidth="1.4" />
+                    <line x1="0" y1={-14} x2="0" y2={0} stroke="#1d4ed8" strokeWidth="1.4" />
+                    <circle cx="0" cy="0" r={INNER_HOLE} fill="none" stroke="#1d4ed8" strokeWidth="1.6" />
+                    <circle cx="0" cy="0" r="2" fill="#1d4ed8" />
+                    {/* 0 / 180 端点标注 */}
+                    <text x={R - 12} y="15" textAnchor="middle" fontSize="12" fontWeight="800" fill="#1d4ed8">0</text>
+                    <text x={-R + 14} y="15" textAnchor="middle" fontSize="12" fontWeight="800" fill="#dc2626">0</text>
+                    {/* 旋转把手：盘体正上方伸出一个小圆 */}
+                    <line x1="0" y1="0" x2="0" y2={-(R + 26)} stroke="#f59e0b" strokeWidth="2" strokeDasharray="4 3" />
+                    <circle cx="0" cy={-(R + 26)} r="11" fill="#f59e0b" className="rot"
+                        onMouseDown={onGrabRotate} onTouchStart={onGrabRotate} />
+                    <path d="M -4 -3 L 0 -7 L 4 -3 M 0 -7 L 0 4" transform={`translate(0 ${-(R + 26)})`}
+                        stroke="#fff" strokeWidth="1.6" fill="none" pointerEvents="none" />
+                </g>
+            );
+        };
+
+        // ===========================================================
+        // 主练习区
+        // ===========================================================
+        const App = () => {
+            const W = 620, H = 480;
+            const svgRef = useRef(null);
+            const [level, setLevel] = useState('easy');
+            const [ang, setAng] = useState(() => makeAngle(W, H, 'easy'));
+            // 量角器位姿
+            const [px, setPx] = useState(W * 0.5);
+            const [py, setPy] = useState(H * 0.5);
+            const [rot, setRot] = useState(0);
+            const [showTool, setShowTool] = useState(true);
+            const [guess, setGuess] = useState('');
+            const [checked, setChecked] = useState(null);   // null | {ok, diff}
+            const [reveal, setReveal] = useState(false);     // 显示真实答案与量法演示
+
+            const drag = useRef(null);   // {mode:'body'|'rotate', ...}
+
+            const toSvg = useCallback((clientX, clientY) => {
+                const rect = svgRef.current.getBoundingClientRect();
+                return {
+                    x: (clientX - rect.left) / rect.width * W,
+                    y: (clientY - rect.top) / rect.height * H,
+                };
+            }, []);
+
+            const evt = (e) => e.touches ? e.touches[0] : e;
+
+            const onGrabBody = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const p = toSvg(evt(e).clientX, evt(e).clientY);
+                drag.current = { mode: 'body', ox: p.x - px, oy: p.y - py };
+            };
+            const onGrabRotate = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const p = toSvg(evt(e).clientX, evt(e).clientY);
+                // 记录抓取时刻手指相对中心的角度与当前 rot 的差，拖动时保持
+                const a = dirDeg(p.x - px, p.y - py);
+                drag.current = { mode: 'rotate', startPointer: a, startRot: rot };
+            };
+            const onMove = (e) => {
+                if (!drag.current) return;
+                const p = toSvg(evt(e).clientX, evt(e).clientY);
+                if (drag.current.mode === 'body') {
+                    setPx(p.x - drag.current.ox);
+                    setPy(p.y - drag.current.oy);
+                } else {
+                    const a = dirDeg(p.x - px, p.y - py);
+                    setRot(norm360(drag.current.startRot + (a - drag.current.startPointer)));
+                }
+            };
+            const onUp = () => { drag.current = null; };
+
+            // ---- 几何：两条边端点 ----
+            const end1 = [ang.vx + ang.armLen1 * Math.cos(toRad(ang.base)),
+                          ang.vy + ang.armLen1 * Math.sin(toRad(ang.base))];
+            const end2 = [ang.vx + ang.armLen2 * Math.cos(toRad(ang.other)),
+                          ang.vy + ang.armLen2 * Math.sin(toRad(ang.other))];
+
+            // 角弧（在顶点处画一小段弧，标示被测的角）
+            const arcR = 30;
+            const arcP = (() => {
+                const a0 = ang.base, a1 = ang.other;
+                // 走"内夹角"那一侧
+                let d = norm180(a1 - a0);
+                const sweep = d > 0 ? 1 : 0;
+                const large = 0;
+                const x0 = ang.vx + arcR * Math.cos(toRad(a0)), y0 = ang.vy + arcR * Math.sin(toRad(a0));
+                const x1 = ang.vx + arcR * Math.cos(toRad(a1)), y1 = ang.vy + arcR * Math.sin(toRad(a1));
+                return `M ${x0} ${y0} A ${arcR} ${arcR} 0 ${large} ${sweep} ${x1} ${y1}`;
+            })();
+
+            // ---- 对准检测（给学生提示，不直接给答案） ----
+            // 1) 中心是否对准顶点
+            const centerDist = Math.hypot(px - ang.vx, py - ang.vy);
+            const centerOn = centerDist <= 10;
+            // 2) 量角器的某个 0 端（右端 rot 方向 / 左端 rot+180 方向）是否与某条边重合
+            // 量角器 0 线(右端)在屏幕上的方向 = rot；180 线(左端) = rot+180。
+            const baseDirs = [ang.base, ang.other];
+            const zeroDirs = [rot, rot + 180];
+            let alignErr = 999, alignBaseIdx = -1;
+            zeroDirs.forEach((zd) => {
+                baseDirs.forEach((bd, bi) => {
+                    const e = Math.abs(norm180(zd - bd));
+                    if (e < alignErr) { alignErr = e; alignBaseIdx = bi; }
+                });
+            });
+            const edgeOn = alignErr <= 4;
+            const placedWell = centerOn && edgeOn;
+
+            // 量角器读数（供演示"看答案"时展示指到哪条刻度）——不平时也能算
+            const measure = ang.measure;
+
+            // ---- 交互动作 ----
+            const newAngle = (lv = level) => {
+                setAng(makeAngle(W, H, lv));
+                setGuess(''); setChecked(null); setReveal(false);
+                // 量角器回到画面中央、复位
+                setPx(W * 0.5); setPy(H * 0.5); setRot(0);
+            };
+            const changeLevel = (lv) => { setLevel(lv); newAngle(lv); };
+
+            const check = () => {
+                const g = parseInt(guess, 10);
+                if (isNaN(g)) return;
+                const diff = Math.abs(g - measure);
+                setChecked({ ok: diff <= 1, diff, guess: g });
+            };
+            const snapTool = () => {
+                // 一键把量角器"摆好"：中心对顶点；把右端 0 压在一条边上，
+                // 并让另一条边落在可见的上半圆刻度内。
+                // 刻度覆盖的屏幕方向 = [rot-180, rot]，读数 i = rot - (另一条边方向)。
+                // 选 0 边使 另一边 = rot - measure（落在上半圆内）。
+                setPx(ang.vx); setPy(ang.vy);
+                const s = norm180(ang.other - ang.base); // A->B 的有符号夹角
+                // s>0：从 base 到 other 是"顺时针 -i"的反方向，应把 0 放在 other 上
+                const zeroDir = s > 0 ? ang.other : ang.base;
+                setRot(norm360(zeroDir));
+            };
+
+            // 摆好后，另一条边落在哪个读数上（用于演示时高亮）
+            // 内圈(蓝)从右端(rot方向)起算：读数 = |另一条边相对 rot 的夹角|
+            const readInner = Math.round(Math.abs(norm180(ang.other - rot)));
+            const readOuter = 180 - readInner;
+
+            useEffect(() => {
+                const el = svgRef.current;
+                if (!el) return;
+                const mv = (e) => onMove(e);
+                const up = () => onUp();
+                window.addEventListener('mousemove', mv);
+                window.addEventListener('mouseup', up);
+                window.addEventListener('touchmove', mv, { passive: false });
+                window.addEventListener('touchend', up);
+                return () => {
+                    window.removeEventListener('mousemove', mv);
+                    window.removeEventListener('mouseup', up);
+                    window.removeEventListener('touchmove', mv);
+                    window.removeEventListener('touchend', up);
+                };
+            });
+
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <header className="relative max-w-5xl mx-auto text-center mb-6 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                        </a>
+                        <h1 className="text-3xl font-bold text-slate-800">量角器与角度测量</h1>
+                        <p className="text-slate-500 mt-1">自己动手摆量角器：对顶点、压 0 线、读刻度</p>
+                    </header>
+
+                    <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-start justify-center gap-6">
+                        {/* 画布 */}
+                        <div className="bg-white rounded-2xl shadow p-3">
+                            <svg ref={svgRef} width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="stage-svg"
+                                onMouseMove={onMove} onMouseUp={onUp}
+                                onTouchMove={onMove} onTouchEnd={onUp}>
+                                {/* 背景淡格子，帮助感知"任意位置" */}
+                                <defs>
+                                    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                                        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#eef2f7" strokeWidth="1" />
+                                    </pattern>
+                                </defs>
+                                <rect width={W} height={H} fill="url(#grid)" />
+
+                                {/* 被测的角（固定，任意位置/朝向/大小） */}
+                                {/* 张开扇形淡填充 */}
+                                <path d={`M ${ang.vx} ${ang.vy} L ${end1[0]} ${end1[1]} ` +
+                                    `A ${Math.min(ang.armLen1, ang.armLen2)} ${Math.min(ang.armLen1, ang.armLen2)} 0 0 ` +
+                                    `${norm180(ang.other - ang.base) > 0 ? 1 : 0} ` +
+                                    `${ang.vx + Math.min(ang.armLen1, ang.armLen2) * Math.cos(toRad(ang.other))} ` +
+                                    `${ang.vy + Math.min(ang.armLen1, ang.armLen2) * Math.sin(toRad(ang.other))} Z`}
+                                    fill="#fde68a" opacity="0.28" />
+                                <path d={arcP} fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+                                <line x1={ang.vx} y1={ang.vy} x2={end1[0]} y2={end1[1]}
+                                    stroke="#334155" strokeWidth="4" strokeLinecap="round" />
+                                <line x1={ang.vx} y1={ang.vy} x2={end2[0]} y2={end2[1]}
+                                    stroke="#334155" strokeWidth="4" strokeLinecap="round" />
+                                <circle cx={ang.vx} cy={ang.vy} r="4.5" fill="#0f172a" />
+                                {/* 顶点标签 */}
+                                <text x={ang.vx} y={ang.vy}
+                                    dx={-Math.sign(Math.cos(toRad((ang.base + ang.other) / 2))) * 14 || -14}
+                                    dy={22} textAnchor="middle" fontSize="14" fontWeight="700" fill="#0f172a">顶点</text>
+
+                                {/* 真实答案（仅在"看答案"时显示） */}
+                                {reveal && (
+                                    <text x={ang.vx + 40 * Math.cos(toRad((ang.base + ang.other) / 2))}
+                                        y={ang.vy + 40 * Math.sin(toRad((ang.base + ang.other) / 2))}
+                                        textAnchor="middle" dominantBaseline="central"
+                                        fontSize="22" fontWeight="800" fill="#b45309">{measure}°</text>
+                                )}
+
+                                {/* 量角器（可开关、可拖、可转） */}
+                                {showTool && (
+                                    <Protractor px={px} py={py} rot={rot} opacity={reveal ? 0.85 : 1}
+                                        onGrabBody={onGrabBody} onGrabRotate={onGrabRotate} />
+                                )}
+
+                                {/* 对准状态灯（左上角） */}
+                                <g transform="translate(14 18)">
+                                    <circle cx="0" cy="0" r="6" fill={centerOn ? '#10b981' : '#cbd5e1'} />
+                                    <text x="12" y="4" fontSize="12" fill={centerOn ? '#059669' : '#94a3b8'}>中心对准顶点</text>
+                                    <circle cx="0" cy="22" r="6" fill={edgeOn ? '#10b981' : '#cbd5e1'} />
+                                    <text x="12" y="26" fontSize="12" fill={edgeOn ? '#059669' : '#94a3b8'}>0 刻度压住一条边</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        {/* 右侧控制面板 */}
+                        <div className="flex flex-col gap-4 w-full lg:w-72">
+                            {/* 难度 */}
+                            <div className="bg-white rounded-2xl shadow p-1.5 flex gap-1.5">
+                                {[['easy', '整十度'], ['normal', '任意度数']].map(([k, label]) => (
+                                    <button key={k} onClick={() => changeLevel(k)}
+                                        className={"flex-1 px-2 py-2 rounded-xl text-sm font-semibold smooth " +
+                                            (level === k ? "bg-blue-500 text-white shadow" : "bg-white text-gray-500 hover:bg-gray-100")}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* 读数输入 */}
+                            <div className="bg-white rounded-2xl shadow px-5 py-4">
+                                <div className="text-sm font-bold text-gray-700 mb-2">你量出的度数是？</div>
+                                <div className="flex items-center gap-2">
+                                    <input type="number" min="0" max="180" value={guess}
+                                        onChange={(e) => { setGuess(e.target.value); setChecked(null); }}
+                                        onKeyDown={(e) => e.key === 'Enter' && check()}
+                                        placeholder="?" inputMode="numeric"
+                                        className="w-24 text-2xl font-bold text-center border-2 border-gray-200 rounded-lg py-1.5 focus:border-blue-400 outline-none" />
+                                    <span className="text-2xl font-bold text-gray-400">°</span>
+                                    <button onClick={check}
+                                        className="ml-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold smooth">
+                                        对一下
+                                    </button>
+                                </div>
+                                {checked && (
+                                    <div className={"mt-3 text-sm font-semibold " + (checked.ok ? "text-emerald-600" : "text-rose-500")}>
+                                        {checked.ok
+                                            ? '✓ 量得很准！' + (reveal ? '' : '')
+                                            : (checked.diff <= 3
+                                                ? `差一点点（差 ${checked.diff}°），量角器再摆正一些？`
+                                                : `还差 ${checked.diff}°，检查一下中心和 0 刻度对齐了吗。`)}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 摆放提示 */}
+                            <div className="bg-white rounded-2xl shadow px-5 py-4">
+                                <div className="text-sm font-bold text-gray-700 mb-2">量角三步</div>
+                                <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside leading-relaxed">
+                                    <li className={centerOn ? 'text-emerald-600 font-semibold' : ''}>
+                                        中心点对准角的<span className="font-semibold">顶点</span>；</li>
+                                    <li className={edgeOn ? 'text-emerald-600 font-semibold' : ''}>
+                                        把 <span className="text-blue-600 font-semibold">0 刻度线</span>压在一条边上；</li>
+                                    <li>看另一条边对着的刻度，就是<span className="text-amber-600 font-semibold">角的度数</span>。</li>
+                                </ol>
+                                <div className="text-xs mt-2.5 leading-relaxed"
+                                    style={{ color: placedWell ? '#059669' : '#9ca3af' }}>
+                                    {placedWell
+                                        ? '✓ 摆好了！沿另一条边读数，注意从压 0 的那圈读起。'
+                                        : (centerOn && !edgeOn ? '中心对好了，转动橙色把手，让 0 刻度压住一条边。'
+                                            : (!centerOn && edgeOn ? '边对上了，拖动盘子让中心落到顶点上。'
+                                                : '拖动量角器盘身移动，拉橙色把手旋转。'))}
+                                </div>
+                            </div>
+
+                            {/* 按钮组 */}
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <button onClick={() => setShowTool(s => !s)}
+                                    className={"px-3 py-2.5 rounded-lg font-semibold smooth text-sm " +
+                                        (showTool ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-white text-blue-600 border-2 border-blue-200 hover:bg-blue-50")}>
+                                    {showTool ? '隐藏量角器' : '显示量角器'}
+                                </button>
+                                <button onClick={snapTool}
+                                    className="px-3 py-2.5 rounded-lg font-semibold smooth text-sm bg-white text-slate-600 border-2 border-slate-200 hover:bg-slate-50">
+                                    帮我摆正
+                                </button>
+                                <button onClick={() => setReveal(r => !r)}
+                                    className={"px-3 py-2.5 rounded-lg font-semibold text-white smooth text-sm " +
+                                        (reveal ? "bg-gray-400 hover:bg-gray-500" : "bg-amber-500 hover:bg-amber-600")}>
+                                    {reveal ? '隐藏答案' : '看答案'}
+                                </button>
+                                <button onClick={() => newAngle()}
+                                    className="px-3 py-2.5 rounded-lg font-semibold text-white smooth text-sm bg-indigo-500 hover:bg-indigo-600">
+                                    换一个角
+                                </button>
+                            </div>
+
+                            {reveal && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 text-sm text-amber-800 leading-relaxed">
+                                    这个角是 <span className="font-bold">{measure}°</span>。
+                                    先按上面"量角三步"把量角器摆正（可点<span className="font-semibold">"帮我摆正"</span>），
+                                    再从压 0 的那条边开始，沿另一条边读到 {measure}。
+                                </div>
+                            )}
+
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                                角画在任意方向、任意大小——记住：<span className="font-semibold">角的大小只看两条边张开的程度，跟边画得长短无关</span>。
+                                拖动盘身平移，拉<span className="font-semibold" style={{color:'#f59e0b'}}>橙色把手</span>旋转，把量角器摆到角上量一量。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

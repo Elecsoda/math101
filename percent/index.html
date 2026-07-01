@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百分数的认识 | Math101</title>
+    <script src="../vendor/react.production.min.js"></script>
+    <script src="../vendor/react-dom.production.min.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #f6f7fb; color: #1f2937; }
+        button, select, input { font: inherit; }
+        .fade-in { animation: fadeIn .35s ease both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all .2s ease; }
+        .cell-pop { animation: cellPop .28s ease both; }
+        @keyframes cellPop { from { opacity: .2; transform: scale(.6); } to { opacity: 1; transform: scale(1); } }
+        .bar-grow { transition: width .5s cubic-bezier(.22,.61,.36,1); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useMemo, useState } = React;
+
+        const clampPct = value => Math.max(0, Math.min(100, Number(value)));
+        const round1 = value => Math.round(value * 10) / 10;
+        const gcd = (a, b) => b ? gcd(b, a % b) : a;
+
+        // 把百分数写成最简分数 num/den（分母不超过 1000，够小学用）
+        const percentToFraction = pct => {
+            const scaled = Math.round(pct * 10);        // 允许一位小数
+            let n = scaled, d = 1000;
+            const g = gcd(Math.abs(n) || 1, d);
+            return { n: n / g, d: d / g };
+        };
+
+        const Fraction = ({ n, d, color = 'text-slate-700', size = 'text-2xl' }) => (
+            <span className={`inline-flex flex-col items-center justify-center align-middle leading-none font-bold mx-1 ${color} ${size}`}>
+                <span>{n}</span>
+                <span className="w-full border-t-2 border-current my-0.5" style={{ minWidth: '1.1em' }}></span>
+                <span>{d}</span>
+            </span>
+        );
+
+        /* ---------- 百方图：10×10 = 100 个小格 ---------- */
+        const HundredGrid = ({ pct, color = '#f59e0b', size = 232 }) => {
+            const filled = Math.round(clampPct(pct));       // 整数格
+            const cell = size / 10;
+            return (
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`百方图，涂色 ${filled} 格`}>
+                    {Array.from({ length: 100 }, (_, i) => {
+                        const r = Math.floor(i / 10), c = i % 10;
+                        const on = i < filled;
+                        return <rect key={i} x={c * cell} y={r * cell} width={cell} height={cell}
+                            fill={on ? color : '#ffffff'} stroke="#cbd5e1" strokeWidth="1"
+                            className={on ? 'cell-pop' : ''} style={{ animationDelay: on ? `${(i % 20) * .012}s` : '0s' }} />;
+                    })}
+                    <rect x="0.5" y="0.5" width={size - 1} height={size - 1} fill="none" stroke="#334155" strokeWidth="2.5" />
+                </svg>
+            );
+        };
+
+        /* ---------- 饼状图 ---------- */
+        const PiePercent = ({ pct, color = '#8b5cf6', size = 210 }) => {
+            const cx = 110, cy = 110, r = 96;
+            const p = clampPct(pct) / 100;
+            const angle = p * Math.PI * 2 - Math.PI / 2;
+            const large = p > 0.5 ? 1 : 0;
+            const x = cx + r * Math.cos(angle), y = cy + r * Math.sin(angle);
+            const start = [cx, cy - r];
+            const wedge = p >= 1
+                ? <circle cx={cx} cy={cy} r={r} fill={color} />
+                : p <= 0 ? null
+                : <path d={`M ${cx} ${cy} L ${start[0]} ${start[1]} A ${r} ${r} 0 ${large} 1 ${x} ${y} Z`} fill={color} />;
+            return (
+                <svg width={size} height={size} viewBox="0 0 220 220" role="img" aria-label={`饼状图，涂色 ${round1(pct)}%`}>
+                    <circle cx={cx} cy={cy} r={r} fill="#ffffff" stroke="#334155" strokeWidth="3" />
+                    {wedge}
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#334155" strokeWidth="3" />
+                </svg>
+            );
+        };
+
+        /* ---------- 进度条 ---------- */
+        const ProgressBar = ({ pct, color = '#0ea5e9', height = 34 }) => {
+            const p = clampPct(pct);
+            return (
+                <div className="w-full">
+                    <div className="w-full rounded-full bg-slate-100 border border-slate-200 overflow-hidden" style={{ height }}>
+                        <div className="h-full bar-grow flex items-center justify-end pr-2 text-white text-sm font-bold"
+                            style={{ width: `${p}%`, background: color }}>
+                            {p >= 12 ? `${round1(p)}%` : ''}
+                        </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-400 mt-1 px-0.5">
+                        <span>0%</span><span>50%</span><span>100%</span>
+                    </div>
+                </div>
+            );
+        };
+
+        const StepDots = ({ labels, step }) => (
+            <div className="flex flex-wrap justify-center gap-2 mb-5" aria-label="演示步骤">
+                {labels.map((label, i) => (
+                    <div key={label} className={`px-3 py-1.5 rounded-full text-sm font-semibold smooth ${i === step ? 'bg-slate-800 text-white shadow' : i < step ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-400 border border-slate-200'}`}>
+                        {i < step ? '✓ ' : ''}{label}
+                    </div>
+                ))}
+            </div>
+        );
+
+        const StepButtons = ({ step, setStep, max }) => (
+            <div className="flex justify-center gap-3 mt-5">
+                {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
+                {step < max && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
+                {step === max && <button onClick={() => setStep(0)} className="px-6 py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow smooth">重新演示 ↻</button>}
+            </div>
+        );
+
+        /* ============ ① 直观认识 ============ */
+        const PRESETS = [1, 7, 25, 50, 63, 75, 100];
+        const MeaningDemo = () => {
+            const [pct, setPct] = useState(63);
+            const p = clampPct(pct);
+            return (
+                <section className="fade-in">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+                        <p className="text-xl leading-relaxed m-0">百分数表示<b className="text-slate-800">一个数是另一个数的百分之几</b>。把整体<b>平均分成 100 份</b>，取了多少份，就是百分之多少。</p>
+                        <p className="text-slate-500 mt-2 mb-0 text-sm">写成 <b className="text-violet-600">{round1(p)}%</b>，读作“百分之 {round1(p)}”，也叫百分率或百分比。</p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5 text-center">
+                        <div className="text-5xl font-bold text-violet-600 mb-1">{round1(p)}%</div>
+                        <div className="text-slate-500 mb-6">= 每 100 份里有 {round1(p)} 份</div>
+                        <div className="grid md:grid-cols-2 gap-6 items-center">
+                            <div className="flex flex-col items-center">
+                                <HundredGrid pct={p} color="#f59e0b" />
+                                <p className="text-sm text-slate-500 mt-2 mb-0">百方图：100 个小格，涂色 <b>{Math.round(p)}</b> 格</p>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <PiePercent pct={p} color="#8b5cf6" />
+                                <p className="text-sm text-slate-500 mt-2 mb-0">饼状图：整个圆当作 100%</p>
+                            </div>
+                        </div>
+                        <div className="mt-6 max-w-xl mx-auto">
+                            <ProgressBar pct={p} color="#0ea5e9" />
+                            <p className="text-sm text-slate-500 mt-2 mb-0">进度条：常用来表示完成了多少</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                        <label className="flex items-center gap-4">
+                            <span className="w-24 text-sm text-slate-500 shrink-0">拖动百分数</span>
+                            <input className="flex-1 accent-violet-500" type="range" min="0" max="100" value={p} onChange={e => setPct(+e.target.value)} />
+                            <b className="w-16 text-right text-violet-600 text-xl">{Math.round(p)}%</b>
+                        </label>
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                            {PRESETS.map(v => <button key={v} onClick={() => setPct(v)} className={`px-3 py-1.5 rounded-xl border smooth ${Math.round(p) === v ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-500 hover:border-violet-300'}`}>{v}%</button>)}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        /* ============ ② 认识与转化 ============ */
+        const CONVERT_CASES = [50, 25, 20, 75, 12.5, 40, 100, 5];
+        const ConvertDemo = () => {
+            const [pct, setPct] = useState(25);
+            const [step, setStep] = useState(0);
+            const p = clampPct(pct);
+            const decimal = round1(p) / 100;           // 精确到千分位以内
+            const frac = percentToFraction(p);
+            const change = v => { setPct(v); setStep(0); };
+            return (
+                <section className="fade-in">
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-5 text-center">
+                        <p className="m-0 text-slate-700"><b className="text-emerald-700">百分数、小数、分数</b> 表示的是同一个大小，只是写法不同，可以互相转化。</p>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <label className="text-sm text-slate-500">输入百分数
+                                <div className="mt-1 inline-flex items-center rounded-xl border-2 border-emerald-300 bg-white px-3 py-2 ml-2">
+                                    <input type="number" min="0" max="100" step="0.1" value={pct}
+                                        onChange={e => change(e.target.value === '' ? 0 : +e.target.value)}
+                                        className="w-24 text-center text-2xl font-bold outline-none" />
+                                    <span className="text-2xl font-bold text-slate-500 ml-1">%</span>
+                                </div>
+                            </label>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {CONVERT_CASES.map(v => <button key={v} onClick={() => change(v)} className={`px-3 py-1.5 rounded-lg border smooth ${round1(p) === v ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500'}`}>{v}%</button>)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <StepDots labels={['百分数', '化成小数', '化成分数']} step={step} />
+
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="grid md:grid-cols-2 gap-6 items-center">
+                            <div className="flex justify-center"><HundredGrid pct={p} color="#10b981" /></div>
+                            <div className="space-y-4">
+                                <div className="rounded-xl bg-violet-50 border border-violet-100 p-4 text-center">
+                                    <div className="text-sm text-violet-500">百分数</div>
+                                    <div className="text-4xl font-bold text-violet-700">{round1(p)}%</div>
+                                </div>
+                                {step >= 1 && <div className="rounded-xl bg-sky-50 border border-sky-100 p-4 text-center fade-in">
+                                    <div className="text-sm text-sky-600">化成小数：去掉 %，小数点向左移两位</div>
+                                    <div className="text-3xl font-bold text-sky-700 mt-1">{round1(p)}% ÷ 100 = {decimal}</div>
+                                </div>}
+                                {step >= 2 && <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center fade-in">
+                                    <div className="text-sm text-amber-600">化成分数：先写成分母是 100 的分数，再约分</div>
+                                    <div className="mt-1 flex items-center justify-center flex-wrap text-2xl font-bold text-amber-700">
+                                        {round1(p)}% = <Fraction n={round1(p)} d={100} size="text-xl" color="text-amber-500" /> = <Fraction n={frac.n} d={frac.d} size="text-2xl" color="text-amber-700" />
+                                    </div>
+                                    <p className="text-xs text-amber-600 mt-2 mb-0">口诀：百分数化分数，先当作分母是 100，再约成最简分数。{round1(p) % 1 !== 0 && '（有小数时先把分子分母同时扩大再约分）'}</p>
+                                </div>}
+                            </div>
+                        </div>
+                    </div>
+                    <StepButtons step={step} setStep={setStep} max={2} />
+                </section>
+            );
+        };
+
+        /* ============ ③ 求一个数的百分之几 ============ */
+        const CALC_CASES = [
+            { whole: 200, pct: 15, unit: '元', story: '一件外套 200 元，打折 15%，省了多少钱？' },
+            { whole: 40, pct: 25, unit: '人', story: '班里 40 人，25% 参加了合唱团，有多少人？' },
+            { whole: 300, pct: 60, unit: '页', story: '一本书 300 页，读完了 60%，读了多少页？' },
+            { whole: 50, pct: 8, unit: '千克', story: '50 千克海水，含盐 8%，有多少千克盐？' }
+        ];
+        const CalcDemo = () => {
+            const [ci, setCi] = useState(0);
+            const [step, setStep] = useState(0);
+            const c = CALC_CASES[ci];
+            const decimal = c.pct / 100;
+            const result = round1(c.whole * decimal);
+            const choose = i => { setCi(i); setStep(0); };
+            return (
+                <section className="fade-in">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+                        <p className="text-lg leading-relaxed m-0">求一个数的百分之几，就是<b className="text-slate-800">用这个数 × 百分数</b>（先把百分数化成小数或分数）。</p>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-2 mb-5">
+                        {CALC_CASES.map((x, i) => <button key={i} onClick={() => choose(i)} className={`px-3 py-2 rounded-xl border text-sm smooth ${i === ci ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-slate-200 bg-white text-slate-500 hover:border-rose-300'}`}>例 {i + 1}</button>)}
+                    </div>
+
+                    <StepDots labels={['读题', '列式', '算结果']} step={step} />
+
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center text-lg text-slate-700">{c.story}</div>
+
+                        <div className="grid md:grid-cols-2 gap-6 items-center mt-5">
+                            <div className="flex flex-col items-center">
+                                <PiePercent pct={c.pct} color="#ef4444" />
+                                <p className="text-sm text-slate-500 mt-2 mb-0">整体 = {c.whole} {c.unit}（当作 100%）</p>
+                            </div>
+                            <div className="space-y-4">
+                                {step >= 1 && <div className="rounded-xl bg-sky-50 border border-sky-100 p-4 fade-in">
+                                    <div className="text-sm text-sky-600 mb-1">列式：整体 × 百分数</div>
+                                    <div className="text-2xl font-bold text-sky-700">{c.whole} × {c.pct}%</div>
+                                    <div className="text-lg text-sky-600 mt-1">= {c.whole} × {decimal}</div>
+                                </div>}
+                                {step >= 2 && <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 fade-in">
+                                    <div className="text-sm text-emerald-600 mb-1">算结果</div>
+                                    <div className="text-3xl font-bold text-emerald-700">= {result} {c.unit}</div>
+                                </div>}
+                            </div>
+                        </div>
+
+                        {step >= 2 && <div className="mt-5">
+                            <ProgressBar pct={c.pct} color="#ef4444" />
+                            <p className="text-center text-sm text-slate-500 mt-2 mb-0">这 {c.pct}% 对应 <b className="text-rose-600">{result} {c.unit}</b>，剩下 {round1(100 - c.pct)}% 对应 {round1(c.whole - result)} {c.unit}。</p>
+                        </div>}
+                    </div>
+                    <StepButtons step={step} setStep={setStep} max={2} />
+                </section>
+            );
+        };
+
+        /* ============ ④ 生活中的百分数 ============ */
+        const LIFE_ITEMS = [
+            { icon: '🔋', title: '手机电量', pct: 78, color: '#22c55e', kind: 'bar', note: '电量 78% 表示：把满电看作 100%，现在还剩 78%。' },
+            { icon: '🏷️', title: '商场打折', pct: 80, color: '#f97316', kind: 'bar', note: '“打八折”就是按原价的 80% 卖，便宜了 20%。' },
+            { icon: '📊', title: '考试正确率', pct: 92, color: '#3b82f6', kind: 'grid', note: '做对 92%，就是每 100 道题里做对 92 道。' },
+            { icon: '🥤', title: '饮料含糖量', pct: 11, color: '#a855f7', kind: 'grid', note: '含糖 11% 表示每 100 克饮料里有 11 克糖。' },
+            { icon: '📈', title: '电池充电进度', pct: 45, color: '#0ea5e9', kind: 'bar', note: '已充 45%，进度条填满 45%。' },
+            { icon: '🌧️', title: '降水概率', pct: 30, color: '#6366f1', kind: 'pie', note: '降水概率 30% 表示下雨的可能性比较小。' },
+            { icon: '💧', title: '盐水浓度', pct: 20, color: '#14b8a6', kind: 'pie', note: '含盐 20%，即 100 克盐水里有 20 克盐。' },
+            { icon: '🎯', title: '任务完成度', pct: 65, color: '#eab308', kind: 'bar', note: '完成了 65%，还剩 35% 没完成。' }
+        ];
+        const LifeDemo = () => {
+            const [active, setActive] = useState(0);
+            const item = LIFE_ITEMS[active];
+            return (
+                <section className="fade-in">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
+                        <p className="text-lg leading-relaxed m-0">生活中到处都有百分数。它让我们<b className="text-slate-800">不看具体数量，也能一眼比较多少、快慢、浓淡</b>。</p>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                        {LIFE_ITEMS.map((x, i) => (
+                            <button key={i} onClick={() => setActive(i)} className={`rounded-2xl border-2 p-3 text-left smooth ${i === active ? 'border-slate-800 bg-slate-50 shadow-md' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                                <div className="text-2xl">{x.icon}</div>
+                                <div className="font-bold text-slate-700 mt-1">{x.title}</div>
+                                <div className="text-2xl font-bold mt-1" style={{ color: x.color }}>{x.pct}%</div>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="grid md:grid-cols-2 gap-6 items-center">
+                            <div className="flex flex-col items-center justify-center">
+                                {item.kind === 'grid' && <HundredGrid pct={item.pct} color={item.color} />}
+                                {item.kind === 'pie' && <PiePercent pct={item.pct} color={item.color} />}
+                                {item.kind === 'bar' && <div className="w-full"><ProgressBar pct={item.pct} color={item.color} /></div>}
+                            </div>
+                            <div>
+                                <div className="text-4xl mb-2">{item.icon}</div>
+                                <h3 className="text-2xl font-bold text-slate-800 mt-0 mb-2">{item.title}：<span style={{ color: item.color }}>{item.pct}%</span></h3>
+                                <p className="text-slate-600 text-lg leading-relaxed m-0">{item.note}</p>
+                                <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-500">
+                                    换算：{item.pct}% = 小数 {item.pct / 100} = 每 100 份取 {item.pct} 份
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mt-5 text-center text-sm text-slate-600">
+                        小贴士：百分数一般<b className="text-indigo-700">不带单位</b>，因为它表示的是两个数量的“倍比关系”，而不是具体的多少。
+                    </div>
+                </section>
+            );
+        };
+
+        const TABS = [
+            { id: 'meaning', title: '① 直观认识', hint: '百方图·饼图·进度条', color: 'bg-violet-600' },
+            { id: 'convert', title: '② 认识与转化', hint: '百分数↔小数↔分数', color: 'bg-emerald-600' },
+            { id: 'calc', title: '③ 简单计算', hint: '求一个数的百分之几', color: 'bg-rose-600' },
+            { id: 'life', title: '④ 生活中的百分数', hint: '打折·电量·浓度', color: 'bg-sky-600' }
+        ];
+
+        const App = () => {
+            const [tab, setTab] = useState('meaning');
+            return (
+                <main className="max-w-5xl mx-auto px-4 py-8">
+                    <header className="relative text-center mb-6 px-12">
+                        <a href="/" aria-label="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 smooth">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        </a>
+                        <div className="inline-flex px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold mb-2">六年级 · 百分数的认识</div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-slate-800 m-0">百分数的认识</h1>
+                        <p className="text-slate-500 mt-3 mb-0">把整体看作 <b>100 份</b>：<b className="text-violet-600">百分之几</b> 就是取了其中几份</p>
+                    </header>
+                    <nav className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-7" aria-label="知识模块">
+                        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`p-3 rounded-xl border-2 text-left smooth ${tab === t.id ? `${t.color} text-white border-transparent shadow-md` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}><b className="block">{t.title}</b><span className={`text-xs ${tab === t.id ? 'text-white/80' : 'text-slate-400'}`}>{t.hint}</span></button>)}
+                    </nav>
+                    {tab === 'meaning' && <MeaningDemo />}
+                    {tab === 'convert' && <ConvertDemo />}
+                    {tab === 'calc' && <CalcDemo />}
+                    {tab === 'life' && <LifeDemo />}
+                    <footer className="text-center text-slate-400 text-sm mt-10">Math101 · 百分数可视化 · 适用人教版六年级上册</footer>
+                </main>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+    <div style="box-sizing:border-box;width:100%;padding:24px 16px;text-align:center;color:#94a3b8;font:13px/1.6 system-ui,-apple-system,sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

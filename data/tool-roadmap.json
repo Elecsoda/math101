@@ -113,15 +113,28 @@
           ]
         },
         {
-          "id": "decimal-calc-lab",
-          "name": "小数加减乘除计算器",
+          "id": "decimal-addsub-align",
+          "name": "小数加减法·对齐演示",
           "grade": "4-5",
-          "status": "planned",
-          "route": "/decimal-calc",
+          "status": "ready",
+          "route": "/decimal-addsub",
           "knowledgeNodeIds": [
-            "decimal-addsub",
+            "decimal-addsub"
+          ]
+        },
+        {
+          "id": "decimal-muldiv-shift",
+          "name": "小数乘除法·小数点移位",
+          "grade": "5",
+          "status": "ready",
+          "route": "/decimal-muldiv",
+          "knowledgeNodeIds": [
             "decimal-mul",
             "decimal-div"
+          ],
+          "tabs": [
+            "小数乘法",
+            "小数除法"
           ]
         },
         {
@@ -157,14 +170,23 @@
           ]
         },
         {
-          "id": "ratio-percent-proportion",
-          "name": "比、百分数与比例",
+          "id": "percent-meaning",
+          "name": "百分数的认识",
+          "grade": "6",
+          "status": "ready",
+          "route": "/percent",
+          "knowledgeNodeIds": [
+            "percent"
+          ]
+        },
+        {
+          "id": "ratio-proportion",
+          "name": "比与比例",
           "grade": "6",
           "status": "planned",
-          "route": "/ratio-percent-proportion",
+          "route": "/ratio-proportion",
           "knowledgeNodeIds": [
             "ratio",
-            "percent",
             "proportion"
           ]
         },
@@ -294,6 +316,7 @@
       "coverage": "partial",
       "coveredNodeIds": [
         "angle-intro",
+        "angle-measure",
         "length-unit",
         "symmetry",
         "translate-rotate",
@@ -308,7 +331,6 @@
         "shape-plane",
         "pos-basic",
         "measure-units",
-        "angle-measure",
         "triangle-classify",
         "cuboid-cube",
         "circle",
@@ -388,7 +410,7 @@
           "id": "angle-measure-protractor",
           "name": "量角器与角度测量",
           "grade": "4",
-          "status": "planned",
+          "status": "ready",
           "route": "/angle-measure",
           "knowledgeNodeIds": [
             "angle-measure"
@@ -463,13 +485,13 @@
       "coveredNodeIds": [
         "bar-chart",
         "line-chart",
-        "average"
+        "average",
+        "possibility"
       ],
       "missingNodeIds": [
         "classify-sort",
         "data-collect",
-        "pie-chart",
-        "possibility"
+        "pie-chart"
       ],
       "recommendedTools": [
         {
@@ -498,10 +520,16 @@
           "id": "possibility-lab",
           "name": "可能性实验室",
           "grade": "5",
-          "status": "planned",
+          "status": "ready",
           "route": "/possibility",
           "knowledgeNodeIds": [
             "possibility"
+          ],
+          "tabs": [
+            "抛硬币",
+            "扔骰子",
+            "转盘",
+            "抽盲盒"
           ]
         }
       ]

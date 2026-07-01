@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小数加减法·对齐演示 | Math101</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .col-grid { font-variant-numeric: tabular-nums; }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+        .slot-pop { animation: slotPop 0.4s ease; }
+        @keyframes slotPop { 0%{transform:scale(0.4);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // 各数位的名称与颜色（从最高位到最低位）
+        const PLACES = [
+            { key: 'h',   name: '百位',   frac: false, color: 'bg-indigo-500' },
+            { key: 't',   name: '十位',   frac: false, color: 'bg-blue-500' },
+            { key: 'o',   name: '个位',   frac: false, color: 'bg-sky-500' },
+            { key: 'DOT', name: '小数点', dot: true },
+            { key: 'd1',  name: '十分位', frac: true,  color: 'bg-amber-500' },
+            { key: 'd2',  name: '百分位', frac: true,  color: 'bg-orange-500' },
+            { key: 'd3',  name: '千分位', frac: true,  color: 'bg-rose-500' },
+        ];
+        const DIGIT_KEYS = PLACES.filter(p => !p.dot).map(p => p.key);
+
+        // 把一个数字（可能带小数）拆成各数位的字符，按 DIGIT_KEYS 对齐
+        // 返回 { h,t,o,d1,d2,d3 } 每个是 '' 或 '0'..'9'
+        const toPlaces = (numStr) => {
+            const s = String(numStr);
+            const neg = s.startsWith('-');
+            const clean = neg ? s.slice(1) : s;
+            let [intPart = '', fracPart = ''] = clean.split('.');
+            intPart = intPart.replace(/^0+(?=\d)/, ''); // 去掉多余前导 0，但保留个位的 0
+            if (intPart === '') intPart = '0';
+            const res = { h: '', t: '', o: '', d1: '', d2: '', d3: '' };
+            const intKeys = ['o', 't', 'h']; // 从个位往高位填
+            for (let i = 0; i < intPart.length && i < intKeys.length; i++) {
+                res[intKeys[i]] = intPart[intPart.length - 1 - i];
+            }
+            const fracKeys = ['d1', 'd2', 'd3'];
+            for (let i = 0; i < fracPart.length && i < fracKeys.length; i++) {
+                res[fracKeys[i]] = fracPart[i];
+            }
+            return res;
+        };
+
+        // 一个数字格子
+        const Cell = ({ ch, tone, pop }) => {
+            const base = "w-11 h-14 flex items-center justify-center rounded-lg text-2xl font-mono font-bold border-2 ";
+            const style = ch === ''
+                ? "border-dashed border-gray-200 text-gray-200"
+                : tone === 'a' ? "border-blue-300 bg-blue-50 text-blue-700"
+                : tone === 'b' ? "border-green-300 bg-green-50 text-green-700"
+                : tone === 'sum' ? "border-rose-300 bg-rose-50 text-rose-700"
+                : "border-gray-300 bg-white text-gray-700";
+            return <div className={base + style + (pop ? " slot-pop" : "")}>{ch === '' ? '·' : ch}</div>;
+        };
+
+        // 小数点格子
+        const DotCell = ({ show }) => (
+            <div className="w-5 h-14 flex items-end justify-center pb-2">
+                {show ? <div className="w-2.5 h-2.5 rounded-full bg-rose-500" /> : <div className="w-2.5 h-2.5 rounded-full bg-gray-200" />}
+            </div>
+        );
+
+        // 一整行（按数位对齐），prefix 是最左的运算符
+        const PlaceRow = ({ places, tone, prefix, dot = true, popKeys = [] }) => (
+            <div className="flex items-center gap-1">
+                <div className="w-8 text-2xl font-bold text-gray-400 text-center">{prefix || ''}</div>
+                {PLACES.map(p => p.dot
+                    ? <DotCell key={p.key} show={dot} />
+                    : <Cell key={p.key} ch={places[p.key]} tone={tone} pop={popKeys.includes(p.key)} />
+                )}
+            </div>
+        );
+
+        // 数位名称表头
+        const PlaceHeader = () => (
+            <div className="flex items-center gap-1 mb-1">
+                <div className="w-8" />
+                {PLACES.map(p => p.dot
+                    ? <div key={p.key} className="w-5" />
+                    : <div key={p.key} className="w-11 text-center text-[11px] leading-tight text-gray-400">{p.name}</div>
+                )}
+            </div>
+        );
+
+        // 计算小数加减，返回对齐后的结果字符串
+        const compute = (a, b, op) => {
+            const r = op === '+' ? a + b : a - b;
+            // 结果的小数位数取两者最大，避免浮点尾巴
+            const decs = Math.max(decimals(a), decimals(b));
+            return Number(r.toFixed(decs + 2)).toFixed(decs).replace(/\.?0+$/, m => m.includes('.') ? '' : m);
+        };
+        const decimals = (n) => {
+            const s = String(n);
+            return s.includes('.') ? s.split('.')[1].length : 0;
+        };
+        // 保留原始输入位数（不去尾零），用于对齐展示
+        const alignedStr = (n, maxDec) => {
+            return Number(n).toFixed(maxDec);
+        };
+
+        // ===== 小数加减法主体 =====
+        const DecimalAddSub = () => {
+            const [aStr, setAStr] = useState('3.25');
+            const [bStr, setBStr] = useState('1.4');
+            const [op, setOp] = useState('+');
+            const [step, setStep] = useState(0); // 0 观察 1 对齐(补零) 2 逐位计算 3 点小数点·完成
+            const [wrongAlign, setWrongAlign] = useState(false); // 展示"末尾对齐"的错误反例
+
+            const a = parseFloat(aStr) || 0;
+            const b = parseFloat(bStr) || 0;
+            const maxDec = Math.max(decimals(aStr), decimals(bStr));
+
+            // 对齐补零后的字符串
+            const aAligned = a.toFixed(maxDec);
+            const bAligned = b.toFixed(maxDec);
+            const resultNum = op === '+' ? a + b : a - b;
+            const resultStr = Number(resultNum.toFixed(maxDec)).toFixed(maxDec);
+
+            // step0 用原始输入；step>=1 用补零对齐
+            const showAlignedA = step >= 1 ? aAligned : aStr;
+            const showAlignedB = step >= 1 ? bAligned : bStr;
+
+            const aP = useMemo(() => toPlaces(showAlignedA), [showAlignedA]);
+            const bP = useMemo(() => toPlaces(showAlignedB), [showAlignedB]);
+            const rP = useMemo(() => toPlaces(resultStr), [resultStr]);
+
+            // 补零高亮：对齐后比原始多出来的小数位
+            const padKeysA = maxDec > decimals(aStr) ? ['d1', 'd2', 'd3'].slice(decimals(aStr), maxDec) : [];
+            const padKeysB = maxDec > decimals(bStr) ? ['d1', 'd2', 'd3'].slice(decimals(bStr), maxDec) : [];
+            const padKeys = step === 1 ? [...padKeysA, ...padKeysB] : [];
+
+            const sub = op === '−' || op === '-';
+            const canSub = !sub || a >= b;
+
+            const randomize = () => {
+                const rnd = (dmax) => {
+                    const dec = 1 + Math.floor(Math.random() * dmax);
+                    const whole = 1 + Math.floor(Math.random() * 40);
+                    const f = Math.floor(Math.random() * Math.pow(10, dec));
+                    return (whole + f / Math.pow(10, dec)).toFixed(dec);
+                };
+                let na = rnd(2), nb = rnd(2);
+                // 让两个数位数不同，突出"补零对齐"的意义
+                if (decimals(na) === decimals(nb)) nb = rnd(decimals(nb) === 1 ? 2 : 1);
+                if (op !== '+' && parseFloat(na) < parseFloat(nb)) [na, nb] = [nb, na];
+                setAStr(na); setBStr(nb); setStep(0); setWrongAlign(false);
+            };
+
+            const stepLabels = [
+                '① 观察：两个数的小数位数不同',
+                '② 对齐：小数点对齐，位数不足的补 0',
+                '③ 计算：像整数一样从右往左逐位相加减',
+                '④ 落点：结果的小数点与上面对齐 · 完成',
+            ];
+
+            return (
+                <div className="fade-in flex flex-col items-center">
+                    {/* 控制区 */}
+                    <div className="bg-white rounded-xl shadow p-5 mb-6 flex flex-wrap gap-4 items-center justify-center">
+                        <input type="text" inputMode="decimal" value={aStr}
+                            onChange={e => { setAStr(e.target.value.replace(/[^\d.]/g, '')); setStep(0); }}
+                            className="w-24 text-center text-lg border-2 border-blue-300 rounded p-1.5 font-mono" />
+                        <div className="flex bg-gray-100 rounded-lg p-1">
+                            <button onClick={() => { setOp('+'); setStep(0); }}
+                                className={"px-4 py-1.5 rounded-md font-bold text-xl smooth-transition " + (op === '+' ? "bg-blue-500 text-white shadow" : "text-gray-500")}>+</button>
+                            <button onClick={() => { setOp('−'); setStep(0); }}
+                                className={"px-4 py-1.5 rounded-md font-bold text-xl smooth-transition " + (op === '−' ? "bg-rose-500 text-white shadow" : "text-gray-500")}>−</button>
+                        </div>
+                        <input type="text" inputMode="decimal" value={bStr}
+                            onChange={e => { setBStr(e.target.value.replace(/[^\d.]/g, '')); setStep(0); }}
+                            className="w-24 text-center text-lg border-2 border-green-300 rounded p-1.5 font-mono" />
+                        <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
+                    </div>
+
+                    {!canSub && (
+                        <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm shake">
+                            这里被减数比减数小，结果会是负数。换一题，或让上面的数更大一些。
+                        </div>
+                    )}
+
+                    {/* 核心：数位对齐竖式 */}
+                    <div className="bg-white rounded-xl shadow p-6 mb-6 overflow-x-auto">
+                        <PlaceHeader />
+                        <div className="col-grid flex flex-col gap-2">
+                            <PlaceRow places={aP} tone="a" popKeys={padKeys} />
+                            <div className="relative">
+                                <PlaceRow places={bP} tone="b" prefix={op} popKeys={padKeys} />
+                            </div>
+                            <div className="border-b-2 border-gray-700 my-1" />
+                            {step >= 2
+                                ? <PlaceRow places={rP} tone="sum" dot={step >= 3}
+                                    popKeys={step === 2 ? DIGIT_KEYS.filter(k => rP[k] !== '') : []} />
+                                : <PlaceRow places={{}} tone="none" dot={false} />}
+                        </div>
+
+                        {/* 小数点对齐指示线 */}
+                        {step >= 1 && (
+                            <div className="mt-3 flex items-center gap-1 text-rose-500 text-xs font-semibold">
+                                <span className="w-8" />
+                                {PLACES.map(p => p.dot
+                                    ? <div key={p.key} className="w-5 text-center">↑</div>
+                                    : <div key={p.key} className="w-11" />)}
+                                <span className="ml-1">小数点必须上下对齐</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 结论横式 */}
+                    <div className="text-2xl font-mono font-bold text-gray-700 mb-6">
+                        {aStr} {op} {bStr} =
+                        <span className="text-rose-600 ml-2">{step >= 3 ? resultStr : '?'}</span>
+                    </div>
+
+                    {/* 步骤条 */}
+                    <div className="flex flex-col items-center gap-3 mb-6">
+                        <div className="text-gray-700 font-semibold h-6 text-center px-4">{stepLabels[step]}</div>
+                        <div className="flex gap-3">
+                            <button onClick={() => setStep(0)} disabled={step === 0}
+                                className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700">重置</button>
+                            <button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={step === 3 || !canSub}
+                                className="px-6 py-2.5 rounded-lg font-semibold smooth-transition text-white disabled:opacity-40 bg-blue-500 hover:bg-blue-600">
+                                {step === 3 ? '已完成' : '下一步'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 为什么要对齐——错误反例 */}
+                    <div className="max-w-xl w-full bg-amber-50 border border-amber-200 rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-bold text-amber-800">为什么要"小数点对齐"，而不是"末尾对齐"？</h3>
+                            <button onClick={() => setWrongAlign(w => !w)}
+                                className="px-3 py-1.5 text-sm rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-800 font-semibold smooth-transition">
+                                {wrongAlign ? '看正确对齐' : '看错误对齐'}
+                            </button>
+                        </div>
+                        <p className="text-sm text-amber-700 mb-3 leading-relaxed">
+                            只有相同的数位才能相加减：十分位加十分位、百分位加百分位。
+                            如果像整数那样"右端对齐"，就会把 <b>十分位</b> 和 <b>百分位</b> 加在一起，结果就错了。
+                        </p>
+                        <WrongAlignDemo aStr={aStr} bStr={bStr} op={op} wrong={wrongAlign} />
+                    </div>
+                </div>
+            );
+        };
+
+        // 错误对齐 vs 正确对齐 的小对比
+        const WrongAlignDemo = ({ aStr, bStr, op, wrong }) => {
+            // 正确：小数点对齐 → 用 toPlaces
+            // 错误：末尾（最后一个字符）对齐 → 把 b 的字符右移到和 a 末尾平齐
+            const stripDot = s => s.replace('.', '');
+            const aDigits = stripDot(aStr);
+            const bDigits = stripDot(bStr);
+            const width = Math.max(aStr.length, bStr.length) + 1;
+
+            const render = (s, correct) => {
+                if (correct) {
+                    const p = toPlaces(s);
+                    return (
+                        <div className="flex gap-0.5 justify-end">
+                            {PLACES.map(pl => pl.dot
+                                ? <span key={pl.key} className="w-3 text-center text-rose-500">{s.includes('.') ? '.' : ''}</span>
+                                : <span key={pl.key} className="w-6 text-center">{p[pl.key] || ''}</span>)}
+                        </div>
+                    );
+                }
+                // 错误对齐：整串（含小数点）右端对齐
+                return (
+                    <div className="flex gap-0.5 justify-end font-mono">
+                        {s.split('').map((ch, i) => (
+                            <span key={i} className={"w-6 text-center " + (ch === '.' ? 'text-gray-400' : '')}>{ch}</span>
+                        ))}
+                    </div>
+                );
+            };
+
+            return (
+                <div className={"bg-white rounded-lg p-4 font-mono text-lg " + (wrong ? "border-2 border-rose-300" : "border-2 border-emerald-300")}>
+                    {wrong
+                        ? <>
+                            {render(aStr, false)}
+                            <div className="flex justify-end items-center gap-1">
+                                <span className="text-gray-400 mr-1">{op}</span>{render(bStr, false)}
+                            </div>
+                            <div className="text-rose-600 text-sm mt-2 font-sans font-semibold">
+                                ✗ 末尾对齐：{aStr} 的十分位竟然和 {bStr} 的{decimals(bStr) >= 2 ? '百分位' : '末位'}对到了一起，数位错乱。
+                            </div>
+                        </>
+                        : <>
+                            {render(aStr, true)}
+                            <div className="flex items-center gap-1">
+                                <span className="text-gray-400">{op}</span>{render(bStr, true)}
+                            </div>
+                            <div className="text-emerald-600 text-sm mt-2 font-sans font-semibold">
+                                ✓ 小数点对齐：个位对个位、十分位对十分位，每一位都是同类，可以直接相加减。
+                            </div>
+                        </>}
+                </div>
+            );
+        };
+
+        const App = () => (
+            <div className="min-h-screen py-8 px-4">
+                <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                    <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                    </a>
+                    <h1 className="text-3xl font-bold text-slate-800">小数加减法 · 对齐演示</h1>
+                    <p className="text-slate-500 mt-1">用数位表把"小数点对齐"变成看得见的动作，理解为什么要对齐、为什么要补零</p>
+                </header>
+                <div className="max-w-3xl mx-auto">
+                    <DecimalAddSub />
+                </div>
+            </div>
+        );
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

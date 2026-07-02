@@ -28,7 +28,7 @@
 const problem = ({no, label, story, keywords, relations, readingTip, equation, steps, answer, diagram, diagramNote}) => ({
     label,
     story,
-    keywords: [],
+    keywords,
     relations: relations.map((value, index) => ({label: index ? "数量关系" : "已知与所求", value})),
     readingTip,
     diagram: diagram || [
@@ -46,7 +46,6 @@ window.WORD_PROBLEM_TOOL = {
     title: "文字题读题与解题",
     subtitle: "练习找条件、辨问题、建立数量关系，并学习完整答案解析。",
     mark: "读", accent: "#ea580c", accentDark: "#c2410c", accentSoft: "#fff1e8",
-    highlightKeywords: false,
     requireAnswerReveal: true,
     showDiagram: false,
     sourceAnswerMode: true,

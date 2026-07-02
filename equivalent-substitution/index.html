@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>体育比赛与等量代换 | Math101</title>
+    <title>等量代换问题 | Math101</title>
     <link rel="stylesheet" href="../word-problem-tool.css">
 </head>
 <body>
@@ -20,9 +20,9 @@
     </main>
     <script>
         window.WORD_PROBLEM_TOOL = {
-            title: "体育比赛 · 等量代换",
-            subtitle: "体育比赛先数“每两人/每两队赛一场”的总场数；等量代换用相等关系替换求量。",
-            mark: "赛", accent: "#7c3aed", accentDark: "#5b21b6", accentSoft: "#f3e8ff",
+            title: "等量代换问题",
+            subtitle: "找出相等关系，用一种量替换另一种量。",
+            mark: "换", accent: "#7c3aed", accentDark: "#5b21b6", accentSoft: "#f3e8ff",
             tabs: [
                 {
                     id: "sports", label: "体育比赛", intro: "单循环赛“每两个人都赛一场”，n 个人共赛 n×(n−1)÷2 场；再结合胜负条件推理。",
@@ -142,8 +142,9 @@
                 }
             ]
         };
+        window.WORD_PROBLEM_TOOL.tabs = window.WORD_PROBLEM_TOOL.tabs.filter(tab => tab.id === "substitution");
     </script>
-    <script src="../word-problem-tool.js"></script>
+    <script src="../docx-problem-bank.js"></script><script src="../word-problem-tool.js"></script>
     <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 </body>
 </html>

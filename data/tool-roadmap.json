@@ -759,14 +759,14 @@
         "equivalent-substitution",
         "engineering",
         "cow-grazing",
-        "economic-promotion"
-      ],
-      "missingNodeIds": [
+        "economic-promotion",
         "interest-tax",
         "concentration",
-        "basic-travel",
-        "frac-percent-app",
-        "proportion-application"
+        "proportion-application",
+        "basic-travel"
+      ],
+      "missingNodeIds": [
+        "frac-percent-app"
       ],
       "newlyReadyNodeIds": [
         "profit-loss",
@@ -852,25 +852,30 @@
           ]
         },
         {
-          "id": "sports-equivalent-substitution",
-          "name": "体育比赛与等量代换",
+          "id": "sports-logic",
+          "name": "体育比赛与逻辑推理",
           "grade": "3-6",
           "status": "ready",
-          "route": "/sports-equivalent-substitution",
+          "route": "/sports-logic",
           "knowledgeNodeIds": [
-            "sports-problem",
+            "sports-problem"
+          ]
+        },
+        {
+          "id": "equivalent-substitution",
+          "name": "等量代换问题",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/equivalent-substitution",
+          "knowledgeNodeIds": [
             "equivalent-substitution"
-          ],
-          "tabs": [
-            "体育比赛",
-            "等量代换"
           ]
         },
         {
           "id": "interest-tax",
           "name": "利息与税务问题",
           "grade": "5-6",
-          "status": "planned",
+          "status": "ready",
           "route": "/interest-tax",
           "knowledgeNodeIds": [
             "interest-tax"
@@ -880,7 +885,7 @@
           "id": "concentration-problem",
           "name": "浓度问题",
           "grade": "5-6",
-          "status": "planned",
+          "status": "ready",
           "route": "/concentration",
           "knowledgeNodeIds": [
             "concentration"
@@ -905,7 +910,7 @@
           "id": "travel-basics",
           "name": "行程问题基本工具",
           "grade": "3-6",
-          "status": "planned",
+          "status": "ready",
           "route": "/basic-travel",
           "knowledgeNodeIds": [
             "basic-travel"
@@ -935,7 +940,7 @@
           "id": "proportion-applications",
           "name": "比例应用题",
           "grade": "6",
-          "status": "planned",
+          "status": "ready",
           "route": "/proportion-applications",
           "knowledgeNodeIds": [
             "proportion-application"

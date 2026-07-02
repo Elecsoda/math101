@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>利息与税务问题 | Math101</title><link rel="stylesheet" href="../word-problem-tool.css"></head>
+<body><main class="shell">
+<header class="topbar"><div class="brand"><div class="brand-mark" id="mark">专</div><div><h1 id="title"></h1><p class="subtitle" id="subtitle"></p></div></div><div class="top-actions"><button class="button" id="randomBtn">随机一题</button><a class="button" href="../">返回首页</a></div></header>
+<nav class="tabs" id="tabs"></nav><p class="tab-intro" id="tabIntro"></p>
+<div class="layout"><section><div class="card problem" id="problem"></div><div class="steps" id="steps"></div><div class="card content" id="content"></div><div class="nav"><button class="button" id="prevBtn">上一步</button><button class="button primary" id="nextBtn">下一步</button></div></section><aside class="card library"><div class="library-head"><h3>同类例题</h3><span class="badge" id="libraryCount"></span></div><div class="items" id="items"></div></aside></div>
+</main><script>
+const p=(label,story,keywords,relations,equation,steps,answer,diagram=[])=>({label,story,keywords,relations:relations.map((value,i)=>({label:i?'数量关系':'核心关系',value})),readingTip:'先圈出决定运算的关系词，再把文字条件翻译成数量关系。',equation,steps,answer,diagram,diagramNote:'图中一格表示一个单位或一份，先看重复规律，再看剩余部分。'});
+window.WORD_PROBLEM_TOOL={title:'利息与税务问题',subtitle:'题目 → 读题高亮 → 数量关系与画图 → 分步解答',mark:'息',accent:'#2563eb',accentDark:'#1d4ed8',accentSoft:'#eff6ff',tabs:[
+{id:'cycle',label:'周期问题',intro:'找周期长度，用余数确定落在周期中的位置。',problems:[p('彩灯颜色','彩灯按“红、黄、蓝、绿”重复排列，第38盏是什么颜色？',['重复','第38盏'],['一个周期有4盏','位置=38÷4的余数'], '38 ÷ 4 = 9……2',['38÷4=9……2。','余数2表示每个周期的第2个位置。'],'第38盏是黄色。',[{label:'一个周期',parts:4,note:'红、黄、蓝、绿'},{label:'余下',parts:2,tone:'warm',note:'第2个位置'}])]},
+{id:'page',label:'页码问题',intro:'按一位数、两位数、三位数分段计算所用数字。',problems:[p('编写页码','一本书从第1页编到第120页，一共用了多少个数字？',['从第1页','第120页','一共'],['1～9页用9个数字','10～99页每页2个，100～120页每页3个'],'9 + 90 × 2 + 21 × 3 = 252',['一位页码用9个。','两位页码用90×2=180个。','三位页码用21×3=63个。'],'一共用了252个数字。')]},
+{id:'concentration',label:'浓度问题',intro:'浓度=溶质质量÷溶液质量，混合时分别守住溶质和总量。',problems:[p('配制盐水','把20克盐加入180克水中，盐水的浓度是多少？',['加入','浓度'],['盐水总量=盐+水','浓度=盐÷盐水总量'],'20 ÷ (20 + 180) = 10%',['盐水总量为200克。','20÷200=10%。'],'盐水浓度是10%。',[{label:'盐',parts:1,tone:'warm',note:'20克'},{label:'水',parts:9,note:'180克'}])]},
+{id:'interest',label:'利息与税务',intro:'先辨认本金或计税金额，再乘对应利率或税率。',problems:[p('定期利息','存入5000元，年利率2%，存3年，利息是多少元？',['年利率','3年','利息'],['年利息=本金×年利率','总利息=年利息×年数'],'5000 × 2% × 3 = 300',['一年利息5000×2%=100元。','3年利息100×3=300元。'],'利息是300元。')]},
+{id:'proportion',label:'比例问题',intro:'找出两组对应量，判断正比例或反比例。',problems:[p('地图距离','一幅地图的比例尺是1∶500000，图上6厘米表示实际多少千米？',['比例尺','实际'],['实际距离=图上距离×500000','厘米换算成千米要÷100000'],'6 × 500000 ÷ 100000 = 30',['实际距离是3000000厘米。','换算为30千米。'],'实际距离是30千米。')]}
+]};
+window.WORD_PROBLEM_TOOL.tabs=window.WORD_PROBLEM_TOOL.tabs.filter(tab=>tab.id==='interest');
+</script><script src="../word-problem-tool.js"></script><div class="site-copyright" style="padding:24px;text-align:center;color:#94a3b8">©孙维刚教育研究院 小宇老师 版权所有</div></body></html>
+

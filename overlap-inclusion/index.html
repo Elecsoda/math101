@@ -162,7 +162,7 @@
 
     function App(){
         const [tab,setTab]=useState('boards');
-        return <main className="page"><header className="hero"><a className="home" href="../" aria-label="返回首页" title="返回首页">⌂</a><h1>重叠问题与容斥原理</h1><p>把“重复计算”画出来，看懂为什么有时要减一次</p></header>
+        return <main className="page"><header className="hero"><a className="home" href="../" aria-label="返回首页" title="返回首页">⌂</a><h1>重叠问题与容斥原理</h1><p>把“重复计算”画出来，看懂为什么有时要减一次 · <a href="../overlap-practice/">进入题库练习</a></p></header>
             <nav className="tabs"><button className={'tab '+(tab==='boards'?'active':'')} onClick={()=>setTab('boards')}>🪵 重叠木板</button><button className={'tab '+(tab==='venn'?'active':'')} onClick={()=>setTab('venn')}>◉ 韦恩图与容斥</button></nav>
             {tab==='boards'?<Boards/>:<Venn/>}<footer>©孙维刚教育研究院 小宇老师 版权所有</footer></main>;
     }

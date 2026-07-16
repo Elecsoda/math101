@@ -47,12 +47,16 @@
         });
     }
 
-    // All classified word-problem tools use the same teaching rhythm:
-    // 0 original problem, 1 read/highlight, 2 relation (+ diagram), 3 solution.
+    // Individual tools may reorganize the merged built-in/document problem bank
+    // or attach a richer teaching model after all source questions are present.
+    if (typeof config.prepare === "function") config.prepare(config);
+
+    // The shared teaching rhythm starts with the untouched problem and a reading
+    // pass. Dual-method tools then branch into diagram, equation and verification.
     const initialStep = () => 0;
     const requestedTab = new URLSearchParams(location.search).get("topic");
     const requestedTabIndex = requestedTab ? config.tabs.findIndex(tab => tab.id === requestedTab) : -1;
-    const state = { tab: requestedTabIndex >= 0 ? requestedTabIndex : 0, problem: 0, step: initialStep() };
+    const state = { tab: requestedTabIndex >= 0 ? requestedTabIndex : 0, problem: 0, step: initialStep(), methodStep: 0 };
     const $ = id => document.getElementById(id);
     const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -222,7 +226,10 @@
         const tab = currentTab();
         $("problem").innerHTML = `
             <div class="problem-head">
-                <h2>${esc(problem.label)}</h2>
+                <div>
+                    ${problem.typeLabel ? `<span class="type-label">${esc(problem.typeLabel)}</span>` : ""}
+                    <h2>${esc(problem.label)}</h2>
+                </div>
                 <span class="badge">${esc(tab.label)} · ${state.problem + 1}/${tab.problems.length}</span>
             </div>
             <p class="story">${state.step >= 1 ? highlightedStory(problem) : esc(problem.story)}</p>
@@ -240,25 +247,80 @@
         `;
     }
 
-    function renderDiagram(problem) {
-        const rows = problem.diagram || [];
+    function renderDiagram(problem, frame = {}) {
+        const rows = frame.rows || problem.diagram || [];
         if (!rows.length) return "";
         return `
-            <h2>${esc(problem.diagramTitle || "画图整理条件")}</h2>
+            <h3 class="diagram-title">${esc(frame.title || problem.diagramTitle || "画图整理条件")}</h3>
             <div class="diagram">
                 ${rows.map(row => `
                     <div class="diagram-row">
                         <div class="diagram-label">${esc(row.label)}</div>
-                        <div class="blocks">
-                            ${Array.from({ length: Math.max(1, row.parts || 1) }, (_, index) => `<span class="block ${esc(row.tone || (index ? "alt" : ""))}"></span>`).join("")}
-                            ${row.extra ? `<span class="block ghost"></span>` : ""}
+                        <div class="segments">
+                            ${Array.from({ length: Math.max(1, row.parts || 1) }, () => `<span class="segment ${esc(row.tone || "")}"></span>`).join("")}
+                            ${Array.from({ length: Math.max(0, row.extras ?? (row.extra ? 1 : 0)) }, () => `<span class="segment extra"></span>`).join("")}
                         </div>
                         <div class="row-note">${esc(row.note || "")}</div>
                     </div>
                 `).join("")}
-                <p class="teaching-note">${esc(problem.diagramNote || "图中的一格代表一份，先看份数关系，再处理多出或少掉的固定量。")}</p>
+                <p class="teaching-note">${esc(frame.note || problem.diagramNote || "每一小段线表示一份，虚线表示多出或少掉的固定量。")}</p>
             </div>
         `;
+    }
+
+    function renderTeachingVisual(problem, stage) {
+        const visual = stage.visual;
+        if (!visual || visual.type === "lines") return renderDiagram(problem, stage);
+
+        if (visual.type === "table") {
+            return `<h3 class="diagram-title">${esc(stage.title || "列表整理")}</h3>
+                <div class="teaching-visual table-visual"><table>
+                    <thead><tr>${(visual.headers || []).map(header => `<th>${esc(header)}</th>`).join("")}</tr></thead>
+                    <tbody>${(visual.rows || []).map(row => `<tr>${row.map(cell => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody>
+                </table></div>`;
+        }
+
+        if (visual.type === "flow") {
+            return `<h3 class="diagram-title">${esc(stage.title || "流程图")}</h3>
+                <div class="teaching-visual flow-visual ${visual.reverse ? "reverse" : ""}">
+                    ${(visual.nodes || []).map((node, index) => `${index ? `<span class="flow-arrow">${visual.reverse ? "←" : "→"}</span>` : ""}<div class="flow-node"><small>${esc(node.label || `第${index + 1}步`)}</small><b>${esc(node.value || node)}</b></div>`).join("")}
+                </div>`;
+        }
+
+        if (visual.type === "cycle") {
+            return `<h3 class="diagram-title">${esc(stage.title || "周期排列")}</h3>
+                <div class="teaching-visual cycle-visual">
+                    <div class="cycle-strip">${(visual.items || []).map((item, index) => `<span class="cycle-cell ${index === visual.highlight ? "active" : ""}"><small>${index + 1}</small>${esc(item)}</span>`).join("")}</div>
+                    ${visual.caption ? `<p>${esc(visual.caption)}</p>` : ""}
+                </div>`;
+        }
+
+        if (visual.type === "range") {
+            return `<h3 class="diagram-title">${esc(stage.title || "分段统计")}</h3>
+                <div class="teaching-visual range-visual">
+                    ${(visual.ranges || []).map(item => `<div class="range-band"><b>${esc(item.label)}</b><span>${esc(item.value)}</span></div>`).join("")}
+                </div>`;
+        }
+
+        if (visual.type === "points") {
+            return `<h3 class="diagram-title">${esc(stage.title || "点与间隔")}</h3>
+                <div class="teaching-visual points-visual">
+                    <div class="point-line">${Array.from({ length: Math.max(2, visual.count || 5) }, (_, index) => `<span class="point"><i>${index + 1}</i></span>`).join("")}</div>
+                    <p>${esc(visual.caption || "点数与间隔数相差1。")}</p>
+                </div>`;
+        }
+
+        if (visual.type === "route") {
+            return `<h3 class="diagram-title">${esc(stage.title || "行程示意")}</h3>
+                <div class="teaching-visual route-visual">
+                    <span class="route-end">${esc(visual.start || "起点")}</span>
+                    <div class="route-track">${(visual.travellers || []).map(item => `<span class="traveller ${item.direction === "left" ? "left" : ""}">${esc(item.label)} ${item.direction === "left" ? "←" : "→"}</span>`).join("")}</div>
+                    <span class="route-end">${esc(visual.end || "终点")}</span>
+                    ${visual.caption ? `<p>${esc(visual.caption)}</p>` : ""}
+                </div>`;
+        }
+
+        return renderDiagram(problem, stage);
     }
 
     function renderSolution(problem) {
@@ -268,6 +330,119 @@
             <ol class="solution">${problem.steps.map(step => `<li>${esc(step)}</li>`).join("")}</ol>
             <div class="answer">答：${esc(problem.answer)}</div>
         `;
+    }
+
+    function renderMethodHeader(number, title, subtitle) {
+        return `<div class="method-head">
+            <span class="method-number">${number}</span>
+            <div><small>方法${number === "一" ? "一" : "二"}</small><h2>${esc(title)}</h2><p>${esc(subtitle || "")}</p></div>
+        </div>`;
+    }
+
+    function splitTeachingSteps(steps) {
+        return (steps || []).flatMap(step => String(step).split(/[。；]/))
+            .map(step => step.trim()).filter(Boolean);
+    }
+
+    function diagramStages(problem) {
+        const method = problem.diagramMethod || {};
+        if (Array.isArray(method.stages) && method.stages.length) return method.stages;
+        const rows = problem.diagram || [];
+        const relations = problem.relations || [];
+        const steps = splitTeachingSteps(method.steps || problem.steps);
+        const count = Math.max(2, steps.length, relations.length, Math.ceil(rows.length / 2));
+        return Array.from({ length: count }, (_, index) => {
+            const rowCount = Math.max(1, Math.ceil(rows.length * (index + 1) / count));
+            return {
+                title: index === 0 ? "画出基准线段" : index === count - 1 ? "根据线段求解" : `补充第${index + 1}个条件`,
+                rows: rows.slice(0, rowCount),
+                relation: relations[index] || null,
+                note: index === count - 1 ? problem.diagramNote : "这一小步只加入当前已经确定的线段。",
+                text: steps[index] || "观察刚刚补充的线段关系。"
+            };
+        });
+    }
+
+    function equationStages(problem) {
+        const method = problem.equationMethod || {};
+        if (Array.isArray(method.stages) && method.stages.length) return method.stages;
+        const equations = Array.isArray(method.equations) ? method.equations : [method.equation || problem.equation].filter(Boolean);
+        const solving = splitTeachingSteps(method.steps);
+        const relationStages = (problem.relations || []).map((item, index) => ({
+            title: `先写关系${index + 1}`,
+            text: `${item.label}：${item.value}`,
+            kind: "relation"
+        }));
+        // A single nested “grand equation” is intentionally not repeated here.
+        // Its simpler relationships appear first, followed by one transformation
+        // per screen. Systems keep each equation on its own screen.
+        const equationItems = equations.length > 1 || !solving.some(text => /[=＝]/.test(text)) ? equations : [];
+        return [
+            { title: "设未知数", text: method.let || "设题目所求的量为 x。", kind: "let" },
+            ...relationStages,
+            ...equationItems.map((text, index) => ({ title: equationItems.length > 1 ? `列方程${index + 1}` : "列方程", text, kind: "equation" })),
+            ...solving.map((text, index) => ({ title: index === solving.length - 1 ? "求出并说明" : `逐步化简${index + 1}`, text, kind: "solve" }))
+        ];
+    }
+
+    function renderMethodProgress(stages) {
+        return `<div class="method-progress" aria-label="方法内揭示进度">
+            ${stages.map((_, index) => `<span class="method-dot ${index === state.methodStep ? "active" : index < state.methodStep ? "done" : ""}">${index + 1}</span>`).join("")}
+        </div>
+        <p class="progress-tip">已揭示 ${state.methodStep + 1}/${stages.length} 步；“下一小步”会继续追加在本页下方。</p>`;
+    }
+
+    function renderDiagramMethod(problem) {
+        const method = problem.diagramMethod || {};
+        const methodTitle = config.methodOneTitle || "线段图";
+        const stages = diagramStages(problem);
+        state.methodStep = Math.min(state.methodStep, stages.length - 1);
+        const visibleStages = stages.slice(0, state.methodStep + 1);
+        return `${renderMethodHeader("一", methodTitle, method.insight || "把数量画成同样大小的份，直观看清和、差、倍关系。")}
+            ${renderMethodProgress(stages)}
+            <div class="revealed-steps">
+                ${visibleStages.map((stage, index) => {
+                    const relationHtml = stage.relation ? `<div class="relation stage-relation"><small>${esc(stage.relation.label)}</small><strong>${esc(stage.relation.value)}</strong></div>` : "";
+                    return `<section class="method-stage-card ${index === state.methodStep ? "latest" : ""}">
+                        <span class="stage-count">第 ${index + 1} 小步</span>
+                        ${relationHtml}
+                        ${renderTeachingVisual(problem, stage)}
+                        <p class="stage-explanation">${esc(stage.text || "观察当前线段。")}</p>
+                    </section>`;
+                }).join("")}
+            </div>
+            ${state.methodStep === stages.length - 1 ? `<div class="method-result">${esc(methodTitle)}得到：${esc(problem.answer)}</div>` : ""}`;
+    }
+
+    function renderEquationMethod(problem) {
+        const method = problem.equationMethod || {};
+        const methodTitle = config.methodTwoTitle || "方程";
+        const stages = equationStages(problem);
+        state.methodStep = Math.min(state.methodStep, stages.length - 1);
+        const visibleStages = stages.slice(0, state.methodStep + 1);
+        return `${renderMethodHeader("二", methodTitle, method.insight || "设一个关键未知量为 x，根据等量关系列方程。")}
+            ${renderMethodProgress(stages)}
+            <div class="revealed-steps equation-reveal">
+                ${visibleStages.map((stage, index) => `<section class="equation-model ${index === state.methodStep ? "latest" : ""}">
+                    <span class="stage-count">第 ${index + 1} 小步 · ${esc(stage.title)}</span>
+                    ${stage.kind === "let"
+                        ? `<p class="equation-setting">${esc(stage.text)}</p>`
+                        : `<div class="equation-lines"><div>${esc(stage.text)}</div></div>`}
+                </section>`).join("")}
+            </div>
+            ${state.methodStep === stages.length - 1 ? `<div class="method-result">${esc(methodTitle)}得到：${esc(problem.answer)}</div>` : ""}`;
+    }
+
+    function renderDualSummary(problem) {
+        const firstTitle = config.methodOneTitle || "线段图";
+        const secondTitle = config.methodTwoTitle || "方程";
+        return `<h2>两种方法，对照检验</h2>
+            <div class="method-compare">
+                <div><b>${esc(firstTitle)}</b><span>${config.methodOneTitle ? "根据题目选择图、表、流程或路线，直观看清结构。" : "适合直观看“几份”和“多出、少掉”的量。"}</span></div>
+                <div><b>${esc(secondTitle)}</b><span>${config.methodTwoTitle ? "把每个数量关系逐条写成算式或方程。" : "适合把变化前后或不同时刻统一成等量关系。"}</span></div>
+            </div>
+            <p class="teaching-note"><b>检验：</b>${esc(problem.check || "把结果代回题目的和、差、倍数或变化关系，所有条件都成立。")}</p>
+            <div class="answer">答：${esc(problem.answer)}</div>`;
     }
 
     function renderContent() {
@@ -286,6 +461,12 @@
         if (state.step === 1) {
             $("content").innerHTML = `<h2>圈出关键数量关系词</h2>
                 <p class="teaching-note">这些完整短语能够决定加、减、乘、除关系。不要把普通问句中的“多少”等词当作数量关系。</p>`;
+        } else if (config.dualMethod && state.step === 2) {
+            $("content").innerHTML = renderDiagramMethod(problem);
+        } else if (config.dualMethod && state.step === 3) {
+            $("content").innerHTML = renderEquationMethod(problem);
+        } else if (config.dualMethod) {
+            $("content").innerHTML = renderDualSummary(problem);
         } else if (state.step === 2) {
             $("content").innerHTML = renderRelations(problem) + (config.showDiagram === false ? "" : renderDiagram(problem));
         } else {
@@ -304,26 +485,36 @@
     }
 
     function renderSteps() {
-        const names = ["读题高亮", "数量关系与画图", "分步解答"];
+        const names = config.dualMethod
+            ? ["读题高亮", `方法一·${config.methodOneTitle || "线段图"}`, `方法二·${config.methodTwoTitle || "方程"}`, "答案与检验"]
+            : ["读题高亮", "数量关系与画图", "分步解答"];
         $("steps").style.gridTemplateColumns = `repeat(${names.length}, 1fr)`;
         $("steps").innerHTML = names.map((name, index) => {
             const step = index + 1;
             const status = step === state.step ? "active" : step < state.step ? "done" : "";
             return `<button class="step ${status}" data-step="${step}" ${state.step === 0 ? "disabled" : ""}>${step}. ${name}</button>`;
         }).join("");
-        $("prevBtn").disabled = state.step === 0;
-        $("nextBtn").textContent = state.step === 0 ? "读题" : state.step === names.length ? "下一题" : "下一步";
+        const methodStages = config.dualMethod && state.step === 2 ? diagramStages(currentProblem())
+            : config.dualMethod && state.step === 3 ? equationStages(currentProblem()) : [];
+        const insideMethod = methodStages.length > 0;
+        const lastMethodStep = !insideMethod || state.methodStep >= methodStages.length - 1;
+        $("prevBtn").disabled = state.step === 0 && state.methodStep === 0;
+        $("nextBtn").textContent = state.step === 0 ? "读题"
+            : insideMethod && !lastMethodStep ? "下一小步"
+            : state.step === 2 ? "进入方程法"
+            : state.step === 3 ? "查看答案"
+            : state.step === names.length ? "下一题" : "下一步";
     }
 
     function bindDynamicEvents() {
         document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => {
-            state.tab = Number(button.dataset.tab); state.problem = 0; state.step = initialStep(); render();
+            state.tab = Number(button.dataset.tab); state.problem = 0; state.step = initialStep(); state.methodStep = 0; render();
         }));
         document.querySelectorAll("[data-problem]").forEach(button => button.addEventListener("click", () => {
-            state.problem = Number(button.dataset.problem); state.step = initialStep(); render();
+            state.problem = Number(button.dataset.problem); state.step = initialStep(); state.methodStep = 0; render();
         }));
         document.querySelectorAll("[data-step]").forEach(button => button.addEventListener("click", () => {
-            state.step = Number(button.dataset.step); render();
+            state.step = Number(button.dataset.step); state.methodStep = 0; render();
         }));
         const revealButton = $("revealBtn");
         if (revealButton) revealButton.addEventListener("click", () => { state.step = 1; render(); });
@@ -341,14 +532,27 @@
     document.documentElement.style.setProperty("--accent-dark", config.accentDark || "#5145cd");
     document.documentElement.style.setProperty("--accent-soft", config.accentSoft || "#f0eeff");
 
-    $("prevBtn").addEventListener("click", () => { state.step = Math.max(0, state.step - 1); render(); });
+    $("prevBtn").addEventListener("click", () => {
+        if (config.dualMethod && (state.step === 2 || state.step === 3) && state.methodStep > 0) {
+            state.methodStep -= 1;
+        } else {
+            state.step = Math.max(0, state.step - 1);
+            if (config.dualMethod && state.step === 2) state.methodStep = diagramStages(currentProblem()).length - 1;
+            else if (config.dualMethod && state.step === 3) state.methodStep = equationStages(currentProblem()).length - 1;
+            else state.methodStep = 0;
+        }
+        render();
+    });
     $("nextBtn").addEventListener("click", () => {
-        const stepCount = 3;
-        if (state.step === 0) state.step = 1;
-        else if (state.step < stepCount) state.step += 1;
+        const stepCount = config.dualMethod ? 4 : 3;
+        const methodStages = config.dualMethod && state.step === 2 ? diagramStages(currentProblem())
+            : config.dualMethod && state.step === 3 ? equationStages(currentProblem()) : [];
+        if (methodStages.length && state.methodStep < methodStages.length - 1) state.methodStep += 1;
+        else if (state.step === 0) { state.step = 1; state.methodStep = 0; }
+        else if (state.step < stepCount) { state.step += 1; state.methodStep = 0; }
         else {
             state.problem = (state.problem + 1) % currentTab().problems.length;
-            state.step = initialStep();
+            state.step = initialStep(); state.methodStep = 0;
         }
         render();
     });
@@ -356,7 +560,7 @@
         const length = currentTab().problems.length;
         let next = state.problem;
         while (length > 1 && next === state.problem) next = Math.floor(Math.random() * length);
-        state.problem = next; state.step = initialStep(); render();
+        state.problem = next; state.step = initialStep(); state.methodStep = 0; render();
     });
 
     render();

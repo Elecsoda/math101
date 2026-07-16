@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>周长与面积实验室 | Math101</title>
+    <title>周长面积·六图形练习 | Math101</title>
     <style>
         :root {
             --bg: #f4f7fb;
@@ -30,16 +30,17 @@
         }
         button, input, select { font: inherit; }
         button { cursor: pointer; }
-        .page { max-width: 1080px; margin: 0 auto; padding: 24px; }
+        .page { width: 100%; max-width: 1080px; margin: 0 auto; padding: 24px; }
         .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
         .brand { display: flex; align-items: center; gap: 12px; }
+        .brand > div:last-child { min-width: 0; }
         .brand-icon {
             width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
             background: linear-gradient(135deg, var(--teal), var(--blue)); color: #fff;
             box-shadow: 0 12px 24px rgba(13, 148, 136, .25); font-size: 22px; font-weight: 950;
         }
         h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
-        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
         .btn {
             border: 1px solid var(--line); background: #fff; color: var(--text);
             border-radius: 10px; padding: 10px 14px; font-weight: 800;
@@ -55,7 +56,7 @@
         }
         .panel { padding: 22px; }
         .tabs {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
             margin-bottom: 18px; padding: 6px; border: 1px solid var(--line);
             border-radius: 16px; background: #fff;
         }
@@ -149,11 +150,86 @@
         .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
 
         .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* 六种基本图形综合练习 */
+        [hidden] { display: none !important; }
+        .practice-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 16px; }
+        .practice-round { min-width: 190px; padding: 12px 14px; border: 1px solid #bae6fd; background: #f0f9ff; border-radius: 14px; }
+        .practice-round-line { display: flex; justify-content: space-between; gap: 12px; color: #475569; font-size: 12px; font-weight: 850; }
+        .practice-round-line b { color: #0369a1; font-size: 16px; }
+        .progress-track { height: 7px; border-radius: 999px; background: #dbeafe; overflow: hidden; margin-top: 9px; }
+        .progress-track i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#0ea5e9,#0d9488); border-radius: inherit; transition: width .25s ease; }
+
+        .shape-picker { display: grid; grid-template-columns: repeat(7, minmax(86px, 1fr)); gap: 8px; margin-bottom: 14px; }
+        .shape-choice { border: 1px solid var(--line); background: #fff; border-radius: 13px; min-height: 54px; padding: 8px 6px; color: #475569; font-weight: 900; }
+        .shape-choice:hover { border-color: #5eead4; color: #0f766e; transform: translateY(-1px); }
+        .shape-choice.active { border-color: var(--teal); background: #ecfdf5; color: #0f766e; box-shadow: inset 0 0 0 1px var(--teal); }
+        .shape-choice span { display: block; color: #94a3b8; font-size: 10px; font-weight: 750; margin-top: 2px; }
+        .shape-choice.active span { color: #0f766e; }
+
+        .formula-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .formula-deck > *, .practice-grid > *, .practice-head > * { min-width: 0; }
+        .formula-card { border-radius: 14px; padding: 12px 14px; border: 1px solid #99f6e4; background: #f0fdfa; }
+        .formula-card.area-formula { border-color: #fde68a; background: #fffbeb; }
+        .formula-card .formula-label { color: #64748b; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+        .formula-card strong { display: block; margin: 3px 0 2px; color: #0f766e; font-size: clamp(17px,2.8vw,22px); overflow-wrap: anywhere; }
+        .formula-card.area-formula strong { color: #b45309; }
+        .formula-card small { color: #64748b; line-height: 1.45; }
+        .formula-card.reverse-formula { grid-column: 1 / -1; border-color: #c4b5fd; background: #faf5ff; }
+        .formula-card.reverse-formula strong { color: #6d28d9; font-size: 15px; line-height: 1.55; }
+
+        .practice-grid { display: grid; grid-template-columns: minmax(290px,.85fr) minmax(360px,1.15fr); gap: 14px; align-items: stretch; }
+        .practice-visual, .question-box { border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+        .practice-visual { display: flex; flex-direction: column; min-height: 390px; background: linear-gradient(180deg,#f8fffe,#f1f5f9); }
+        .visual-title { display: flex; justify-content: space-between; gap: 10px; padding: 14px 16px 0; color: #64748b; font-size: 12px; font-weight: 850; }
+        .visual-title b { color: #0f766e; }
+        #practiceSvg { width: 100%; flex: 1; min-height: 270px; }
+        .visual-note { margin: 0 14px 14px; padding: 9px 11px; border-radius: 10px; background: #fff; color: #64748b; font-size: 12px; line-height: 1.55; border: 1px dashed #cbd5e1; }
+
+        .question-box { padding: 18px; }
+        .q-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .q-tag { padding: 5px 10px; border-radius: 999px; color: #0369a1; background: #e0f2fe; font-size: 12px; font-weight: 900; }
+        .q-level { color: #94a3b8; font-size: 12px; font-weight: 800; }
+        .q-prompt { margin: 0; color: #1e293b; font-size: clamp(17px,2.5vw,20px); line-height: 1.7; font-weight: 800; }
+        .q-prompt em { color: #0f766e; font-style: normal; }
+        .known-box { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0; }
+        .known-item { max-width: 100%; overflow-wrap: anywhere; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; border-radius: 9px; padding: 6px 9px; font-size: 12px; font-weight: 800; }
+
+        .answer-label { color: #334155; font-size: 13px; font-weight: 900; display: block; margin: 14px 0 7px; }
+        .answer-line { display: flex; align-items: stretch; gap: 8px; }
+        .answer-input-wrap { flex: 1; display: flex; align-items: center; border: 2px solid #cbd5e1; background: #fff; border-radius: 11px; overflow: hidden; transition: border-color .18s; }
+        .answer-input-wrap:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,.10); }
+        .answer-input-wrap input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 11px 12px; font-weight: 900; font-size: 17px; }
+        .answer-unit { padding: 0 11px; color: #64748b; font-size: 12px; font-weight: 850; border-left: 1px solid #e2e8f0; }
+        .answer-line .btn { box-shadow: none; }
+        .question-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .question-actions .btn { box-shadow: none; }
+        .feedback { margin-top: 11px; border-radius: 11px; padding: 10px 12px; font-size: 13px; font-weight: 800; line-height: 1.55; }
+        .feedback.good { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .feedback.try { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .feedback.hint { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+        .solution-box { margin-top: 14px; border-radius: 14px; border: 1px solid #c4b5fd; background: #faf5ff; overflow: hidden; }
+        .solution-title { padding: 11px 14px; color: #6d28d9; font-weight: 950; border-bottom: 1px solid #ddd6fe; background: #f5f3ff; }
+        .basis-line { margin: 12px 13px 0; padding: 9px 11px; border-radius: 9px; background: #fff; color: #5b21b6; font-weight: 900; font-size: 14px; }
+        .solution-steps { list-style: none; margin: 10px 13px 12px; padding: 0; display: grid; gap: 8px; }
+        .solution-steps li { position: relative; padding: 9px 10px 9px 40px; background: rgba(255,255,255,.8); border-radius: 9px; color: #475569; line-height: 1.55; font-size: 13px; }
+        .solution-steps li i { position: absolute; left: 10px; top: 9px; width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; background: #8b5cf6; color: #fff; font-style: normal; font-size: 11px; font-weight: 950; }
+        .mistake-tip { margin: 0 13px 13px; padding: 8px 10px; color: #9a3412; background: #fff7ed; border-radius: 9px; font-size: 12px; line-height: 1.55; }
+
         @media (max-width: 720px) {
             .tabs { grid-template-columns: repeat(2, 1fr); }
             .topbar { display: block; }
             .topbar .btn { display: inline-flex; margin-top: 14px; }
             .twocol { grid-template-columns: 1fr; }
+            .practice-head { display: block; }
+            .practice-round { margin-top: 12px; }
+            .shape-picker { grid-template-columns: repeat(3, 1fr); }
+            .formula-deck, .practice-grid { grid-template-columns: 1fr; }
+            .formula-card.reverse-formula { grid-column: 1; }
+            .practice-visual { min-height: 330px; }
+            .answer-line { flex-wrap: wrap; }
+            .answer-input-wrap { flex-basis: 100%; }
         }
     </style>
 </head>
@@ -164,7 +240,7 @@
                 <div class="brand-icon">▦</div>
                 <div>
                     <h1>周长与面积实验室</h1>
-                    <p class="sub">先数格子、数线段，理解周长和面积是什么；再到图形周长，最后用割补法推面积（人教三上→五上）</p>
+                    <p class="sub">从数格子、割补推导到六种基本图形的公式应用与分步练习（小学三至六年级）</p>
                 </div>
             </div>
             <a class="btn" href="../">返回首页</a>
@@ -175,6 +251,7 @@
             <button class="tab" data-view="perimeter">图形周长<small>正方形→多边形</small></button>
             <button class="tab" data-view="area-grid">面积·数格子<small>正方形→长方形</small></button>
             <button class="tab" data-view="area-cut">面积·割补法<small>平行/三角/梯形</small></button>
+            <button class="tab" data-view="practice">公式练习<small>六图形·多题型</small></button>
         </div>
 
         <!-- ============ Tab1 直观认识 ============ -->
@@ -313,6 +390,75 @@
                 </div>
 
                 <div class="hintbox" id="cutHint"></div>
+            </div>
+        </section>
+
+        <!-- ============ Tab5 六种基本图形公式练习 ============ -->
+        <section class="card view" id="view-practice">
+            <div class="panel">
+                <div class="practice-head">
+                    <div>
+                        <h2>5 · 六种基本图形公式练习</h2>
+                        <p class="lead" style="margin-bottom:0">按教材常见梯度组织：<b>直接套公式</b>、<b>反求未知量</b>、<b>生活情境</b>和<b>易错辨析</b>。可以先独立作答，也可以随时查看计算依据与完整步骤。</p>
+                    </div>
+                    <div class="practice-round" aria-label="本轮答题进度">
+                        <div class="practice-round-line"><span>本轮进度</span><b id="practiceProgressText">第 1 / 10 题</b></div>
+                        <div class="practice-round-line"><span>答对 <strong id="practiceScore">0</strong> 题</span><span>连对 <strong id="practiceStreak">0</strong> 题</span></div>
+                        <div class="progress-track"><i id="practiceProgressBar"></i></div>
+                    </div>
+                </div>
+
+                <div class="shape-picker" id="practiceShapePicker" aria-label="选择练习图形">
+                    <button class="shape-choice active" data-shape="mixed">综合随机<span>六种图形</span></button>
+                    <button class="shape-choice" data-shape="square">正方形<span>含反求边长</span></button>
+                    <button class="shape-choice" data-shape="rect">长方形<span>反求长或宽</span></button>
+                    <button class="shape-choice" data-shape="tri">三角形<span>反求底或高</span></button>
+                    <button class="shape-choice" data-shape="para">平行四边形<span>反求底或高</span></button>
+                    <button class="shape-choice" data-shape="trap">梯形<span>反求底或高</span></button>
+                    <button class="shape-choice" data-shape="circle">圆形<span>反求半径直径</span></button>
+                </div>
+
+                <div class="formula-deck" id="practiceFormulaDeck"></div>
+
+                <div class="practice-grid">
+                    <div class="practice-visual">
+                        <div class="visual-title"><span>条件示意图</span><b id="practiceShapeName">基本图形</b></div>
+                        <svg id="practiceSvg" viewBox="0 0 420 300" role="img" aria-label="题目图形示意图"></svg>
+                        <p class="visual-note" id="practiceVisualNote">示意图不一定按实际比例绘制，请以题目给出的数据为准。</p>
+                    </div>
+
+                    <div class="question-box">
+                        <div class="q-meta">
+                            <span class="q-tag" id="practiceTag">基础应用</span>
+                            <span class="q-level" id="practiceLevel">★ 入门</span>
+                        </div>
+                        <p class="q-prompt" id="practicePrompt"></p>
+                        <div class="known-box" id="practiceKnown"></div>
+
+                        <label class="answer-label" for="practiceAnswer">把答案填在这里：</label>
+                        <div class="answer-line">
+                            <div class="answer-input-wrap">
+                                <input id="practiceAnswer" type="number" inputmode="decimal" step="any" autocomplete="off" aria-label="答案">
+                                <span class="answer-unit" id="practiceUnit"></span>
+                            </div>
+                            <button class="btn primary" id="practiceSubmit">检查答案</button>
+                            <button class="btn primary" id="practiceNext" hidden>下一题 →</button>
+                        </div>
+                        <div class="question-actions">
+                            <button class="btn small" id="practiceHint">给我一个提示</button>
+                            <button class="btn small" id="practiceReveal">查看依据与步骤</button>
+                            <button class="btn small" id="practiceRefresh">换一道同类题</button>
+                        </div>
+
+                        <div class="feedback" id="practiceFeedback" hidden></div>
+                        <div class="solution-box" id="practiceSolution" hidden>
+                            <div class="solution-title">计算依据与步骤</div>
+                            <div class="basis-line" id="practiceBasis"></div>
+                            <ol class="solution-steps" id="practiceSteps"></ol>
+                            <p class="mistake-tip" id="practiceMistake"></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -1042,14 +1188,736 @@
     drawCut(0);
 
     /* ============================================================
-       标签切换
+       Tab 5 · 六种基本图形公式练习
+       题型：直接应用 / 反求未知量 / 生活情境 / 易错辨析
        ============================================================ */
-    document.querySelectorAll(".tab").forEach(btn => {
+    const practiceNames = {
+        square: "正方形", rect: "长方形", tri: "三角形",
+        para: "平行四边形", trap: "梯形", circle: "圆形"
+    };
+    const practiceFormulaBook = {
+        square: {
+            perimeter: "C = a × 4",
+            perimeterNote: "4 条边都相等，周长 = 边长 × 4",
+            area: "S = a × a",
+            areaNote: "面积 = 边长 × 边长",
+            reverse: "已知周长求边长：a = C ÷ 4"
+        },
+        rect: {
+            perimeter: "C = (a + b) × 2",
+            perimeterNote: "先求一组长与宽的和，再乘 2",
+            area: "S = a × b",
+            areaNote: "面积 = 长 × 宽",
+            reverse: "已知周长：宽 = C ÷ 2 − 长　｜　已知面积：长 = S ÷ 宽"
+        },
+        tri: {
+            perimeter: "C = a + b + c",
+            perimeterNote: "三条边依次相加；缺边时可用周长反求",
+            area: "S = a × h ÷ 2",
+            areaNote: "a 是底，h 必须是这条底边上的高",
+            reverse: "底 = S × 2 ÷ 高　｜　高 = S × 2 ÷ 底　｜　缺边 = C − 另两边"
+        },
+        para: {
+            perimeter: "C = (a + b) × 2",
+            perimeterNote: "两组对边分别相等；a、b 是相邻边",
+            area: "S = a × h",
+            areaNote: "a 是底，h 是对应的高，不是斜边",
+            reverse: "底 = S ÷ 高　｜　高 = S ÷ 底"
+        },
+        trap: {
+            perimeter: "C = a + b + c + d",
+            perimeterNote: "上底、下底和两条腰全部相加",
+            area: "S = (a + b) × h ÷ 2",
+            areaNote: "先算上、下底之和，再乘高，最后除以 2",
+            reverse: "高 = S × 2 ÷ (上底 + 下底)　｜　上底 = S × 2 ÷ 高 − 下底"
+        },
+        circle: {
+            perimeter: "C = πd = 2πr",
+            perimeterNote: "d 是直径，r 是半径；本工具取 π = 3.14",
+            area: "S = πr²",
+            areaNote: "r² 表示 r × r；本工具取 π = 3.14",
+            reverse: "直径 d = C ÷ π　｜　半径 r = C ÷ π ÷ 2"
+        }
+    };
+
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function resultNum(n) { return Math.round(n * 100) / 100; }
+    function nstr(n) { return num(resultNum(n)); }
+    function labelValue(name, value, unit) { return `${name} ${nstr(value)} ${unit}`; }
+
+    function makeSquareProblem() {
+        const makers = [
+            () => {
+                const a = randInt(3, 12), answer = a * 4;
+                return {
+                    shape: "square", signature: "square-border", tag: "生活情境", level: "★ 入门",
+                    prompt: `一块正方形展示板的边长是 <em>${a} 厘米</em>。沿它的四周贴一圈彩带，至少需要多长的彩带？`,
+                    known: [labelValue("边长", a, "厘米"), "求四周长度（周长）"], answer, unit: "厘米",
+                    formula: "正方形周长 C = 边长 × 4",
+                    hint: "题目问“四周一圈”，求的是周长。正方形有 4 条一样长的边。",
+                    steps: [`辨认：求展示板四周的长度，就是求正方形的周长。`, `代入：C = ${a} × 4。`, `计算：${a} × 4 = ${answer}。`, `答：至少需要 ${answer} 厘米彩带。`],
+                    tip: "易错提醒：求周长用长度单位“厘米”，不能写“平方厘米”。",
+                    diagram: { side: `边长 ${a} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(4, 11), answer = a * a;
+                return {
+                    shape: "square", signature: "square-area", tag: "基础应用", level: "★ 入门",
+                    prompt: `一个正方形地砖的边长是 <em>${a} 分米</em>，这块地砖的面积是多少？`,
+                    known: [labelValue("边长", a, "分米"), "求占地大小（面积）"], answer, unit: "平方分米",
+                    formula: "正方形面积 S = 边长 × 边长",
+                    hint: "面积表示图形占多大的面，要用边长乘边长。",
+                    steps: [`辨认：题目求地砖占多大的面，所以求面积。`, `代入：S = ${a} × ${a}。`, `计算：${a} × ${a} = ${answer}。`, `答：地砖的面积是 ${answer} 平方分米。`],
+                    tip: "易错提醒：面积单位要写“平方分米”；不要把边长乘 4。",
+                    diagram: { side: `边长 ${a} 分米` }
+                };
+            },
+            () => {
+                const a = randInt(4, 15), c = a * 4;
+                return {
+                    shape: "square", signature: "square-reverse-side", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个正方形花坛的周长是 <em>${c} 米</em>。它的边长是多少米？`,
+                    known: [labelValue("周长", c, "米"), "4 条边相等", "反求边长"], answer: a, unit: "米",
+                    formula: "边长 = 正方形周长 ÷ 4",
+                    hint: "已知 4 条相等的边合起来是周长，把周长平均分成 4 份。",
+                    steps: [`关系：周长 = 边长 × 4，所以用除法反求边长。`, `列式：边长 = ${c} ÷ 4。`, `计算：${c} ÷ 4 = ${a}。`, `答：花坛的边长是 ${a} 米。`],
+                    tip: "易错提醒：反求边长要用周长除以 4，不能再乘 4。",
+                    diagram: { side: "边长 ?", perimeter: `周长 ${c} 米` }
+                };
+            },
+            () => {
+                const a = randInt(3, 12), c = a * 4, area = a * a;
+                return {
+                    shape: "square", signature: "square-two-step", tag: "两步计算", level: "★★ 进阶",
+                    prompt: `一块正方形草坪的周长是 <em>${c} 米</em>。这块草坪的面积是多少平方米？`,
+                    known: [labelValue("周长", c, "米"), "先求边长，再求面积"], answer: area, unit: "平方米",
+                    formula: "边长 = C ÷ 4；面积 S = 边长 × 边长",
+                    hint: "不能用周长直接求面积。先把周长平均分成 4 份求边长。",
+                    steps: [`先求边长：${c} ÷ 4 = ${a}（米）。`, `依据：正方形面积 = 边长 × 边长。`, `再求面积：${a} × ${a} = ${area}（平方米）。`, `答：草坪的面积是 ${area} 平方米。`],
+                    tip: "易错提醒：周长和面积不能直接换算，中间必须先求出边长。",
+                    diagram: { side: "边长 ?", perimeter: `周长 ${c} 米` }
+                };
+            }
+        ];
+        return pick(makers)();
+    }
+
+    function makeRectProblem() {
+        const makers = [
+            () => {
+                const a = randInt(7, 18), b = randInt(3, a - 2), answer = (a + b) * 2;
+                return {
+                    shape: "rect", signature: "rect-frame", tag: "生活情境", level: "★ 入门",
+                    prompt: `一张长方形照片长 <em>${a} 厘米</em>、宽 <em>${b} 厘米</em>。给照片装一圈边框，边框至少长多少厘米？`,
+                    known: [labelValue("长", a, "厘米"), labelValue("宽", b, "厘米"), "求一圈边框"], answer, unit: "厘米",
+                    formula: "长方形周长 C = (长 + 宽) × 2",
+                    hint: "一圈里有 2 条长和 2 条宽，可以先算一组长与宽。",
+                    steps: [`辨认：求一圈边框的长度，就是求周长。`, `代入：C = (${a} + ${b}) × 2。`, `计算：${a + b} × 2 = ${answer}。`, `答：边框至少长 ${answer} 厘米。`],
+                    tip: "易错提醒：长加宽后还要乘 2，不能只算相邻两条边。",
+                    diagram: { length: `长 ${a} 厘米`, width: `宽 ${b} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(8, 20), b = randInt(4, 10), answer = a * b;
+                return {
+                    shape: "rect", signature: "rect-area", tag: "基础应用", level: "★ 入门",
+                    prompt: `一个长方形小菜园长 <em>${a} 米</em>、宽 <em>${b} 米</em>，占地面积是多少平方米？`,
+                    known: [labelValue("长", a, "米"), labelValue("宽", b, "米"), "求占地面积"], answer, unit: "平方米",
+                    formula: "长方形面积 S = 长 × 宽",
+                    hint: "占地大小求面积，把长和宽相乘。",
+                    steps: [`辨认：题目求菜园占地大小，所以求面积。`, `代入：S = ${a} × ${b}。`, `计算：${a} × ${b} = ${answer}。`, `答：菜园占地 ${answer} 平方米。`],
+                    tip: "易错提醒：面积单位是“平方米”，不是“米”。",
+                    diagram: { length: `长 ${a} 米`, width: `宽 ${b} 米` }
+                };
+            },
+            () => {
+                const a = randInt(9, 18), b = randInt(3, 8), c = (a + b) * 2;
+                return {
+                    shape: "rect", signature: "rect-reverse-width", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个长方形操场的周长是 <em>${c} 米</em>，长是 <em>${a} 米</em>。它的宽是多少米？`,
+                    known: [labelValue("周长", c, "米"), labelValue("长", a, "米"), "反求宽"], answer: b, unit: "米",
+                    formula: "宽 = 周长 ÷ 2 − 长",
+                    hint: "先用周长除以 2，得到一组“长 + 宽”，再减去长。",
+                    steps: [`先求一组长与宽：${c} ÷ 2 = ${a + b}（米）。`, `再求宽：${a + b} − ${a} = ${b}（米）。`, `验算：(${a} + ${b}) × 2 = ${c}（米）。`, `答：操场的宽是 ${b} 米。`],
+                    tip: "易错提醒：不能用周长直接减长；周长里包含 2 条长和 2 条宽。",
+                    diagram: { length: `长 ${a} 米`, width: "宽 ?", perimeter: `周长 ${c} 米` }
+                };
+            },
+            () => {
+                const a = randInt(7, 15), b = randInt(3, 7), area = a * b, answer = (a + b) * 2;
+                return {
+                    shape: "rect", signature: "rect-area-to-perimeter", tag: "两步计算", level: "★★★ 挑战",
+                    prompt: `一张长方形卡纸的面积是 <em>${area} 平方分米</em>，宽是 <em>${b} 分米</em>。它的周长是多少分米？`,
+                    known: [labelValue("面积", area, "平方分米"), labelValue("宽", b, "分米"), "先求长，再求周长"], answer, unit: "分米",
+                    formula: "长 = 面积 ÷ 宽；周长 C = (长 + 宽) × 2",
+                    hint: "已知面积和宽，先用面积除以宽求长，再使用周长公式。",
+                    steps: [`先求长：${area} ÷ ${b} = ${a}（分米）。`, `依据：C = (长 + 宽) × 2。`, `代入：(${a} + ${b}) × 2 = ${a + b} × 2 = ${answer}（分米）。`, `答：卡纸的周长是 ${answer} 分米。`],
+                    tip: "易错提醒：第一步面积除以宽，得到的是“长”；最终问周长，要写长度单位。",
+                    diagram: { length: "长 ?", width: `宽 ${b} 分米`, area: `面积 ${area} 平方分米` }
+                };
+            },
+            () => {
+                const a = randInt(8, 18), b = randInt(3, 9), area = a * b;
+                return {
+                    shape: "rect", signature: "rect-reverse-length", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个长方形展板的面积是 <em>${area} 平方厘米</em>，宽是 <em>${b} 厘米</em>。它的长是多少厘米？`,
+                    known: [labelValue("面积", area, "平方厘米"), labelValue("宽", b, "厘米"), "反求长"], answer: a, unit: "厘米",
+                    formula: "长 = 长方形面积 ÷ 宽",
+                    hint: "由“面积 = 长 × 宽”反求长，用面积除以宽。",
+                    steps: [`关系：S = 长 × 宽。`, `反求：长 = S ÷ 宽。`, `代入：${area} ÷ ${b} = ${a}（厘米）。`, `答：展板的长是 ${a} 厘米。`],
+                    tip: "易错提醒：面积除以一条边，得到另一条边，答案改用长度单位“厘米”。",
+                    diagram: { length: "长 ?", width: `宽 ${b} 厘米`, area: `面积 ${area} 平方厘米` }
+                };
+            }
+        ];
+        return pick(makers)();
+    }
+
+    function makeTriProblem() {
+        const makers = [
+            () => {
+                const a = randInt(4, 9), b = randInt(5, 10), c = randInt(Math.abs(a - b) + 2, a + b - 1), answer = a + b + c;
+                return {
+                    shape: "tri", signature: "tri-perimeter", tag: "基础应用", level: "★ 入门",
+                    prompt: `一个三角形标志牌的三条边分别长 <em>${a} 厘米</em>、<em>${b} 厘米</em>和 <em>${c} 厘米</em>。它的周长是多少厘米？`,
+                    known: [labelValue("边①", a, "厘米"), labelValue("边②", b, "厘米"), labelValue("边③", c, "厘米")], answer, unit: "厘米",
+                    formula: "三角形周长 C = 三条边长度之和",
+                    hint: "周长是围成图形的所有边的总长度，把三条边都加上。",
+                    steps: [`辨认：求三角形周长，要把三条边全部相加。`, `列式：C = ${a} + ${b} + ${c}。`, `计算：${a} + ${b} + ${c} = ${answer}。`, `答：标志牌的周长是 ${answer} 厘米。`],
+                    tip: "易错提醒：不要漏掉第三条边；只有等边三角形才能直接用边长乘 3。",
+                    diagram: { sides: [`${a} 厘米`, `${b} 厘米`, `${c} 厘米`] }
+                };
+            },
+            () => {
+                let base = randInt(5, 14), height = randInt(3, 10);
+                if ((base * height) % 2) base++;
+                const answer = base * height / 2;
+                return {
+                    shape: "tri", signature: "tri-area", tag: "基础应用", level: "★★ 进阶",
+                    prompt: `一块三角形红领巾布料的底是 <em>${base} 分米</em>，这条底边上的高是 <em>${height} 分米</em>。它的面积是多少平方分米？`,
+                    known: [labelValue("底", base, "分米"), labelValue("对应的高", height, "分米"), "求面积"], answer, unit: "平方分米",
+                    formula: "三角形面积 S = 底 × 高 ÷ 2",
+                    hint: "三角形可以和一个相同的三角形拼成平行四边形，所以最后要除以 2。",
+                    steps: [`依据：S = 底 × 高 ÷ 2。`, `代入：S = ${base} × ${height} ÷ 2。`, `计算：${base * height} ÷ 2 = ${answer}。`, `答：布料的面积是 ${answer} 平方分米。`],
+                    tip: "易错提醒：底乘高后不要忘记除以 2；高必须与所选底边对应。",
+                    diagram: { base: `底 ${base} 分米`, height: `高 ${height} 分米` }
+                };
+            },
+            () => {
+                const base = randInt(5, 14), height = randInt(4, 10), area = base * height / 2;
+                return {
+                    shape: "tri", signature: "tri-reverse-height", tag: "反求未知量", level: "★★★ 挑战",
+                    prompt: `一个三角形的面积是 <em>${nstr(area)} 平方厘米</em>，底是 <em>${base} 厘米</em>。这条底边上的高是多少厘米？`,
+                    known: [labelValue("面积", area, "平方厘米"), labelValue("底", base, "厘米"), "反求高"], answer: height, unit: "厘米",
+                    formula: "高 = 三角形面积 × 2 ÷ 底",
+                    hint: "由“面积 = 底 × 高 ÷ 2”反推，先把面积乘 2，再除以底。",
+                    steps: [`关系：S = 底 × 高 ÷ 2。`, `反求：高 = S × 2 ÷ 底。`, `代入：${nstr(area)} × 2 ÷ ${base} = ${height}（厘米）。`, `答：这条底边上的高是 ${height} 厘米。`],
+                    tip: "易错提醒：反求高时要先把面积乘 2，不能直接用面积除以底。",
+                    diagram: { base: `底 ${base} 厘米`, height: "高 ?", area: `面积 ${nstr(area)} 平方厘米` }
+                };
+            },
+            () => {
+                const a = randInt(5, 10), b = randInt(6, 11), missing = randInt(Math.abs(a - b) + 2, a + b - 1), c = a + b + missing;
+                return {
+                    shape: "tri", signature: "tri-missing-side", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一块三角形菜地的周长是 <em>${c} 米</em>，其中两条边分别是 <em>${a} 米</em>和 <em>${b} 米</em>。第三条边长多少米？`,
+                    known: [labelValue("周长", c, "米"), labelValue("边①", a, "米"), labelValue("边②", b, "米"), "反求第三边"], answer: missing, unit: "米",
+                    formula: "第三边 = 周长 − 已知的两条边",
+                    hint: "周长是三条边的总和，从总数里依次减去两条已知边。",
+                    steps: [`关系：周长 = 边① + 边② + 第三边。`, `列式：第三边 = ${c} − ${a} − ${b}。`, `计算：${c} − ${a} − ${b} = ${missing}。`, `答：第三条边长 ${missing} 米。`],
+                    tip: "易错提醒：这是周长反求边长，不需要使用三角形面积公式。",
+                    diagram: { sides: [`${a} 米`, `${b} 米`, "?"], perimeter: `周长 ${c} 米` }
+                };
+            },
+            () => {
+                const base = randInt(6, 15), height = randInt(3, 10), area = base * height / 2;
+                return {
+                    shape: "tri", signature: "tri-reverse-base", tag: "反求未知量", level: "★★★ 挑战",
+                    prompt: `一个三角形的面积是 <em>${nstr(area)} 平方分米</em>，高是 <em>${height} 分米</em>。与这条高对应的底是多少分米？`,
+                    known: [labelValue("面积", area, "平方分米"), labelValue("高", height, "分米"), "反求对应的底"], answer: base, unit: "分米",
+                    formula: "底 = 三角形面积 × 2 ÷ 高",
+                    hint: "由“面积 = 底 × 高 ÷ 2”反推，先把面积乘 2，再除以高。",
+                    steps: [`关系：S = 底 × 高 ÷ 2。`, `反求：底 = S × 2 ÷ 高。`, `代入：${nstr(area)} × 2 ÷ ${height} = ${base}（分米）。`, `答：与这条高对应的底是 ${base} 分米。`],
+                    tip: "易错提醒：三角形反求底和反求高的方法相似，都要先把面积乘 2。",
+                    diagram: { base: "底 ?", height: `高 ${height} 分米`, area: `面积 ${nstr(area)} 平方分米` }
+                };
+            }
+        ];
+        return pick(makers)();
+    }
+
+    function makeParaProblem() {
+        const makers = [
+            () => {
+                const base = randInt(6, 15), height = randInt(3, 9), answer = base * height;
+                return {
+                    shape: "para", signature: "para-area", tag: "生活情境", level: "★ 入门",
+                    prompt: `一块平行四边形停车区的底是 <em>${base} 米</em>，对应的高是 <em>${height} 米</em>。它的面积是多少平方米？`,
+                    known: [labelValue("底", base, "米"), labelValue("对应的高", height, "米"), "求面积"], answer, unit: "平方米",
+                    formula: "平行四边形面积 S = 底 × 高",
+                    hint: "把平行四边形沿高割补成长方形，长等于底，宽等于高。",
+                    steps: [`依据：S = 底 × 高。`, `代入：S = ${base} × ${height}。`, `计算：${base} × ${height} = ${answer}。`, `答：停车区的面积是 ${answer} 平方米。`],
+                    tip: "易错提醒：面积要用底乘对应的高，不是底乘斜边。",
+                    diagram: { base: `底 ${base} 米`, height: `高 ${height} 米` }
+                };
+            },
+            () => {
+                const base = randInt(6, 14), height = randInt(3, 9), area = base * height;
+                return {
+                    shape: "para", signature: "para-reverse-height", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个平行四边形的面积是 <em>${area} 平方厘米</em>，底是 <em>${base} 厘米</em>。它的高是多少厘米？`,
+                    known: [labelValue("面积", area, "平方厘米"), labelValue("底", base, "厘米"), "反求高"], answer: height, unit: "厘米",
+                    formula: "高 = 平行四边形面积 ÷ 底",
+                    hint: "由“面积 = 底 × 高”反求一个乘数，用积除以另一个乘数。",
+                    steps: [`关系：S = 底 × 高。`, `反求：高 = S ÷ 底。`, `代入：${area} ÷ ${base} = ${height}（厘米）。`, `答：平行四边形的高是 ${height} 厘米。`],
+                    tip: "易错提醒：面积除以底得到的是长度，所以答案单位写“厘米”。",
+                    diagram: { base: `底 ${base} 厘米`, height: "高 ?", area: `面积 ${area} 平方厘米` }
+                };
+            },
+            () => {
+                const base = randInt(7, 15), side = randInt(4, 9), answer = (base + side) * 2;
+                return {
+                    shape: "para", signature: "para-perimeter", tag: "周长辨析", level: "★★ 进阶",
+                    prompt: `一个平行四边形相邻两条边分别长 <em>${base} 分米</em>和 <em>${side} 分米</em>。它的周长是多少分米？`,
+                    known: [labelValue("一条边", base, "分米"), labelValue("相邻边", side, "分米"), "两组对边相等"], answer, unit: "分米",
+                    formula: "平行四边形周长 C = (相邻边① + 相邻边②) × 2",
+                    hint: "平行四边形的两组对边分别相等，一圈包含两条底边和两条斜边。",
+                    steps: [`依据：两组对边分别相等。`, `代入：C = (${base} + ${side}) × 2。`, `计算：${base + side} × 2 = ${answer}。`, `答：平行四边形的周长是 ${answer} 分米。`],
+                    tip: "易错提醒：求周长使用的是边长，不使用图形内部的高。",
+                    diagram: { base: `底边 ${base} 分米`, side: `斜边 ${side} 分米` }
+                };
+            },
+            () => {
+                const base = randInt(8, 16), height = randInt(4, 9), side = height + randInt(2, 5), answer = base * height;
+                return {
+                    shape: "para", signature: "para-distractor", tag: "易错辨析", level: "★★★ 挑战",
+                    prompt: `一个平行四边形的底是 <em>${base} 米</em>，高是 <em>${height} 米</em>，斜边长 <em>${side} 米</em>。它的面积是多少平方米？`,
+                    known: [labelValue("底", base, "米"), labelValue("高", height, "米"), labelValue("斜边", side, "米（干扰条件）")], answer, unit: "平方米",
+                    formula: "平行四边形面积 S = 底 × 对应的高",
+                    hint: "求面积只选底和对应的高；斜边是求周长时才会使用的条件。",
+                    steps: [`筛选条件：求面积需要底 ${base} 米和高 ${height} 米。`, `斜边 ${side} 米与本题面积计算无关。`, `计算：S = ${base} × ${height} = ${answer}（平方米）。`, `答：平行四边形的面积是 ${answer} 平方米。`],
+                    tip: "易错提醒：图形画得再斜，面积也不能用底乘斜边。",
+                    diagram: { base: `底 ${base} 米`, height: `高 ${height} 米`, side: `斜边 ${side} 米` }
+                };
+            },
+            () => {
+                const base = randInt(7, 16), height = randInt(3, 9), area = base * height;
+                return {
+                    shape: "para", signature: "para-reverse-base", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个平行四边形的面积是 <em>${area} 平方米</em>，高是 <em>${height} 米</em>。与这条高对应的底是多少米？`,
+                    known: [labelValue("面积", area, "平方米"), labelValue("高", height, "米"), "反求对应的底"], answer: base, unit: "米",
+                    formula: "底 = 平行四边形面积 ÷ 高",
+                    hint: "由“面积 = 底 × 高”反求底，用面积除以高。",
+                    steps: [`关系：S = 底 × 高。`, `反求：底 = S ÷ 高。`, `代入：${area} ÷ ${height} = ${base}（米）。`, `答：与这条高对应的底是 ${base} 米。`],
+                    tip: "易错提醒：面积除以高得到对应的底；不要用图中的斜边代替底。",
+                    diagram: { base: "底 ?", height: `高 ${height} 米`, area: `面积 ${area} 平方米` }
+                };
+            }
+        ];
+        return pick(makers)();
+    }
+
+    function makeTrapProblem() {
+        const makers = [
+            () => {
+                const top = randInt(3, 8), bottom = randInt(top + 2, 15), height = randInt(3, 9), answer = (top + bottom) * height / 2;
+                return {
+                    shape: "trap", signature: "trap-area", tag: "生活情境", level: "★★ 进阶",
+                    prompt: `一块梯形花圃的上底是 <em>${top} 米</em>，下底是 <em>${bottom} 米</em>，高是 <em>${height} 米</em>。花圃面积是多少平方米？`,
+                    known: [labelValue("上底", top, "米"), labelValue("下底", bottom, "米"), labelValue("高", height, "米")], answer: resultNum(answer), unit: "平方米",
+                    formula: "梯形面积 S = (上底 + 下底) × 高 ÷ 2",
+                    hint: "先把两条互相平行的底边相加，再乘高，最后除以 2。",
+                    steps: [`依据：S = (上底 + 下底) × 高 ÷ 2。`, `代入：S = (${top} + ${bottom}) × ${height} ÷ 2。`, `计算：${top + bottom} × ${height} ÷ 2 = ${nstr(answer)}。`, `答：花圃面积是 ${nstr(answer)} 平方米。`],
+                    tip: "易错提醒：括号内是上底加下底，最后还要除以 2。",
+                    diagram: { top: `上底 ${top} 米`, bottom: `下底 ${bottom} 米`, height: `高 ${height} 米` }
+                };
+            },
+            () => {
+                const top = randInt(3, 7), bottom = randInt(top + 3, 14), height = randInt(4, 10), area = (top + bottom) * height / 2;
+                return {
+                    shape: "trap", signature: "trap-reverse-height", tag: "反求未知量", level: "★★★ 挑战",
+                    prompt: `一个梯形的面积是 <em>${nstr(area)} 平方厘米</em>，上底是 <em>${top} 厘米</em>，下底是 <em>${bottom} 厘米</em>。它的高是多少厘米？`,
+                    known: [labelValue("面积", area, "平方厘米"), labelValue("上底", top, "厘米"), labelValue("下底", bottom, "厘米")], answer: height, unit: "厘米",
+                    formula: "高 = 梯形面积 × 2 ÷ (上底 + 下底)",
+                    hint: "由面积公式反推：先把面积乘 2，再除以上、下底的和。",
+                    steps: [`先求两底之和：${top} + ${bottom} = ${top + bottom}（厘米）。`, `反求：高 = S × 2 ÷ (上底 + 下底)。`, `代入：${nstr(area)} × 2 ÷ ${top + bottom} = ${height}（厘米）。`, `答：梯形的高是 ${height} 厘米。`],
+                    tip: "易错提醒：反求高时，面积要先乘 2；除数是两底之和。",
+                    diagram: { top: `上底 ${top} 厘米`, bottom: `下底 ${bottom} 厘米`, height: "高 ?", area: `面积 ${nstr(area)} 平方厘米` }
+                };
+            },
+            () => {
+                const top = randInt(4, 8), bottom = randInt(top + 3, 14), left = randInt(4, 9), right = randInt(4, 9), answer = top + bottom + left + right;
+                return {
+                    shape: "trap", signature: "trap-perimeter", tag: "周长辨析", level: "★★ 进阶",
+                    prompt: `一个梯形纸片的上底、下底和两条腰分别长 <em>${top} 分米</em>、<em>${bottom} 分米</em>、<em>${left} 分米</em>、<em>${right} 分米</em>。它的周长是多少分米？`,
+                    known: [labelValue("上底", top, "分米"), labelValue("下底", bottom, "分米"), labelValue("左腰", left, "分米"), labelValue("右腰", right, "分米")], answer, unit: "分米",
+                    formula: "梯形周长 C = 上底 + 下底 + 左腰 + 右腰",
+                    hint: "周长就是沿外边线走一圈，把四条边全部相加；不使用高。",
+                    steps: [`辨认：求梯形周长，要把四条外边都相加。`, `列式：C = ${top} + ${bottom} + ${left} + ${right}。`, `计算：${top} + ${bottom} + ${left} + ${right} = ${answer}。`, `答：梯形纸片的周长是 ${answer} 分米。`],
+                    tip: "易错提醒：高在梯形内部，不属于周长；两条腰也不一定相等。",
+                    diagram: { top: `${top} 分米`, bottom: `${bottom} 分米`, left: `${left} 分米`, right: `${right} 分米` }
+                };
+            },
+            () => {
+                const top = randInt(3, 8), bottom = randInt(top + 3, 15), height = randInt(4, 10), area = (top + bottom) * height / 2;
+                return {
+                    shape: "trap", signature: "trap-reverse-top", tag: "反求未知量", level: "★★★ 挑战",
+                    prompt: `一块梯形广告牌的面积是 <em>${nstr(area)} 平方米</em>，下底是 <em>${bottom} 米</em>，高是 <em>${height} 米</em>。它的上底是多少米？`,
+                    known: [labelValue("面积", area, "平方米"), labelValue("下底", bottom, "米"), labelValue("高", height, "米"), "反求上底"], answer: top, unit: "米",
+                    formula: "上底 = 面积 × 2 ÷ 高 − 下底",
+                    hint: "先由面积反求“上底 + 下底”，再减去已知的下底。",
+                    steps: [`先求两底之和：${nstr(area)} × 2 ÷ ${height} = ${top + bottom}（米）。`, `再求上底：${top + bottom} − ${bottom} = ${top}（米）。`, `验算：(${top} + ${bottom}) × ${height} ÷ 2 = ${nstr(area)}（平方米）。`, `答：广告牌的上底是 ${top} 米。`],
+                    tip: "易错提醒：面积乘 2 再除以高，得到的是两底之和，不是上底。",
+                    diagram: { top: "上底 ?", bottom: `下底 ${bottom} 米`, height: `高 ${height} 米`, area: `面积 ${nstr(area)} 平方米` }
+                };
+            }
+        ];
+        return pick(makers)();
+    }
+
+    function makeCircleProblem() {
+        const makers = [
+            () => {
+                const r = randInt(2, 10), answer = resultNum(2 * 3.14 * r);
+                return {
+                    shape: "circle", signature: "circle-circ-r", tag: "基础应用", level: "★★ 进阶",
+                    prompt: `一个圆形杯垫的半径是 <em>${r} 厘米</em>。它的周长是多少厘米？（π 取 3.14）`,
+                    known: [labelValue("半径 r", r, "厘米"), "π = 3.14", "求圆周长"], answer, unit: "厘米",
+                    formula: "圆的周长 C = 2πr",
+                    hint: "已知的是半径，使用 C = 2 × π × r。",
+                    steps: [`依据：C = 2πr。`, `代入：C = 2 × 3.14 × ${r}。`, `计算：6.28 × ${r} = ${nstr(answer)}。`, `答：杯垫的周长是 ${nstr(answer)} 厘米。`],
+                    tip: "易错提醒：已知半径时不要漏乘 2；周长仍使用长度单位。",
+                    diagram: { radius: `半径 ${r} 厘米` }
+                };
+            },
+            () => {
+                const d = randInt(4, 16), answer = resultNum(3.14 * d);
+                return {
+                    shape: "circle", signature: "circle-circ-d", tag: "生活情境", level: "★★ 进阶",
+                    prompt: `一个圆形喷水池的直径是 <em>${d} 米</em>。绕池边走一圈大约是多少米？（π 取 3.14）`,
+                    known: [labelValue("直径 d", d, "米"), "π = 3.14", "绕一圈求周长"], answer, unit: "米",
+                    formula: "圆的周长 C = πd",
+                    hint: "题目直接给出直径，使用 π 乘直径，不需要再乘 2。",
+                    steps: [`辨认：绕池边一圈，就是求圆的周长。`, `代入：C = 3.14 × ${d}。`, `计算：3.14 × ${d} = ${nstr(answer)}。`, `答：绕池边一圈大约是 ${nstr(answer)} 米。`],
+                    tip: "易错提醒：使用 C = πd 时不要再乘 2；“大约”是因为 π 取近似值。",
+                    diagram: { diameter: `直径 ${d} 米` }
+                };
+            },
+            () => {
+                const r = randInt(2, 10), answer = resultNum(3.14 * r * r);
+                return {
+                    shape: "circle", signature: "circle-area", tag: "基础应用", level: "★★ 进阶",
+                    prompt: `一块圆形桌布的半径是 <em>${r} 分米</em>。桌布的面积是多少平方分米？（π 取 3.14）`,
+                    known: [labelValue("半径 r", r, "分米"), "π = 3.14", "求圆面积"], answer, unit: "平方分米",
+                    formula: "圆的面积 S = πr²",
+                    hint: "r² 是半径乘半径，不是半径乘 2。",
+                    steps: [`依据：S = πr²。`, `代入：S = 3.14 × ${r} × ${r}。`, `计算：3.14 × ${r * r} = ${nstr(answer)}。`, `答：桌布的面积是 ${nstr(answer)} 平方分米。`],
+                    tip: "易错提醒：r² = r × r；面积答案使用平方单位。",
+                    diagram: { radius: `半径 ${r} 分米` }
+                };
+            },
+            () => {
+                const r = randInt(2, 10), c = resultNum(2 * 3.14 * r);
+                return {
+                    shape: "circle", signature: "circle-reverse-radius", tag: "反求未知量", level: "★★★ 挑战",
+                    prompt: `一个圆形花坛的周长是 <em>${nstr(c)} 米</em>。它的半径是多少米？（π 取 3.14）`,
+                    known: [labelValue("圆周长", c, "米"), "π = 3.14", "反求半径"], answer: r, unit: "米",
+                    formula: "半径 r = 圆周长 C ÷ 2 ÷ π",
+                    hint: "由 C = 2πr 反求 r，要用周长依次除以 2 和 π。",
+                    steps: [`关系：C = 2πr。`, `反求：r = C ÷ 2 ÷ π。`, `代入：${nstr(c)} ÷ 2 ÷ 3.14 = ${r}（米）。`, `答：花坛的半径是 ${r} 米。`],
+                    tip: "易错提醒：${nstr(c)} ÷ 3.14 得到的是直径；还要再除以 2 才是半径。",
+                    diagram: { radius: "半径 ?", circumference: `周长 ${nstr(c)} 米` }
+                };
+            },
+            () => {
+                const d = randInt(4, 18), c = resultNum(3.14 * d);
+                return {
+                    shape: "circle", signature: "circle-reverse-diameter", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个圆形钟面的周长是 <em>${nstr(c)} 厘米</em>。它的直径是多少厘米？（π 取 3.14）`,
+                    known: [labelValue("圆周长", c, "厘米"), "π = 3.14", "反求直径"], answer: d, unit: "厘米",
+                    formula: "直径 d = 圆周长 C ÷ π",
+                    hint: "由 C = πd 反求直径，用周长除以 π。",
+                    steps: [`关系：C = πd。`, `反求：d = C ÷ π。`, `代入：${nstr(c)} ÷ 3.14 = ${d}（厘米）。`, `答：钟面的直径是 ${d} 厘米。`],
+                    tip: "易错提醒：周长除以 π 得到直径；如果题目问半径，还需再除以 2。",
+                    diagram: { diameter: "直径 ?", circumference: `周长 ${nstr(c)} 厘米` }
+                };
+            }
+        ];
+        return pick(makers)();
+    }
+
+    const practiceMakers = {
+        square: makeSquareProblem, rect: makeRectProblem, tri: makeTriProblem,
+        para: makeParaProblem, trap: makeTrapProblem, circle: makeCircleProblem
+    };
+    const practiceShapeKeys = Object.keys(practiceMakers);
+    let practiceSelected = "mixed";
+    let practiceQuestion = null;
+    let practiceLastSignature = "";
+    let practiceCompleted = 0;
+    let practiceScore = 0;
+    let practiceStreak = 0;
+    let practiceResolved = false;
+    let practiceWrongAttempted = false;
+
+    function renderPracticeFormula(shape) {
+        const f = practiceFormulaBook[shape];
+        const prefix = practiceSelected === "mixed" ? `本题 · ${practiceNames[shape]}` : practiceNames[shape];
+        $("practiceFormulaDeck").innerHTML = `
+            <div class="formula-card">
+                <span class="formula-label">${prefix} · 周长依据</span>
+                <strong>${f.perimeter}</strong>
+                <small>${f.perimeterNote}</small>
+            </div>
+            <div class="formula-card area-formula">
+                <span class="formula-label">${prefix} · 面积依据</span>
+                <strong>${f.area}</strong>
+                <small>${f.areaNote}</small>
+            </div>
+            <div class="formula-card reverse-formula">
+                <span class="formula-label">↩ 常见反求关系</span>
+                <strong>${f.reverse}</strong>
+                <small>反求时先回到原公式，想清楚未知量在乘法、加法中的位置，再使用逆运算。</small>
+            </div>`;
+    }
+
+    function svgLabel(svg, x, y, str, attrs) {
+        const isUnknown = String(str).includes("?");
+        svg.appendChild(text(x, y, str, Object.assign({
+            fill: isUnknown ? "#7c3aed" : "#0f766e", "font-size": 13, "font-weight": 900
+        }, attrs || {})));
+    }
+
+    function drawPracticeGrid(svg) {
+        for (let x = 20; x <= 400; x += 20) svg.appendChild(el("line", { x1:x, y1:18, x2:x, y2:280, stroke:"#e8eef4", "stroke-width":1 }));
+        for (let y = 20; y <= 280; y += 20) svg.appendChild(el("line", { x1:20, y1:y, x2:400, y2:y, stroke:"#e8eef4", "stroke-width":1 }));
+    }
+
+    function renderPracticeDiagram(q) {
+        const svg = $("practiceSvg"), d = q.diagram || {};
+        clear(svg); drawPracticeGrid(svg);
+        const fill = "rgba(13,148,136,.15)", stroke = "#0d9488";
+        if (q.shape === "square") {
+            svg.appendChild(el("rect", { x:110, y:50, width:200, height:200, rx:4, fill, stroke, "stroke-width":4 }));
+            svgLabel(svg, 210, 39, d.side || "边长");
+            if (d.perimeter) svgLabel(svg, 210, 278, d.perimeter, { fill:"#7c3aed" });
+            [[110,50],[310,50],[310,250],[110,250]].forEach(p => svg.appendChild(el("path", { d:`M ${p[0]} ${p[1]} h ${p[0] < 210 ? 13 : -13} v ${p[1] < 150 ? 13 : -13}`, fill:"none", stroke:"#0f766e", "stroke-width":2 })));
+        } else if (q.shape === "rect") {
+            svg.appendChild(el("rect", { x:55, y:80, width:310, height:155, rx:4, fill, stroke, "stroke-width":4 }));
+            svgLabel(svg, 210, 65, d.length || "长");
+            svgLabel(svg, 45, 162, d.width || "宽", { transform:"rotate(-90 45 162)" });
+            if (d.perimeter || d.area) svgLabel(svg, 210, 270, d.perimeter || d.area, { fill:"#7c3aed" });
+            svg.appendChild(el("path", { d:"M 55 80 h 14 v 14", fill:"none", stroke:"#0f766e", "stroke-width":2 }));
+        } else if (q.shape === "tri") {
+            const pts = [[52,238],[365,238],[185,48]];
+            svg.appendChild(el("polygon", { points:pts.map(p=>p.join(",")).join(" "), fill, stroke, "stroke-width":4, "stroke-linejoin":"round" }));
+            if (d.sides) {
+                svgLabel(svg, 210, 263, d.sides[0]);
+                svgLabel(svg, 98, 135, d.sides[1], { transform:"rotate(-55 98 135)" });
+                svgLabel(svg, 292, 137, d.sides[2], { transform:"rotate(47 292 137)" });
+            } else {
+                svgLabel(svg, 210, 263, d.base || "底");
+                svg.appendChild(el("line", { x1:185,y1:48,x2:185,y2:238,stroke:"#7c3aed","stroke-width":2,"stroke-dasharray":"6 5" }));
+                svg.appendChild(el("path", { d:"M 185 238 h 14 v -14", fill:"none", stroke:"#7c3aed", "stroke-width":2 }));
+                svgLabel(svg, 174, 145, d.height || "高", { fill:"#7c3aed", transform:"rotate(-90 174 145)" });
+            }
+            if (d.perimeter || d.area) svgLabel(svg, 315, 34, d.perimeter || d.area, { fill:"#7c3aed" });
+        } else if (q.shape === "para") {
+            const pts = [[105,62],[360,62],[305,238],[50,238]];
+            svg.appendChild(el("polygon", { points:pts.map(p=>p.join(",")).join(" "), fill, stroke, "stroke-width":4, "stroke-linejoin":"round" }));
+            svgLabel(svg, 180, 264, d.base || "底");
+            if (d.height) {
+                svg.appendChild(el("line", { x1:105,y1:62,x2:105,y2:238,stroke:"#7c3aed","stroke-width":2,"stroke-dasharray":"6 5" }));
+                svg.appendChild(el("path", { d:"M 105 238 h 14 v -14", fill:"none", stroke:"#7c3aed", "stroke-width":2 }));
+                svgLabel(svg, 93, 151, d.height, { fill:"#7c3aed", transform:"rotate(-90 93 151)" });
+            }
+            if (d.side) svgLabel(svg, 62, 145, d.side, { transform:"rotate(-73 62 145)" });
+            if (d.area) svgLabel(svg, 300, 286, d.area, { fill:"#7c3aed" });
+        } else if (q.shape === "trap") {
+            const pts = [[125,63],[300,63],[365,238],[50,238]];
+            svg.appendChild(el("polygon", { points:pts.map(p=>p.join(",")).join(" "), fill, stroke, "stroke-width":4, "stroke-linejoin":"round" }));
+            svgLabel(svg, 212, 47, d.top || "上底");
+            svgLabel(svg, 210, 264, d.bottom || "下底");
+            if (d.height) {
+                svg.appendChild(el("line", { x1:125,y1:63,x2:125,y2:238,stroke:"#7c3aed","stroke-width":2,"stroke-dasharray":"6 5" }));
+                svg.appendChild(el("path", { d:"M 125 238 h 14 v -14", fill:"none", stroke:"#7c3aed", "stroke-width":2 }));
+                svgLabel(svg, 113, 151, d.height, { fill:"#7c3aed", transform:"rotate(-90 113 151)" });
+            }
+            if (d.left) svgLabel(svg, 77, 145, d.left, { transform:"rotate(-67 77 145)" });
+            if (d.right) svgLabel(svg, 340, 145, d.right, { transform:"rotate(70 340 145)" });
+            if (d.area) svgLabel(svg, 312, 286, d.area, { fill:"#7c3aed" });
+        } else {
+            svg.appendChild(el("circle", { cx:210, cy:145, r:102, fill, stroke, "stroke-width":4 }));
+            svg.appendChild(el("circle", { cx:210, cy:145, r:4, fill:"#0f766e" }));
+            if (d.diameter) {
+                svg.appendChild(el("line", { x1:108,y1:145,x2:312,y2:145,stroke:"#7c3aed","stroke-width":3 }));
+                svgLabel(svg, 210, 132, d.diameter, { fill:"#7c3aed" });
+            } else {
+                svg.appendChild(el("line", { x1:210,y1:145,x2:298,y2:94,stroke:"#7c3aed","stroke-width":3 }));
+                svgLabel(svg, 266, 108, d.radius || "半径", { fill:"#7c3aed", transform:"rotate(-30 266 108)" });
+            }
+            if (d.circumference) svgLabel(svg, 210, 277, d.circumference, { fill:"#7c3aed" });
+            svgLabel(svg, 210, 22, "π = 3.14", { fill:"#64748b" });
+        }
+    }
+
+    function updatePracticeStats() {
+        const current = Math.min(practiceCompleted + 1, 10);
+        $("practiceProgressText").textContent = practiceCompleted >= 10 ? "本轮已完成" : `第 ${current} / 10 题`;
+        $("practiceScore").textContent = practiceScore;
+        $("practiceStreak").textContent = practiceStreak;
+        $("practiceProgressBar").style.width = `${Math.min(100, practiceCompleted * 10)}%`;
+    }
+
+    function createPracticeProblem(forcedShape) {
+        const shape = forcedShape || (practiceSelected === "mixed" ? pick(practiceShapeKeys) : practiceSelected);
+        let q = practiceMakers[shape]();
+        let guard = 0;
+        while (q.signature === practiceLastSignature && guard++ < 8) q = practiceMakers[shape]();
+        practiceLastSignature = q.signature;
+        return q;
+    }
+
+    function loadPracticeProblem(forcedShape) {
+        practiceQuestion = createPracticeProblem(forcedShape);
+        practiceResolved = false;
+        practiceWrongAttempted = false;
+        renderPracticeFormula(practiceQuestion.shape);
+        $("practiceShapeName").textContent = practiceNames[practiceQuestion.shape];
+        $("practiceTag").textContent = practiceQuestion.tag;
+        $("practiceLevel").textContent = practiceQuestion.level;
+        $("practicePrompt").innerHTML = practiceQuestion.prompt;
+        $("practiceKnown").innerHTML = practiceQuestion.known.map(k => `<span class="known-item">${k}</span>`).join("");
+        $("practiceUnit").textContent = practiceQuestion.unit;
+        $("practiceAnswer").value = "";
+        $("practiceAnswer").disabled = false;
+        $("practiceSubmit").hidden = false;
+        $("practiceNext").hidden = true;
+        $("practiceHint").hidden = false;
+        $("practiceReveal").hidden = false;
+        $("practiceRefresh").hidden = false;
+        $("practiceFeedback").hidden = true;
+        $("practiceSolution").hidden = true;
+        $("practiceVisualNote").textContent = practiceQuestion.note || "示意图不一定按实际比例绘制，请以题目给出的数据为准。紫色虚线表示高或待求量。";
+        renderPracticeDiagram(practiceQuestion);
+        updatePracticeStats();
+        setTimeout(() => $("practiceAnswer").focus({ preventScroll:true }), 0);
+    }
+
+    function showPracticeFeedback(kind, html) {
+        const box = $("practiceFeedback");
+        box.className = `feedback ${kind}`;
+        box.innerHTML = html;
+        box.hidden = false;
+    }
+
+    function showPracticeSolution() {
+        const q = practiceQuestion;
+        $("practiceBasis").textContent = `计算依据：${q.formula}`;
+        $("practiceSteps").innerHTML = q.steps.map((s, i) => `<li><i>${i + 1}</i>${s}</li>`).join("");
+        $("practiceMistake").textContent = q.tip;
+        $("practiceSolution").hidden = false;
+    }
+
+    function resolvePractice(correct, byReveal) {
+        if (practiceResolved) return;
+        practiceResolved = true;
+        practiceCompleted++;
+        if (correct) {
+            practiceScore++;
+            practiceStreak = practiceWrongAttempted ? 0 : practiceStreak + 1;
+        } else {
+            practiceStreak = 0;
+        }
+        $("practiceAnswer").disabled = true;
+        $("practiceSubmit").hidden = true;
+        $("practiceNext").hidden = false;
+        $("practiceNext").textContent = practiceCompleted >= 10 ? "再练一轮 ↻" : "下一题 →";
+        $("practiceHint").hidden = true;
+        $("practiceReveal").hidden = true;
+        $("practiceRefresh").hidden = true;
+        showPracticeSolution();
+        if (correct) {
+            const roundText = practiceCompleted >= 10 ? ` 本轮完成：答对 ${practiceScore} / 10 题。` : "";
+            showPracticeFeedback("good", `✓ 答对了！答案是 <b>${nstr(practiceQuestion.answer)} ${practiceQuestion.unit}</b>。${roundText}`);
+        } else if (byReveal) {
+            const roundText = practiceCompleted >= 10 ? ` 本轮完成：答对 ${practiceScore} / 10 题。` : "";
+            showPracticeFeedback("hint", `已展开完整解析，正确答案是 <b>${nstr(practiceQuestion.answer)} ${practiceQuestion.unit}</b>。先对照每一步，再做下一题。${roundText}`);
+        }
+        updatePracticeStats();
+    }
+
+    function submitPracticeAnswer() {
+        if (practiceResolved) return;
+        const raw = $("practiceAnswer").value.trim();
+        if (!raw) {
+            showPracticeFeedback("try", "先填入一个数值答案，再点“检查答案”。单位已经写在输入框右侧，不用重复输入。");
+            return;
+        }
+        const value = Number(raw);
+        if (!Number.isFinite(value)) {
+            showPracticeFeedback("try", "请输入有效的数字。");
+            return;
+        }
+        if (Math.abs(value - practiceQuestion.answer) <= 0.01) {
+            resolvePractice(true, false);
+        } else {
+            practiceWrongAttempted = true;
+            practiceStreak = 0;
+            updatePracticeStats();
+            const direction = value > practiceQuestion.answer ? "偏大" : "偏小";
+            showPracticeFeedback("try", `还差一点，这个结果<b>${direction}</b>。${practiceQuestion.hint} 可以修改后再试。`);
+        }
+    }
+
+    function nextPracticeProblem() {
+        if (practiceCompleted >= 10) {
+            practiceCompleted = 0; practiceScore = 0; practiceStreak = 0; practiceLastSignature = "";
+        }
+        loadPracticeProblem();
+    }
+
+    function startPracticeRound() {
+        practiceCompleted = 0; practiceScore = 0; practiceStreak = 0; practiceLastSignature = "";
+        loadPracticeProblem();
+    }
+
+    $("practiceShapePicker").querySelectorAll("button").forEach(btn => {
         btn.addEventListener("click", () => {
-            document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === btn));
-            document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + btn.dataset.view));
+            practiceSelected = btn.dataset.shape;
+            $("practiceShapePicker").querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+            startPracticeRound();
         });
     });
+    $("practiceSubmit").addEventListener("click", submitPracticeAnswer);
+    $("practiceNext").addEventListener("click", nextPracticeProblem);
+    $("practiceHint").addEventListener("click", () => showPracticeFeedback("hint", `提示：${practiceQuestion.hint}<br>可用依据：<b>${practiceQuestion.formula}</b>`));
+    $("practiceReveal").addEventListener("click", () => resolvePractice(false, true));
+    $("practiceRefresh").addEventListener("click", () => loadPracticeProblem(practiceQuestion.shape));
+    $("practiceAnswer").addEventListener("keydown", e => {
+        if (e.key === "Enter") practiceResolved ? nextPracticeProblem() : submitPracticeAnswer();
+    });
+    startPracticeRound();
+
+    /* ============================================================
+       标签切换
+       ============================================================ */
+    function activateTabView(viewName) {
+        const target = document.querySelector(`.tab[data-view="${viewName}"]`);
+        if (!target) return;
+        document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === target));
+        document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + viewName));
+    }
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            activateTabView(btn.dataset.view);
+            history.replaceState(null, "", "#" + btn.dataset.view);
+        });
+    });
+    const initialView = location.hash.slice(1);
+    if (initialView) activateTabView(initialView);
     </script>
     <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 </body>

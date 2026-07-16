@@ -29,9 +29,10 @@
     </main>
     <script>
         window.WORD_PROBLEM_TOOL = {
-            title: "复杂和差倍与年龄问题",
-            subtitle: "基础和差倍留在读题画图工具；这里专门处理条件转换、时刻变化与多步推理。",
+            title: "和差倍与年龄问题",
+            subtitle: "归为4类；线段图和方程在同一页逐步揭示，前后关系始终保留。",
             mark: "倍", accent: "#7c3aed", accentDark: "#5b21b6", accentSoft: "#f3e8ff",
+            dualMethod: true,
             tabs: [
                 {
                     id: "complex", label: "复杂和差倍", intro: "原“终极挑战”题组：先转化条件，再使用和、差、倍关系。",
@@ -144,7 +145,9 @@
             ]
         };
     </script>
-    <script src="../docx-problem-bank.js"></script><script src="../word-problem-tool.js"></script>
+    <script src="../docx-problem-bank.js"></script>
+    <script src="./classification.js"></script>
+    <script src="../word-problem-tool.js"></script>
     <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 </body>
 </html>

@@ -58,70 +58,70 @@
         // 基础版题库（单步：加 / 减 / 乘）
         const BASIC = [
             {
-                label: '比多（求大数）①', kind: 'compare-more', unit: '个',
+                label: '求大数①', kind: 'compare-more', unit: '个',
                 nameA: '小明', nameB: '小红', item: '贴纸',
                 story: '小红有 5 个贴纸，小明比小红多 3 个。小明有几个？',
                 keywords: [ {text:'比小红多', type:'more'}, {text:'3 个', type:'num'} ],
                 base: 5, gap: 3, ask: 'A',  // 已知 B=5、多 gap，求 A
             },
             {
-                label: '比多（求大数）②', kind: 'compare-more', unit: '颗',
+                label: '求大数②', kind: 'compare-more', unit: '颗',
                 nameA: '弟弟', nameB: '姐姐', item: '草莓',
                 story: '姐姐摘了 4 颗草莓，弟弟比姐姐多摘 5 颗。弟弟摘了几颗？',
                 keywords: [ {text:'比姐姐多摘', type:'more'}, {text:'5 颗', type:'num'} ],
                 base: 4, gap: 5, ask: 'A',
             },
             {
-                label: '比少（求小数）①', kind: 'compare-less', unit: '本',
+                label: '求小数①', kind: 'compare-less', unit: '本',
                 nameA: '小明', nameB: '小红', item: '故事书',
                 story: '小明有 8 本书，小红比小明少 2 本。小红有几本？',
                 keywords: [ {text:'比小明少', type:'less'}, {text:'2 本', type:'num'} ],
                 base: 8, gap: 2, ask: 'B', // 已知 A=8、少 gap，求 B
             },
             {
-                label: '比少（求小数）②', kind: 'compare-less', unit: '辆',
+                label: '求小数②', kind: 'compare-less', unit: '辆',
                 nameA: '红色车', nameB: '蓝色车', item: '玩具车',
                 story: '红色车有 7 辆，蓝色车比红色车少 3 辆。蓝色车有几辆？',
                 keywords: [ {text:'比红色车少', type:'less'}, {text:'3 辆', type:'num'} ],
                 base: 7, gap: 3, ask: 'B',
             },
             {
-                label: '一共（求总数）①', kind: 'total', unit: '只',
+                label: '求总数①', kind: 'total', unit: '只',
                 nameA: '白兔', nameB: '黑兔', item: '兔子',
                 story: '草地上有白兔 6 只，黑兔 4 只。一共有几只兔子？',
                 keywords: [ {text:'一共', type:'total'} ],
                 valA: 6, valB: 4, ask: 'total',
             },
             {
-                label: '一共（求总数）②', kind: 'total', unit: '朵',
+                label: '求总数②', kind: 'total', unit: '朵',
                 nameA: '红花', nameB: '黄花', item: '花',
                 story: '花瓶里插了红花 5 朵，黄花 7 朵。一共插了几朵花？',
                 keywords: [ {text:'一共', type:'total'} ],
                 valA: 5, valB: 7, ask: 'total',
             },
             {
-                label: '相差（多几）①', kind: 'difference', unit: '颗',
+                label: '求相差①', kind: 'difference', unit: '颗',
                 nameA: '哥哥', nameB: '弟弟', item: '糖',
                 story: '哥哥有 9 颗糖，弟弟有 6 颗糖。哥哥比弟弟多几颗？',
                 keywords: [ {text:'多几颗', type:'morewh'} ],
                 valA: 9, valB: 6, ask: 'diff',
             },
             {
-                label: '相差（多几）②', kind: 'difference', unit: '本',
+                label: '求相差②', kind: 'difference', unit: '本',
                 nameA: '小红', nameB: '小芳', item: '本子',
                 story: '小红有 12 本本子，小芳有 8 本。小红比小芳多几本？',
                 keywords: [ {text:'多几本', type:'morewh'} ],
                 valA: 12, valB: 8, ask: 'diff',
             },
             {
-                label: '几倍（求倍数）①', kind: 'times', unit: '朵',
+                label: '求倍数①', kind: 'times', unit: '朵',
                 nameA: '小华', nameB: '小丽', item: '花',
                 story: '小丽折了 4 朵花，小华折的是小丽的 3 倍。小华折了几朵？',
                 keywords: [ {text:'小丽的 3 倍', type:'times'} ],
                 base: 4, factor: 3, ask: 'A', // A = B × factor
             },
             {
-                label: '几倍（求倍数）②', kind: 'times', unit: '个',
+                label: '求倍数②', kind: 'times', unit: '个',
                 nameA: '鸭子', nameB: '鹅', item: '只',
                 story: '池塘里有鹅 3 只，鸭子的只数是鹅的 4 倍。鸭子有几只？',
                 keywords: [ {text:'鹅的 4 倍', type:'times'} ],
@@ -181,7 +181,7 @@
         // ============================================================
         const ULTIMATE = [
             {
-                id: 'chalk', label: '终极①·粉笔总价', unit: '元',
+                id: 'chalk', label: '粉笔总价', unit: '元',
                 story: '学校买了 6 箱白粉笔和 3 箱彩色粉笔，共用去 630 元。已知每箱彩色粉笔比每箱白粉笔贵 30 元。每箱彩色粉笔和每箱白粉笔各多少元？',
                 keywords: [ {text:'6 箱白粉笔', type:'num'}, {text:'3 箱彩色粉笔', type:'num'}, {text:'共用去 630 元', type:'total'}, {text:'贵 30 元', type:'more'} ],
                 steps: [
@@ -193,7 +193,7 @@
                 answer: '每箱白粉笔 60 元，每箱彩色粉笔 90 元。',
             },
             {
-                id: 'shelf', label: '终极②·书架转移', unit: '本',
+                id: 'shelf', label: '书架转移', unit: '本',
                 story: '有两个书架，甲书架比乙书架多 40 本书。如果从甲书架拿 5 本放入乙书架，此时甲书架的书是乙书架的 3 倍。原来甲、乙两个书架各有多少本书？',
                 keywords: [ {text:'多 40 本', type:'more'}, {text:'拿 5 本放入乙', type:'less'}, {text:'是乙书架的 3 倍', type:'times'} ],
                 steps: [
@@ -205,7 +205,7 @@
                 answer: '原来甲书架 50 本，乙书架 10 本。',
             },
             {
-                id: 'money', label: '终极③·你给我给', unit: '元',
+                id: 'money', label: '你给我给', unit: '元',
                 story: '小通和小虎各有一笔钱。如果小通拿 80 元给小虎，两人的钱就同样多；如果小虎给小通 70 元，小通的钱就是小虎的 3 倍。请问他们原来各有多少钱？',
                 keywords: [ {text:'拿 80 元给小虎', type:'less'}, {text:'同样多', type:'total'}, {text:'给小通 70 元', type:'more'}, {text:'是小虎的 3 倍', type:'times'} ],
                 steps: [
@@ -218,7 +218,7 @@
                 answer: '原来小通 380 元，小虎 220 元。',
             },
             {
-                id: 'class', label: '终极④·三班调人', unit: '人',
+                id: 'class', label: '三班调人', unit: '人',
                 story: '三年级有甲、乙、丙三个班，一共 162 人。如果从甲班转 2 人到乙班，则甲、乙两班人数相同；如果再从丙班转 3 人到乙班，则乙、丙两班人数相同。甲班原来有多少人？',
                 keywords: [ {text:'一共 162 人', type:'total'}, {text:'转 2 人到乙班', type:'less'}, {text:'甲、乙两班人数相同', type:'morewh'}, {text:'转 3 人到乙班', type:'less'}, {text:'乙、丙两班人数相同', type:'morewh'} ],
                 steps: [
@@ -231,7 +231,7 @@
                 answer: '甲班原来有 54 人。（乙班 50 人，丙班 58 人）',
             },
             {
-                id: 'subtract', label: '终极⑤·减法三数', unit: '',
+                id: 'subtract', label: '减法三数', unit: '',
                 story: '一个减法算式，被减数、减数与差的和等于 120，减数是差的 3 倍，那么差是多少？',
                 keywords: [ {text:'被减数、减数与差的和等于 120', type:'total'}, {text:'减数是差的 3 倍', type:'times'} ],
                 steps: [
@@ -243,7 +243,7 @@
                 answer: '差是 15。',
             },
             {
-                id: 'pieces', label: '终极⑥·棋子搬家', unit: '个',
+                id: 'pieces', label: '棋子搬家', unit: '个',
                 story: '有两堆棋子，第一堆有 87 个，第二堆有 69 个。从第一堆拿多少个棋子到第二堆，就能使第二堆棋子数是第一堆的 3 倍？',
                 keywords: [ {text:'第一堆有 87 个', type:'num'}, {text:'第二堆有 69 个', type:'num'}, {text:'第二堆棋子数是第一堆的 3 倍', type:'times'} ],
                 steps: [
@@ -262,7 +262,7 @@
         // ============================================================
         const AGE = [
             {
-                id: 'mother', label: '年龄①·母子年龄', unit: '岁',
+                id: 'mother', label: '母子年龄', unit: '岁',
                 story: '6 年前，母亲的年龄是儿子的 5 倍。5 年后，母子年龄和是 76 岁。母亲今年多少岁？',
                 keywords: [ {text:'6 年前', type:'less'}, {text:'是儿子的 5 倍', type:'times'}, {text:'5 年后', type:'more'}, {text:'年龄和是 76 岁', type:'total'} ],
                 steps: [
@@ -275,7 +275,7 @@
                 answer: '母亲今年 51 岁。',
             },
             {
-                id: 'wangli', label: '年龄②·错时年龄', unit: '岁',
+                id: 'wangli', label: '错时年龄', unit: '岁',
                 story: '王燕 3 年前的年龄等于李龙 3 年后的年龄。王燕 4 年前和李龙 5 年后的年龄和是 41 岁。王燕和李龙今年各多少岁？',
                 keywords: [ {text:'王燕 3 年前', type:'less'}, {text:'等于李龙 3 年后', type:'morewh'}, {text:'王燕 4 年前', type:'less'}, {text:'李龙 5 年后', type:'more'}, {text:'和是 41 岁', type:'total'} ],
                 steps: [
@@ -288,7 +288,7 @@
                 answer: '王燕今年 23 岁，李龙今年 17 岁。',
             },
             {
-                id: 'brothers', label: '年龄③·哥弟年龄', unit: '岁',
+                id: 'brothers', label: '哥弟年龄', unit: '岁',
                 story: '兄弟俩今年的年龄和是 30 岁。当哥哥像弟弟现在这样大时，弟弟的年龄恰好是哥哥年龄的一半。哥哥今年多少岁？',
                 keywords: [ {text:'年龄和是 30 岁', type:'total'}, {text:'当哥哥像弟弟现在这样大时', type:'less'}, {text:'是哥哥年龄的一半', type:'times'} ],
                 steps: [
@@ -307,7 +307,7 @@
         // ============================================================
         const NORM = [
             {
-                id: 'flag', label: '归一①·制作彩旗', unit: '人',
+                id: 'flag', label: '制作彩旗', unit: '人',
                 story: '3 个同学 2 小时可以制作 120 面彩旗。如果要在 2.5 小时内制作 500 面彩旗，需要安排多少个同学？',
                 keywords: [ {text:'3 个同学 2 小时', type:'num'}, {text:'120 面彩旗', type:'num'}, {text:'2.5 小时', type:'num'}, {text:'500 面彩旗', type:'total'} ],
                 steps: [
@@ -318,7 +318,7 @@
                 answer: '需要安排 10 个同学。',
             },
             {
-                id: 'save', label: '归一②·攒钱买书架', unit: '个月',
+                id: 'save', label: '攒钱买架', unit: '个月',
                 story: '聪聪如果每月攒 66 元，攒一年的钱正好可以买一个书架。如果每月攒 99 元，可以少攒几个月？',
                 keywords: [ {text:'每月攒 66 元', type:'num'}, {text:'攒一年', type:'num'}, {text:'每月攒 99 元', type:'num'}, {text:'少攒几个月', type:'morewh'} ],
                 steps: [
@@ -329,7 +329,7 @@
                 answer: '可以少攒 4 个月。',
             },
             {
-                id: 'banana', label: '归一③·猩猩吃香蕉', unit: '个',
+                id: 'banana', label: '猩猩香蕉', unit: '个',
                 story: '6 只猩猩 8 天吃 24 个香蕉，按这样的速度，9 只猩猩 10 天吃多少个香蕉？',
                 keywords: [ {text:'6 只猩猩 8 天', type:'num'}, {text:'24 个香蕉', type:'num'}, {text:'9 只猩猩 10 天', type:'num'} ],
                 steps: [
@@ -340,7 +340,7 @@
                 answer: '9 只猩猩 10 天吃 45 个香蕉。',
             },
             {
-                id: 'walk', label: '归一④·上学路程', unit: '分钟',
+                id: 'walk', label: '上学路程', unit: '分钟',
                 story: '赵老师从家到学校，平时每分钟走 72 米，12 分钟可以到学校。有一天他比平时每分钟多走 24 米，这次多长时间就能到学校？',
                 keywords: [ {text:'每分钟走 72 米', type:'num'}, {text:'12 分钟', type:'num'}, {text:'多走 24 米', type:'more'} ],
                 steps: [
@@ -357,7 +357,7 @@
         // ============================================================
         const GAP = [
             {
-                id: 'lamp', label: '间隔①·路灯位置', unit: '个',
+                id: 'lamp', label: '路灯位置', unit: '个',
                 story: '一条长 2400 米的公路一旁安装路灯（两头都装），原来每 6 米装一个，灯位已预留好。现在改为每 8 米装一个，共有多少个路灯的预留位置不需要重新预留？',
                 keywords: [ {text:'长 2400 米', type:'num'}, {text:'两头都装', type:'morewh'}, {text:'每 6 米', type:'num'}, {text:'每 8 米', type:'num'} ],
                 steps: [
@@ -369,7 +369,7 @@
                 answer: '有 101 个预留位置不需要重新预留。',
             },
             {
-                id: 'ringflag', label: '间隔②·环形彩旗', unit: '米',
+                id: 'ringflag', label: '环形彩旗', unit: '米',
                 story: '400 米环形跑道边每隔 16 米插一杆彩旗，共插 25 杆。后来增加彩旗、缩短间隔，起点的彩旗不动，重新插完后有 5 杆彩旗没动。现在相邻两杆彩旗的间隔是多少米？',
                 keywords: [ {text:'400 米环形', type:'num'}, {text:'每隔 16 米', type:'num'}, {text:'缩短间隔', type:'less'}, {text:'5 杆彩旗没动', type:'morewh'} ],
                 steps: [
@@ -381,7 +381,7 @@
                 answer: '现在相邻两杆彩旗的间隔是 10 米。',
             },
             {
-                id: 'square', label: '间隔③·表演方阵', unit: '人',
+                id: 'square', label: '表演方阵', unit: '人',
                 story: '四年级同学组成 4 个表演方阵，每个方阵排成 6 行、每行 6 人，最外面一圈是男生，其余是女生。四年级参加表演的男生有多少人？女生呢？',
                 keywords: [ {text:'4 个表演方阵', type:'num'}, {text:'6 行、每行 6 人', type:'num'}, {text:'最外面一圈是男生', type:'morewh'} ],
                 steps: [
@@ -393,7 +393,7 @@
                 answer: '男生 80 人，女生 64 人。',
             },
             {
-                id: 'stairs', label: '间隔④·爬楼梯', unit: '层',
+                id: 'stairs', label: '爬楼梯', unit: '层',
                 story: '甲、乙两人比赛爬楼梯，甲跑到 4 层时，乙恰好跑到 3 层。照这样计算，甲跑到 16 层时，乙跑到多少层？',
                 keywords: [ {text:'甲跑到 4 层', type:'num'}, {text:'乙恰好跑到 3 层', type:'num'}, {text:'甲跑到 16 层', type:'num'} ],
                 steps: [
@@ -411,7 +411,7 @@
         // ============================================================
         const MOVE = [
             {
-                id: 'candy', label: '移多补少①·分糖果', unit: '次',
+                id: 'candy', label: '分糖果', unit: '次',
                 story: '妈妈分给哥哥 40 块糖果，分给弟弟 16 块。哥哥每次给弟弟 4 块，多少次后两人的糖果同样多？',
                 keywords: [ {text:'哥哥 40 块', type:'num'}, {text:'弟弟 16 块', type:'num'}, {text:'每次给弟弟 4 块', type:'less'}, {text:'同样多', type:'morewh'} ],
                 steps: [
@@ -420,10 +420,20 @@
                     '要把 24 块的差全部抹平：24 ÷ 8 = 3（次）。',
                     '验证：3 次后哥哥 40 − 12 = 28，弟弟 16 + 12 = 28，一样多。',
                 ],
+                equationLet: '设需要移动 x 次。',
+                equationSteps: [
+                    '哥哥剩下：40 − 4x（块）。',
+                    '弟弟变成：16 + 4x（块）。',
+                    '同样多，所以：40 − 4x = 16 + 4x。',
+                    '移项：40 − 16 = 4x + 4x。',
+                    '化简：24 = 8x。',
+                    '解得：x = 3。',
+                ],
+                check: '移动3次共12块；哥哥28块，弟弟28块。',
                 answer: '3 次后两人的糖果同样多。',
             },
             {
-                id: 'bag', label: '移多补少②·两袋糖', unit: '次',
+                id: 'bag', label: '两袋糖', unit: '次',
                 story: '有两袋糖，第一袋比第二袋多 16 块。每次从第一袋拿 4 块放入第二袋，需要拿多少次才能使两袋一样多？',
                 keywords: [ {text:'多 16 块', type:'more'}, {text:'拿 4 块放入第二袋', type:'less'}, {text:'一样多', type:'morewh'} ],
                 steps: [
@@ -431,10 +441,18 @@
                     '每拿 4 块过去，第一袋少 4、第二袋多 4，差缩小 4 + 4 = 8（块）。',
                     '抹平 16 块的差：16 ÷ 8 = 2（次）。',
                 ],
+                equationLet: '设需要移动 x 次。',
+                equationSteps: [
+                    '每移动1次，两袋的差缩小：4 + 4 = 8（块）。',
+                    '移动x次后差为0，所以：16 − 8x = 0。',
+                    '移项：8x = 16。',
+                    '解得：x = 2。',
+                ],
+                check: '原来相差16块；移动2次后，差缩小2 × 8 = 16块。',
                 answer: '需要拿 2 次。',
             },
             {
-                id: 'average', label: '移多补少③·平均成绩', unit: '次',
+                id: 'average', label: '平均成绩', unit: '次',
                 story: '明明前几次自测的平均成绩是 84 分，这次只有达到 100 分，才能把平均成绩提高到 86 分。这是他第几次自测？',
                 keywords: [ {text:'平均成绩是 84 分', type:'num'}, {text:'这次只有达到 100 分', type:'num'}, {text:'提高到 86 分', type:'total'} ],
                 steps: [
@@ -443,6 +461,17 @@
                     '前面的次数：14 ÷ 2 = 7（次）。',
                     '算上这一次：7 + 1 = 8（次）。',
                 ],
+                equationLet: '设这次考试前已经测了 x 次。',
+                equationSteps: [
+                    '前x次的总分：84x（分）。',
+                    '加入这次100分后，共有x + 1次。',
+                    '按新平均分列方程：84x + 100 = 86(x + 1)。',
+                    '去括号：84x + 100 = 86x + 86。',
+                    '移项：100 − 86 = 86x − 84x。',
+                    '化简：14 = 2x，解得x = 7。',
+                    '算上本次：7 + 1 = 8（次）。',
+                ],
+                check: '前7次共588分，加100分得688分；688 ÷ 8 = 86分。',
                 answer: '这是他第 8 次自测。',
             },
         ];
@@ -569,7 +598,7 @@
         // ============================================================
         const BasicMode = ({ qi, setQi }) => {
             const [step, setStep] = useState(0); // 0读题 1画已知 2画关系/比较 3列式
-            const [mode, setMode] = useState('block');
+            const [mode, setMode] = useState('line');
             const q = BASIC[qi];
             const sol = useMemo(() => solveBasic(q), [q]);
 
@@ -592,9 +621,7 @@
                             <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">下一题 ›</button>
                         </div>
                         <div className="flex gap-1 items-center">
-                            <span className="text-sm text-gray-400 mr-1">画法</span>
-                            <button onClick={() => setMode('block')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='block'?'bg-blue-500 text-white':'bg-gray-100 text-gray-500')}>方块</button>
-                            <button onClick={() => setMode('line')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='line'?'bg-blue-500 text-white':'bg-gray-100 text-gray-500')}>线段</button>
+                            <span className="px-3 py-1.5 rounded-lg text-sm bg-blue-500 text-white">线段图</span>
                         </div>
                     </div>
 
@@ -760,7 +787,7 @@
 
         const AdvancedMode = ({ qi, setQi }) => {
             const [step, setStep] = useState(0);
-            const [mode, setMode] = useState('block');
+            const [mode, setMode] = useState('line');
             const q = ADVANCED[qi];
             const sol = useMemo(() => solveAdvanced(q), [q]);
             const unit = q.unit;
@@ -780,9 +807,7 @@
                             <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">下一题 ›</button>
                         </div>
                         <div className="flex gap-1 items-center">
-                            <span className="text-sm text-gray-400 mr-1">画法</span>
-                            <button onClick={() => setMode('block')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='block'?'bg-purple-500 text-white':'bg-gray-100 text-gray-500')}>方块</button>
-                            <button onClick={() => setMode('line')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='line'?'bg-purple-500 text-white':'bg-gray-100 text-gray-500')}>线段</button>
+                            <span className="px-3 py-1.5 rounded-lg text-sm bg-purple-500 text-white">线段图</span>
                         </div>
                     </div>
 
@@ -1153,7 +1178,7 @@
         function buildMoveBars(q, step, mode) {
             const cA = COLORS.A, cB = COLORS.B;
             if (q.id === 'candy' || q.id === 'bag') {
-                const big = q.id === 'candy' ? 10 : 8;   // 用方块比例示意（非真实数量）
+                const big = q.id === 'candy' ? 10 : 8;   // 用线段长度比例示意（非真实数量）
                 const small = q.id === 'candy' ? 4 : 4;
                 const diffUnits = big - small;
                 return (
@@ -1203,19 +1228,34 @@
                     btn: 'bg-orange-500 hover:bg-orange-600', num: 'text-orange-400', ans: 'text-orange-600' },
         };
 
-        // 通用"读题—画图—列式"演示组件（终极挑战 / 年龄问题共用）
-        // theme: THEME 里的键名（'rose' / 'teal'）；buildBars: 专属画图函数
+        // 通用“读题—图示—方程—检验”演示组件。
         const StoryMode = ({ data, qi, setQi, theme, buildBars }) => {
             const [step, setStep] = useState(0);
-            const [mode, setMode] = useState('block');
+            const [mode, setMode] = useState('line');
+            const [methodReveal, setMethodReveal] = useState(1);
             const q = data[qi];
             const t = THEME[theme];
+            const equationStages = [q.equationLet, ...(q.equationSteps || [])].filter(Boolean);
 
-            useEffect(() => { setStep(0); }, [qi, data]);
+            useEffect(() => { setStep(0); setMethodReveal(1); }, [qi, data]);
             const next = () => setQi((qi + 1) % data.length);
             const prev = () => setQi((qi - 1 + data.length) % data.length);
+            const methodCount = step === 1 ? 2 : step === 2 ? equationStages.length : 1;
+            const advance = () => {
+                if ((step === 1 || step === 2) && methodReveal < methodCount) setMethodReveal(methodReveal + 1);
+                else if (step < 3) { setStep(step + 1); setMethodReveal(1); }
+                else { setStep(0); setMethodReveal(1); }
+            };
+            const retreat = () => {
+                if ((step === 1 || step === 2) && methodReveal > 1) setMethodReveal(methodReveal - 1);
+                else if (step > 0) {
+                    const previous = step - 1;
+                    setStep(previous);
+                    setMethodReveal(previous === 1 ? 2 : previous === 2 ? equationStages.length : 1);
+                }
+            };
 
-            const stepNames = ['① 读题，找关键词', '② 画出已知的量', '③ 画出数量关系', '④ 列式计算'];
+            const stepNames = ['① 读题', '② 图示分析', '③ 方程', '④ 答案检验'];
 
             return (
                 <div className="fade-in">
@@ -1225,9 +1265,7 @@
                             <button onClick={next} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 smooth">下一题 ›</button>
                         </div>
                         <div className="flex gap-1 items-center">
-                            <span className="text-sm text-gray-400 mr-1">画法</span>
-                            <button onClick={() => setMode('block')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='block'?t.on:'bg-gray-100 text-gray-500')}>方块</button>
-                            <button onClick={() => setMode('line')} className={"px-3 py-1.5 rounded-lg text-sm smooth " + (mode==='line'?t.on:'bg-gray-100 text-gray-500')}>线段</button>
+                            <span className={"px-3 py-1.5 rounded-lg text-sm " + t.on}>图示 + 方程</span>
                         </div>
                     </div>
 
@@ -1242,28 +1280,41 @@
                         ))}
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 160 }}>
-                        {step === 0 && <p className="text-gray-400 text-center py-12">先读题，把关键词找出来，再点"下一步"开始画图 →</p>}
-                        {step >= 1 && buildBars(q, step, mode)}
-                        {step === 1 && <p className="text-sm text-gray-400 mt-2">先照着题意把各个量画出来。下一步再标出它们之间的关系 →</p>}
-                    </div>
+                    {step === 0 && <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100"><p className="text-gray-400 text-center py-12">先完整读题；下一步再逐段补充图示。</p></div>}
 
-                    {step >= 3 && (
+                    {step === 1 && (
+                        <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto fade-in" style={{ minHeight: 160 }}>
+                            <p className="text-sm font-bold text-orange-600 mb-4">方法一 · 图示分析　已揭示 {methodReveal}/2 小步</p>
+                            {buildBars(q, methodReveal, mode)}
+                            {q.steps.slice(0, methodReveal).map((s, i) => <p key={i} className="text-sm text-gray-500 mt-2">{i + 1}. {s}</p>)}
+                        </div>
+                    )}
+
+                    {step === 2 && (
                         <div className={"rounded-xl p-5 mb-5 border fade-in " + t.panel}>
-                            <p className="text-gray-500 mb-2 text-sm">一步一步把它解出来：</p>
-                            {q.steps.map((s, i) => (
-                                <p key={i} className="text-lg mb-2 text-gray-700">
-                                    <span className={"inline-block w-6 font-mono " + t.num}>{i + 1}.</span>{s}
-                                </p>
-                            ))}
-                            <p className="mt-3 text-lg text-gray-700">答：<span className={"font-bold " + t.ans}>{q.answer}</span></p>
+                            <p className="text-sm font-bold text-orange-600 mb-4">方法二 · 方程　已揭示 {methodReveal}/{equationStages.length} 小步</p>
+                            <div className="space-y-3">
+                                {equationStages.slice(0, methodReveal).map((s, i) => (
+                                    <div key={i} className="rounded-lg bg-white/80 border border-orange-100 px-4 py-3 text-lg text-gray-700">
+                                        <span className={"inline-block w-7 font-mono " + t.num}>{i + 1}.</span>{s}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {step === 3 && (
+                        <div className="rounded-xl p-5 mb-5 border border-green-200 bg-green-50 fade-in">
+                            <p className="text-green-800 font-semibold">检验：{q.check}</p>
+                            <p className="mt-3 text-lg text-gray-700">答：<span className="font-bold text-green-700">{q.answer}</span></p>
                         </div>
                     )}
 
                     <div className="flex gap-3">
-                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
-                        {step < 3 && <button onClick={() => setStep(step + 1)} className={"px-6 py-2.5 text-white rounded-lg font-semibold smooth " + t.btn}>下一步 →</button>}
-                        {step === 3 && <button onClick={() => setStep(0)} className="px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold smooth">从头再看一遍</button>}
+                        {step > 0 && <button onClick={retreat} className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-600 smooth">上一步</button>}
+                        <button onClick={advance} className={"px-6 py-2.5 text-white rounded-lg font-semibold smooth " + (step === 3 ? 'bg-green-500 hover:bg-green-600' : t.btn)}>
+                            {(step === 1 || step === 2) && methodReveal < methodCount ? '下一小步 →' : step === 3 ? '从头再看一遍' : '下一步 →'}
+                        </button>
                     </div>
                 </div>
             );

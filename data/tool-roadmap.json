@@ -183,7 +183,7 @@
           "id": "ratio-proportion",
           "name": "比与比例",
           "grade": "6",
-          "status": "planned",
+          "status": "ready",
           "route": "/ratio-proportion",
           "knowledgeNodeIds": [
             "ratio",
@@ -354,7 +354,7 @@
         },
         {
           "id": "object-viewer",
-          "name": "观察物体三视图",
+          "name": "堆叠小方块",
           "grade": "2-4",
           "status": "ready",
           "route": "/object-viewer",
@@ -362,9 +362,8 @@
             "observe-object"
           ],
           "tabs": [
-            "搭一搭·看三视图",
-            "学规则",
-            "辨认练习"
+            "方块操作台",
+            "视图挑战"
           ]
         },
         {
@@ -924,7 +923,7 @@
           "name": "平均数问题",
           "grade": "3-6",
           "status": "ready",
-          "route": "/bar-model",
+          "route": "/average-problem",
           "knowledgeNodeIds": [
             "average-problem"
           ]

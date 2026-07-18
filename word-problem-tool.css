@@ -67,6 +67,31 @@ h1 { margin-bottom: 4px; font-size: clamp(23px, 3.2vw, 34px); }
 .story { margin: 13px 0 0; font-size: 18px; line-height: 1.8; color: #394256; font-weight: 650; }
 .keyword { color: var(--accent-dark); background: var(--accent-soft); border-bottom: 2px solid color-mix(in srgb, var(--accent) 55%, white); padding: 1px 3px; border-radius: 4px; }
 .hint { margin: 12px 0 0; padding: 9px 12px; border: 1px solid #fde68a; border-radius: 11px; background: #fffbeb; color: #8a4b08; font-weight: 750; font-size: 13px; }
+.problem-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 14px; }
+.problem-choice { display: flex; align-items: baseline; gap: 8px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 11px; color: #394256; background: #fafbfc; line-height: 1.55; }
+.problem-choice b { color: var(--accent-dark); }
+.question-visual { margin-top: 16px; }
+.average-line-choices { display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fafbfc; }
+.average-chart-choice { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; min-width: 0; padding: 8px; border-radius: 11px; background: #fff; }
+.average-chart-choice > b { align-self: center; color: var(--accent-dark); font-size: 17px; }
+.average-chart-choice svg { display: block; width: 100%; min-width: 125px; }
+.chart-axes { fill: #26364a; stroke: #26364a; stroke-width: 2; }
+.chart-axes path:first-child { fill: none; }
+.chart-bars { fill: #a9dce9; stroke: #26364a; stroke-width: 1.5; }
+.chart-average-line { stroke: #26364a; stroke-width: 1.6; stroke-dasharray: 6 5; }
+.bar-chart-visual svg { display: block; width: 100%; max-height: 270px; }
+.bar-chart-axis { fill: none; stroke: #64748b; stroke-width: 2; }
+.bar-chart-bars rect { fill: color-mix(in srgb, var(--accent) 42%, white); stroke: var(--accent-dark); stroke-width: 1.5; }
+.bar-chart-bars text { fill: var(--muted); font: 700 9px/1 system-ui, sans-serif; text-anchor: middle; }
+.chart-line-label { fill: var(--accent-dark); font: 800 9px/1 system-ui, sans-serif; }
+.bar-chart-visual p, .visual-caption { margin: 10px 0 0; color: var(--muted); font-weight: 750; line-height: 1.65; }
+.balance-visual { display: grid; grid-template-columns: minmax(130px, 1fr) 120px minmax(130px, 1fr); align-items: end; gap: 14px; overflow: visible; }
+.balance-side { min-height: 112px; display: grid; place-items: center; align-content: center; gap: 5px; padding: 14px; border: 2px solid color-mix(in srgb, var(--accent) 34%, white); border-radius: 15px; color: var(--accent-dark); background: #fff; text-align: center; }
+.balance-side small, .balance-side span { color: var(--muted); font-weight: 750; }
+.balance-side b { font-size: 21px; }
+.balance-beam { position: relative; height: 82px; }
+.balance-beam span { position: absolute; left: 4px; right: 4px; top: 18px; height: 7px; border-radius: 999px; background: var(--accent); }
+.balance-beam i { position: absolute; left: 50%; bottom: 0; width: 0; height: 0; transform: translateX(-50%); border-left: 32px solid transparent; border-right: 32px solid transparent; border-bottom: 54px solid color-mix(in srgb, var(--accent) 30%, white); }
 
 .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0; }
 .step { border: 1px solid var(--line); border-radius: 11px; padding: 10px 6px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; }
@@ -186,6 +211,11 @@ h1 { margin-bottom: 4px; font-size: clamp(23px, 3.2vw, 34px); }
     .top-actions { margin-top: 13px; }
     .steps { grid-template-columns: repeat(2, 1fr) !important; }
     .relation-grid { grid-template-columns: repeat(2, 1fr); }
+    .problem-choices { grid-template-columns: 1fr; }
+    .average-line-choices { grid-template-columns: 1fr; }
+    .average-chart-choice { grid-template-columns: 28px minmax(0, 210px); justify-content: center; }
+    .balance-visual { grid-template-columns: 1fr; align-items: center; }
+    .balance-beam { width: 120px; height: 60px; margin: 0 auto; }
     .method-compare { grid-template-columns: 1fr; }
     .diagram-row { grid-template-columns: 72px 1fr; }
     .row-note { grid-column: 2; }

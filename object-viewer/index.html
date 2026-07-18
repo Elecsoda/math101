@@ -3,144 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>观察物体·三视图 | Math101</title>
+    <title>堆叠小方块 | Math101</title>
     <script src="../vendor/three.min.js"></script>
     <style>
         :root {
-            --bg: #f4f7fb; --card: #ffffff; --text: #1f2937; --muted: #64748b;
-            --line: #dbe4ef; --blue: #2563eb; --indigo: #4f46e5; --purple: #7c3aed;
-            --amber: #f59e0b; --green: #10b981; --red: #ef4444;
-            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+            --bg: #f3f6fb; --card: #fff; --text: #172033; --muted: #64748b;
+            --line: #dbe4ef; --indigo: #4f46e5; --purple: #7c3aed;
+            --blue: #2563eb; --green: #059669; --amber: #d97706; --red: #dc2626;
             --front: #60a5fa; --side: #34d399; --top: #fbbf24;
+            --shadow: 0 18px 44px rgba(15, 23, 42, .09);
         }
         * { box-sizing: border-box; }
         body {
-            margin: 0; min-height: 100vh;
-            background: radial-gradient(circle at top left, #dbeafe 0, transparent 32rem), var(--bg);
-            color: var(--text); font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+            margin: 0; min-height: 100vh; color: var(--text);
+            background: radial-gradient(circle at 8% 0, #dbeafe 0, transparent 30rem), var(--bg);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
         }
         button, input, select { font: inherit; }
         button { cursor: pointer; }
-        .page { max-width: 1180px; margin: 0 auto; padding: 24px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand-icon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
-            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
-            box-shadow: 0 12px 24px rgba(79, 70, 229, .25); font-size: 22px; font-weight: 950; }
-        h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+        .page { max-width: 1320px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 13px; }
+        .brand-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center;
+            color: #fff; font-size: 22px; font-weight: 950; background: linear-gradient(135deg, var(--indigo), var(--purple));
+            box-shadow: 0 12px 26px rgba(79, 70, 229, .25); }
+        h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); }
+        h2 { margin: 0; font-size: 21px; }
         .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
-        .btn { border: 1px solid var(--line); background: #fff; color: var(--text);
-            border-radius: 10px; padding: 10px 14px; font-weight: 800;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none; }
-        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
-        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
-        .btn.primary:hover { color: #fff; }
-        .card { background: rgba(255,255,255,.95); border: 1px solid rgba(226, 232, 240, .95);
-            border-radius: 18px; box-shadow: var(--shadow); }
+        .btn { border: 1px solid var(--line); background: #fff; color: #334155; border-radius: 10px;
+            padding: 9px 13px; font-weight: 800; box-shadow: 0 3px 10px rgba(15, 23, 42, .05); text-decoration: none; }
+        .btn:hover { border-color: #a5b4fc; color: var(--indigo); }
+        .btn:disabled { opacity: .45; cursor: not-allowed; }
+        .card { background: rgba(255,255,255,.96); border: 1px solid rgba(226,232,240,.95); border-radius: 20px; box-shadow: var(--shadow); }
         .panel { padding: 20px; }
-        h2 { margin: 0 0 4px; font-size: 20px; }
-        .lead { color: var(--muted); font-size: 14px; margin: 0 0 14px; line-height: 1.6; }
-        .lead b { color: var(--indigo); }
 
-        .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-        .tab { border: 1px solid var(--line); background: #fff; color: #475569;
-            border-radius: 999px; padding: 9px 16px; font-weight: 850; font-size: 14px;
-            box-shadow: 0 2px 6px rgba(15,23,42,.05); }
-        .tab:hover { border-color: #c7d2fe; color: var(--indigo); }
-        .tab.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+        .tab { border: 1px solid var(--line); background: #fff; color: #475569; border-radius: 999px;
+            padding: 9px 17px; font-size: 14px; font-weight: 850; }
+        .tab:hover { color: var(--indigo); border-color: #a5b4fc; }
+        .tab.active { color: #fff; background: var(--indigo); border-color: var(--indigo); }
         .view { display: none; }
         .view.active { display: block; }
 
-        .stage { border: 1px solid var(--line); border-radius: 16px;
-            background: linear-gradient(180deg, #ffffff, #f8fafc); padding: 14px; position: relative; }
-        .stage-title { font-weight: 900; color: #334155; font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
-        svg { display: block; width: 100%; height: auto; user-select: none; }
-        svg text { font-family: inherit; }
+        .intro-row { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 12px; }
+        .lead { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 5px 0 0; }
+        .lead b { color: var(--indigo); }
 
-        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 4px 0 14px; }
-        .controls label { font-weight: 850; color: #334155; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
-        select { border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; font-weight: 800; color: #312e81; background: #fff; }
-        .chip { padding: 8px 12px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850; border: 1px solid transparent; font-size: 13px; }
-        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
-        .chip.active { background: #e0e7ff; border-color: #a5b4fc; color: var(--indigo); }
-        .hint-bar { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: 13px; margin: 8px 2px 0; line-height: 1.6; }
-        .hint-bar span b { color: #334155; }
+        .controls { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; margin-bottom: 14px; }
+        .controls label { display: inline-flex; align-items: center; gap: 6px; color: #334155; font-size: 13px; font-weight: 850; }
+        select { border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #312e81; padding: 8px 10px; font-weight: 800; }
+        .total-pill { margin-left: auto; border-radius: 12px; padding: 8px 12px; background: #ecfdf5; border: 1px solid #a7f3d0;
+            color: #065f46; font-size: 13px; font-weight: 850; }
+        .total-pill b { font-size: 18px; }
+        .stage-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+        .stage-head .stage-title { margin: 0; }
+        .view-toggles { display: flex; gap: 7px; color: #475569; font-size: 13px; font-weight: 850; }
+        .view-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;
+            min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+        .view-toggle:hover { color: var(--indigo); border-color: #a5b4fc; }
+        .view-toggle input { width: 17px; height: 17px; accent-color: var(--indigo); margin: 0; }
 
-        /* ===== 同屏布局：左=操作，中=立体图，右=三视图竖排 ===== */
-        .layout {
-            display: grid; gap: 14px;
-            grid-template-columns: 215px minmax(0,1fr) 190px;
-            grid-template-areas: "build iso views";
-            align-items: stretch;
-        }
-        .area-build { grid-area: build; }
-        .area-iso   { grid-area: iso; }
-        .area-views { grid-area: views; display: flex; flex-direction: column; gap: 12px; }
-        .area-views .mini { flex: 1; }
-        .canvas-wrap { width: 100%; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden;
-            background: radial-gradient(circle at 60% 30%, #eef2ff, #f8fafc 70%); position: relative; }
+        .layout { display: grid; gap: 14px; grid-template-columns: 270px minmax(360px, 1fr) 226px; align-items: stretch; }
+        .stage { position: relative; border: 1px solid var(--line); border-radius: 16px; padding: 14px;
+            background: linear-gradient(180deg, #fff, #f8fafc); }
+        .stage-title { display: flex; align-items: center; gap: 8px; margin: 0 0 9px; color: #334155; font-size: 14px; font-weight: 900; }
+        .dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; flex: 0 0 auto; }
+        .small-note { color: var(--muted); font-size: 12px; line-height: 1.55; }
+
+        /* 分层编辑器 */
+        .layer-nav { display: grid; grid-template-columns: 34px minmax(0,1fr) 34px; gap: 6px; margin: 8px 0 10px; }
+        .layer-arrow { border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--indigo); font-weight: 950; }
+        .layer-nav select { min-width: 0; width: 100%; text-align: center; }
+        .grid-directions { display: grid; grid-template-columns: 22px minmax(0,1fr) 22px;
+            grid-template-areas: "back back back" "left grid right" "front front front"; gap: 5px; align-items: center; }
+        .grid-dir { text-align: center; color: #94a3b8; font-size: 11px; font-weight: 900; }
+        .grid-dir.back { grid-area: back; }
+        .grid-dir.front { grid-area: front; color: var(--blue); background: #dbeafe; border-radius: 6px; padding: 3px; }
+        .grid-dir.left { grid-area: left; color: var(--green); writing-mode: vertical-rl; transform: rotate(180deg); }
+        .grid-dir.right { grid-area: right; writing-mode: vertical-rl; }
+        .editGrid { grid-area: grid; display: grid; gap: 4px; padding: 5px; border: 2px solid #dbe4ef;
+            border-bottom: 5px solid var(--blue); border-left-color: #34d399; border-radius: 10px; background: #eef2f7; }
+        .cellBtn { min-width: 0; aspect-ratio: 1; padding: 0; display: grid; place-items: center; border: 1px solid #cbd5e1;
+            border-radius: 6px; background: #fff; color: #cbd5e1; font-weight: 950; transition: transform .08s, border-color .12s, background .12s; }
+        .cellBtn:hover { z-index: 1; transform: scale(1.05); border-color: #818cf8; }
+        .cellBtn.filled { color: #312e81; border-color: #6366f1; background: #c7d2fe; box-shadow: inset 0 0 0 2px rgba(255,255,255,.5); }
+        .cellBtn.source { color: #fff; background: var(--red); border-color: #991b1b; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { to { transform: scale(.9); } }
+        .tool-label { margin: 12px 0 6px; color: #64748b; font-size: 11px; font-weight: 900; }
+        .tool-palette { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+        .tool-btn { border: 1px solid var(--line); border-radius: 9px; padding: 7px 3px; background: #fff; color: #475569; font-size: 12px; font-weight: 850; }
+        .tool-btn:hover { color: var(--indigo); border-color: #a5b4fc; }
+        .tool-btn.active { color: #fff; background: var(--indigo); border-color: var(--indigo); }
+        .edit-status { min-height: 39px; margin-top: 8px; padding: 7px 9px; border-radius: 9px; color: #475569; background: #f1f5f9; font-size: 12px; line-height: 1.45; }
+        .edit-status b { color: var(--indigo); }
+
+        /* 三维区 */
+        .canvas-wrap { width: 100%; aspect-ratio: 4/3; overflow: hidden; position: relative; border-radius: 12px;
+            background: radial-gradient(circle at 55% 32%, #eef2ff, #f8fafc 72%); }
         .canvas-wrap canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
         .canvas-wrap canvas:active { cursor: grabbing; }
-        .rotate-badge { position: absolute; left: 10px; bottom: 10px; padding: 5px 11px; border-radius: 999px;
-            background: rgba(255,255,255,.92); border: 1px solid var(--line); font-size: 12px; font-weight: 800;
-            color: #475569; box-shadow: 0 2px 6px rgba(15,23,42,.06); pointer-events: none; }
-        .dir-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
-        .dir-row .dir-label { font-size: 12px; font-weight: 850; color: #94a3b8; margin-right: 2px; }
-        .dir-btn { border: 1px solid var(--line); background: #fff; color: #475569; border-radius: 9px;
-            padding: 6px 11px; font-weight: 850; font-size: 13px; box-shadow: 0 1px 4px rgba(15,23,42,.05); }
-        .dir-btn:hover { border-color: #c7d2fe; color: var(--indigo); }
-        .dir-btn.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
-        .dir-btn small { font-weight: 700; opacity: .7; }
-        .mini { padding: 10px; }
-        .mini .stage-title { font-size: 13px; margin-bottom: 6px; }
-        .mini svg { max-height: 150px; }
-        .vlabel { font-size: 12px; color: var(--muted); margin-top: 4px; text-align: center; line-height: 1.5; }
+        .canvas-badge { position: absolute; left: 9px; bottom: 9px; pointer-events: none; border: 1px solid var(--line);
+            border-radius: 999px; background: rgba(255,255,255,.92); color: #475569; padding: 5px 10px; font-size: 11px; font-weight: 800; }
+        .axis-hint { display: flex; justify-content: flex-end; gap: 9px; margin-top: 5px; color: #94a3b8; font-size: 10px; font-weight: 800; }
+        .axis-hint .front { color: var(--blue); } .axis-hint .side { color: var(--green); } .axis-hint .up { color: var(--amber); }
+        .display-layer-row { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; }
+        .display-layer-row > span { flex: 0 0 auto; color: #94a3b8; font-size: 11px; font-weight: 850; }
+        .display-layer-row .layer-filters { margin: 0; }
+        .dir-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 9px; }
+        .dir-label { margin-right: 2px; color: #94a3b8; font-size: 11px; font-weight: 850; }
+        .dir-btn { border: 1px solid var(--line); border-radius: 8px; padding: 7px 11px; background: #fff; color: #475569; font-size: 13px; font-weight: 850; }
+        .dir-btn:hover { color: var(--indigo); border-color: #a5b4fc; }
+        .dir-btn.active { color: #fff; background: var(--indigo); border-color: var(--indigo); }
+        .dir-btn.target { color: #1d4ed8; border-color: #60a5fa; background: #dbeafe; box-shadow: 0 0 0 2px rgba(96,165,250,.2); }
+        .dir-btn.target::before { content: "★"; margin-right: 3px; }
+        .dir-btn.target.active { color: #fff; background: var(--indigo); border-color: var(--indigo); }
 
-        /* 操作区 */
-        .build-grid-wrap { display: grid; grid-template-columns: 1fr; gap: 8px; }
-        .gridLabel { font-size: 12px; font-weight: 850; color: #94a3b8; text-align: center; }
-        .gridLabel.front { color: #2563eb; } .gridLabel.left { color: #059669; }
-        .editGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-        .cellBtn { position: relative; aspect-ratio: 1; border-radius: 12px; border: 2px solid #e2e8f0;
-            background: #f8fafc; display: grid; place-items: center; font-size: 26px; font-weight: 950; color: #312e81;
-            transition: background .12s, border-color .12s, transform .06s; padding: 0; }
-        .cellBtn:hover { border-color: #a5b4fc; transform: translateY(-1px); }
-        .cellBtn:active { transform: translateY(0); }
-        .cellBtn .mini-minus { position: absolute; right: 4px; bottom: 3px; font-size: 11px; color: #94a3b8; font-weight: 800; }
-        .cellBtn[data-empty="1"] { color: #cbd5e1; }
-        .build-help { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin: 4px 2px 0; }
-        .build-help b { color: var(--indigo); }
-        .build-help kbd { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 5px; padding: 0 5px; font-weight: 800; color: var(--indigo); }
+        /* 投影视图 */
+        .area-views { display: flex; flex-direction: column; gap: 9px; }
+        .mini { padding: 9px; flex: 1; min-height: 0; }
+        .mini .stage-title { margin-bottom: 2px; font-size: 12px; }
+        .mini svg { display: block; width: 100%; max-height: 135px; user-select: none; }
+        .projection-axis { display: flex; justify-content: space-between; color: #94a3b8; font-size: 9px; font-weight: 800; padding: 0 12px; }
+        .top-axis { text-align: center; color: #94a3b8; font-size: 9px; line-height: 1.1; }
+        .top-axis.front { color: var(--blue); }
 
-        .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
-        .explain { border: 1px solid var(--line); border-radius: 14px; background: #f8fafc; padding: 13px 14px; line-height: 1.55; font-size: 14px; }
-        .explain b { color: var(--indigo); }
-        .explain .f { color: #2563eb; } .explain .s { color: #059669; } .explain .t { color: #d97706; }
-        .read-out { margin-top: 14px; padding: 14px 16px; border-radius: 16px; background: #eef2ff; border: 1px solid #c7d2fe; color: #312e81; font-weight: 800; line-height: 1.6; font-size: 14px; }
-        .read-out b { color: var(--indigo); }
-        .feedback { margin-top: 12px; font-weight: 900; font-size: 15px; min-height: 22px; }
-        .feedback.ok { color: var(--green); } .feedback.no { color: var(--red); }
-        .q-prompt { font-size: 15px; font-weight: 800; color: #334155; margin: 0 0 10px; line-height: 1.6; }
+        /* 分层数数 */
+        .count-stage { margin-top: 14px; padding: 13px 15px; }
+        .layer-filters { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+        .layer-chip { border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; background: #fff; color: #475569; font-size: 11px; font-weight: 850; }
+        .layer-chip:hover { color: var(--indigo); border-color: #a5b4fc; }
+        .layer-chip.active { color: #fff; background: var(--indigo); border-color: var(--indigo); }
+        .layer-chip.empty { color: #94a3b8; }
+        .sum-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+        .sum-part { padding: 5px 8px; border: 1px solid #c7d2fe; border-radius: 8px; background: #eef2ff; color: #3730a3; font-size: 12px; font-weight: 850; }
+        .sum-sign { color: #64748b; font-weight: 950; }
+        .sum-total { padding: 8px 12px; border-radius: 9px; background: #dcfce7; color: #166534; font-weight: 950; }
+        .count-message { margin-top: 8px; color: #334155; font-size: 12px; line-height: 1.5; }
+        .count-message b { color: var(--indigo); }
+
+        /* 挑战 */
+        .quiz-grid { display: grid; grid-template-columns: minmax(320px,.9fr) minmax(380px,1.1fr); gap: 16px; margin-top: 13px; }
+        .q-prompt { color: #334155; font-size: 15px; font-weight: 850; line-height: 1.6; margin: 0 0 10px; }
         .q-prompt b { color: var(--indigo); }
-        .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-top: 4px; }
-        .opt { border: 2px solid var(--line); border-radius: 14px; padding: 10px; background: #fff; text-align: center; }
+        .quiz-direction-badge { position: absolute; right: 10px; top: 10px; z-index: 2; pointer-events: none;
+            border: 1px solid #93c5fd; border-radius: 10px; padding: 7px 10px; background: rgba(219,234,254,.94);
+            color: #1d4ed8; font-size: 13px; font-weight: 950; box-shadow: 0 3px 10px rgba(37,99,235,.1); }
+        .opt-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+        .opt { border: 2px solid var(--line); border-radius: 13px; padding: 8px; background: #fff; text-align: center; cursor: pointer; }
         .opt:hover { border-color: #a5b4fc; }
-        .opt.right { border-color: var(--green); background: #ecfdf5; }
-        .opt.wrong { border-color: var(--red); background: #fef2f2; }
-        .opt .lab { font-weight: 850; font-size: 13px; color: #475569; margin-top: 6px; }
-        .score { font-weight: 850; color: var(--muted); font-size: 13px; }
-        .grid2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; align-items: start; }
+        .opt.right { border-color: #10b981; background: #ecfdf5; }
+        .opt.wrong { border-color: #ef4444; background: #fef2f2; }
+        .opt svg { display: block; width: 100%; max-height: 145px; }
+        .opt-label { color: #64748b; font-size: 12px; font-weight: 850; }
+        .feedback { min-height: 24px; margin-top: 10px; font-size: 14px; font-weight: 900; }
+        .feedback.ok { color: #059669; } .feedback.no { color: #dc2626; }
+        .score { color: #64748b; font-size: 13px; font-weight: 850; }
 
-        @media (max-width: 880px) {
-            .page { padding: 16px; }
-            .topbar { display: block; }
-            .topbar .btn { display: inline-flex; margin-top: 14px; }
-            .layout { grid-template-columns: 1fr; grid-template-areas: "build" "iso" "views"; }
-            .area-views { flex-direction: row; }
-            .area-views .mini { min-width: 0; }
-            .explain-grid { grid-template-columns: 1fr; }
-            .grid2 { grid-template-columns: 1fr; }
+        @media (max-width: 1060px) {
+            .layout { grid-template-columns: 250px minmax(0,1fr); }
+            .area-views { grid-column: 1/-1; flex-direction: row; }
+            .mini { min-width: 0; }
+        }
+        @media (max-width: 760px) {
+            .page { padding: 14px; }
+            .panel { padding: 14px; }
+            .topbar { align-items: flex-start; }
+            .topbar .btn { padding: 8px 10px; }
+            .intro-row { display: block; }
+            .total-pill { width: 100%; margin-left: 0; }
+            .layout { grid-template-columns: 1fr; }
+            .area-views { grid-column: auto; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+            .quiz-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 500px) {
+            .brand-icon { display: none; }
+            .sub { font-size: 12px; }
+            .area-views { grid-template-columns: 1fr; }
+            .opt-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -148,10 +187,10 @@
     <main class="page">
         <header class="topbar">
             <div class="brand">
-                <div class="brand-icon">视</div>
+                <div class="brand-icon">叠</div>
                 <div>
-                    <h1>观察物体·三视图</h1>
-                    <p class="sub">用小正方体搭出物体，拖动旋转观察，并画出正视图、侧视图、俯视图</p>
+                    <h1>堆叠小方块</h1>
+                    <p class="sub">自由搭建 · 分层数数 · 从前、后、左、右和上面观察</p>
                 </div>
             </div>
             <a class="btn" href="../">返回首页</a>
@@ -159,91 +198,72 @@
 
         <section class="card panel">
             <div class="tabs" id="tabs">
-                <button class="tab active" data-tab="build">搭一搭·看三视图</button>
-                <button class="tab" data-tab="learn">学规则</button>
-                <button class="tab" data-tab="quiz">辨认练习</button>
+                <button class="tab active" data-tab="workbench">方块操作台</button>
+                <button class="tab" data-tab="quiz">视图挑战</button>
             </div>
 
-            <!-- ============ 搭一搭 ============ -->
-            <section class="view active" id="view-build">
-                <h2>用小正方体搭出物体，拖动旋转，三视图自动更新</h2>
-                <p class="lead">左边在 <b>3×3</b> 底面上点击格子<b>加高一层</b>。中间是<b>可拖动旋转</b>的立体图，四周是从三个方向看到的<b>正视图、侧视图、俯视图</b>——立体图和三视图<b>同屏对照</b>。</p>
+            <section class="view active" id="view-workbench">
+                <div class="intro-row">
+                    <div>
+                        <h2>搭、数、看</h2>
+                        <p class="lead">修改同一个作品，按层数数量，再换方向观察。</p>
+                    </div>
+                </div>
 
                 <div class="controls">
-                    <label>选一个例子 <select id="preset"></select></label>
-                    <button class="btn" id="clearBtn">清空重搭</button>
+                    <label>框架阶数
+                        <select id="orderSelect" aria-label="框架阶数"></select>
+                    </label>
+                    <label>示例作品
+                        <select id="preset" aria-label="示例作品"></select>
+                    </label>
+                    <button class="btn" id="undoBtn">撤销</button>
+                    <button class="btn" id="clearBtn">清空</button>
                     <button class="btn" id="resetViewBtn">复位视角</button>
-                    <span class="hint-bar" style="margin:0"><span>📦 共用了 <b id="cubeCount">0</b> 个小正方体</span></span>
+                    <span class="total-pill"><b id="cubeCount">0</b> 块 / 最多 <span id="maxCount">27</span> 块</span>
                 </div>
 
                 <div class="layout">
-                    <!-- 左：操作区 -->
-                    <div class="area-build stage">
-                        <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>搭建区</p>
-                        <div class="build-grid-wrap">
-                            <div class="gridLabel">后</div>
+                    <section class="stage area-editor">
+                        <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>自由修改</p>
+                        <div class="small-note">可点左侧格子，也可直接点三维方块。</div>
+                        <div class="layer-nav">
+                            <button class="layer-arrow" id="layerDown" aria-label="下一层">−</button>
+                            <select id="layerSelect" aria-label="当前编辑层"></select>
+                            <button class="layer-arrow" id="layerUp" aria-label="上一层">＋</button>
+                        </div>
+                        <div class="grid-directions">
+                            <div class="grid-dir back">后</div>
+                            <div class="grid-dir left">左</div>
                             <div class="editGrid" id="editGrid"></div>
-                            <div class="gridLabel front">前（正面朝这边 ↓）</div>
+                            <div class="grid-dir right">右</div>
+                            <div class="grid-dir front">蓝色边 = 前（正面）</div>
                         </div>
-                        <p class="build-help">👉 <b>点格子</b> = 这一摞 <b>+1</b> 层。<br>👉 满 <kbd>4</kbd> 层后再点会 <b>清零</b>。<br>👉 数字 = 这一摞有几个方块。</p>
-                    </div>
+                        <div class="tool-label">选择修改方式</div>
+                        <div class="tool-palette" id="toolPalette">
+                            <button class="tool-btn active" data-tool="add">＋ 添加</button>
+                            <button class="tool-btn" data-tool="delete">− 删除</button>
+                            <button class="tool-btn" data-tool="move">↗ 移动</button>
+                        </div>
+                        <div class="edit-status" id="editStatus"></div>
+                    </section>
 
-                    <!-- 中：立体图 3D + 六向观察按钮 -->
-                    <div class="area-iso stage">
-                        <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>立体图（按住拖动可旋转 🔄）</p>
-                        <div class="canvas-wrap"><canvas id="iso3d"></canvas><span class="rotate-badge">🖱️ 拖动旋转 · 滚轮缩放</span></div>
+                    <section class="stage area-iso">
+                        <div class="stage-head">
+                            <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>立体图</p>
+                            <div class="view-toggles">
+                                <label class="view-toggle"><input type="checkbox" id="frameToggle">框架</label>
+                                <label class="view-toggle"><input type="checkbox" id="directionToggle">方向</label>
+                            </div>
+                        </div>
+                        <div class="display-layer-row"><span>分层</span><div class="layer-filters" id="layerFilters"></div></div>
+                        <div class="canvas-wrap">
+                            <canvas id="iso3d"></canvas>
+                            <span class="canvas-badge">拖动旋转 · 滚轮缩放</span>
+                        </div>
+                        <div class="axis-hint"><span class="front">蓝＝前</span><span class="side">绿＝左</span><span class="up">橙＝上</span></div>
                         <div class="dir-row" data-dir-row="build">
-                            <span class="dir-label">切换视角：</span>
-                            <button class="dir-btn" data-dir="front">前 <small>正视</small></button>
-                            <button class="dir-btn" data-dir="back">后</button>
-                            <button class="dir-btn" data-dir="left">左 <small>侧视</small></button>
-                            <button class="dir-btn" data-dir="right">右</button>
-                            <button class="dir-btn" data-dir="top">上 <small>俯视</small></button>
-                            <button class="dir-btn" data-dir="bottom">下</button>
-                        </div>
-                    </div>
-
-                    <!-- 右：三视图竖排 -->
-                    <div class="area-views">
-                        <div class="stage mini">
-                            <p class="stage-title"><span class="dot" style="background:var(--front)"></span>正视图（从前往后 →）</p>
-                            <svg id="viewFront" viewBox="0 0 150 150"></svg>
-                        </div>
-                        <div class="stage mini">
-                            <p class="stage-title"><span class="dot" style="background:var(--side)"></span>侧视图（从左往右 →）</p>
-                            <svg id="viewSide" viewBox="0 0 150 150"></svg>
-                        </div>
-                        <div class="stage mini">
-                            <p class="stage-title"><span class="dot" style="background:var(--top)"></span>俯视图（从上往下 ↓）</p>
-                            <svg id="viewTop" viewBox="0 0 150 150"></svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="read-out" id="readout"></div>
-            </section>
-
-            <!-- ============ 学规则 ============ -->
-            <section class="view" id="view-learn">
-                <h2>三视图是怎么来的？</h2>
-                <p class="lead">把物体放在三个互相垂直的方向上观察：<b>正面、侧面、上面</b>。每个方向看到的，是物体“压扁”到那个平面上的轮廓。前后重叠时，只看得到<b>最高</b>的那一格。</p>
-                <div class="explain-grid">
-                    <div class="explain"><b class="f">正视图</b>：从<b>前面</b>水平看。沿“前后”方向看过去，每一<b>竖列</b>只看得到最高的那一摞。正视图高度 = 这一列里<b>最高</b>的方块数。</div>
-                    <div class="explain"><b class="s">侧视图</b>：从<b>左侧</b>水平看。沿“左右”方向看过去，每一<b>横行</b>只看得到最高的那一摞。侧视图高度 = 这一行里<b>最高</b>的方块数。</div>
-                    <div class="explain"><b class="t">俯视图</b>：从<b>上面</b>竖直往下看。看到底面被占的格子（看不出高低），有方块就涂上，是物体<b>底面</b>的形状。</div>
-                </div>
-                <p class="lead" style="margin-top:16px">点方向按钮，看从那个方向是<b>怎么压扁</b>的。立体图也可以<b>拖动旋转</b>：</p>
-                <div class="controls" id="learnDirs">
-                    <button class="chip active" data-dir="front">从正面看 →</button>
-                    <button class="chip" data-dir="side">从侧面看 →</button>
-                    <button class="chip" data-dir="top">从上面看 ↓</button>
-                </div>
-                <div class="grid2">
-                    <div class="stage">
-                        <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>立体图（拖动旋转）</p>
-                        <div class="canvas-wrap"><canvas id="learn3d"></canvas><span class="rotate-badge">🖱️ 拖动旋转</span></div>
-                        <div class="dir-row" data-dir-row="learn">
-                            <span class="dir-label">切换视角：</span>
+                            <span class="dir-label">观察</span>
                             <button class="dir-btn" data-dir="front">前</button>
                             <button class="dir-btn" data-dir="back">后</button>
                             <button class="dir-btn" data-dir="left">左</button>
@@ -251,29 +271,64 @@
                             <button class="dir-btn" data-dir="top">上</button>
                             <button class="dir-btn" data-dir="bottom">下</button>
                         </div>
-                    </div>
-                    <div class="stage">
-                        <p class="stage-title" id="learnViewTitle"><span class="dot" style="background:var(--front)"></span>这个方向得到的视图</p>
-                        <svg id="learnView" viewBox="0 0 180 180"></svg>
-                        <div class="read-out" id="learnText" style="margin-top:12px"></div>
-                    </div>
+                    </section>
+
+                    <aside class="area-views">
+                        <section class="stage mini">
+                            <p class="stage-title"><span class="dot" style="background:var(--front)"></span>正视图 · 从蓝色“前”看</p>
+                            <svg id="viewFront" viewBox="0 0 160 160" aria-label="正视图"></svg>
+                            <div class="projection-axis"><span>左</span><span>右</span></div>
+                        </section>
+                        <section class="stage mini">
+                            <p class="stage-title"><span class="dot" style="background:var(--side)"></span>侧视图 · 从“左”看</p>
+                            <svg id="viewSide" viewBox="0 0 160 160" aria-label="侧视图"></svg>
+                            <div class="projection-axis"><span>后</span><span>前</span></div>
+                        </section>
+                        <section class="stage mini">
+                            <p class="stage-title"><span class="dot" style="background:var(--top)"></span>俯视图 · 从“上”看</p>
+                            <div class="top-axis">后</div>
+                            <svg id="viewTop" viewBox="0 0 160 160" aria-label="俯视图"></svg>
+                            <div class="top-axis front">前（蓝色边）</div>
+                        </section>
+                    </aside>
                 </div>
+
+                <section class="stage count-stage">
+                    <p class="stage-title"><span class="dot" style="background:var(--green)"></span>分层数数</p>
+                    <div class="sum-row" id="sumRow"></div>
+                    <div class="count-message" id="countMessage"></div>
+                </section>
             </section>
 
-            <!-- ============ 辨认练习 ============ -->
             <section class="view" id="view-quiz">
-                <h2>看立体图，选出正确的视图</h2>
-                <p class="lead">下面给出一个立体图（可<b>拖动旋转</b>观察），判断从指定方向看到的视图是哪一个。做对换下一题。</p>
-                <div class="controls">
-                    <span class="score" id="score">得分 0 / 0</span>
-                    <button class="btn" id="nextQ">换一题</button>
+                <div class="intro-row">
+                    <div>
+                        <h2>视图挑战</h2>
+                        <p class="lead">换方向、分层观察，再选出正确的视图。</p>
+                    </div>
+                    <div class="controls" style="margin:0">
+                        <span class="score" id="score">得分 0 / 0</span>
+                        <button class="btn" id="nextQ">换一题</button>
+                    </div>
                 </div>
-                <div class="grid2">
-                    <div class="stage">
-                        <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>这个物体（拖动旋转）</p>
-                        <div class="canvas-wrap"><canvas id="quiz3d"></canvas><span class="rotate-badge">🖱️ 拖动旋转</span></div>
+                <div class="quiz-grid">
+                    <section class="stage">
+                        <div class="stage-head">
+                            <p class="stage-title"><span class="dot" style="background:var(--indigo)"></span>观察作品</p>
+                            <div class="view-toggles">
+                                <label class="view-toggle"><input type="checkbox" id="quizFrameToggle">框架</label>
+                                <label class="view-toggle"><input type="checkbox" id="quizDirectionToggle">方向</label>
+                            </div>
+                        </div>
+                        <div class="display-layer-row"><span>分层</span><div class="layer-filters" id="quizLayerFilters"></div></div>
+                        <div class="canvas-wrap">
+                            <canvas id="quiz3d"></canvas>
+                            <span class="canvas-badge">可以拖动旋转</span>
+                            <span class="quiz-direction-badge" id="quizDirectionBadge"></span>
+                        </div>
+                        <div class="axis-hint"><span class="front">蓝＝前</span><span class="side">绿＝左</span><span class="up">橙＝上</span></div>
                         <div class="dir-row" data-dir-row="quiz">
-                            <span class="dir-label">切换视角：</span>
+                            <span class="dir-label">观察</span>
                             <button class="dir-btn" data-dir="front">前</button>
                             <button class="dir-btn" data-dir="back">后</button>
                             <button class="dir-btn" data-dir="left">左</button>
@@ -281,12 +336,12 @@
                             <button class="dir-btn" data-dir="top">上</button>
                             <button class="dir-btn" data-dir="bottom">下</button>
                         </div>
-                    </div>
-                    <div class="stage">
+                    </section>
+                    <section class="stage">
                         <p class="q-prompt" id="quizPrompt"></p>
                         <div class="opt-grid" id="quizOptions"></div>
                         <div class="feedback" id="quizFeedback"></div>
-                    </div>
+                    </section>
                 </div>
             </section>
         </section>
@@ -295,336 +350,585 @@
     <script>
         const $ = id => document.getElementById(id);
         const SVGNS = "http://www.w3.org/2000/svg";
-        const N = 3, MAX_H = 4;
+        const LAYER_COLORS = [0x818cf8, 0x38bdf8, 0x34d399, 0xfbbf24, 0xfb923c, 0xf472b6, 0xa78bfa, 0x2dd4bf, 0xf87171, 0x94a3b8];
+        let N = 3;
 
-        function svgEl(name, attrs, text) {
+        const cloneCubes = cubes => cubes.map(layer => layer.map(row => row.slice()));
+        const emptyCubes = (n = N) => Array.from({ length: n }, () => Array.from({ length: n }, () => Array(n).fill(false)));
+        const cubeTotal = cubes => cubes.reduce((sum, layer) => sum + layer.reduce((s, row) => s + row.filter(Boolean).length, 0), 0);
+        const layerCounts = cubes => cubes.map(layer => layer.reduce((sum, row) => sum + row.filter(Boolean).length, 0));
+
+        function svgEl(name, attrs) {
             const node = document.createElementNS(SVGNS, name);
-            for (const k in attrs) node.setAttribute(k, attrs[k]);
-            if (text != null) node.textContent = text;
+            Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
             return node;
         }
         function clearSvg(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
-        function emptyGrid() { return Array.from({ length: N }, () => Array(N).fill(0)); }
-        function cubeTotal(h) { let s = 0; for (const row of h) for (const v of row) s += v; return s; }
 
-        // ---------- 三视图计算 ----------
-        function frontView(h) { const m = Array(N).fill(0); for (let c=0;c<N;c++) for (let r=0;r<N;r++) m[c]=Math.max(m[c],h[r][c]); return columnsToView(m); }
-        function sideView(h)  { const m = Array(N).fill(0); for (let r=0;r<N;r++) for (let c=0;c<N;c++) m[r]=Math.max(m[r],h[r][c]); return columnsToView(m); }
-        function topView(h)   { const cells=[]; for (let r=0;r<N;r++){const row=[];for(let c=0;c<N;c++) row.push(h[r][c]>0?1:0); cells.push(row);} return {w:N,h:N,cells,kind:"top"}; }
-        function columnsToView(cols) {
-            const maxH = Math.max(1, ...cols); const cells=[];
-            for (let level=maxH-1; level>=0; level--) { const row=[]; for (let c=0;c<cols.length;c++) row.push(cols[c]>level?1:0); cells.push(row); }
-            return { w: cols.length, h: maxH, cells, kind:"elev" };
+        // cubes[level][row][column]：level 从下往上，row 从后往前，column 从左往右。
+        function frontView(cubes) {
+            const n = cubes.length;
+            const cells = Array.from({ length: n }, (_, vr) => {
+                const level = n - 1 - vr;
+                return Array.from({ length: n }, (_, c) => cubes[level].some(row => row[c]));
+            });
+            return { w: n, h: n, cells };
         }
-        function sameView(a,b){ if(a.w!==b.w||a.h!==b.h) return false; for(let r=0;r<a.h;r++) for(let c=0;c<a.w;c++) if(a.cells[r][c]!==b.cells[r][c]) return false; return true; }
-
-        function renderView(svg, view, color, size) {
-            clearSvg(svg); const pad=12, vb=size||150;
-            const cell = Math.min((vb-2*pad)/view.w, (vb-2*pad)/view.h);
-            const gw=cell*view.w, gh=cell*view.h, ox=(vb-gw)/2, oy=(vb-gh)/2;
-            for (let r=0;r<view.h;r++) for (let c=0;c<view.w;c++) {
-                const filled = view.cells[r][c];
-                svg.appendChild(svgEl("rect", { x: ox+c*cell, y: oy+r*cell, width: cell, height: cell, rx: 3,
-                    fill: filled?color:"#fff", stroke: filled?"#1e293b":"#e2e8f0", "stroke-width": filled?1.6:1 }));
+        function sideView(cubes) {
+            const n = cubes.length;
+            const cells = Array.from({ length: n }, (_, vr) => {
+                const level = n - 1 - vr;
+                return Array.from({ length: n }, (_, r) => cubes[level][r].some(Boolean));
+            });
+            return { w: n, h: n, cells };
+        }
+        function topView(cubes) {
+            const n = cubes.length;
+            const cells = Array.from({ length: n }, (_, r) => Array.from({ length: n }, (_, c) => cubes.some(layer => layer[r][c])));
+            return { w: n, h: n, cells };
+        }
+        function sameView(a, b) {
+            if (a.w !== b.w || a.h !== b.h) return false;
+            return a.cells.every((row, r) => row.every((value, c) => value === b.cells[r][c]));
+        }
+        function renderView(svg, view, color, size = 160, contextView = null) {
+            clearSvg(svg);
+            const pad = 12;
+            const cell = Math.min((size - pad * 2) / view.w, (size - pad * 2) / view.h);
+            const ox = (size - cell * view.w) / 2;
+            const oy = (size - cell * view.h) / 2;
+            for (let r = 0; r < view.h; r++) for (let c = 0; c < view.w; c++) {
+                const filled = view.cells[r][c], contextual = contextView && contextView.cells[r][c];
+                svg.appendChild(svgEl("rect", {
+                    x: ox + c * cell, y: oy + r * cell, width: cell, height: cell, rx: Math.min(3, cell * .12),
+                    fill: filled ? color : contextual ? "#e2e8f0" : "#fff",
+                    stroke: filled ? "#334155" : contextual ? "#94a3b8" : "#dbe4ef", "stroke-width": filled ? 1.35 : 1
+                }));
             }
         }
 
-        // ================= Three.js 立体图 =================
-        // 约定坐标：x = 列 c（右），y = 层 z（上），z = 行 r（前为正方向，朝观察者）
-        const CUBE_COLORS = { topFace: 0xfde68a, body: 0xa5b4fc };
-        function makeViewer(canvas) {
-            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-            renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-            const root = new THREE.Group(); scene.add(root);          // 物体根节点（旋转作用在它身上）
-            const light1 = new THREE.DirectionalLight(0xffffff, 0.9); light1.position.set(4, 7, 5); scene.add(light1);
-            const light2 = new THREE.DirectionalLight(0xffffff, 0.35); light2.position.set(-5, 3, -4); scene.add(light2);
-            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        // ================= 三维查看器 =================
+        function makeTextSprite(text, background, foreground = "#fff") {
+            const canvas = document.createElement("canvas");
+            canvas.width = 512; canvas.height = 128;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = background; ctx.beginPath();
+            ctx.moveTo(33, 5); ctx.lineTo(479, 5); ctx.quadraticCurveTo(507, 5, 507, 33);
+            ctx.lineTo(507, 95); ctx.quadraticCurveTo(507, 123, 479, 123); ctx.lineTo(33, 123);
+            ctx.quadraticCurveTo(5, 123, 5, 95); ctx.lineTo(5, 33); ctx.quadraticCurveTo(5, 5, 33, 5); ctx.fill();
+            ctx.fillStyle = foreground; ctx.font = "bold 58px Microsoft YaHei, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(text, 256, 66);
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+            const sprite = new THREE.Sprite(material); sprite.scale.set(.72, .28, 1); sprite.renderOrder = 20;
+            return sprite;
+        }
+        function disposeGroup(group) {
+            const geometries = new Set(), materials = new Set(), textures = new Set();
+            group.traverse(obj => {
+                if (obj.geometry) geometries.add(obj.geometry);
+                const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
+                mats.forEach(mat => { materials.add(mat); if (mat.map) textures.add(mat.map); });
+            });
+            while (group.children.length) group.remove(group.children[0]);
+            textures.forEach(item => item.dispose()); materials.forEach(item => item.dispose()); geometries.forEach(item => item.dispose());
+        }
+        function addSceneGuides(root, n, showFrame, showDirections) {
+            const half = n / 2;
+            const axisOrigin = new THREE.Vector3(half + .28, .04, -half - .28), axisLength = Math.min(.72, n * .28);
+            root.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,1), axisOrigin, axisLength, 0x2563eb, .16, .1));
+            root.add(new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), axisOrigin, axisLength, 0x059669, .16, .1));
+            root.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), axisOrigin, axisLength, 0xd97706, .16, .1));
 
-            const state = { yaw: -0.7, pitch: 0.5, dist: 9, target: new THREE.Vector3() };
-            function applyCam() {
+            if (showFrame) {
+                const frameBox = new THREE.BoxGeometry(n, n, n);
+                const frameGeo = new THREE.EdgesGeometry(frameBox); frameBox.dispose();
+                const frame = new THREE.LineSegments(frameGeo, new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: .38 }));
+                frame.position.y = half; root.add(frame);
+                const grid = new THREE.GridHelper(n, n, 0xcbd5e1, 0xe2e8f0); grid.position.y = .005; root.add(grid);
+            }
+            if (showDirections) {
+                const labels = [
+                    ["前", "#2563eb", 0, .24, half + .34], ["后", "#64748b", 0, .24, -half - .34],
+                    ["左", "#059669", -half - .34, .24, 0], ["右", "#64748b", half + .34, .24, 0],
+                    ["上", "#d97706", 0, n + .25, 0], ["下", "#64748b", 0, -.22, 0]
+                ];
+                labels.forEach(([text, bg, x, y, z]) => { const sprite = makeTextSprite(text, bg); sprite.position.set(x, y, z); root.add(sprite); });
+            }
+        }
+        function makeViewer(canvas, onFreeView, onCubeClick) {
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(38, 1, .1, 150);
+            const root = new THREE.Group(); scene.add(root);
+            const light1 = new THREE.DirectionalLight(0xffffff, 1); light1.position.set(5, 9, 7); scene.add(light1);
+            const light2 = new THREE.DirectionalLight(0xffffff, .35); light2.position.set(-6, 4, -5); scene.add(light2);
+            scene.add(new THREE.AmbientLight(0xffffff, .65));
+            const state = { yaw: -.72, pitch: .48, dist: 12, target: new THREE.Vector3(0, 2, 0) };
+
+            function applyCamera() {
                 const { yaw, pitch, dist, target } = state;
-                camera.position.set(
-                    target.x + dist * Math.cos(pitch) * Math.sin(yaw),
-                    target.y + dist * Math.sin(pitch),
-                    target.z + dist * Math.cos(pitch) * Math.cos(yaw)
-                );
+                camera.position.set(target.x + dist * Math.cos(pitch) * Math.sin(yaw), target.y + dist * Math.sin(pitch), target.z + dist * Math.cos(pitch) * Math.cos(yaw));
                 camera.lookAt(target);
             }
-            function resize() {
+            function render() {
                 const w = canvas.clientWidth, h = canvas.clientHeight;
                 if (!w || !h) return;
-                renderer.setSize(w, h, false);
-                camera.aspect = w / h; camera.updateProjectionMatrix();
+                renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); applyCamera(); renderer.render(scene, camera);
             }
-            function render() { resize(); applyCam(); renderer.render(scene, camera); }
-
-            // 拖动旋转 + 滚轮缩放
-            let drag = null;
-            canvas.addEventListener("pointerdown", e => { canvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY }; });
-            canvas.addEventListener("pointermove", e => {
-                if (!drag) return;
-                state.yaw -= (e.clientX - drag.x) * 0.01;
-                state.pitch = Math.max(-1.35, Math.min(1.45, state.pitch + (e.clientY - drag.y) * 0.01));
-                drag = { x: e.clientX, y: e.clientY };
-                render();
+            let drag = null, dragged = false, animation = null;
+            const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+            canvas.addEventListener("pointerdown", event => {
+                canvas.setPointerCapture(event.pointerId); drag = { x: event.clientX, y: event.clientY }; dragged = false;
             });
-            const stop = e => { try { canvas.releasePointerCapture(e.pointerId); } catch(_){} drag = null; };
-            canvas.addEventListener("pointerup", stop); canvas.addEventListener("pointercancel", stop);
-            canvas.addEventListener("wheel", e => { e.preventDefault(); state.dist = Math.max(4, Math.min(22, state.dist * Math.exp(e.deltaY*0.0012))); render(); }, { passive: false });
-
-            // 平滑转到目标视角（yaw 取最短弧）
-            let anim = null;
-            function animateTo(yaw, pitch) {
-                if (drag) { state.yaw = yaw; state.pitch = pitch; render(); return; }
-                let dy = yaw - state.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); // 归一化到 [-π,π]
-                const fromYaw = state.yaw, toYaw = state.yaw + dy, fromPitch = state.pitch;
-                const t0 = performance.now(), dur = 360;
-                if (anim) cancelAnimationFrame(anim);
-                (function step(now) {
-                    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); // easeOut
-                    state.yaw = fromYaw + (toYaw - fromYaw) * e;
-                    state.pitch = fromPitch + (pitch - fromPitch) * e;
-                    render();
-                    if (k < 1) anim = requestAnimationFrame(step);
-                })(t0);
+            canvas.addEventListener("pointermove", event => {
+                if (!drag) return;
+                const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+                if (Math.abs(dx) + Math.abs(dy) > 1) dragged = true;
+                state.yaw -= dx * .01; state.pitch = Math.max(-1.35, Math.min(1.45, state.pitch + dy * .01));
+                drag = { x: event.clientX, y: event.clientY }; render();
+                if (dragged && onFreeView) onFreeView();
+            });
+            function pickCube(event) {
+                if (!onCubeClick) return;
+                const rect = canvas.getBoundingClientRect();
+                pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera(pointer, camera);
+                const hit = raycaster.intersectObjects(root.children, true).find(item => Number.isInteger(item.instanceId) && item.object.userData.cells);
+                if (!hit) return;
+                const cell = hit.object.userData.cells[hit.instanceId], normal = hit.face ? hit.face.normal : new THREE.Vector3(0, 1, 0);
+                onCubeClick({ ...cell, normal: { x: normal.x, y: normal.y, z: normal.z } });
             }
-            // 六向标准视角（坐标：x=右, y=上, z=前朝观察者）
-            const DIRS = {
-                front: { yaw: 0,             pitch: 0 },
-                back:  { yaw: Math.PI,        pitch: 0 },
-                right: { yaw: Math.PI / 2,    pitch: 0 },
-                left:  { yaw: -Math.PI / 2,   pitch: 0 },
-                top:   { yaw: 0,             pitch: Math.PI / 2 - 0.001 },
-                bottom:{ yaw: 0,             pitch: -Math.PI / 2 + 0.001 },
+            const stopDrag = event => {
+                const shouldPick = drag && !dragged;
+                try { canvas.releasePointerCapture(event.pointerId); } catch (_) {} drag = null;
+                if (shouldPick) pickCube(event);
             };
+            canvas.addEventListener("pointerup", stopDrag);
+            canvas.addEventListener("pointercancel", event => { try { canvas.releasePointerCapture(event.pointerId); } catch (_) {} drag = null; });
+            canvas.addEventListener("wheel", event => {
+                event.preventDefault(); state.dist = Math.max(4, Math.min(42, state.dist * Math.exp(event.deltaY * .0012))); render();
+            }, { passive: false });
 
+            const directions = {
+                front: { yaw: 0, pitch: 0 }, back: { yaw: Math.PI, pitch: 0 },
+                left: { yaw: -Math.PI / 2, pitch: 0 }, right: { yaw: Math.PI / 2, pitch: 0 },
+                top: { yaw: 0, pitch: Math.PI / 2 - .001 }, bottom: { yaw: 0, pitch: -Math.PI / 2 + .001 }
+            };
+            function animateTo(yaw, pitch) {
+                let delta = Math.atan2(Math.sin(yaw - state.yaw), Math.cos(yaw - state.yaw));
+                const fromYaw = state.yaw, toYaw = state.yaw + delta, fromPitch = state.pitch, start = performance.now();
+                if (animation) cancelAnimationFrame(animation);
+                const step = now => {
+                    const t = Math.min(1, (now - start) / 360), eased = 1 - Math.pow(1 - t, 3);
+                    state.yaw = fromYaw + (toYaw - fromYaw) * eased; state.pitch = fromPitch + (pitch - fromPitch) * eased; render();
+                    if (t < 1) animation = requestAnimationFrame(step);
+                };
+                animation = requestAnimationFrame(step);
+            }
             return {
-                scene, root, state, render,
-                resetView() { animateTo(-0.7, 0.5); },
-                snapTo(dir) { const d = DIRS[dir]; if (d) animateTo(d.yaw, d.pitch); },
-                // 用高度图重建方块；fitDist 自动适配让物体不被裁切
-                setCubes(h) {
-                    while (root.children.length) root.remove(root.children[0]);
-                    const half = N / 2;
-                    const geo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
-                    const matBody = new THREE.MeshLambertMaterial({ color: CUBE_COLORS.body });
-                    const matTop  = new THREE.MeshLambertMaterial({ color: CUBE_COLORS.topFace });
-                    for (let r=0;r<N;r++) for (let c=0;c<N;c++) {
-                        const stack = h[r][c];
-                        for (let z=0;z<stack;z++) {
-                            const top = (z === stack-1);
-                            const mesh = new THREE.Mesh(geo, [matBody,matBody,top?matTop:matBody,matBody,matBody,matBody]);
-                            // x=列, y=层, z=行（前 r 大 → +z 朝观察者）
-                            mesh.position.set(c - half + 0.5, z + 0.5, (r - half + 0.5));
-                            root.add(mesh);
-                            const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x475569 }));
-                            edges.position.copy(mesh.position); root.add(edges);
+                render,
+                resetView() { animateTo(-.72, .48); },
+                snapTo(dir) { if (directions[dir]) animateTo(directions[dir].yaw, directions[dir].pitch); },
+                setCubes(cubes, visibleLayer = null, source = null, options = {}) {
+                    disposeGroup(root);
+                    const n = cubes.length, half = n / 2;
+                    const boxGeo = new THREE.BoxGeometry(.94, .94, .94);
+                    const makeMaterials = (bodyColor, topColor, opacity) => {
+                        const faded = opacity < 1;
+                        const body = new THREE.MeshLambertMaterial({ color: bodyColor, transparent: faded, opacity, depthWrite: !faded });
+                        const top = new THREE.MeshLambertMaterial({ color: topColor, transparent: faded, opacity, depthWrite: !faded });
+                        return [body, body, top, body, body, body];
+                    };
+                    const matrix = new THREE.Matrix4(), edgePositions = [], fadedEdgePositions = [], halfCube = .47;
+                    let instanceCount = 0;
+                    const edgePairs = [
+                        [-1,-1,-1, 1,-1,-1], [1,-1,-1, 1,1,-1], [1,1,-1, -1,1,-1], [-1,1,-1, -1,-1,-1],
+                        [-1,-1,1, 1,-1,1], [1,-1,1, 1,1,1], [1,1,1, -1,1,1], [-1,1,1, -1,-1,1],
+                        [-1,-1,-1, -1,-1,1], [1,-1,-1, 1,-1,1], [1,1,-1, 1,1,1], [-1,1,-1, -1,1,1]
+                    ];
+                    for (let level = 0; level < n; level++) {
+                        const focused = visibleLayer === null || level === visibleLayer;
+                        const positions = [], sourcePositions = [];
+                        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (cubes[level][r][c]) {
+                            const isSource = source && source.level === level && source.r === r && source.c === c;
+                            const x = c - half + .5, y = level + .5, z = r - half + .5;
+                            (isSource ? sourcePositions : positions).push([x, y, z, level, r, c]);
+                            const targetEdges = focused || isSource ? edgePositions : fadedEdgePositions;
+                            edgePairs.forEach(pair => targetEdges.push(
+                                x + pair[0] * halfCube, y + pair[1] * halfCube, z + pair[2] * halfCube,
+                                x + pair[3] * halfCube, y + pair[4] * halfCube, z + pair[5] * halfCube
+                            ));
                         }
+                        [[positions, LAYER_COLORS[level % LAYER_COLORS.length], 0xfef3c7, focused ? 1 : .13], [sourcePositions, 0xef4444, 0xfecaca, 1]].forEach(([items, bodyColor, topColor, opacity]) => {
+                            if (!items.length) return; instanceCount += items.length;
+                            const materials = makeMaterials(bodyColor, topColor, opacity);
+                            const instances = new THREE.InstancedMesh(boxGeo, materials, items.length);
+                            items.forEach(([x, y, z], index) => { matrix.makeTranslation(x, y, z); instances.setMatrixAt(index, matrix); });
+                            instances.userData.cells = items.map(item => ({ level: item[3], r: item[4], c: item[5] }));
+                            instances.instanceMatrix.needsUpdate = true; instances.renderOrder = opacity < 1 ? 0 : 1; root.add(instances);
+                        });
                     }
-                    // 地面方向提示（淡色坐标轴箭头）
-                    addDirHints(root, half, h);
-                    // 自动适配相机距离
-                    const maxH = Math.max(1, ...h.flat());
-                    state.target.set(0, maxH/2, 0);
-                    state.dist = Math.max(7, 2.2 * Math.max(N, maxH) + 2.5);
-                    render();
+                    const addEdges = (positions, opacity) => {
+                        if (!positions.length) return;
+                        const edgeGeo = new THREE.BufferGeometry();
+                        edgeGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+                        root.add(new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({ color: 0x475569, transparent: opacity < 1, opacity })));
+                    };
+                    addEdges(edgePositions, .9); addEdges(fadedEdgePositions, .1);
+                    if (!instanceCount) boxGeo.dispose();
+                    addSceneGuides(root, n, Boolean(options.showFrame), Boolean(options.showDirections));
+                    state.target.set(0, n / 2, 0); state.dist = Math.max(6.5, n * 1.75 + 2.5); render();
                 }
             };
         }
-        // 把某个 .dir-row 的六向按钮接到一个 viewer 上
-        function wireDirButtons(rowName, viewer) {
-            const row = document.querySelector(`.dir-row[data-dir-row="${rowName}"]`);
-            if (!row) return;
-            row.querySelectorAll(".dir-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    row.querySelectorAll(".dir-btn").forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    viewer.snapTo(btn.dataset.dir);
-                });
-            });
-        }
-        function addDirHints(root, half, h) {
-            const mkArrow = (dir, color, len) => {
-                const a = new THREE.ArrowHelper(dir.clone().normalize(), new THREE.Vector3(0,0,0), len, color, 0.5, 0.3);
-                return a;
-            };
-            const base = new THREE.Group();
-            base.position.set(-half-0.3, 0.02, half+0.3);
-            base.add(mkArrow(new THREE.Vector3(0,0,1), 0x2563eb, 1.1));   // +z 前(正面)
-            base.add(mkArrow(new THREE.Vector3(1,0,0), 0x059669, 1.1));   // +x 右(侧面观察沿此)
-            base.add(mkArrow(new THREE.Vector3(0,1,0), 0xd97706, 1.1));   // +y 上
-            root.add(base);
+        function wireDirectionButtons(name, viewer) {
+            const row = document.querySelector(`.dir-row[data-dir-row="${name}"]`);
+            row.querySelectorAll(".dir-btn").forEach(button => button.addEventListener("click", () => {
+                row.querySelectorAll(".dir-btn").forEach(item => item.classList.remove("active"));
+                button.classList.add("active"); viewer.snapTo(button.dataset.dir);
+            }));
         }
 
-        // ---------- 操作区（HTML 按钮网格） ----------
-        function renderEditGrid(h) {
-            const wrap = $("editGrid"); wrap.innerHTML = "";
-            for (let r=0;r<N;r++) for (let c=0;c<N;c++) {
-                const v = h[r][c];
-                const b = document.createElement("button");
-                b.className = "cellBtn"; b.dataset.empty = v ? "0" : "1";
-                b.style.background = v ? `rgba(79,70,229,${0.12 + v*0.16})` : "#f8fafc";
-                b.style.borderColor = v ? "#6366f1" : "#e2e8f0";
-                b.innerHTML = v ? `${v}<span class="mini-minus">点+1</span>` : `+`;
-                b.title = v ? `这一摞有 ${v} 个，点击 +1（满4清零）` : "点击放第 1 个方块";
-                b.addEventListener("click", () => { cycleCell(r, c); });
-                wrap.appendChild(b);
-            }
-        }
-
-        // ================= 状态 & 搭一搭 =================
-        let heights = emptyGrid();
-        let buildViewer = null;
-        function cycleCell(r,c){ heights[r][c] = (heights[r][c]+1>MAX_H)?0:heights[r][c]+1; $("preset").value=""; refreshBuild(); }
-        function refreshBuild() {
-            renderEditGrid(heights);
-            if (buildViewer) buildViewer.setCubes(heights);
-            renderView($("viewFront"), frontView(heights), "var(--front)");
-            renderView($("viewSide"),  sideView(heights),  "var(--side)");
-            renderView($("viewTop"),   topView(heights),   "var(--top)");
-            $("cubeCount").textContent = cubeTotal(heights);
-            updateReadout();
-        }
-        function updateReadout() {
-            const total = cubeTotal(heights);
-            if (!total) { $("readout").innerHTML = "底面还是空的，点左边的格子搭出一个物体吧。"; return; }
-            const fv=frontView(heights), sv=sideView(heights), tv=topView(heights);
-            const tCount = tv.cells.flat().reduce((a,b)=>a+b,0);
-            $("readout").innerHTML = `这个物体一共用了 <b>${total}</b> 个小正方体。正视图最高 <b>${fv.h}</b> 层、宽 <b>${fv.w}</b> 列；侧视图最高 <b>${sv.h}</b> 层；俯视图占了底面 <b>${tCount}</b> 个格子。` + (sameView(fv,sv)?"　正视图和侧视图<b>恰好一样</b>。":"");
-        }
-        const PRESETS = [
-            { name: "单个正方体", g: [[0,0,0],[0,1,0],[0,0,0]] },
-            { name: "一排三个（横放）", g: [[0,0,0],[1,1,1],[0,0,0]] },
-            { name: "L 形（平放）", g: [[0,0,0],[1,0,0],[1,1,1]] },
-            { name: "台阶（前低后高）", g: [[3,3,3],[2,2,2],[1,1,1]] },
-            { name: "两层小塔", g: [[0,0,0],[0,2,0],[0,0,0]] },
-            { name: "金字塔角", g: [[1,1,1],[1,2,1],[1,1,3]] },
-            { name: "前后看一样的台阶", g: [[1,2,3],[1,2,3],[1,2,3]] },
-            { name: "三视图都不同", g: [[3,0,0],[2,1,0],[0,1,2]] },
+        // ================= 操作台状态 =================
+        let cubes = emptyCubes();
+        let activeLayer = 0, visibleLayer = null, editTool = "add", moveSource = null;
+        let showFrame = false, showDirections = false, editHint = "";
+        let history = [], buildViewer = null;
+        const PRESET_GROUPS = [
+            { label: "基础形状", items: [
+                { key: "stairs", name: "分层台阶", minOrder: 2 }, { key: "tower", name: "高塔", minOrder: 2 },
+                { key: "bridge", name: "小桥", minOrder: 3 }, { key: "corner", name: "转角阶梯", minOrder: 3 },
+                { key: "full", name: "填满框架", minOrder: 2 }
+            ]},
+            { label: "小动物", items: [
+                { key: "dog", name: "🐶 小狗", minOrder: 5 }, { key: "duck", name: "🐤 小鸭", minOrder: 4 },
+                { key: "rabbit", name: "🐰 小兔", minOrder: 5 }
+            ]},
+            { label: "静物与景物", items: [
+                { key: "tree", name: "🌳 小树", minOrder: 5 }, { key: "chair", name: "🪑 椅子", minOrder: 4 },
+                { key: "cup", name: "☕ 杯子", minOrder: 5 }
+            ]}
         ];
-        function loadPreset(i){ heights = PRESETS[i].g.map(row=>row.slice()); refreshBuild(); }
-        function initBuild() {
-            const sel = $("preset");
-            sel.innerHTML = `<option value="">— 自己搭 —</option>` + PRESETS.map((p,i)=>`<option value="${i}">${p.name}</option>`).join("");
-            sel.addEventListener("change", () => { if (sel.value!=="") loadPreset(Number(sel.value)); });
-            $("clearBtn").addEventListener("click", () => { heights = emptyGrid(); sel.value=""; refreshBuild(); });
-            $("resetViewBtn").addEventListener("click", () => buildViewer && buildViewer.resetView());
-            buildViewer = makeViewer($("iso3d"));
-            wireDirButtons("build", buildViewer);
-            loadPreset(3); sel.value = "3";
+        function presetInfo(key) { return PRESET_GROUPS.flatMap(group => group.items).find(item => item.key === key); }
+        const snapshot = () => ({ n: N, cubes: cloneCubes(cubes), activeLayer, visibleLayer });
+        function recordHistory() { history.push(snapshot()); if (history.length > 40) history.shift(); }
+        function restore(snapshotData) {
+            N = snapshotData.n; cubes = cloneCubes(snapshotData.cubes); activeLayer = snapshotData.activeLayer;
+            visibleLayer = snapshotData.visibleLayer; moveSource = null; editHint = ""; syncOrderControl(); $("preset").value = "custom"; refreshAll();
         }
-
-        // ================= 学规则 =================
-        const learnShape = [[1,2,3],[0,1,2],[0,0,1]];
-        let learnDir = "front", learnViewer = null;
-        function refreshLearn() {
-            if (learnViewer) learnViewer.setCubes(learnShape);
-            let view, color, title, txt;
-            if (learnDir === "front") { view=frontView(learnShape); color="var(--front)"; title="正视图（沿“前→后”压扁，每列取最高）";
-                txt="把物体沿<b>前后方向</b>压平：前后重叠的方块只剩下最高的。每一<b>列</b>看到的高度，就是这一列里最高的那一摞。"; }
-            else if (learnDir === "side") { view=sideView(learnShape); color="var(--side)"; title="侧视图（沿“左→右”压扁，每行取最高）";
-                txt="从<b>左侧</b>看，沿<b>左右方向</b>压平：每一<b>行</b>看到的高度，是这一行里最高的那一摞。"; }
-            else { view=topView(learnShape); color="var(--top)"; title="俯视图（从上往下看，看底面形状）";
-                txt="从<b>正上方</b>往下看，看不出高低，只看到<b>底面</b>哪些格子有方块——有就涂上。"; }
-            renderView($("learnView"), view, color, 180);
-            $("learnViewTitle").innerHTML = `<span class="dot" style="background:${color}"></span>${title}`;
-            $("learnText").innerHTML = txt;
+        function syncOrderControl() { $("orderSelect").value = String(N); }
+        function setStack(target, r, c, height) { for (let level = 0; level < Math.min(height, target.length); level++) target[level][r][c] = true; }
+        function makePreset(key, n = N) {
+            const result = emptyCubes(n), size = n, start = 0;
+            const put = (level, r, c, shapeSize = n) => {
+                const offset = Math.floor((n - shapeSize) / 2), rr = r + offset, cc = c + offset;
+                if (level >= 0 && level < n && rr >= 0 && rr < n && cc >= 0 && cc < n) result[level][rr][cc] = true;
+            };
+            if (key === "stairs") {
+                for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) setStack(result, start + r, start + c, Math.min(n, size - r));
+            } else if (key === "tower") {
+                for (let level = 0; level < n; level++) {
+                    const inset = Math.floor(level / 2), span = Math.max(1, n - inset * 2);
+                    for (let r = inset; r < inset + span; r++) for (let c = inset; c < inset + span; c++) result[level][r][c] = true;
+                }
+            } else if (key === "bridge") {
+                const mid = Math.floor(n / 2), top = Math.min(n - 1, 2);
+                for (let level = 0; level <= top; level++) { result[level][mid][0] = true; result[level][mid][n - 1] = true; }
+                for (let c = 0; c < n; c++) result[top][mid][c] = true;
+            } else if (key === "corner") {
+                for (let c = 0; c < n; c++) setStack(result, n - 1, c, c + 1);
+                for (let r = 0; r < n - 1; r++) setStack(result, r, 0, Math.max(1, n - r));
+            } else if (key === "full") {
+                for (let level = 0; level < n; level++) for (let r = 0; r < n; r++) result[level][r].fill(true);
+            } else if (key === "dog") {
+                for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) put(1, r, c, 5);
+                for (let r = 1; r <= 2; r++) for (let c = 1; c <= 3; c++) put(2, r, c, 5);
+                [[1,1],[1,3],[3,1],[3,3]].forEach(([r,c]) => put(0, r, c, 5));
+                for (let c = 1; c <= 3; c++) { put(2, 3, c, 5); put(3, 3, c, 5); }
+                put(2, 4, 2, 5); put(4, 3, 1, 5); put(4, 3, 3, 5); put(2, 0, 2, 5);
+            } else if (key === "duck") {
+                for (let r = 0; r <= 2; r++) for (let c = 1; c <= 2; c++) { put(0, r, c, 4); put(1, r, c, 4); }
+                for (let c = 1; c <= 2; c++) { put(2, 2, c, 4); put(2, 3, c, 4); }
+                put(2, 0, 1, 4); put(2, 0, 2, 4);
+            } else if (key === "rabbit") {
+                for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) { put(0, r, c, 5); put(1, r, c, 5); }
+                for (let c = 1; c <= 3; c++) { put(2, 3, c, 5); put(3, 3, c, 5); }
+                put(4, 3, 1, 5); put(4, 3, 3, 5); put(0, 4, 1, 5); put(0, 4, 3, 5); put(2, 0, 2, 5);
+            } else if (key === "tree") {
+                for (let level = 0; level <= 2; level++) put(level, 2, 2, 5);
+                for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) { put(2, r, c, 5); put(3, r, c, 5); }
+                [[2,2],[1,2],[3,2],[2,1],[2,3]].forEach(([r,c]) => put(4, r, c, 5));
+            } else if (key === "chair") {
+                [[1,1],[1,2],[2,1],[2,2]].forEach(([r,c]) => { put(0, r, c, 4); put(1, r, c, 4); });
+                for (let level = 2; level <= 3; level++) { put(level, 1, 1, 4); put(level, 1, 2, 4); }
+            } else if (key === "cup") {
+                for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) put(0, r, c, 5);
+                for (let level = 1; level <= 2; level++) for (let r = 1; r <= 3; r++) for (let c = 1; c <= 3; c++) {
+                    if (r === 1 || r === 3 || c === 1 || c === 3) put(level, r, c, 5);
+                }
+                put(1, 2, 4, 5); put(2, 2, 4, 5);
+            }
+            return result;
         }
-        function initLearn() {
-            learnViewer = makeViewer($("learn3d"));
-            wireDirButtons("learn", learnViewer);
-            $("learnDirs").querySelectorAll(".chip").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    $("learnDirs").querySelectorAll(".chip").forEach(b=>b.classList.remove("active"));
-                    btn.classList.add("active"); learnDir = btn.dataset.dir; refreshLearn();
-                });
+        function resizeCubes(oldCubes, newN) {
+            const oldN = oldCubes.length, result = emptyCubes(newN), offset = Math.floor((newN - oldN) / 2);
+            for (let level = 0; level < Math.min(oldN, newN); level++) for (let r = 0; r < oldN; r++) for (let c = 0; c < oldN; c++) {
+                const nr = r + offset, nc = c + offset;
+                if (oldCubes[level][r][c] && nr >= 0 && nr < newN && nc >= 0 && nc < newN) result[level][nr][nc] = true;
+            }
+            return result;
+        }
+        function setActiveLayer(next) {
+            activeLayer = Math.max(0, Math.min(N - 1, next));
+            if (visibleLayer !== null) visibleLayer = activeLayer;
+            refreshAll();
+        }
+        function handleCell(level, r, c) {
+            editHint = "";
+            const occupied = cubes[level][r][c];
+            if (editTool === "add" && !occupied) { recordHistory(); cubes[level][r][c] = true; }
+            else if (editTool === "delete" && occupied) { recordHistory(); cubes[level][r][c] = false; if (moveSource && moveSource.level === level && moveSource.r === r && moveSource.c === c) moveSource = null; }
+            else if (editTool === "move") {
+                if (!moveSource && occupied) moveSource = { level, r, c };
+                else if (moveSource && occupied && moveSource.level === level && moveSource.r === r && moveSource.c === c) moveSource = null;
+                else if (moveSource && !occupied) {
+                    recordHistory(); cubes[moveSource.level][moveSource.r][moveSource.c] = false; cubes[level][r][c] = true; moveSource = null;
+                } else if (occupied) moveSource = { level, r, c };
+            }
+            $("preset").value = "custom"; refreshAll();
+        }
+        function isInside(cell) {
+            return cell.level >= 0 && cell.level < N && cell.r >= 0 && cell.r < N && cell.c >= 0 && cell.c < N;
+        }
+        function adjacentCell(hit) {
+            return {
+                level: hit.level + Math.round(hit.normal.y),
+                r: hit.r + Math.round(hit.normal.z),
+                c: hit.c + Math.round(hit.normal.x)
+            };
+        }
+        function sameCell(a, b) { return a && b && a.level === b.level && a.r === b.r && a.c === b.c; }
+        function handleCubeClick(hit) {
+            editHint = "";
+            if (editTool === "delete") {
+                recordHistory(); cubes[hit.level][hit.r][hit.c] = false;
+                if (sameCell(moveSource, hit)) moveSource = null;
+                editHint = "已删除点中的方块。";
+            } else if (editTool === "add") {
+                const target = adjacentCell(hit);
+                if (isInside(target) && !cubes[target.level][target.r][target.c]) {
+                    recordHistory(); cubes[target.level][target.r][target.c] = true; activeLayer = target.level;
+                    if (visibleLayer !== null) visibleLayer = target.level;
+                    editHint = "已贴着点中的面添加一块。";
+                } else editHint = "这个方向没有空位，请点方块的另一个面。";
+            } else if (!moveSource) {
+                moveSource = { level: hit.level, r: hit.r, c: hit.c }; activeLayer = hit.level;
+                editHint = "已选中移动起点，再点另一个方块的空面。";
+            } else if (sameCell(moveSource, hit)) {
+                moveSource = null; editHint = "已取消移动。";
+            } else {
+                const target = adjacentCell(hit);
+                if (isInside(target) && !cubes[target.level][target.r][target.c]) {
+                    recordHistory(); cubes[moveSource.level][moveSource.r][moveSource.c] = false;
+                    cubes[target.level][target.r][target.c] = true; moveSource = null; activeLayer = target.level;
+                    if (visibleLayer !== null) visibleLayer = target.level;
+                    editHint = "已把方块移动到点中的空面。";
+                } else editHint = "目标位置被占用或超出范围，请换一个面。";
+            }
+            $("preset").value = "custom"; refreshAll();
+        }
+        function renderEditor() {
+            const layerSelect = $("layerSelect");
+            layerSelect.innerHTML = Array.from({ length: N }, (_, i) => `<option value="${i}">第 ${i + 1} 层（${i === 0 ? "最底层" : "自下往上"}）</option>`).join("");
+            layerSelect.value = String(activeLayer);
+            $("layerDown").disabled = activeLayer === 0; $("layerUp").disabled = activeLayer === N - 1;
+            const grid = $("editGrid"); grid.innerHTML = ""; grid.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+            for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+                const occupied = cubes[activeLayer][r][c], button = document.createElement("button");
+                const source = moveSource && moveSource.level === activeLayer && moveSource.r === r && moveSource.c === c;
+                button.className = `cellBtn${occupied ? " filled" : ""}${source ? " source" : ""}`;
+                button.style.fontSize = N >= 9 ? "10px" : N >= 7 ? "12px" : N >= 5 ? "16px" : "21px";
+                button.textContent = source ? "起" : occupied ? "■" : "+";
+                button.setAttribute("aria-label", `第${activeLayer + 1}层，第${r + 1}行第${c + 1}列，${occupied ? "有方块" : "空"}`);
+                button.addEventListener("click", () => handleCell(activeLayer, r, c)); grid.appendChild(button);
+            }
+            const status = $("editStatus");
+            if (editHint) status.innerHTML = editHint;
+            else if (editTool === "add") status.innerHTML = `正在<b>添加</b>：点空格，或点三维方块的某个面。`;
+            else if (editTool === "delete") status.innerHTML = `正在<b>删除</b>：点格子或直接点三维方块。`;
+            else if (!moveSource) status.innerHTML = `正在<b>移动</b>：先点一块作为起点。`;
+            else status.innerHTML = `已选第 <b>${moveSource.level + 1}</b> 层的方块。可切换楼层，再点空格作为终点。`;
+        }
+        function renderCounting() {
+            const counts = layerCounts(cubes), total = counts.reduce((a, b) => a + b, 0), filters = $("layerFilters");
+            filters.innerHTML = "";
+            const all = document.createElement("button"); all.className = `layer-chip${visibleLayer === null ? " active" : ""}`; all.textContent = `全部 · ${total} 块`;
+            all.addEventListener("click", () => { visibleLayer = null; refreshAll(); }); filters.appendChild(all);
+            counts.forEach((count, level) => {
+                const button = document.createElement("button");
+                button.className = `layer-chip${visibleLayer === level ? " active" : ""}${count === 0 ? " empty" : ""}`;
+                button.textContent = `第 ${level + 1} 层 · ${count} 块`;
+                button.addEventListener("click", () => { activeLayer = level; visibleLayer = level; refreshAll(); }); filters.appendChild(button);
             });
-            refreshLearn();
+            const sum = $("sumRow"); sum.innerHTML = "";
+            counts.forEach((count, index) => {
+                if (index) { const plus = document.createElement("span"); plus.className = "sum-sign"; plus.textContent = "+"; sum.appendChild(plus); }
+                const part = document.createElement("span"); part.className = "sum-part"; part.textContent = `第${index + 1}层 ${count}`; sum.appendChild(part);
+            });
+            const equals = document.createElement("span"); equals.className = "sum-sign"; equals.textContent = "="; sum.appendChild(equals);
+            const totalEl = document.createElement("span"); totalEl.className = "sum-total"; totalEl.textContent = `一共 ${total} 块`; sum.appendChild(totalEl);
+            $("countMessage").innerHTML = visibleLayer === null
+                ? (total ? `分层计算：${counts.join(" + ")} = <b>${total}</b>（块）。` : `框架还是空的。先在左侧选择一层并添加方块。`)
+                : `第 <b>${visibleLayer + 1}</b> 层有 <b>${counts[visibleLayer]}</b> 块；其他层已淡化，编辑网格也已切换到这一层。`;
+        }
+        function refreshAll() {
+            renderEditor(); renderCounting();
+            const shownCubes = visibleLayer === null ? cubes : cubes.map((layer, index) => index === visibleLayer ? layer : layer.map(row => row.map(() => false)));
+            const contextFront = visibleLayer === null ? null : frontView(cubes), contextSide = visibleLayer === null ? null : sideView(cubes), contextTop = visibleLayer === null ? null : topView(cubes);
+            renderView($("viewFront"), frontView(shownCubes), "var(--front)", 160, contextFront);
+            renderView($("viewSide"), sideView(shownCubes), "var(--side)", 160, contextSide);
+            renderView($("viewTop"), topView(shownCubes), "var(--top)", 160, contextTop);
+            if (buildViewer) buildViewer.setCubes(cubes, visibleLayer, moveSource, { showFrame, showDirections });
+            $("cubeCount").textContent = cubeTotal(cubes); $("maxCount").textContent = N ** 3; $("undoBtn").disabled = history.length === 0;
+        }
+        function initWorkbench() {
+            $("orderSelect").innerHTML = Array.from({ length: 9 }, (_, i) => { const n = i + 2; return `<option value="${n}">${n} 阶（${n}×${n}×${n}）</option>`; }).join("");
+            syncOrderControl();
+            $("preset").innerHTML = `<option value="custom">— 自由作品 —</option>` + PRESET_GROUPS.map(group =>
+                `<optgroup label="${group.label}">${group.items.map(item => `<option value="${item.key}">${item.name}</option>`).join("")}</optgroup>`
+            ).join("");
+            $("orderSelect").addEventListener("change", event => {
+                const nextN = Number(event.target.value); if (nextN === N) return;
+                recordHistory(); cubes = resizeCubes(cubes, nextN); N = nextN; activeLayer = Math.min(activeLayer, N - 1);
+                visibleLayer = visibleLayer === null ? null : Math.min(visibleLayer, N - 1); moveSource = null; editHint = ""; $("preset").value = "custom"; refreshAll();
+            });
+            $("preset").addEventListener("change", event => {
+                if (event.target.value === "custom") return;
+                recordHistory();
+                const info = presetInfo(event.target.value);
+                if (info && N < info.minOrder) { N = info.minOrder; syncOrderControl(); }
+                cubes = makePreset(event.target.value); activeLayer = 0; visibleLayer = null; moveSource = null; editHint = ""; refreshAll();
+            });
+            $("layerSelect").addEventListener("change", event => setActiveLayer(Number(event.target.value)));
+            $("layerDown").addEventListener("click", () => setActiveLayer(activeLayer - 1));
+            $("layerUp").addEventListener("click", () => setActiveLayer(activeLayer + 1));
+            $("toolPalette").querySelectorAll(".tool-btn").forEach(button => button.addEventListener("click", () => {
+                $("toolPalette").querySelectorAll(".tool-btn").forEach(item => item.classList.remove("active"));
+                button.classList.add("active"); editTool = button.dataset.tool; editHint = ""; if (editTool !== "move") moveSource = null; refreshAll();
+            }));
+            $("undoBtn").addEventListener("click", () => { if (history.length) restore(history.pop()); });
+            $("clearBtn").addEventListener("click", () => {
+                if (!cubeTotal(cubes)) return; recordHistory(); cubes = emptyCubes(); moveSource = null; visibleLayer = null; editHint = ""; $("preset").value = "custom"; refreshAll();
+            });
+            buildViewer = makeViewer($("iso3d"), () => {
+                document.querySelectorAll('.dir-row[data-dir-row="build"] .dir-btn').forEach(button => button.classList.remove("active"));
+            }, handleCubeClick);
+            wireDirectionButtons("build", buildViewer);
+            $("frameToggle").addEventListener("change", event => { showFrame = event.target.checked; refreshAll(); });
+            $("directionToggle").addEventListener("change", event => { showDirections = event.target.checked; refreshAll(); });
+            $("resetViewBtn").addEventListener("click", () => {
+                buildViewer.resetView(); document.querySelectorAll('.dir-row[data-dir-row="build"] .dir-btn').forEach(button => button.classList.remove("active"));
+            });
+            cubes = makePreset("stairs"); $("preset").value = "stairs"; refreshAll();
         }
 
-        // ================= 辨认练习 =================
-        let quiz=null, score=0, asked=0, answered=false, quizViewer=null;
-        function randShape() {
-            let g, total;
-            do { g = emptyGrid();
-                for (let r=0;r<N;r++) for (let c=0;c<N;c++) if (Math.random()<0.55) g[r][c]=1+Math.floor(Math.random()*3);
-                total = cubeTotal(g);
-            } while (total<3 || total>12);
-            return g;
+        // ================= 视图挑战 =================
+        let quizViewer = null, quizReady = false, quiz = null, score = 0, asked = 0, answered = false;
+        let quizVisibleLayer = null, quizShowFrame = false, quizShowDirections = false;
+        function randomShape(n) {
+            let result, total;
+            do {
+                result = emptyCubes(n);
+                for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (Math.random() < .56) {
+                    const height = 1 + Math.floor(Math.random() * n); setStack(result, r, c, height);
+                }
+                total = cubeTotal(result);
+            } while (total < n || total > n * n * 2.5);
+            return result;
         }
         function distortView(view) {
-            const cells = view.cells.map(row=>row.slice());
-            const filled=[]; for (let r=0;r<view.h;r++) for (let c=0;c<view.w;c++) if (cells[r][c]) filled.push([r,c]);
-            if (filled.length>1 && Math.random()<0.6) { const [r,c]=filled[Math.floor(Math.random()*filled.length)]; cells[r][c]=0; }
-            else { let placed=false,t=0; while(!placed&&t++<20){const r=Math.floor(Math.random()*view.h),c=Math.floor(Math.random()*view.w); if(!cells[r][c]){cells[r][c]=1;placed=true;}} }
-            return { w:view.w, h:view.h, cells, kind:view.kind };
+            const cells = view.cells.map(row => row.slice()), locations = [];
+            for (let r = 0; r < view.h; r++) for (let c = 0; c < view.w; c++) locations.push([r, c]);
+            for (let attempts = 0; attempts < 30; attempts++) {
+                const [r, c] = locations[Math.floor(Math.random() * locations.length)];
+                cells[r][c] = !cells[r][c];
+                if (cells.flat().some(Boolean)) break;
+            }
+            return { w: view.w, h: view.h, cells };
         }
         function newQuiz() {
-            answered=false; $("quizFeedback").textContent=""; $("quizFeedback").className="feedback";
-            const g = randShape();
-            const dirs = [
-                { key:"front", label:"正面（从前往后）", color:"var(--front)", fn:frontView },
-                { key:"side",  label:"侧面（从左往右）", color:"var(--side)",  fn:sideView },
-                { key:"top",   label:"上面（从上往下）", color:"var(--top)",   fn:topView },
+            const n = Math.min(5, Math.max(2, N)), shape = randomShape(n);
+            const directions = [
+                { key: "front", short: "前面", label: "前面（正视）", color: "var(--front)", fn: frontView },
+                { key: "left", short: "左面", label: "左面（侧视）", color: "var(--side)", fn: sideView },
+                { key: "top", short: "上面", label: "上面（俯视）", color: "var(--top)", fn: topView }
             ];
-            const dir = dirs[Math.floor(Math.random()*dirs.length)];
-            const correct = dir.fn(g);
+            const dir = directions[Math.floor(Math.random() * directions.length)], correct = dir.fn(shape);
             const options = [{ view: correct, ok: true }];
-            let guard=0;
-            while (options.length<4 && guard++<40) { const cand=distortView(correct); if (cand.cells.flat().some(Boolean) && !options.some(o=>sameView(o.view,cand))) options.push({view:cand,ok:false}); }
-            while (options.length<4) { const other=dirs[Math.floor(Math.random()*dirs.length)].fn(g); if (!options.some(o=>sameView(o.view,other))) options.push({view:other,ok:false}); else options.push({view:distortView(correct),ok:false}); }
-            for (let i=options.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[options[i],options[j]]=[options[j],options[i]];}
-            quiz = { g, dir, options };
-            if (quizViewer) quizViewer.setCubes(g);
-            $("quizPrompt").innerHTML = `从<b>${dir.label}</b>看这个物体，得到的视图是下面哪一个？`;
-            const wrap = $("quizOptions"); wrap.innerHTML="";
-            options.forEach((opt,i) => {
-                const div = document.createElement("div"); div.className="opt"; div.dataset.i=i;
-                const svg = document.createElementNS(SVGNS,"svg"); svg.setAttribute("viewBox","0 0 120 120"); svg.style.width="100%"; svg.style.height="auto";
-                renderView(svg, opt.view, dir.color, 120); div.appendChild(svg);
-                const lab = document.createElement("div"); lab.className="lab"; lab.textContent="选项 "+"ABCD"[i]; div.appendChild(lab);
-                div.addEventListener("click", () => answerQuiz(i)); wrap.appendChild(div);
+            while (options.length < 4) {
+                const candidate = distortView(correct);
+                if (!options.some(option => sameView(option.view, candidate))) options.push({ view: candidate, ok: false });
+            }
+            for (let i = options.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [options[i], options[j]] = [options[j], options[i]]; }
+            quiz = { shape, dir, options }; answered = false; quizVisibleLayer = null;
+            $("quizFeedback").textContent = ""; $("quizFeedback").className = "feedback";
+            $("quizDirectionBadge").textContent = `本题：从${dir.short}看`;
+            $("quizPrompt").innerHTML = `本题要求从<b>${dir.label}</b>观察。下面哪一个图是正确的？`;
+            const directionRow = document.querySelector('.dir-row[data-dir-row="quiz"]');
+            directionRow.querySelectorAll(".dir-btn").forEach(button => button.classList.remove("target", "active"));
+            directionRow.querySelector(`.dir-btn[data-dir="${dir.key}"]`).classList.add("target");
+            renderQuizLayers(); refreshQuizViewer();
+            const wrap = $("quizOptions"); wrap.innerHTML = "";
+            options.forEach((option, index) => {
+                const div = document.createElement("div"); div.className = "opt";
+                const svg = document.createElementNS(SVGNS, "svg"); svg.setAttribute("viewBox", "0 0 150 150"); renderView(svg, option.view, dir.color, 150);
+                const label = document.createElement("div"); label.className = "opt-label"; label.textContent = `选项 ${"ABCD"[index]}`;
+                div.append(svg, label); div.addEventListener("click", () => answerQuiz(index)); wrap.appendChild(div);
             });
         }
-        function answerQuiz(i) {
-            if (answered) return; answered=true; asked++;
-            const opts = $("quizOptions").children;
-            quiz.options.forEach((opt,k)=>{ if(opt.ok) opts[k].classList.add("right"); else if(k===i) opts[k].classList.add("wrong"); });
-            const fb = $("quizFeedback");
-            if (quiz.options[i].ok) { score++; fb.textContent="✓ 答对了！想象从那个方向压扁的样子。"; fb.className="feedback ok"; }
-            else { fb.textContent="✗ 不对哦。绿色的才是正确视图，再对照立体图想一想。"; fb.className="feedback no"; }
+        function refreshQuizViewer() {
+            if (quizViewer && quiz) quizViewer.setCubes(quiz.shape, quizVisibleLayer, null, { showFrame: quizShowFrame, showDirections: quizShowDirections });
+        }
+        function renderQuizLayers() {
+            if (!quiz) return;
+            const counts = layerCounts(quiz.shape), wrap = $("quizLayerFilters"); wrap.innerHTML = "";
+            const addButton = (label, layer) => {
+                const button = document.createElement("button");
+                button.className = `layer-chip${quizVisibleLayer === layer ? " active" : ""}`; button.textContent = label;
+                button.addEventListener("click", () => { quizVisibleLayer = layer; renderQuizLayers(); refreshQuizViewer(); }); wrap.appendChild(button);
+            };
+            addButton("全部", null); counts.forEach((count, level) => addButton(`${level + 1}层·${count}`, level));
+        }
+        function answerQuiz(index) {
+            if (answered) return; answered = true; asked++;
+            Array.from($("quizOptions").children).forEach((node, i) => {
+                if (quiz.options[i].ok) node.classList.add("right"); else if (i === index) node.classList.add("wrong");
+            });
+            if (quiz.options[index].ok) { score++; $("quizFeedback").textContent = "✓ 答对了！你找准了观察方向。"; $("quizFeedback").className = "feedback ok"; }
+            else { $("quizFeedback").textContent = "✗ 再看一看蓝色正面和绿色左边，绿色框是正确答案。"; $("quizFeedback").className = "feedback no"; }
             $("score").textContent = `得分 ${score} / ${asked}`;
         }
-        function initQuiz() { quizViewer = makeViewer($("quiz3d")); wireDirButtons("quiz", quizViewer); $("nextQ").addEventListener("click", newQuiz); newQuiz(); }
+        function initQuiz() {
+            quizViewer = makeViewer($("quiz3d")); wireDirectionButtons("quiz", quizViewer);
+            $("quizFrameToggle").addEventListener("change", event => { quizShowFrame = event.target.checked; refreshQuizViewer(); });
+            $("quizDirectionToggle").addEventListener("change", event => { quizShowDirections = event.target.checked; refreshQuizViewer(); });
+            $("nextQ").addEventListener("click", newQuiz); newQuiz(); quizReady = true;
+        }
 
-        // ================= Tab 切换 =================
-        let learnReady=false, quizReady=false;
-        $("tabs").querySelectorAll(".tab").forEach(tab => {
-            tab.addEventListener("click", () => {
-                $("tabs").querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-                document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
-                tab.classList.add("active");
-                const name = tab.dataset.tab; $("view-"+name).classList.add("active");
-                if (name==="learn" && !learnReady) { initLearn(); learnReady=true; } else if (name==="learn" && learnViewer) learnViewer.render();
-                if (name==="quiz"  && !quizReady)  { initQuiz();  quizReady=true; }  else if (name==="quiz"  && quizViewer)  quizViewer.render();
-                if (name==="build" && buildViewer) buildViewer.render();
-            });
-        });
-
-        window.addEventListener("resize", () => {
-            if (buildViewer) buildViewer.render();
-            if (learnViewer) learnViewer.render();
-            if (quizViewer)  quizViewer.render();
-        });
-        // 手动拖动后，清除“当前视角”高亮（避免误导）
-        document.addEventListener("pointerdown", e => {
-            if (e.target.tagName === "CANVAS") e.target.closest(".stage")?.querySelectorAll(".dir-btn.active").forEach(b => b.classList.remove("active"));
-        }, true);
-
-        initBuild();
+        // ================= 页面初始化 =================
+        $("tabs").querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
+            $("tabs").querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+            document.querySelectorAll(".view").forEach(item => item.classList.remove("active"));
+            tab.classList.add("active"); $("view-" + tab.dataset.tab).classList.add("active");
+            if (tab.dataset.tab === "quiz") { if (!quizReady) initQuiz(); else quizViewer.render(); }
+            else if (buildViewer) buildViewer.render();
+        }));
+        window.addEventListener("resize", () => { if (buildViewer) buildViewer.render(); if (quizViewer) quizViewer.render(); });
+        initWorkbench();
     </script>
-    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+    <div class="site-copyright" style="box-sizing:border-box;width:100%;padding:24px 16px;text-align:center;color:#94a3b8;font:13px/1.6 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 </body>
 </html>

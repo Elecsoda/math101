@@ -52,7 +52,7 @@
     if (typeof config.prepare === "function") config.prepare(config);
 
     // The shared teaching rhythm starts with the untouched problem and a reading
-    // pass. Dual-method tools then branch into diagram, equation and verification.
+    // pass. Guided tools then choose diagram, optional equation and verification.
     const initialStep = () => 0;
     const requestedTab = new URLSearchParams(location.search).get("topic");
     const requestedTabIndex = requestedTab ? config.tabs.findIndex(tab => tab.id === requestedTab) : -1;
@@ -63,6 +63,13 @@
     })[char]);
     const currentTab = () => config.tabs[state.tab];
     const currentProblem = () => currentTab().problems[state.problem];
+    const usesGuidedMethods = () => Boolean(config.dualMethod || config.adaptiveMethods);
+    const usesEquationMethod = problem => Boolean(config.dualMethod || (config.adaptiveMethods && problem.useEquation));
+    const stepKinds = problem => {
+        if (usesGuidedMethods()) return ["read", "diagram", ...(usesEquationMethod(problem) ? ["equation"] : []), "answer"];
+        return ["read", "relations", "solution"];
+    };
+    const currentStepKind = problem => stepKinds(problem)[state.step - 1] || "";
 
     function relationPhrases(problem) {
         const story = problem.story || "";
@@ -221,6 +228,44 @@
         $("tabIntro").textContent = currentTab().intro || "";
     }
 
+    function renderQuestionVisual(visual) {
+        if (!visual || visual.type !== "average-line-choices") return "";
+        const values = (visual.values || []).map(Number).filter(Number.isFinite);
+        const choices = visual.choices || [];
+        if (!values.length || !choices.length) return "";
+        const chartMax = Math.max(Number(visual.max) || 0, ...values, ...choices.map(choice => Number(choice.lineValue) || 0), 1);
+        const baseline = 108;
+        const chartHeight = 82;
+        const y = value => baseline - Math.max(0, Math.min(chartMax, Number(value) || 0)) / chartMax * chartHeight;
+        const charts = choices.map((choice, choiceIndex) => {
+            const bars = values.map((value, index) => {
+                const barY = y(value);
+                return `<rect x="${34 + index * 31}" y="${barY.toFixed(1)}" width="18" height="${(baseline - barY).toFixed(1)}" rx="1" />`;
+            }).join("");
+            const lineY = y(choice.lineValue).toFixed(1);
+            const label = choice.label || String.fromCharCode(65 + choiceIndex);
+            return `<article class="average-chart-choice">
+                <b>${esc(label)}.</b>
+                <svg viewBox="0 0 170 125" role="img" aria-label="${esc(`${label}选项：虚线高度为${choice.lineValue}`)}">
+                    <title>${esc(`${label}选项的柱状统计图`)}</title>
+                    <g class="chart-axes"><path d="M24 108H158M24 108V15"/><path d="m158 108-8-4v8zM24 15l-4 8h8z"/></g>
+                    <g class="chart-bars">${bars}</g>
+                    <line class="chart-average-line" x1="25" y1="${lineY}" x2="153" y2="${lineY}" />
+                </svg>
+            </article>`;
+        }).join("");
+        return `<div class="question-visual average-line-choices" aria-label="平均水平虚线选项">${charts}</div>`;
+    }
+
+    function renderChoices(problem) {
+        if (!Array.isArray(problem.choices) || !problem.choices.length) return "";
+        return `<div class="problem-choices" aria-label="题目选项">${problem.choices.map((choice, index) => {
+            const label = typeof choice === "string" ? String.fromCharCode(65 + index) : (choice.label || String.fromCharCode(65 + index));
+            const text = typeof choice === "string" ? choice : choice.text;
+            return `<div class="problem-choice"><b>${esc(label)}.</b><span>${esc(text)}</span></div>`;
+        }).join("")}</div>`;
+    }
+
     function renderProblem() {
         const problem = currentProblem();
         const tab = currentTab();
@@ -233,6 +278,8 @@
                 <span class="badge">${esc(tab.label)} · ${state.problem + 1}/${tab.problems.length}</span>
             </div>
             <p class="story">${state.step >= 1 ? highlightedStory(problem) : esc(problem.story)}</p>
+            ${renderQuestionVisual(problem.questionVisual)}
+            ${renderChoices(problem)}
             ${state.step >= 1 && problem.hint ? `<p class="hint">提示：${esc(problem.hint)}</p>` : ""}
         `;
     }
@@ -271,6 +318,35 @@
     function renderTeachingVisual(problem, stage) {
         const visual = stage.visual;
         if (!visual || visual.type === "lines") return renderDiagram(problem, stage);
+
+        if (visual.type === "bar-chart") {
+            const values = (visual.values || []).map(Number).filter(Number.isFinite);
+            const maxValue = Math.max(Number(visual.max) || 0, ...values, Number(visual.lineValue) || 0, 1);
+            const baseline = 116;
+            const chartHeight = 86;
+            const y = value => baseline - Math.max(0, Math.min(maxValue, Number(value) || 0)) / maxValue * chartHeight;
+            const bars = values.map((value, index) => {
+                const barY = y(value);
+                const x = 42 + index * 42;
+                return `<g><rect x="${x}" y="${barY.toFixed(1)}" width="24" height="${(baseline - barY).toFixed(1)}" rx="2"/><text x="${x + 12}" y="132">${esc((visual.labels || [])[index] || `第${index + 1}次`)}</text></g>`;
+            }).join("");
+            const line = Number.isFinite(Number(visual.lineValue))
+                ? `<line class="chart-average-line" x1="31" y1="${y(visual.lineValue).toFixed(1)}" x2="${Math.max(205, 48 + values.length * 42)}" y2="${y(visual.lineValue).toFixed(1)}"/><text class="chart-line-label" x="${Math.max(207, 50 + values.length * 42)}" y="${(y(visual.lineValue) + 4).toFixed(1)}">${esc(visual.lineLabel || "平均线")}</text>`
+                : "";
+            const width = Math.max(280, 105 + values.length * 42);
+            return `<h3 class="diagram-title">${esc(stage.title || "柱状图")}</h3>
+                <div class="teaching-visual bar-chart-visual"><svg viewBox="0 0 ${width} 145" role="img" aria-label="${esc(visual.caption || stage.title || "柱状统计图")}">
+                    <path class="bar-chart-axis" d="M28 116H${width - 18}M28 116V20"/>
+                    <g class="bar-chart-bars">${bars}</g>${line}
+                </svg>${visual.caption ? `<p>${esc(visual.caption)}</p>` : ""}</div>`;
+        }
+
+        if (visual.type === "balance") {
+            const renderSide = side => `<div class="balance-side"><small>${esc(side.label || "一边")}</small><b>${esc(side.value || "")}</b>${side.note ? `<span>${esc(side.note)}</span>` : ""}</div>`;
+            return `<h3 class="diagram-title">${esc(stage.title || "移多补少")}</h3>
+                <div class="teaching-visual balance-visual">${renderSide(visual.left || {})}<div class="balance-beam"><span></span><i></i></div>${renderSide(visual.right || {})}</div>
+                ${visual.caption ? `<p class="visual-caption">${esc(visual.caption)}</p>` : ""}`;
+        }
 
         if (visual.type === "table") {
             return `<h3 class="diagram-title">${esc(stage.title || "列表整理")}</h3>
@@ -333,9 +409,11 @@
     }
 
     function renderMethodHeader(number, title, subtitle) {
+        const adaptiveLabel = number === "一" ? "按题选图" : "反问题方法";
+        const badge = config.adaptiveMethods ? (number === "一" ? "图" : "式") : number;
         return `<div class="method-head">
-            <span class="method-number">${number}</span>
-            <div><small>方法${number === "一" ? "一" : "二"}</small><h2>${esc(title)}</h2><p>${esc(subtitle || "")}</p></div>
+            <span class="method-number">${badge}</span>
+            <div><small>${config.adaptiveMethods ? adaptiveLabel : `方法${number === "一" ? "一" : "二"}`}</small><h2>${esc(title)}</h2><p>${esc(subtitle || "")}</p></div>
         </div>`;
     }
 
@@ -394,11 +472,11 @@
 
     function renderDiagramMethod(problem) {
         const method = problem.diagramMethod || {};
-        const methodTitle = config.methodOneTitle || "线段图";
+        const methodTitle = config.methodOneTitle || (config.adaptiveMethods ? "图表与推理" : "线段图");
         const stages = diagramStages(problem);
         state.methodStep = Math.min(state.methodStep, stages.length - 1);
         const visibleStages = stages.slice(0, state.methodStep + 1);
-        return `${renderMethodHeader("一", methodTitle, method.insight || "把数量画成同样大小的份，直观看清和、差、倍关系。")}
+        return `${renderMethodHeader("一", methodTitle, method.insight || (config.adaptiveMethods ? "根据题意选择柱状图、表格、配对或平衡图，一步只处理一个关系。" : "把数量画成同样大小的份，直观看清和、差、倍关系。"))}
             ${renderMethodProgress(stages)}
             <div class="revealed-steps">
                 ${visibleStages.map((stage, index) => {
@@ -445,6 +523,13 @@
             <div class="answer">答：${esc(problem.answer)}</div>`;
     }
 
+    function renderAdaptiveSummary(problem) {
+        return `<h2>答案与检验</h2>
+            <ol class="solution">${problem.steps.map(step => `<li>${esc(step)}</li>`).join("")}</ol>
+            <p class="teaching-note"><b>检验：</b>${esc(problem.check || "把结果代回题目条件，核对总量、份数和平均数是否都成立。")}</p>
+            <div class="answer">答：${esc(problem.answer)}</div>`;
+    }
+
     function renderContent() {
         const problem = currentProblem();
         if (state.step === 0) {
@@ -458,16 +543,17 @@
             `;
             return;
         }
-        if (state.step === 1) {
+        const kind = currentStepKind(problem);
+        if (kind === "read") {
             $("content").innerHTML = `<h2>圈出关键数量关系词</h2>
                 <p class="teaching-note">这些完整短语能够决定加、减、乘、除关系。不要把普通问句中的“多少”等词当作数量关系。</p>`;
-        } else if (config.dualMethod && state.step === 2) {
+        } else if (usesGuidedMethods() && kind === "diagram") {
             $("content").innerHTML = renderDiagramMethod(problem);
-        } else if (config.dualMethod && state.step === 3) {
+        } else if (usesGuidedMethods() && kind === "equation") {
             $("content").innerHTML = renderEquationMethod(problem);
-        } else if (config.dualMethod) {
-            $("content").innerHTML = renderDualSummary(problem);
-        } else if (state.step === 2) {
+        } else if (usesGuidedMethods() && kind === "answer") {
+            $("content").innerHTML = config.adaptiveMethods ? renderAdaptiveSummary(problem) : renderDualSummary(problem);
+        } else if (kind === "relations") {
             $("content").innerHTML = renderRelations(problem) + (config.showDiagram === false ? "" : renderDiagram(problem));
         } else {
             $("content").innerHTML = renderSolution(problem);
@@ -485,24 +571,34 @@
     }
 
     function renderSteps() {
-        const names = config.dualMethod
-            ? ["读题高亮", `方法一·${config.methodOneTitle || "线段图"}`, `方法二·${config.methodTwoTitle || "方程"}`, "答案与检验"]
-            : ["读题高亮", "数量关系与画图", "分步解答"];
+        const problem = currentProblem();
+        const kinds = stepKinds(problem);
+        const labels = {
+            read: "读题高亮",
+            diagram: config.adaptiveMethods ? "图表与推理" : `方法一·${config.methodOneTitle || "线段图"}`,
+            equation: config.adaptiveMethods ? "列式方程" : `方法二·${config.methodTwoTitle || "方程"}`,
+            answer: "答案与检验",
+            relations: "数量关系与画图",
+            solution: "分步解答"
+        };
+        const names = kinds.map(kind => labels[kind]);
         $("steps").style.gridTemplateColumns = `repeat(${names.length}, 1fr)`;
         $("steps").innerHTML = names.map((name, index) => {
             const step = index + 1;
             const status = step === state.step ? "active" : step < state.step ? "done" : "";
             return `<button class="step ${status}" data-step="${step}" ${state.step === 0 ? "disabled" : ""}>${step}. ${name}</button>`;
         }).join("");
-        const methodStages = config.dualMethod && state.step === 2 ? diagramStages(currentProblem())
-            : config.dualMethod && state.step === 3 ? equationStages(currentProblem()) : [];
+        const kind = currentStepKind(problem);
+        const methodStages = usesGuidedMethods() && kind === "diagram" ? diagramStages(problem)
+            : usesGuidedMethods() && kind === "equation" ? equationStages(problem) : [];
         const insideMethod = methodStages.length > 0;
         const lastMethodStep = !insideMethod || state.methodStep >= methodStages.length - 1;
+        const nextKind = kinds[state.step] || "";
         $("prevBtn").disabled = state.step === 0 && state.methodStep === 0;
         $("nextBtn").textContent = state.step === 0 ? "读题"
             : insideMethod && !lastMethodStep ? "下一小步"
-            : state.step === 2 ? "进入方程法"
-            : state.step === 3 ? "查看答案"
+            : nextKind === "equation" ? "进入方程法"
+            : nextKind === "answer" ? "查看答案"
             : state.step === names.length ? "下一题" : "下一步";
     }
 
@@ -533,20 +629,25 @@
     document.documentElement.style.setProperty("--accent-soft", config.accentSoft || "#f0eeff");
 
     $("prevBtn").addEventListener("click", () => {
-        if (config.dualMethod && (state.step === 2 || state.step === 3) && state.methodStep > 0) {
+        const problem = currentProblem();
+        const kind = currentStepKind(problem);
+        if (usesGuidedMethods() && (kind === "diagram" || kind === "equation") && state.methodStep > 0) {
             state.methodStep -= 1;
         } else {
             state.step = Math.max(0, state.step - 1);
-            if (config.dualMethod && state.step === 2) state.methodStep = diagramStages(currentProblem()).length - 1;
-            else if (config.dualMethod && state.step === 3) state.methodStep = equationStages(currentProblem()).length - 1;
+            const previousKind = currentStepKind(problem);
+            if (usesGuidedMethods() && previousKind === "diagram") state.methodStep = diagramStages(problem).length - 1;
+            else if (usesGuidedMethods() && previousKind === "equation") state.methodStep = equationStages(problem).length - 1;
             else state.methodStep = 0;
         }
         render();
     });
     $("nextBtn").addEventListener("click", () => {
-        const stepCount = config.dualMethod ? 4 : 3;
-        const methodStages = config.dualMethod && state.step === 2 ? diagramStages(currentProblem())
-            : config.dualMethod && state.step === 3 ? equationStages(currentProblem()) : [];
+        const problem = currentProblem();
+        const stepCount = stepKinds(problem).length;
+        const kind = currentStepKind(problem);
+        const methodStages = usesGuidedMethods() && kind === "diagram" ? diagramStages(problem)
+            : usesGuidedMethods() && kind === "equation" ? equationStages(problem) : [];
         if (methodStages.length && state.methodStep < methodStages.length - 1) state.methodStep += 1;
         else if (state.step === 0) { state.step = 1; state.methodStep = 0; }
         else if (state.step < stepCount) { state.step += 1; state.methodStep = 0; }

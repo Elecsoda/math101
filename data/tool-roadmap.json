@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-06-28",
+  "updatedAt": "2026-08-01",
   "sources": {
     "knowledgeGraph": "../private-school-management/data/skilltree.json",
     "textbook": "人教版小学数学教材主线",
@@ -48,13 +48,13 @@
         "decimal-meaning",
         "op-laws",
         "equation",
-        "negative"
+        "negative",
+        "mul-multi-by-1",
+        "mul-2x2"
       ],
       "missingNodeIds": [
         "num-10k",
-        "mul-multi-by-1",
         "addsub-10k",
-        "mul-2x2",
         "bignum",
         "mul-3x2",
         "div-by-2digit",
@@ -84,16 +84,23 @@
         },
         {
           "id": "multi-digit-calc-lab",
-          "name": "多位数乘除竖式实验室",
+          "name": "多位数乘法竖式实验室",
           "grade": "1-6",
-          "status": "planned",
+          "status": "partial",
           "route": "/multi-digit-calc",
           "knowledgeNodeIds": [
             "mul-multi-by-1",
-            "mul-2x2",
-            "mul-3x2",
-            "div-by-2digit"
-          ]
+            "mul-2x2"
+          ],
+          "tabs": [
+            "整十整百口算",
+            "面积模型·理解含义",
+            "多位数×一位数",
+            "两位数×两位数",
+            "末尾有0的简算",
+            "闯关练习"
+          ],
+          "notes": "已覆盖多位数乘法（含义、竖式、部分积对位、末尾0简算）；mul-3x2 三位数乘两位数与 div-by-2digit 除法竖式仍待补。"
         },
         {
           "id": "mixed-operation-order",
@@ -325,13 +332,13 @@
         "parallelogram-trapezoid",
         "polygon-area",
         "observe-object",
-        "shape-solid"
+        "shape-solid",
+        "triangle-classify"
       ],
       "missingNodeIds": [
         "shape-plane",
         "pos-basic",
         "measure-units",
-        "triangle-classify",
         "cuboid-cube",
         "circle",
         "cylinder-cone",
@@ -426,6 +433,16 @@
             "parallelogram-trapezoid",
             "triangle-classify",
             "polygon-area"
+          ]
+        },
+        {
+          "id": "triangle-lab",
+          "name": "三角形系统学习",
+          "grade": "4-5",
+          "status": "ready",
+          "route": "/triangle",
+          "knowledgeNodeIds": [
+            "triangle-classify"
           ]
         },
         {

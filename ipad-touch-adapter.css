@@ -1,0 +1,104 @@
+/*
+ * Shared touch-pointer affordances for every Math101 tool.
+ * The class is added by ipad-touch-adapter.js only on touch-capable devices,
+ * so desktop layouts keep their original compact controls.
+ */
+html.math101-touch {
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+}
+
+html.math101-touch body {
+    /* Allow panning and pinch zoom, but suppress Safari's double-tap zoom. */
+    touch-action: manipulation;
+}
+
+html.math101-touch button,
+html.math101-touch [role="button"],
+html.math101-touch [onclick],
+html.math101-touch a,
+html.math101-touch label,
+html.math101-touch input,
+html.math101-touch select,
+html.math101-touch textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+
+html.math101-touch button,
+html.math101-touch [role="button"],
+html.math101-touch [onclick],
+html.math101-touch a,
+html.math101-touch label,
+html.math101-touch select {
+    touch-action: manipulation;
+}
+
+html.math101-touch button,
+html.math101-touch [role="button"],
+html.math101-touch a[aria-label],
+html.math101-touch a.button,
+html.math101-touch select {
+    min-height: 44px;
+}
+
+html.math101-touch button,
+html.math101-touch [role="button"],
+html.math101-touch a[aria-label],
+html.math101-touch a.button {
+    min-width: 44px;
+}
+
+html.math101-touch div[onclick],
+html.math101-touch span[onclick] {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+html.math101-touch input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.math101-touch textarea {
+    min-height: 44px;
+}
+
+html.math101-touch input[type="checkbox"],
+html.math101-touch input[type="radio"] {
+    width: max(24px, 1.5em);
+    height: max(24px, 1.5em);
+    touch-action: manipulation;
+}
+
+html.math101-touch input[type="range"] {
+    min-height: 44px;
+    touch-action: pan-y;
+}
+
+html.math101-touch .grab,
+html.math101-touch .hand-grab,
+html.math101-touch .rot {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+html.math101-touch button,
+html.math101-touch [role="button"],
+html.math101-touch [onclick],
+html.math101-touch .grab,
+html.math101-touch .hand-grab,
+html.math101-touch .rot {
+    -webkit-touch-callout: none;
+}
+
+/* Keep the focused field visible when the iPad software keyboard opens. */
+html.math101-touch input:focus,
+html.math101-touch select:focus,
+html.math101-touch textarea:focus {
+    scroll-margin-block: 18vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.math101-touch *,
+    html.math101-touch *::before,
+    html.math101-touch *::after {
+        scroll-behavior: auto !important;
+    }
+}

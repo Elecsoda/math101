@@ -17,6 +17,8 @@
         .pop { animation: pop 0.4s ease; }
         @keyframes pop { 0%{transform:scale(0.6);opacity:0} 100%{transform:scale(1);opacity:1} }
     </style>
+    <link rel="stylesheet" href="../ipad-touch-adapter.css">
+    <script src="../ipad-touch-adapter.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -61,6 +63,11 @@
                 setA(2 + Math.floor(Math.random() * 7));
                 setB(2 + Math.floor(Math.random() * 7));
                 setHighlight(null);
+            };
+            const highlightOnKey = (kind) => (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                setHighlight(kind);
             };
 
             return (
@@ -108,16 +115,28 @@
 
                             {/* 四个算式 */}
                             <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-                                <div onMouseEnter={() => setHighlight('row')} onMouseLeave={() => setHighlight(null)}>
+                                <div role="button" tabIndex="0" className="w-full text-left" aria-label="高亮按行观察的点阵"
+                                    onTouchStart={() => setHighlight('row')} onClick={() => setHighlight('row')} onFocus={() => setHighlight('row')}
+                                    onKeyDown={highlightOnKey('row')}
+                                    onMouseEnter={() => setHighlight('row')} onMouseLeave={() => setHighlight(null)}>
                                     <EqCard type="mul" text={`${a} × ${b} = ${total}`} sub={`${a} 行，每行 ${b} 个`} />
                                 </div>
-                                <div onMouseEnter={() => setHighlight('col')} onMouseLeave={() => setHighlight(null)}>
+                                <div role="button" tabIndex="0" className="w-full text-left" aria-label="高亮按列观察的点阵"
+                                    onTouchStart={() => setHighlight('col')} onClick={() => setHighlight('col')} onFocus={() => setHighlight('col')}
+                                    onKeyDown={highlightOnKey('col')}
+                                    onMouseEnter={() => setHighlight('col')} onMouseLeave={() => setHighlight(null)}>
                                     <EqCard type="mul" text={`${b} × ${a} = ${total}`} sub={`${b} 列，每列 ${a} 个`} />
                                 </div>
-                                <div onMouseEnter={() => setHighlight('row')} onMouseLeave={() => setHighlight(null)}>
+                                <div role="button" tabIndex="0" className="w-full text-left" aria-label="高亮等分成行的点阵"
+                                    onTouchStart={() => setHighlight('row')} onClick={() => setHighlight('row')} onFocus={() => setHighlight('row')}
+                                    onKeyDown={highlightOnKey('row')}
+                                    onMouseEnter={() => setHighlight('row')} onMouseLeave={() => setHighlight(null)}>
                                     <EqCard type="div" text={`${total} ÷ ${a} = ${b}`} sub={`${total} 个分成 ${a} 行，每行 ${b} 个`} />
                                 </div>
-                                <div onMouseEnter={() => setHighlight('col')} onMouseLeave={() => setHighlight(null)}>
+                                <div role="button" tabIndex="0" className="w-full text-left" aria-label="高亮等分成列的点阵"
+                                    onTouchStart={() => setHighlight('col')} onClick={() => setHighlight('col')} onFocus={() => setHighlight('col')}
+                                    onKeyDown={highlightOnKey('col')}
+                                    onMouseEnter={() => setHighlight('col')} onMouseLeave={() => setHighlight(null)}>
                                     <EqCard type="div" text={`${total} ÷ ${b} = ${a}`} sub={`${total} 个分成 ${b} 列，每列 ${a} 个`} />
                                 </div>
                             </div>
@@ -129,7 +148,7 @@
                                 这 {total} 个点没有变，只是看的角度不同：
                                 按 <span className="text-rose-600 font-bold">行</span> 看，或按 <span className="text-emerald-600 font-bold">列</span> 看，
                                 就得到两道乘法；反过来"把总数分回去"，就是两道除法。
-                                把鼠标移到右边的算式上，看看点阵怎么高亮。
+                                轻触或把鼠标移到右边的算式上，看看点阵怎么高亮。
                                 记住：<span className="font-bold">乘法和除法是互相反过来的</span>，会一道就能想出其他三道。
                             </p>
                         </div>

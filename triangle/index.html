@@ -1,0 +1,3126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角形系统学习 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --teal: #0d9488;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #e0e7ff 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { width: 100%; max-width: 1080px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand > div:last-child { min-width: 0; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .28); font-size: 22px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none; white-space: nowrap;
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.primary:hover { color: #fff; filter: brightness(1.06); }
+        .btn.small { padding: 7px 11px; font-size: 13px; }
+        .card {
+            background: rgba(255,255,255,.96); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 22px; }
+        .tabs {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+            margin-bottom: 18px; padding: 6px; border: 1px solid var(--line);
+            border-radius: 16px; background: #fff;
+        }
+        .tab {
+            border: 0; border-radius: 12px; padding: 12px 4px; color: var(--muted);
+            background: transparent; font-weight: 950; text-align: center; line-height: 1.25; font-size: 14px;
+        }
+        .tab small { display: block; font-weight: 750; font-size: 11px; margin-top: 3px; opacity: .82; }
+        .tab.active { background: var(--indigo); color: #fff; box-shadow: 0 8px 18px rgba(79,70,229,.26); }
+        .view { display: none; animation: fade .22s ease; }
+        .view.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        h3.blk { margin: 18px 0 8px; font-size: 16px; color: #4338ca; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 16px; line-height: 1.6; }
+        .lead b { color: var(--indigo); }
+        code { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-weight: 850; }
+
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; align-items: center; }
+        .chip { padding: 8px 13px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850;
+            border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .chip.active { background: var(--indigo); color: #fff; }
+
+        .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex-wrap: wrap; }
+        .seg button { border: 0; background: #fff; padding: 8px 14px; font-weight: 850; color: var(--muted); font-size: 13px; border-right: 1px solid var(--line); }
+        .seg button:last-child { border-right: 0; }
+        .seg button.active { background: var(--indigo); color: #fff; }
+
+        .stage {
+            position: relative; border-radius: 16px; border: 1px solid var(--line);
+            background: linear-gradient(180deg,#fdfdff,#eef1fb); padding: 14px; text-align: center;
+            overflow-x: auto;
+        }
+        svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .readout { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+        .stat-pill { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 8px 16px;
+            font-weight: 850; font-size: 14px; color: #3730a3; }
+        .stat-pill b { color: var(--indigo); font-size: 18px; }
+        .stat-pill.area { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+        .stat-pill.area b { color: #d97706; }
+        .stat-pill.warn { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .stat-pill.warn b { color: #dc2626; }
+        .stat-pill.ok { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; }
+        .stat-pill.ok b { color: #059669; }
+
+        .hintbox { border: 1px solid #c7d2fe; background: #eef2ff; border-radius: 14px; padding: 12px 16px;
+            line-height: 1.7; font-size: 14px; margin-top: 14px; color: #312e81; }
+        .hintbox b { color: var(--indigo); }
+        .hintbox .formula { display: inline-block; background: #fff; border: 1px solid #c7d2fe; border-radius: 8px;
+            padding: 2px 10px; font-weight: 900; color: #4338ca; margin: 2px 0; }
+        .hintbox ul { margin: 8px 0 0; padding-left: 20px; }
+        .hintbox li { margin: 4px 0; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 6px 0 14px; }
+        .control { display: flex; align-items: center; gap: 8px; font-weight: 850; font-size: 13px; color: #334155; }
+        .control input[type=range] { accent-color: var(--indigo); width: 130px; }
+        .control .val { display: inline-block; min-width: 30px; text-align: center; color: var(--indigo); font-weight: 950; font-size: 15px; }
+
+        .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+        .tgl { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 13px;
+            font-weight: 850; font-size: 13px; color: var(--muted); }
+        .tgl.on { background: #e0e7ff; border-color: #a5b4fc; color: #4338ca; }
+
+        .step-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 12px; }
+        .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        [hidden] { display: none !important; }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 10px; font-size: 13px; color: var(--muted); font-weight: 800; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+        /* 属性清单 */
+        .prop-list { display: grid; gap: 9px; margin: 12px 0 0; }
+        .prop-item { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 12px;
+            border: 1px solid var(--line); background: #fff; font-size: 13.5px; line-height: 1.6; }
+        .prop-item .ico { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center;
+            background: #e0e7ff; color: #4338ca; font-weight: 950; font-size: 12px; }
+        .prop-item.on { border-color: #a5b4fc; background: #f5f3ff; }
+        .prop-item.bad { border-color: #fecaca; background: #fef2f2; }
+        .prop-item.bad .ico { background: #fee2e2; color: #b91c1c; }
+        .prop-item b { color: #4338ca; }
+
+        /* 分类卡片 */
+        .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
+        .type-card { border: 1px solid var(--line); border-radius: 14px; background: #fff; padding: 10px; text-align: center; }
+        .type-card.active { border-color: var(--indigo); box-shadow: inset 0 0 0 1px var(--indigo); background: #eef2ff; }
+        .type-card svg { width: 100%; height: 96px; }
+        .type-card .tname { font-weight: 950; font-size: 14px; color: #3730a3; margin-top: 4px; }
+        .type-card .tdesc { font-size: 11.5px; color: #64748b; line-height: 1.5; margin-top: 2px; }
+
+        /* 关系图（集合） */
+        .rel-note { display: grid; gap: 8px; margin-top: 12px; }
+        .rel-row { padding: 10px 13px; border-radius: 11px; font-size: 13.5px; line-height: 1.6; border: 1px solid var(--line); background: #fff; }
+        .rel-row b { color: #4338ca; }
+        .rel-row.yes { border-color: #a7f3d0; background: #ecfdf5; }
+        .rel-row.yes b { color: #047857; }
+        .rel-row.no { border-color: #fed7aa; background: #fff7ed; }
+        .rel-row.no b { color: #c2410c; }
+
+        /* 判断题 */
+        .judge-box { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: #fff; }
+        .judge-q { font-size: clamp(15px,2.4vw,17px); font-weight: 850; line-height: 1.7; margin: 0 0 12px; color: #1e293b; }
+        .judge-q em { color: var(--indigo); font-style: normal; }
+        .judge-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        /* 练习区 */
+        .practice-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 16px; }
+        .practice-round { min-width: 190px; padding: 12px 14px; border: 1px solid #c7d2fe; background: #eef2ff; border-radius: 14px; }
+        .practice-round-line { display: flex; justify-content: space-between; gap: 12px; color: #475569; font-size: 12px; font-weight: 850; }
+        .practice-round-line b { color: #4338ca; font-size: 16px; }
+        .progress-track { height: 7px; border-radius: 999px; background: #dbeafe; overflow: hidden; margin-top: 9px; }
+        .progress-track i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#6366f1,#a855f7); border-radius: inherit; transition: width .25s ease; }
+
+        .topic-picker { display: grid; grid-template-columns: repeat(7, minmax(78px, 1fr)); gap: 8px; margin-bottom: 14px; }
+        .topic-choice { border: 1px solid var(--line); background: #fff; border-radius: 13px; min-height: 54px; padding: 8px 4px; color: #475569; font-weight: 900; font-size: 13px; }
+        .topic-choice:hover { border-color: #a5b4fc; color: #4338ca; }
+        .topic-choice.active { border-color: var(--indigo); background: #eef2ff; color: #4338ca; box-shadow: inset 0 0 0 1px var(--indigo); }
+        .topic-choice span { display: block; color: #94a3b8; font-size: 10px; font-weight: 750; margin-top: 2px; }
+        .topic-choice.active span { color: #4338ca; }
+
+        .formula-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .formula-deck > *, .practice-grid > *, .practice-head > * { min-width: 0; }
+        .formula-card { border-radius: 14px; padding: 12px 14px; border: 1px solid #c7d2fe; background: #eef2ff; }
+        .formula-card.area-formula { border-color: #fde68a; background: #fffbeb; }
+        .formula-card .formula-label { color: #64748b; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+        .formula-card strong { display: block; margin: 3px 0 2px; color: #4338ca; font-size: clamp(17px,2.8vw,22px); overflow-wrap: anywhere; }
+        .formula-card.area-formula strong { color: #b45309; }
+        .formula-card small { color: #64748b; line-height: 1.45; }
+        .formula-card.reverse-formula { grid-column: 1 / -1; border-color: #c4b5fd; background: #faf5ff; }
+        .formula-card.reverse-formula strong { color: #6d28d9; font-size: 15px; line-height: 1.55; }
+
+        .practice-grid { display: grid; grid-template-columns: minmax(290px,.85fr) minmax(360px,1.15fr); gap: 14px; align-items: stretch; }
+        .practice-visual, .question-box { border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+        .practice-visual { display: flex; flex-direction: column; min-height: 390px; background: linear-gradient(180deg,#fbfbff,#f1f5f9); }
+        .visual-title { display: flex; justify-content: space-between; gap: 10px; padding: 14px 16px 0; color: #64748b; font-size: 12px; font-weight: 850; }
+        .visual-title b { color: #4338ca; }
+        #practiceSvg { width: 100%; flex: 1; min-height: 270px; }
+        .visual-note { margin: 0 14px 14px; padding: 9px 11px; border-radius: 10px; background: #fff; color: #64748b; font-size: 12px; line-height: 1.55; border: 1px dashed #cbd5e1; }
+
+        .question-box { padding: 18px; }
+        .q-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .q-tag { padding: 5px 10px; border-radius: 999px; color: #4338ca; background: #e0e7ff; font-size: 12px; font-weight: 900; }
+        .q-level { color: #94a3b8; font-size: 12px; font-weight: 800; }
+        .q-prompt { margin: 0; color: #1e293b; font-size: clamp(17px,2.5vw,20px); line-height: 1.7; font-weight: 800; }
+        .q-prompt em { color: var(--indigo); font-style: normal; }
+        .known-box { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0; }
+        .known-item { max-width: 100%; overflow-wrap: anywhere; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; border-radius: 9px; padding: 6px 9px; font-size: 12px; font-weight: 800; }
+
+        .answer-label { color: #334155; font-size: 13px; font-weight: 900; display: block; margin: 14px 0 7px; }
+        .answer-line { display: flex; align-items: stretch; gap: 8px; }
+        .answer-input-wrap { flex: 1; display: flex; align-items: center; border: 2px solid #cbd5e1; background: #fff; border-radius: 11px; overflow: hidden; transition: border-color .18s; }
+        .answer-input-wrap:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,.10); }
+        .answer-input-wrap input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 11px 12px; font-weight: 900; font-size: 17px; }
+        .answer-unit { padding: 0 11px; color: #64748b; font-size: 12px; font-weight: 850; border-left: 1px solid #e2e8f0; }
+        .answer-line .btn { box-shadow: none; }
+        .choice-list { display: grid; gap: 8px; margin-top: 4px; }
+        .choice-btn { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 11px; padding: 11px 13px;
+            font-weight: 850; font-size: 14px; color: #334155; line-height: 1.55; }
+        .choice-btn:hover { border-color: #a5b4fc; color: #4338ca; }
+        .choice-btn.picked { border-color: var(--indigo); background: #eef2ff; color: #4338ca; }
+        .choice-btn.right { border-color: #6ee7b7; background: #ecfdf5; color: #047857; }
+        .choice-btn.wrong { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+        .question-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .question-actions .btn { box-shadow: none; }
+        .feedback { margin-top: 11px; border-radius: 11px; padding: 10px 12px; font-size: 13px; font-weight: 800; line-height: 1.55; }
+        .feedback.good { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .feedback.try { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .feedback.hint { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+        .solution-box { margin-top: 14px; border-radius: 14px; border: 1px solid #c4b5fd; background: #faf5ff; overflow: hidden; }
+        .solution-title { padding: 11px 14px; color: #6d28d9; font-weight: 950; border-bottom: 1px solid #ddd6fe; background: #f5f3ff; }
+        .basis-line { margin: 12px 13px 0; padding: 9px 11px; border-radius: 9px; background: #fff; color: #5b21b6; font-weight: 900; font-size: 14px; }
+        .solution-steps { list-style: none; margin: 10px 13px 12px; padding: 0; display: grid; gap: 8px; }
+        .solution-steps li { position: relative; padding: 9px 10px 9px 40px; background: rgba(255,255,255,.8); border-radius: 9px; color: #475569; line-height: 1.55; font-size: 13px; }
+        .solution-steps li i { position: absolute; left: 10px; top: 9px; width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; background: #8b5cf6; color: #fff; font-style: normal; font-size: 11px; font-weight: 950; }
+        .mistake-tip { margin: 0 13px 13px; padding: 8px 10px; color: #9a3412; background: #fff7ed; border-radius: 9px; font-size: 12px; line-height: 1.55; }
+
+        @media (max-width: 860px) {
+            .tabs { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 720px) {
+            .tabs { grid-template-columns: repeat(3, 1fr); }
+            .topbar { display: block; }
+            .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .twocol { grid-template-columns: 1fr; }
+            .type-grid { grid-template-columns: 1fr 1fr; }
+            .practice-head { display: block; }
+            .practice-round { margin-top: 12px; }
+            .topic-picker { grid-template-columns: repeat(4, 1fr); }
+            .formula-deck, .practice-grid { grid-template-columns: 1fr; }
+            .formula-card.reverse-formula { grid-column: 1; }
+            .practice-visual { min-height: 330px; }
+            .answer-line { flex-wrap: wrap; }
+            .answer-input-wrap { flex-basis: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">△</div>
+                <div>
+                    <h1>三角形系统学习</h1>
+                    <p class="sub">从认识三角形、三边关系、按角与按边分类、内角和、画高，到面积公式推导与综合练习（小学四至五年级）</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-view="know">1 认识<small>定义·稳定性</small></button>
+            <button class="tab" data-view="side">2 三边关系<small>能否围成</small></button>
+            <button class="tab" data-view="classify">3 分类<small>按角·按边</small></button>
+            <button class="tab" data-view="sum">4 内角和<small>180°</small></button>
+            <button class="tab" data-view="height">5 底和高<small>画三条高</small></button>
+            <button class="tab" data-view="area">6 面积推导<small>÷2 的由来</small></button>
+            <button class="tab" data-view="practice">7 综合练习<small>六类题型</small></button>
+        </div>
+
+        <!-- ============ Tab1 认识三角形 ============ -->
+        <section class="card view active" id="view-know">
+            <div class="panel">
+                <h2>1 · 什么是三角形</h2>
+                <p class="lead">由<b>三条线段围成</b>（每相邻两条线段的<b>端点相连</b>）的图形叫做三角形。它有 <b>3 条边、3 个角、3 个顶点</b>。拖动顶点旁的滑块改变形状，观察哪些量在变、哪些量<b>始终不变</b>。</p>
+
+                <div class="controls">
+                    <label class="control">顶点左右
+                        <input type="range" id="knowApexX" min="-40" max="140" value="45" step="1">
+                        <span class="val" id="knowApexXVal">45</span>
+                    </label>
+                    <label class="control">顶点高低
+                        <input type="range" id="knowApexY" min="30" max="95" value="70" step="1">
+                        <span class="val" id="knowApexYVal">70</span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <button class="tgl on" id="tglVertex">标出顶点与边</button>
+                    <button class="tgl on" id="tglAngleMark">标出三个角</button>
+                    <button class="tgl" id="tglNotTri">对比：不是三角形的图形</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="knowSvg" viewBox="0 0 620 340" width="620" height="340" role="img" aria-label="三角形的基本认识"></svg>
+                </div>
+
+                <div class="readout">
+                    <div class="stat-pill">边数 <b>3</b></div>
+                    <div class="stat-pill">角数 <b>3</b></div>
+                    <div class="stat-pill">顶点数 <b>3</b></div>
+                    <div class="stat-pill area">内角和 <b>180</b>°（永远不变）</div>
+                </div>
+
+                <div class="prop-list" id="knowProps"></div>
+
+                <h3 class="blk">三角形的稳定性</h3>
+                <p class="lead">三条边的长度<b>一旦确定，形状就唯一确定</b>，怎么拉都不会变形——这就是三角形的<b>稳定性</b>。平行四边形却一拉就变形。</p>
+
+                <div class="controls">
+                    <label class="control">用力拉一拉
+                        <input type="range" id="stablePull" min="0" max="100" value="0" step="1">
+                        <span class="val" id="stablePullVal">0</span>%
+                    </label>
+                    <button class="btn small primary" id="stableAnim">自动拉动 ▶</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="stableSvg" viewBox="0 0 620 260" width="620" height="260" role="img" aria-label="三角形稳定性与平行四边形不稳定性对比"></svg>
+                </div>
+
+                <div class="hintbox">
+                    <b>要点小结</b>
+                    <ul>
+                        <li><b>定义：</b>由三条线段<b>围成</b>的图形叫三角形；三条线段必须<b>首尾相连</b>，不能有缺口，也不能交叉出头。</li>
+                        <li>三角形用 <code>△ABC</code> 表示；A、B、C 是<b>顶点</b>，AB、BC、AC 是<b>边</b>，∠A、∠B、∠C 是<b>内角</b>。</li>
+                        <li><b>稳定性：</b>三边长确定 → 形状唯一。生活中的自行车三角架、房梁、篮球架支撑杆、电线塔都用到这一点。</li>
+                        <li>平行四边形容易变形（伸缩门、活动衣架用的是这个特点）；给它加一根斜杆分成两个三角形，就稳固了。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab2 三边关系 ============ -->
+        <section class="card view" id="view-side">
+            <div class="panel">
+                <h2>2 · 三边关系：任意两边之和大于第三边</h2>
+                <p class="lead">给出三根小棒，它们<b>不一定</b>能围成三角形。规律是：<b>任意两边的和大于第三边</b>。实际判断时只要用<b>较短的两条边相加</b>，看是否大于最长边就够了。</p>
+
+                <div class="controls">
+                    <label class="control">小棒 a
+                        <input type="range" id="sideA" min="1" max="12" value="4" step="1">
+                        <span class="val" id="sideAVal">4</span>
+                    </label>
+                    <label class="control">小棒 b
+                        <input type="range" id="sideB" min="1" max="12" value="6" step="1">
+                        <span class="val" id="sideBVal">6</span>
+                    </label>
+                    <label class="control">小棒 c
+                        <input type="range" id="sideC" min="1" max="12" value="8" step="1">
+                        <span class="val" id="sideCVal">8</span>
+                    </label>
+                    <button class="btn small" id="sidePreset1">试试 3、3、6</button>
+                    <button class="btn small" id="sidePreset2">试试 2、3、7</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="sideSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="三边能否围成三角形"></svg>
+                </div>
+
+                <div class="readout" id="sideReadout"></div>
+                <div class="prop-list" id="sideChecks"></div>
+
+                <div class="hintbox">
+                    <b>判断方法与常见题型</b>
+                    <ul>
+                        <li><b>判断法：</b>把三条边从小到大排好，只要 <span class="formula">较短两边之和 > 最长边</span>，就一定能围成。</li>
+                        <li><b>刚好相等</b>（如 3、3、6）时，两条短边平放下来正好和长边重合，<b>压成一条线段</b>，围不成三角形。</li>
+                        <li><b>小于</b>（如 2、3、7）时，两条短边够不着，中间有缺口，更围不成。</li>
+                        <li><b>求第三边范围：</b>已知两边 a、b，第三边 c 满足 <span class="formula">a − b &lt; c &lt; a + b</span>（大减小 &lt; 第三边 &lt; 两边和）。</li>
+                    </ul>
+                </div>
+
+                <h3 class="blk">第三边可以是多少？</h3>
+                <div class="controls">
+                    <label class="control">已知边 1
+                        <input type="range" id="rangeA" min="2" max="12" value="5" step="1">
+                        <span class="val" id="rangeAVal">5</span>
+                    </label>
+                    <label class="control">已知边 2
+                        <input type="range" id="rangeB" min="2" max="12" value="8" step="1">
+                        <span class="val" id="rangeBVal">8</span>
+                    </label>
+                </div>
+                <div class="stage">
+                    <svg id="rangeSvg" viewBox="0 0 620 190" width="620" height="190" role="img" aria-label="第三边取值范围数轴"></svg>
+                </div>
+                <div class="hintbox" id="rangeText"></div>
+            </div>
+        </section>
+
+        <!-- ============ Tab3 分类 ============ -->
+        <section class="card view" id="view-classify">
+            <div class="panel">
+                <h2>3 · 三角形的分类</h2>
+                <p class="lead">三角形有两种分法：<b>按角分</b>成锐角、直角、钝角三角形（每个三角形<b>只属于其中一类</b>）；<b>按边分</b>成不等边三角形、等腰三角形（等边三角形是特殊的等腰三角形）。</p>
+
+                <div class="chip-row">
+                    <span class="control" style="margin-right:4px">分类方式：</span>
+                    <button class="chip active" data-cmode="angle">按角分</button>
+                    <button class="chip" data-cmode="side">按边分</button>
+                </div>
+
+                <div class="type-grid" id="typeGrid"></div>
+
+                <h3 class="blk">自己动手：拖动顶点，看它属于哪一类</h3>
+                <div class="controls">
+                    <label class="control">顶点左右
+                        <input type="range" id="clsX" min="-50" max="150" value="50" step="1">
+                        <span class="val" id="clsXVal">50</span>
+                    </label>
+                    <label class="control">顶点高低
+                        <input type="range" id="clsY" min="20" max="110" value="75" step="1">
+                        <span class="val" id="clsYVal">75</span>
+                    </label>
+                    <button class="btn small" id="clsRight">变成直角三角形</button>
+                    <button class="btn small" id="clsEqui">变成等边三角形</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="clsSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="三角形分类判定"></svg>
+                </div>
+
+                <div class="readout" id="clsReadout"></div>
+                <div class="rel-note" id="clsNote"></div>
+
+                <div class="hintbox">
+                    <b>分类要点</b>
+                    <ul>
+                        <li><b>按角分（只看最大的角）：</b>三个角都是锐角 → <b>锐角</b>三角形；有一个直角 → <b>直角</b>三角形；有一个钝角 → <b>钝角</b>三角形。</li>
+                        <li>一个三角形里<b>最多只有一个</b>直角或钝角，<b>至少有两个锐角</b>。所以不能只看到一个锐角就说它是锐角三角形。</li>
+                        <li><b>直角三角形：</b>夹直角的两条边叫<b>直角边</b>，最长的那条叫<b>斜边</b>；两个锐角的和是 90°。</li>
+                        <li><b>按边分：</b>三边都不相等 → 不等边三角形；有两边相等 → <b>等腰</b>三角形（相等的两边叫<b>腰</b>，另一边叫<b>底</b>，两个<b>底角相等</b>）；三边都相等 → <b>等边（正）</b>三角形，三个角都是 <b>60°</b>。</li>
+                        <li><b>包含关系：</b>等边三角形<b>一定是</b>等腰三角形，等腰三角形<b>不一定是</b>等边三角形。</li>
+                        <li>两种分法可以组合：等腰直角三角形（45°、45°、90°）、等腰钝角三角形都存在；但<b>没有</b>等边直角三角形。</li>
+                    </ul>
+                </div>
+
+                <h3 class="blk">判一判（点击选择）</h3>
+                <div class="judge-box">
+                    <p class="judge-q" id="judgeQ">加载中…</p>
+                    <div class="judge-actions">
+                        <button class="btn primary" id="judgeYes">✓ 对</button>
+                        <button class="btn" id="judgeNo">✗ 错</button>
+                        <button class="btn small" id="judgeNext" hidden>下一题 →</button>
+                    </div>
+                    <div class="feedback" id="judgeFeedback" hidden></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab4 内角和 ============ -->
+        <section class="card view" id="view-sum">
+            <div class="panel">
+                <h2>4 · 三角形的内角和是 180°</h2>
+                <p class="lead">不论三角形是大是小、是什么形状，<b>三个内角的和永远是 180°</b>。下面用两种课本上的方法来验证。</p>
+
+                <div class="chip-row">
+                    <button class="chip active" data-smode="tear">撕角拼成平角</button>
+                    <button class="chip" data-smode="fold">折角拼成平角</button>
+                    <button class="chip" data-smode="calc">已知两角求第三角</button>
+                </div>
+
+                <!-- 撕角 -->
+                <div id="sumTearBox">
+                    <div class="controls">
+                        <label class="control">三角形形状
+                            <input type="range" id="tearShape" min="0" max="100" value="35" step="1">
+                            <span class="val" id="tearShapeVal">35</span>
+                        </label>
+                        <label class="control">拼合进度
+                            <input type="range" id="tearProg" min="0" max="100" value="0" step="1">
+                            <span class="val" id="tearProgVal">0</span>%
+                        </label>
+                        <button class="btn small primary" id="tearAnim">演示撕拼 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="tearSvg" viewBox="0 0 620 340" width="620" height="340" role="img" aria-label="撕角拼成平角验证内角和"></svg>
+                    </div>
+                    <div class="readout" id="tearReadout"></div>
+                    <div class="hintbox" id="tearText"></div>
+                </div>
+
+                <!-- 折角 -->
+                <div id="sumFoldBox" hidden>
+                    <div class="controls">
+                        <label class="control">折叠进度
+                            <input type="range" id="foldProg" min="0" max="100" value="0" step="1">
+                            <span class="val" id="foldProgVal">0</span>%
+                        </label>
+                        <button class="btn small primary" id="foldAnim">演示折叠 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="foldSvg" viewBox="0 0 620 340" width="620" height="340" role="img" aria-label="折角验证内角和"></svg>
+                    </div>
+                    <div class="hintbox">
+                        <b>折一折：</b>把三角形的<b>三个角向内折</b>到同一条底边上，三个角正好<b>拼成一个平角</b>，没有重叠也没有缝隙。平角是 <b>180°</b>，所以三角形内角和 = <b>180°</b>。
+                    </div>
+                </div>
+
+                <!-- 求角 -->
+                <div id="sumCalcBox" hidden>
+                    <div class="controls">
+                        <label class="control">已知 ∠B
+                            <input type="range" id="calcA" min="15" max="120" value="55" step="5">
+                            <span class="val" id="calcAVal">55</span>°
+                        </label>
+                        <label class="control">已知 ∠C
+                            <input type="range" id="calcB" min="15" max="120" value="70" step="5">
+                            <span class="val" id="calcBVal">70</span>°
+                        </label>
+                    </div>
+                    <div class="stage">
+                        <svg id="calcSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="已知两角求第三角"></svg>
+                    </div>
+                    <div class="readout" id="calcReadout"></div>
+                    <div class="hintbox" id="calcText"></div>
+                </div>
+
+                <div class="hintbox">
+                    <b>内角和的常用结论</b>
+                    <ul>
+                        <li><span class="formula">∠1 + ∠2 + ∠3 = 180°</span>，与三角形的大小、形状<b>无关</b>。</li>
+                        <li>已知两个角求第三个角：<span class="formula">第三角 = 180° − 已知两角的和</span>。</li>
+                        <li><b>直角三角形</b>：两个锐角的和 = 180° − 90° = <b>90°</b>。</li>
+                        <li><b>等边三角形</b>：三个角相等，每个角是 180° ÷ 3 = <b>60°</b>。</li>
+                        <li><b>等腰三角形</b>：两个底角相等。已知顶角求底角：（180° − 顶角）÷ 2；已知底角求顶角：180° − 底角 × 2。</li>
+                        <li><b>易错：</b>把一个大三角形分成两个小三角形，每个小三角形的内角和<b>还是 180°</b>，不是 90°。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab5 底和高 ============ -->
+        <section class="card view" id="view-height">
+            <div class="panel">
+                <h2>5 · 认识底和高：三角形有三组底和高</h2>
+                <p class="lead">从三角形的<b>一个顶点</b>向它的<b>对边</b>作一条垂线，顶点和垂足之间的线段叫做三角形的<b>高</b>，这条对边叫做三角形的<b>底</b>。每个三角形都有 <b>3 组</b>互相对应的底和高。</p>
+
+                <div class="chip-row">
+                    <span class="control" style="margin-right:4px">图形类型：</span>
+                    <button class="chip active" data-htype="acute">锐角三角形</button>
+                    <button class="chip" data-htype="right">直角三角形</button>
+                    <button class="chip" data-htype="obtuse">钝角三角形</button>
+                </div>
+
+                <div class="chip-row">
+                    <span class="control" style="margin-right:4px">当前这条高：</span>
+                    <button class="chip active" data-hv="0">顶点 A → 底 BC</button>
+                    <button class="chip" data-hv="1">顶点 B → 底 AC</button>
+                    <button class="chip" data-hv="2">顶点 C → 底 AB</button>
+                </div>
+
+                <div class="toggle-row">
+                    <button class="tgl" id="tglAll3">同时显示三条高</button>
+                    <button class="tgl on" id="tglExtend">需要时延长底边（虚线）</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="heightSvg" viewBox="0 0 620 400" width="620" height="400" role="img" aria-label="三角形的底和高"></svg>
+                </div>
+
+                <div class="readout" id="heightReadout"></div>
+
+                <div class="hintbox" id="heightText"></div>
+
+                <div class="hintbox">
+                    <b>画高三步法与易错点</b>
+                    <ul>
+                        <li><b>①定底定顶点：</b>先确定以哪条边为底，高一定是从<b>它对面的那个顶点</b>画出来的。</li>
+                        <li><b>②作垂线：</b>把三角尺的一条直角边贴在底边上，另一条直角边过顶点，画出垂线段。</li>
+                        <li><b>③标直角、写“高”：</b>在垂足处画上直角符号 <code>⌐</code>，并用虚线表示高。</li>
+                        <li><b>直角三角形</b>：两条<b>直角边</b>互为底和高，第三条高（斜边上的高）在图形内部。</li>
+                        <li><b>钝角三角形</b>：夹钝角的两条边上的高落在<b>图形外面</b>，必须先把底边<b>延长</b>，再作垂线。</li>
+                        <li><b>易错：</b>底和高必须是<b>互相对应</b>的一组；斜边不是高；高一定要画到<b>对边（或它的延长线）</b>上。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab6 面积推导 ============ -->
+        <section class="card view" id="view-area">
+            <div class="panel">
+                <h2>6 · 面积公式的推导：为什么要“÷ 2”</h2>
+                <p class="lead">两个<b>完全一样</b>的三角形，可以拼成一个<b>平行四边形</b>。这个平行四边形的底就是三角形的底，高就是三角形的高，所以 <b>S△ = 底 × 高 ÷ 2</b>。</p>
+
+                <div class="chip-row">
+                    <button class="chip active" data-amode="pair">拼摆法（两个拼一个）</button>
+                    <button class="chip" data-amode="cut">割补法（剪拼成长方形）</button>
+                    <button class="chip" data-amode="grid">数方格法</button>
+                    <button class="chip" data-amode="equal">等底等高</button>
+                </div>
+
+                <!-- 拼摆 -->
+                <div id="areaPairBox">
+                    <div class="controls">
+                        <label class="control">底 a
+                            <input type="range" id="pairBase" min="4" max="10" value="8" step="1">
+                            <span class="val" id="pairBaseVal">8</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="pairHeight" min="2" max="7" value="5" step="1">
+                            <span class="val" id="pairHeightVal">5</span>
+                        </label>
+                        <label class="control">旋转拼合
+                            <input type="range" id="pairProg" min="0" max="100" value="0" step="1">
+                            <span class="val" id="pairProgVal">0</span>%
+                        </label>
+                        <button class="btn small primary" id="pairAnim">演示拼摆 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="pairSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="两个完全一样的三角形拼成平行四边形"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">底 = <b id="pairBaseOut">8</b></div>
+                        <div class="stat-pill">高 = <b id="pairHeightOut">5</b></div>
+                        <div class="stat-pill">拼成的平行四边形 S = <b id="pairParaOut">40</b></div>
+                        <div class="stat-pill area">三角形 S = 8 × 5 ÷ 2 = <b id="pairTriOut">20</b></div>
+                    </div>
+                    <div class="hintbox" id="pairStepText"></div>
+                </div>
+
+                <!-- 割补 -->
+                <div id="areaCutBox" hidden>
+                    <div class="controls">
+                        <label class="control">底 a
+                            <input type="range" id="cutBase" min="4" max="10" value="8" step="1">
+                            <span class="val" id="cutBaseVal">8</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="cutHeight" min="2" max="7" value="6" step="1">
+                            <span class="val" id="cutHeightVal">6</span>
+                        </label>
+                        <label class="control">剪拼进度
+                            <input type="range" id="cutProg" min="0" max="100" value="0" step="1">
+                            <span class="val" id="cutProgVal">0</span>%
+                        </label>
+                        <button class="btn small primary" id="cutAnim">演示剪拼 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="cutSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="割补法把三角形拼成长方形"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">底 = <b id="cutBaseOut">8</b></div>
+                        <div class="stat-pill">高 = <b id="cutHeightOut">6</b></div>
+                        <div class="stat-pill">拼成的长方形：长 <b id="cutRectW">8</b> × 宽 <b id="cutRectH">3</b></div>
+                        <div class="stat-pill area">S△ = <b id="cutAreaOut">24</b></div>
+                    </div>
+                    <div class="hintbox" id="cutStepText"></div>
+                </div>
+
+                <!-- 数方格 -->
+                <div id="areaGridBox" hidden>
+                    <div class="controls">
+                        <label class="control">底 a
+                            <input type="range" id="gridBase" min="3" max="9" value="6" step="1">
+                            <span class="val" id="gridBaseVal">6</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="gridHeight" min="2" max="6" value="4" step="1">
+                            <span class="val" id="gridHeightVal">4</span>
+                        </label>
+                        <button class="btn small primary" id="gridPair">补成平行四边形 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="gridSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="数方格法求三角形面积"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">整个平行四边形 <b id="gridPara">24</b> 格</div>
+                        <div class="stat-pill area">三角形占一半 = <b id="gridTri">12</b> 格</div>
+                    </div>
+                    <div class="hintbox">
+                        <b>数方格法：</b>先数出三角形盖住的格子（不满一格的按<b>半格</b>算，两个半格拼成一整格）。再把两个完全一样的三角形拼成平行四边形，格数正好是三角形的 <b>2 倍</b>。这说明 <span class="formula">S△ = 底 × 高 ÷ 2</span>，与拼摆法的结论一致。
+                    </div>
+                </div>
+
+                <!-- 等底等高 -->
+                <div id="areaEqualBox" hidden>
+                    <div class="controls">
+                        <label class="control">顶点滑动
+                            <input type="range" id="eqShear" min="-90" max="150" value="30" step="1">
+                            <span class="val" id="eqShearVal">30</span>
+                        </label>
+                        <label class="control">底 a
+                            <input type="range" id="eqBase" min="4" max="9" value="8" step="1">
+                            <span class="val" id="eqBaseVal">8</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="eqHeight" min="2" max="6" value="5" step="1">
+                            <span class="val" id="eqHeightVal">5</span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <button class="tgl on" id="tglEqPara">同时显示等底等高的平行四边形</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="eqSvg" viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="等底等高三角形面积相等"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">底 = <b id="eqBaseOut">8</b></div>
+                        <div class="stat-pill">高 = <b id="eqHeightOut">5</b></div>
+                        <div class="stat-pill area">三角形 S = <b id="eqTriOut">20</b>（滑动时不变）</div>
+                        <div class="stat-pill">平行四边形 S = <b id="eqParaOut">40</b></div>
+                    </div>
+                    <div class="hintbox">
+                        <b>等底等高结论</b>
+                        <ul>
+                            <li>顶点沿着与底平行的方向滑动时，<b>底和高都没变</b>，所以<b>面积不变</b>（但三条边的长度和周长变了）。</li>
+                            <li><b>等底等高的三角形，面积一定相等</b>；面积相等的三角形，形状不一定相同。</li>
+                            <li>三角形与平行四边形<b>等底等高</b>时：<span class="formula">S△ = S平行四边形 ÷ 2</span>。</li>
+                            <li>三角形面积相等，底越大高就越小：<b>底 × 高 的积不变</b>。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab7 综合练习 ============ -->
+        <section class="card view" id="view-practice">
+            <div class="panel">
+                <div class="practice-head">
+                    <div>
+                        <h2>7 · 三角形综合练习</h2>
+                        <p class="lead" style="margin-bottom:0">按知识点分类练习：概念与分类、三边关系、内角和求角、面积正算、反求底与高、等积变形与生活情境。</p>
+                    </div>
+                    <div class="practice-round">
+                        <div class="practice-round-line"><span id="practiceProgressText">第 1 / 10 题</span></div>
+                        <div class="practice-round-line" style="margin-top:6px"><span>答对 <b id="practiceScore">0</b></span><span>连对 <b id="practiceStreak">0</b></span></div>
+                        <div class="progress-track"><i id="practiceProgressBar"></i></div>
+                    </div>
+                </div>
+
+                <div class="topic-picker" id="practiceTopicPicker">
+                    <button class="topic-choice active" data-topic="mixed">综合<span>全部混合</span></button>
+                    <button class="topic-choice" data-topic="concept">概念<span>分类判断</span></button>
+                    <button class="topic-choice" data-topic="sides">三边<span>能否围成</span></button>
+                    <button class="topic-choice" data-topic="angle">求角<span>内角和</span></button>
+                    <button class="topic-choice" data-topic="area">面积<span>a×h÷2</span></button>
+                    <button class="topic-choice" data-topic="reverse">反求<span>求底/求高</span></button>
+                    <button class="topic-choice" data-topic="transform">等积<span>等底等高</span></button>
+                </div>
+
+                <div class="formula-deck" id="practiceFormulaDeck"></div>
+
+                <div class="practice-grid">
+                    <div class="practice-visual">
+                        <div class="visual-title"><span>示意图</span><b id="practiceTopicName">三角形</b></div>
+                        <svg id="practiceSvg" viewBox="0 0 420 300" role="img" aria-label="题目示意图"></svg>
+                        <div class="visual-note" id="practiceVisualNote"></div>
+                    </div>
+
+                    <div class="question-box">
+                        <div class="q-meta">
+                            <span class="q-tag" id="practiceTag">基础应用</span>
+                            <span class="q-level" id="practiceLevel">★ 入门</span>
+                        </div>
+                        <p class="q-prompt" id="practicePrompt">加载中…</p>
+                        <div class="known-box" id="practiceKnown"></div>
+
+                        <div id="practiceNumericArea">
+                            <label class="answer-label" for="practiceAnswer">你的答案</label>
+                            <div class="answer-line">
+                                <div class="answer-input-wrap">
+                                    <input id="practiceAnswer" type="text" inputmode="decimal" autocomplete="off" placeholder="填写数值">
+                                    <span class="answer-unit" id="practiceUnit">厘米</span>
+                                </div>
+                                <button class="btn primary" id="practiceSubmit">检查答案</button>
+                            </div>
+                        </div>
+
+                        <div id="practiceChoiceArea" hidden>
+                            <label class="answer-label">选择正确的说法</label>
+                            <div class="choice-list" id="practiceChoices"></div>
+                        </div>
+
+                        <div class="question-actions">
+                            <button class="btn small" id="practiceHint">看提示</button>
+                            <button class="btn small" id="practiceReveal">看解析</button>
+                            <button class="btn small" id="practiceRefresh">换一题</button>
+                            <button class="btn small primary" id="practiceNext" hidden>下一题 →</button>
+                        </div>
+
+                        <div class="feedback" id="practiceFeedback" hidden></div>
+
+                        <div class="solution-box" id="practiceSolution" hidden>
+                            <div class="solution-title">解题过程</div>
+                            <div class="basis-line" id="practiceBasis"></div>
+                            <ol class="solution-steps" id="practiceSteps"></ol>
+                            <div class="mistake-tip" id="practiceMistake"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    const $ = id => document.getElementById(id);
+    const SVGNS = "http://www.w3.org/2000/svg";
+    function el(tag, attrs) {
+        const e = document.createElementNS(SVGNS, tag);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        return e;
+    }
+    function clear(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+    function num(n) { return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString(); }
+    function nstr(n) { return num(Math.round(n * 100) / 100); }
+    function text(x, y, str, attrs) {
+        const t = el("text", Object.assign({ x, y, "text-anchor": "middle", "font-family": "Segoe UI, Microsoft YaHei, sans-serif" }, attrs || {}));
+        t.textContent = str;
+        return t;
+    }
+    function poly(pts, attrs) {
+        return el("polygon", Object.assign({ points: pts.map(p => p.join(",")).join(" "), "stroke-linejoin": "round" }, attrs || {}));
+    }
+    function line(x1, y1, x2, y2, attrs) { return el("line", Object.assign({ x1, y1, x2, y2 }, attrs || {})); }
+    function sub(p, q) { return [p[0] - q[0], p[1] - q[1]]; }
+    function len(v) { return Math.hypot(v[0], v[1]); }
+    function norm(v) { const L = len(v) || 1; return [v[0] / L, v[1] / L]; }
+    /** 在垂足 f 处画直角符号，u 为底边方向单位向量，v 为高方向单位向量 */
+    function rightAngle(f, u, v, size, color) {
+        const s = size || 13;
+        const p1 = [f[0] + u[0] * s, f[1] + u[1] * s];
+        const p2 = [p1[0] + v[0] * s, p1[1] + v[1] * s];
+        const p3 = [f[0] + v[0] * s, f[1] + v[1] * s];
+        return el("polyline", {
+            points: [p1, p2, p3].map(p => p.join(",")).join(" "),
+            fill: "none", stroke: color || "#7c3aed", "stroke-width": 2
+        });
+    }
+    function toggle(btn, onChange) {
+        btn.addEventListener("click", () => { btn.classList.toggle("on"); onChange(btn.classList.contains("on")); });
+    }
+    function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+        return a;
+    }
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function labelValue(name, value, unit) { return `${name} ${nstr(value)} ${unit}`; }
+
+    const C = { stroke: "#4f46e5", fill: "rgba(99,102,241,.13)", height: "#7c3aed", wrong: "#ef4444", grid: "#e5e9f5", ok: "#10b981" };
+
+    /** 计算三角形三个内角（度），顶点顺序 A,B,C；屏幕坐标 */
+    function anglesOf(A, B, Cp) {
+        function ang(v, p, q) {
+            const u = norm(sub(p, v)), w = norm(sub(q, v));
+            return Math.acos(Math.max(-1, Math.min(1, u[0] * w[0] + u[1] * w[1]))) * 180 / Math.PI;
+        }
+        return [ang(A, B, Cp), ang(B, A, Cp), ang(Cp, A, B)];
+    }
+    /** 在顶点处画角弧和度数标签 */
+    function angleArc(svg, vertex, p1, p2, label, color, r) {
+        const a1 = Math.atan2(p1[1] - vertex[1], p1[0] - vertex[0]);
+        const a2 = Math.atan2(p2[1] - vertex[1], p2[0] - vertex[0]);
+        let diff = a2 - a1;
+        while (diff <= -Math.PI) diff += 2 * Math.PI;
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        const rr = r || 30;
+        const s = [vertex[0] + rr * Math.cos(a1), vertex[1] + rr * Math.sin(a1)];
+        const e = [vertex[0] + rr * Math.cos(a2), vertex[1] + rr * Math.sin(a2)];
+        svg.appendChild(el("path", {
+            d: `M ${s[0]} ${s[1]} A ${rr} ${rr} 0 0 ${diff > 0 ? 1 : 0} ${e[0]} ${e[1]}`,
+            fill: "none", stroke: color, "stroke-width": 2.5
+        }));
+        if (label) {
+            const mid = a1 + diff / 2;
+            svg.appendChild(text(vertex[0] + (rr + 16) * Math.cos(mid), vertex[1] + (rr + 16) * Math.sin(mid) + 4,
+                label, { fill: color, "font-size": 13, "font-weight": 900 }));
+        }
+    }
+    /** 垂足：点 P 到直线 QR 的投影 */
+    function footOf(P, Q, R) {
+        const d = sub(R, Q), L2 = d[0] * d[0] + d[1] * d[1] || 1;
+        const t = ((P[0] - Q[0]) * d[0] + (P[1] - Q[1]) * d[1]) / L2;
+        return { pt: [Q[0] + d[0] * t, Q[1] + d[1] * t], t };
+    }
+    function propItem(on, title, body, bad) {
+        return `<div class="prop-item ${on ? (bad ? "bad" : "on") : ""}">
+            <span class="ico">${on ? (bad ? "✗" : "✓") : "·"}</span>
+            <div><b>${title}</b>　${body}</div>
+        </div>`;
+    }
+
+    /* ============================================================
+       Tab 1 · 认识三角形
+       ============================================================ */
+    const knowState = { apexX: 45, apexY: 70, showVertex: true, showAngle: true, showNot: false };
+
+    function knowGeometry() {
+        const B = [175, 265], Cp = [445, 265];
+        const A = [175 + knowState.apexX * 1.9, 265 - knowState.apexY * 2.3];
+        return { A, B, C: Cp };
+    }
+
+    function drawKnow() {
+        const svg = $("knowSvg");
+        clear(svg);
+        const { A, B, C: Cp } = knowGeometry();
+
+        if (knowState.showNot) {
+            // 左侧：正确的三角形；右侧：两个反例
+            svg.appendChild(text(310, 26, "下面三个图形中，只有第一个是三角形", { fill: "#64748b", "font-size": 13, "font-weight": 900 }));
+            const box = (ox, oy) => ({ b: [ox, oy + 92], c: [ox + 140, oy + 92], a: [ox + 58, oy] });
+            const g1 = box(40, 70), g2 = box(240, 70), g3 = box(440, 70);
+            // ① 正确
+            svg.appendChild(poly([g1.a, g1.b, g1.c], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+            svg.appendChild(text(g1.b[0] + 70, g1.b[1] + 30, "✓ 三条线段首尾相连", { fill: "#047857", "font-size": 12.5, "font-weight": 900 }));
+            svg.appendChild(text(g1.b[0] + 70, g1.b[1] + 50, "围成的封闭图形", { fill: "#047857", "font-size": 12.5, "font-weight": 900 }));
+            // ② 有缺口
+            svg.appendChild(el("polyline", { points: `${g2.a.join(",")} ${g2.b.join(",")} ${g2.c[0] - 34},${g2.c[1]}`, fill: "none", stroke: C.wrong, "stroke-width": 4, "stroke-linejoin": "round" }));
+            svg.appendChild(line(g2.a[0], g2.a[1], g2.c[0], g2.c[1], { stroke: C.wrong, "stroke-width": 4 }));
+            svg.appendChild(el("circle", { cx: g2.c[0] - 17, cy: g2.c[1], r: 8, fill: "none", stroke: "#f59e0b", "stroke-width": 2.5, "stroke-dasharray": "3 3" }));
+            svg.appendChild(text(g2.b[0] + 70, g2.b[1] + 30, "✗ 没有连接起来", { fill: "#b91c1c", "font-size": 12.5, "font-weight": 900 }));
+            svg.appendChild(text(g2.b[0] + 70, g2.b[1] + 50, "留有缺口，不封闭", { fill: "#b91c1c", "font-size": 12.5, "font-weight": 900 }));
+            // ③ 出头
+            svg.appendChild(el("polyline", { points: `${g3.a.join(",")} ${g3.b.join(",")} ${g3.c.join(",")} ${g3.a[0] + 8},${g3.a[1] - 22}`, fill: "none", stroke: C.wrong, "stroke-width": 4, "stroke-linejoin": "round" }));
+            svg.appendChild(text(g3.b[0] + 70, g3.b[1] + 30, "✗ 线段交叉出头", { fill: "#b91c1c", "font-size": 12.5, "font-weight": 900 }));
+            svg.appendChild(text(g3.b[0] + 70, g3.b[1] + 50, "不是“围成”", { fill: "#b91c1c", "font-size": 12.5, "font-weight": 900 }));
+            renderKnowProps();
+            return;
+        }
+
+        svg.appendChild(poly([A, B, Cp], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+
+        const [aA, aB, aC] = anglesOf(A, B, Cp);
+        if (knowState.showAngle) {
+            angleArc(svg, A, B, Cp, `∠A ${Math.round(aA)}°`, "#4f46e5", 30);
+            angleArc(svg, B, Cp, A, `∠B ${Math.round(aB)}°`, "#0d9488", 30);
+            angleArc(svg, Cp, A, B, `∠C ${Math.round(aC)}°`, "#f59e0b", 30);
+            svg.appendChild(text(310, 322, `∠A + ∠B + ∠C = ${Math.round(aA)}° + ${Math.round(aB)}° + ${Math.round(aC)}° = 180°`,
+                { fill: "#4338ca", "font-size": 14, "font-weight": 950 }));
+        }
+
+        if (knowState.showVertex) {
+            [[A, "A", 0, -18], [B, "B", -18, 16], [Cp, "C", 18, 16]].forEach(([p, s, dx, dy]) => {
+                svg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 5, fill: "#312e81" }));
+                svg.appendChild(text(p[0] + dx, p[1] + dy, s, { fill: "#312e81", "font-size": 16, "font-weight": 950 }));
+            });
+            const mids = [[A, B, "边 AB"], [B, Cp, "边 BC"], [A, Cp, "边 AC"]];
+            mids.forEach(([p, q, s]) => {
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const out = norm(sub([mx, my], [(A[0] + B[0] + Cp[0]) / 3, (A[1] + B[1] + Cp[1]) / 3]));
+                svg.appendChild(text(mx + out[0] * 26, my + out[1] * 26 + 4, s, { fill: "#4338ca", "font-size": 12.5, "font-weight": 900 }));
+            });
+        }
+        renderKnowProps();
+    }
+
+    function renderKnowProps() {
+        const { A, B, C: Cp } = knowGeometry();
+        const [aA, aB, aC] = anglesOf(A, B, Cp).map(Math.round);
+        const maxA = Math.max(aA, aB, aC);
+        const kind = maxA > 91 ? "钝角三角形" : (Math.abs(maxA - 90) <= 1 ? "直角三角形" : "锐角三角形");
+        $("knowProps").innerHTML = [
+            propItem(true, "三条边", "AB、BC、AC，三条线段首尾相连围成封闭图形。"),
+            propItem(true, "三个顶点", "A、B、C，每两条边的公共端点就是一个顶点。"),
+            propItem(true, "三个内角", `∠A = ${aA}°，∠B = ${aB}°，∠C = ${aC}°，无论怎么拖，和都是 180°。`),
+            propItem(true, "当前类型", `按角分，它是<b>${kind}</b>（看最大的角 ${maxA}°）。`),
+            propItem(true, "稳定性", "三条边的长度确定后，这个三角形的形状就唯一确定了，拉不变形。")
+        ].join("");
+    }
+
+    ["knowApexX", "knowApexY"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            knowState[id === "knowApexX" ? "apexX" : "apexY"] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawKnow();
+        });
+    });
+    toggle($("tglVertex"), v => { knowState.showVertex = v; drawKnow(); });
+    toggle($("tglAngleMark"), v => { knowState.showAngle = v; drawKnow(); });
+    toggle($("tglNotTri"), v => { knowState.showNot = v; drawKnow(); });
+    drawKnow();
+
+    /* ---- 稳定性对比 ---- */
+    let stablePull = 0, stableTimer = null;
+    function drawStable() {
+        const svg = $("stableSvg");
+        clear(svg);
+        const p = stablePull / 100;
+
+        // 左：三角形（不变形）
+        const T = [[80, 60], [30, 200], [230, 200]];
+        svg.appendChild(poly(T, { fill: "rgba(16,185,129,.14)", stroke: C.ok, "stroke-width": 5, "stroke-linejoin": "round" }));
+        T.forEach(pt => svg.appendChild(el("circle", { cx: pt[0], cy: pt[1], r: 6, fill: "#065f46" })));
+        svg.appendChild(text(130, 232, "三角形：怎么拉都不变形", { fill: "#047857", "font-size": 14, "font-weight": 950 }));
+        svg.appendChild(text(130, 30, "✓ 稳定", { fill: "#047857", "font-size": 15, "font-weight": 950 }));
+        // 拉力箭头
+        if (p > 0) {
+            svg.appendChild(line(30 - 8 * p * 4, 200, 30, 200, { stroke: "#f59e0b", "stroke-width": 3 }));
+            svg.appendChild(line(230, 200, 230 + 8 * p * 4, 200, { stroke: "#f59e0b", "stroke-width": 3 }));
+        }
+
+        // 右：平行四边形（被拉变形）
+        const deg = 90 - 45 * p;
+        const rad = deg * Math.PI / 180;
+        // 拉到最斜时右端 = ox + a + b·cos45° + 箭头，要留在 620 内
+        const a = 150, b = 130;
+        const ox = 330, oy = 200;
+        const P = [[ox, oy], [ox + a, oy], [ox + a + b * Math.cos(rad), oy - b * Math.sin(rad)], [ox + b * Math.cos(rad), oy - b * Math.sin(rad)]];
+        svg.appendChild(poly(P, { fill: "rgba(239,68,68,.12)", stroke: C.wrong, "stroke-width": 5, "stroke-linejoin": "round" }));
+        P.forEach(pt => svg.appendChild(el("circle", { cx: pt[0], cy: pt[1], r: 6, fill: "#991b1b" })));
+        svg.appendChild(text(455, 232, "平行四边形：一拉就变形", { fill: "#b91c1c", "font-size": 14, "font-weight": 950 }));
+        svg.appendChild(text(455, 30, "✗ 不稳定", { fill: "#b91c1c", "font-size": 15, "font-weight": 950 }));
+        if (p > 0) {
+            svg.appendChild(line(ox + a + b * Math.cos(rad), oy - b * Math.sin(rad), Math.min(612, ox + a + b * Math.cos(rad) + 26 * p), oy - b * Math.sin(rad), { stroke: "#f59e0b", "stroke-width": 3 }));
+        }
+        svg.appendChild(text(455, 250, `夹角从 90° 变成了 ${Math.round(deg)}°`, { fill: "#64748b", "font-size": 12, "font-weight": 850 }));
+        svg.appendChild(text(130, 250, "三个角始终没变", { fill: "#64748b", "font-size": 12, "font-weight": 850 }));
+    }
+    $("stablePull").addEventListener("input", e => {
+        stablePull = +e.target.value; $("stablePullVal").textContent = e.target.value; drawStable();
+    });
+    $("stableAnim").addEventListener("click", () => {
+        if (stableTimer) { clearInterval(stableTimer); stableTimer = null; $("stableAnim").textContent = "自动拉动 ▶"; return; }
+        $("stableAnim").textContent = "暂停 ⏸";
+        let dir = stablePull >= 100 ? -1 : 1;
+        stableTimer = setInterval(() => {
+            stablePull += dir * 2;
+            if (stablePull >= 100) { stablePull = 100; dir = -1; }
+            if (stablePull <= 0) { stablePull = 0; dir = 1; }
+            $("stablePull").value = stablePull;
+            $("stablePullVal").textContent = stablePull;
+            drawStable();
+        }, 40);
+    });
+    drawStable();
+
+    /* ============================================================
+       Tab 2 · 三边关系
+       ============================================================ */
+    const sideState = { a: 4, b: 6, c: 8 };
+
+    function drawSide() {
+        const svg = $("sideSvg");
+        clear(svg);
+        const s = [sideState.a, sideState.b, sideState.c].slice().sort((x, y) => x - y);
+        const [s1, s2, s3] = s;
+        const ok = s1 + s2 > s3;
+        const equal = s1 + s2 === s3;
+        // 三角形画在 y=170~280 这一带，缩放比例既要让最长边放得下，也要让顶点不顶到上面的文字
+        const apexH = ok ? Math.sqrt(Math.max(0, s1 * s1 - Math.pow((s1 * s1 + s3 * s3 - s2 * s2) / (2 * s3), 2))) : 0;
+        const U = Math.min(30, 520 / s3, apexH > 0.01 ? 104 / apexH : 30);
+
+        // 先画三根小棒
+        svg.appendChild(text(310, 26, "三根小棒", { fill: "#64748b", "font-size": 13, "font-weight": 900 }));
+        const cols = ["#4f46e5", "#0d9488", "#f59e0b"];
+        [sideState.a, sideState.b, sideState.c].forEach((v, i) => {
+            const y = 48 + i * 22;
+            const x0 = 310 - v * U / 2;
+            svg.appendChild(line(x0, y, x0 + v * U, y, { stroke: cols[i], "stroke-width": 9, "stroke-linecap": "round" }));
+            svg.appendChild(text(x0 - 22, y + 5, "abc"[i] + " = " + v, { fill: cols[i], "font-size": 12.5, "font-weight": 900 }));
+        });
+
+        const baseY = 280;
+        const bx = 310 - s3 * U / 2;
+        // 最长边作为底
+        svg.appendChild(line(bx, baseY, bx + s3 * U, baseY, { stroke: "#f59e0b", "stroke-width": 7, "stroke-linecap": "round" }));
+        svg.appendChild(text(310, baseY + 26, `最长边 ${s3}`, { fill: "#b45309", "font-size": 13, "font-weight": 900 }));
+
+        if (ok) {
+            // 用余弦定理求顶点
+            const cosB = (s1 * s1 + s3 * s3 - s2 * s2) / (2 * s1 * s3);
+            const angB = Math.acos(Math.max(-1, Math.min(1, cosB)));
+            const apex = [bx + s1 * U * Math.cos(angB), baseY - s1 * U * Math.sin(angB)];
+            svg.appendChild(poly([[bx, baseY], [bx + s3 * U, baseY], apex], { fill: "rgba(16,185,129,.15)", stroke: C.ok, "stroke-width": 4 }));
+            svg.appendChild(line(bx, baseY, apex[0], apex[1], { stroke: "#4f46e5", "stroke-width": 5, "stroke-linecap": "round" }));
+            svg.appendChild(line(apex[0], apex[1], bx + s3 * U, baseY, { stroke: "#0d9488", "stroke-width": 5, "stroke-linecap": "round" }));
+            svg.appendChild(text(310, 128, "✓ 能围成三角形", { fill: "#047857", "font-size": 17, "font-weight": 950 }));
+        } else {
+            // 两条短边平放：从两端向中间伸
+            const yy = baseY - 40;
+            svg.appendChild(line(bx, yy, bx + s1 * U, yy, { stroke: "#4f46e5", "stroke-width": 6, "stroke-linecap": "round" }));
+            svg.appendChild(line(bx + s3 * U - s2 * U, yy, bx + s3 * U, yy, { stroke: "#0d9488", "stroke-width": 6, "stroke-linecap": "round" }));
+            svg.appendChild(line(bx, yy, bx, baseY, { stroke: "#cbd5e1", "stroke-width": 1.5, "stroke-dasharray": "4 4" }));
+            svg.appendChild(line(bx + s3 * U, yy, bx + s3 * U, baseY, { stroke: "#cbd5e1", "stroke-width": 1.5, "stroke-dasharray": "4 4" }));
+            if (equal) {
+                svg.appendChild(text(310, 128, "✗ 围不成：两条短边正好和长边一样长", { fill: "#b91c1c", "font-size": 16, "font-weight": 950 }));
+                svg.appendChild(text(310, 150, "压成了一条线段，没有“三角形”的样子", { fill: "#b91c1c", "font-size": 13, "font-weight": 850 }));
+                svg.appendChild(el("circle", { cx: bx + s1 * U, cy: yy, r: 7, fill: "none", stroke: "#dc2626", "stroke-width": 2.5 }));
+            } else {
+                const gap = (s3 - s1 - s2) * U;
+                svg.appendChild(text(310, 128, "✗ 围不成：两条短边够不着", { fill: "#b91c1c", "font-size": 16, "font-weight": 950 }));
+                svg.appendChild(line(bx + s1 * U, yy, bx + s3 * U - s2 * U, yy, { stroke: "#dc2626", "stroke-width": 2.5, "stroke-dasharray": "5 4" }));
+                svg.appendChild(text(bx + s1 * U + gap / 2, yy - 14, `缺口 ${nstr(s3 - s1 - s2)}`, { fill: "#dc2626", "font-size": 12, "font-weight": 900 }));
+            }
+        }
+
+        // 结论
+        const sign = ok ? ">" : (equal ? "=" : "<");
+        const color = ok ? "#047857" : "#b91c1c";
+        svg.appendChild(text(310, 158, `较短两边之和 ${s1} + ${s2} = ${s1 + s2}　${sign}　最长边 ${s3}`,
+            { fill: color, "font-size": 15, "font-weight": 950 }));
+
+        $("sideReadout").innerHTML = ok
+            ? `<div class="stat-pill ok">结论 <b>能围成</b></div><div class="stat-pill">${s1} + ${s2} = ${s1 + s2} > ${s3}</div>`
+            : `<div class="stat-pill warn">结论 <b>围不成</b></div><div class="stat-pill">${s1} + ${s2} = ${s1 + s2} ${sign} ${s3}</div>`;
+
+        const pairs = [[sideState.a, sideState.b, sideState.c], [sideState.a, sideState.c, sideState.b], [sideState.b, sideState.c, sideState.a]];
+        $("sideChecks").innerHTML = pairs.map(([x, y, z]) =>
+            propItem(x + y > z, `${x} + ${y} = ${x + y} ${x + y > z ? ">" : (x + y === z ? "=" : "<")} ${z}`,
+                x + y > z ? "这一组满足“两边之和大于第三边”。" : "这一组<b>不满足</b>，所以围不成三角形。", x + y <= z)
+        ).join("") + propItem(ok, "综合判断",
+            ok ? "三组都满足，能围成三角形。实际只需检查<b>较短两边之和</b>就够了。"
+               : "只要有一组不满足，就<b>围不成</b>三角形。", !ok);
+    }
+
+    ["sideA", "sideB", "sideC"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            sideState[id.slice(4).toLowerCase()] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawSide();
+        });
+    });
+    function setSides(a, b, c) {
+        sideState.a = a; sideState.b = b; sideState.c = c;
+        $("sideA").value = a; $("sideAVal").textContent = a;
+        $("sideB").value = b; $("sideBVal").textContent = b;
+        $("sideC").value = c; $("sideCVal").textContent = c;
+        drawSide();
+    }
+    $("sidePreset1").addEventListener("click", () => setSides(3, 3, 6));
+    $("sidePreset2").addEventListener("click", () => setSides(2, 3, 7));
+    drawSide();
+
+    /* ---- 第三边范围数轴 ---- */
+    const rangeState = { a: 5, b: 8 };
+    function drawRange() {
+        const svg = $("rangeSvg");
+        clear(svg);
+        const a = Math.max(rangeState.a, rangeState.b), b = Math.min(rangeState.a, rangeState.b);
+        const lo = a - b, hi = a + b;
+        const x0 = 60, x1 = 570, y = 108;
+        const maxV = 26;
+        const X = v => x0 + (x1 - x0) * v / maxV;
+
+        svg.appendChild(line(x0, y, x1, y, { stroke: "#94a3b8", "stroke-width": 2 }));
+        svg.appendChild(el("polygon", { points: `${x1},${y} ${x1 - 10},${y - 5} ${x1 - 10},${y + 5}`, fill: "#94a3b8" }));
+        for (let v = 0; v <= maxV; v += 2) {
+            svg.appendChild(line(X(v), y, X(v), y + 7, { stroke: "#94a3b8", "stroke-width": 1.5 }));
+            svg.appendChild(text(X(v), y + 24, String(v), { fill: "#94a3b8", "font-size": 11, "font-weight": 800 }));
+        }
+        // 可取区间
+        svg.appendChild(el("rect", { x: X(lo), y: y - 16, width: X(hi) - X(lo), height: 16, fill: "rgba(16,185,129,.22)" }));
+        svg.appendChild(line(X(lo), y - 26, X(lo), y + 10, { stroke: "#dc2626", "stroke-width": 3 }));
+        svg.appendChild(line(X(hi), y - 26, X(hi), y + 10, { stroke: "#dc2626", "stroke-width": 3 }));
+        svg.appendChild(el("circle", { cx: X(lo), cy: y, r: 5.5, fill: "#fff", stroke: "#dc2626", "stroke-width": 2.5 }));
+        svg.appendChild(el("circle", { cx: X(hi), cy: y, r: 5.5, fill: "#fff", stroke: "#dc2626", "stroke-width": 2.5 }));
+        svg.appendChild(text(X(lo), y - 34, `${lo}（取不到）`, { fill: "#dc2626", "font-size": 12, "font-weight": 900 }));
+        svg.appendChild(text(X(hi), y - 34, `${hi}（取不到）`, { fill: "#dc2626", "font-size": 12, "font-weight": 900 }));
+        svg.appendChild(text((X(lo) + X(hi)) / 2, y - 4, "第三边只能取这一段", { fill: "#047857", "font-size": 12.5, "font-weight": 950 }));
+        svg.appendChild(text(310, 34, `已知两边：${rangeState.a} 和 ${rangeState.b}`, { fill: "#4338ca", "font-size": 14, "font-weight": 950 }));
+        svg.appendChild(text(310, 58, `${lo} < 第三边 < ${hi}`, { fill: "#7c3aed", "font-size": 16, "font-weight": 950 }));
+
+        const ints = [];
+        for (let v = lo + 1; v < hi; v++) ints.push(v);
+        $("rangeText").innerHTML = `<b>结论：</b>已知两条边是 ${rangeState.a} 和 ${rangeState.b}，
+            第三边必须<b>大于</b>它们的差 <span class="formula">${a} − ${b} = ${lo}</span>，
+            并且<b>小于</b>它们的和 <span class="formula">${a} + ${b} = ${hi}</span>。<br>
+            即 <span class="formula">${lo} &lt; 第三边 &lt; ${hi}</span>。
+            如果第三边取<b>整数</b>，一共有 <b>${ints.length}</b> 种可能：${ints.join("、")}。
+            <br><b>易错提醒：</b>两端的 ${lo} 和 ${hi} <b>都取不到</b>——取到就压成一条线段了。`;
+    }
+    ["rangeA", "rangeB"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            rangeState[id.slice(5).toLowerCase()] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawRange();
+        });
+    });
+    drawRange();
+
+    /* ============================================================
+       Tab 3 · 分类
+       ============================================================ */
+    const typeDefs = {
+        angle: [
+            { key: "acute", name: "锐角三角形", desc: "三个角都是锐角（都小于 90°）", pts: [[80, 20], [18, 100], [142, 100]] },
+            { key: "right", name: "直角三角形", desc: "有一个角是直角（90°）", pts: [[28, 20], [28, 100], [142, 100]] },
+            { key: "obtuse", name: "钝角三角形", desc: "有一个角是钝角（大于 90°）", pts: [[128, 22], [12, 100], [150, 100]] }
+        ],
+        side: [
+            { key: "scalene", name: "不等边三角形", desc: "三条边都不相等", pts: [[112, 22], [16, 100], [148, 100]] },
+            { key: "isosceles", name: "等腰三角形", desc: "有两条边相等（腰），两个底角相等", pts: [[80, 18], [22, 100], [138, 100]] },
+            { key: "equilateral", name: "等边三角形", desc: "三条边都相等，三个角都是 60°", pts: [[80, 20], [30, 106], [130, 106]] }
+        ]
+    };
+    let clsMode = "angle";
+
+    function drawTypeCard(svg, def) {
+        clear(svg);
+        const pts = def.pts;
+        svg.appendChild(poly(pts, { fill: C.fill, stroke: C.stroke, "stroke-width": 3.5 }));
+        if (def.key === "right") {
+            svg.appendChild(rightAngle(pts[1], [1, 0], [0, -1], 13, "#dc2626"));
+        }
+        if (def.key === "obtuse") {
+            angleArc(svg, pts[1], pts[0], pts[2], "", "#dc2626", 22);
+        }
+        if (def.key === "acute") {
+            pts.forEach((p, i) => angleArc(svg, p, pts[(i + 1) % 3], pts[(i + 2) % 3], "", "#059669", 16));
+        }
+        // 等边标记
+        const marks = def.key === "equilateral" ? [[0, 1, 1], [1, 2, 1], [0, 2, 1]]
+            : def.key === "isosceles" ? [[0, 1, 1], [0, 2, 1]] : [];
+        marks.forEach(([i, j]) => {
+            const p = pts[i], q = pts[j];
+            const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+            const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+            svg.appendChild(el("line", { x1: mx, y1: my - 6, x2: mx, y2: my + 6, stroke: C.stroke, "stroke-width": 2.4, transform: `rotate(${ang} ${mx} ${my})` }));
+        });
+        if (def.key === "scalene") {
+            [[0, 1, 1], [1, 2, 2], [0, 2, 3]].forEach(([i, j, n]) => {
+                const p = pts[i], q = pts[j];
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+                for (let k = 0; k < n; k++) {
+                    const off = (k - (n - 1) / 2) * 5;
+                    svg.appendChild(el("line", { x1: mx + off, y1: my - 5, x2: mx + off, y2: my + 5, stroke: C.stroke, "stroke-width": 2, transform: `rotate(${ang} ${mx} ${my})` }));
+                }
+            });
+        }
+    }
+
+    function renderTypeGrid() {
+        const grid = $("typeGrid");
+        grid.innerHTML = typeDefs[clsMode].map(d => `
+            <div class="type-card" data-tkey="${d.key}">
+                <svg viewBox="0 0 160 120" id="typeSvg-${d.key}"></svg>
+                <div class="tname">${d.name}</div>
+                <div class="tdesc">${d.desc}</div>
+            </div>`).join("");
+        typeDefs[clsMode].forEach(d => drawTypeCard($("typeSvg-" + d.key), d));
+        highlightType();
+    }
+
+    /* ---- 交互判定 ---- */
+    const clsState = { x: 50, y: 75 };
+    function clsGeometry() {
+        const B = [180, 268], Cp = [440, 268];
+        const A = [180 + clsState.x * 1.75, 268 - clsState.y * 2.1];
+        return { A, B, C: Cp };
+    }
+    function classifyCurrent() {
+        const { A, B, C: Cp } = clsGeometry();
+        const angs = anglesOf(A, B, Cp);
+        const maxA = Math.max(...angs);
+        const byAngle = maxA > 90.8 ? "obtuse" : (maxA >= 89.2 ? "right" : "acute");
+        const sides = [len(sub(B, Cp)), len(sub(A, Cp)), len(sub(A, B))]; // a=BC, b=AC, c=AB
+        const eq = (p, q) => Math.abs(p - q) / Math.max(p, q) < 0.02;
+        const e1 = eq(sides[0], sides[1]), e2 = eq(sides[1], sides[2]), e3 = eq(sides[0], sides[2]);
+        const bySide = (e1 && e2) ? "equilateral" : ((e1 || e2 || e3) ? "isosceles" : "scalene");
+        return { angs, sides, byAngle, bySide, maxA };
+    }
+    function highlightType() {
+        const r = classifyCurrent();
+        const key = clsMode === "angle" ? r.byAngle : r.bySide;
+        document.querySelectorAll(".type-card").forEach(c => c.classList.toggle("active", c.dataset.tkey === key));
+    }
+
+    function drawCls() {
+        const svg = $("clsSvg");
+        clear(svg);
+        const { A, B, C: Cp } = clsGeometry();
+        const r = classifyCurrent();
+        const [aA, aB, aC] = r.angs;
+        const fillCol = r.byAngle === "right" ? "rgba(245,158,11,.14)" : (r.byAngle === "obtuse" ? "rgba(239,68,68,.12)" : "rgba(16,185,129,.14)");
+        const strokeCol = r.byAngle === "right" ? "#d97706" : (r.byAngle === "obtuse" ? "#dc2626" : "#059669");
+        svg.appendChild(poly([A, B, Cp], { fill: fillCol, stroke: strokeCol, "stroke-width": 4 }));
+
+        const vs = [[A, B, Cp, aA, "∠A"], [B, Cp, A, aB, "∠B"], [Cp, A, B, aC, "∠C"]];
+        vs.forEach(([v, p, q, deg, nm]) => {
+            const isRight = Math.abs(deg - 90) < 0.8;
+            const col = isRight ? "#d97706" : (deg > 90 ? "#dc2626" : "#059669");
+            if (isRight) {
+                svg.appendChild(rightAngle(v, norm(sub(p, v)), norm(sub(q, v)), 15, "#d97706"));
+                const mid = norm([norm(sub(p, v))[0] + norm(sub(q, v))[0], norm(sub(p, v))[1] + norm(sub(q, v))[1]]);
+                svg.appendChild(text(v[0] + mid[0] * 42, v[1] + mid[1] * 42 + 4, `${nm} 90°`, { fill: col, "font-size": 13, "font-weight": 900 }));
+            } else {
+                angleArc(svg, v, p, q, `${nm} ${Math.round(deg)}°`, col, 30);
+            }
+        });
+        [[A, "A", 0, -18], [B, "B", -18, 16], [Cp, "C", 18, 16]].forEach(([p, s, dx, dy]) => {
+            svg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 5, fill: "#312e81" }));
+            svg.appendChild(text(p[0] + dx, p[1] + dy, s, { fill: "#312e81", "font-size": 15, "font-weight": 950 }));
+        });
+        // 边长（用刻度单位显示）
+        const U = 26;
+        const sideLbl = [[B, Cp, r.sides[0]], [A, Cp, r.sides[1]], [A, B, r.sides[2]]];
+        const cx = (A[0] + B[0] + Cp[0]) / 3, cy = (A[1] + B[1] + Cp[1]) / 3;
+        sideLbl.forEach(([p, q, L]) => {
+            const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+            const out = norm(sub([mx, my], [cx, cy]));
+            svg.appendChild(text(mx + out[0] * 24, my + out[1] * 24 + 4, nstr(L / U), { fill: "#4338ca", "font-size": 12, "font-weight": 900 }));
+        });
+
+        const names = { acute: "锐角三角形", right: "直角三角形", obtuse: "钝角三角形", scalene: "不等边三角形", isosceles: "等腰三角形", equilateral: "等边三角形" };
+        $("clsReadout").innerHTML = `
+            <div class="stat-pill">最大的角 <b>${Math.round(r.maxA)}</b>°</div>
+            <div class="stat-pill ${r.byAngle === "acute" ? "ok" : (r.byAngle === "obtuse" ? "warn" : "area")}">按角分：<b>${names[r.byAngle]}</b></div>
+            <div class="stat-pill">按边分：<b>${names[r.bySide]}</b></div>
+            <div class="stat-pill">内角和 <b>${Math.round(r.angs[0]) + Math.round(r.angs[1]) + Math.round(r.angs[2])}</b>°</div>`;
+
+        const acuteCount = r.angs.filter(x => x < 89.2).length;
+        $("clsNote").innerHTML = [
+            `<div class="rel-row yes"><b>按角分的判断方法：</b>只看<b>最大的那个角</b>。现在最大的角是 ${Math.round(r.maxA)}°，所以它是<b>${names[r.byAngle]}</b>。</div>`,
+            `<div class="rel-row ${acuteCount >= 2 ? "yes" : "no"}"><b>锐角个数：</b>现在有 ${acuteCount} 个锐角。任何三角形都<b>至少有两个锐角</b>，所以“有一个锐角就是锐角三角形”是<b>错的</b>。</div>`,
+            r.bySide === "equilateral"
+                ? `<div class="rel-row yes"><b>等边三角形：</b>三条边相等，三个角都是 <b>60°</b>。它<b>也是</b>等腰三角形（特殊的等腰三角形）。</div>`
+                : (r.bySide === "isosceles"
+                    ? `<div class="rel-row yes"><b>等腰三角形：</b>相等的两条边叫<b>腰</b>，第三条边叫<b>底</b>，两个<b>底角相等</b>。</div>`
+                    : `<div class="rel-row no"><b>不等边三角形：</b>三条边都不相等，三个角也都不相等。</div>`),
+            `<div class="rel-row"><b>组合判断：</b>这个三角形同时是「${names[r.byAngle]}」和「${names[r.bySide]}」。按角分和按边分是<b>两种不同的标准</b>，可以同时使用。</div>`
+        ].join("");
+        highlightType();
+    }
+
+    ["clsX", "clsY"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            clsState[id === "clsX" ? "x" : "y"] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawCls();
+        });
+    });
+    function setCls(x, y) {
+        clsState.x = x; clsState.y = y;
+        $("clsX").value = x; $("clsXVal").textContent = x;
+        $("clsY").value = y; $("clsYVal").textContent = y;
+        drawCls();
+    }
+    // 直角：A 在 B 正上方 → x = 0
+    $("clsRight").addEventListener("click", () => setCls(0, 75));
+    // 等边：底边 260px，A 在中点上方 260*√3/2 px
+    $("clsEqui").addEventListener("click", () => {
+        const x = Math.round(130 / 1.75);
+        const y = Math.round(260 * Math.sqrt(3) / 2 / 2.1);
+        setCls(x, Math.min(110, y));
+    });
+    document.querySelectorAll("[data-cmode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            clsMode = btn.dataset.cmode;
+            document.querySelectorAll("[data-cmode]").forEach(b => b.classList.toggle("active", b === btn));
+            renderTypeGrid();
+        });
+    });
+    renderTypeGrid();
+    drawCls();
+
+    /* ---- 判一判 ---- */
+    const judgeBank = [
+        { q: "由三条线段<em>围成</em>的图形叫做三角形。", a: true, why: "关键词是“围成”——三条线段必须首尾相连，不能有缺口，也不能交叉出头。" },
+        { q: "三角形的内角和一定是 180°，与它的大小、形状无关。", a: true, why: "无论三角形是大是小、是什么类型，内角和永远是 180°。" },
+        { q: "有一个角是锐角的三角形，一定是锐角三角形。", a: false, why: "每个三角形<b>至少</b>有两个锐角。必须<b>三个角都是锐角</b>才叫锐角三角形。" },
+        { q: "一个三角形中最多只能有一个直角。", a: true, why: "两个直角就已经是 180° 了，第三个角没有度数，围不成三角形。" },
+        { q: "等边三角形一定是等腰三角形。", a: true, why: "等腰只要求“有两条边相等”，等边三角形三条边都相等，当然满足。" },
+        { q: "等腰三角形一定是等边三角形。", a: false, why: "反过来不成立。等腰只需要两条边相等，第三条边可以不同。" },
+        { q: "等边三角形的每个角都是 60°。", a: true, why: "三个角相等，180° ÷ 3 = 60°。" },
+        { q: "钝角三角形有两个钝角。", a: false, why: "只能有一个钝角。两个钝角相加已经超过 180° 了。" },
+        { q: "三角形任意两边的和一定大于第三边。", a: true, why: "这是三边关系。实际判断时只要检查<b>较短两边之和</b>是否大于最长边。" },
+        { q: "三根长 3 厘米、3 厘米、6 厘米的小棒能围成一个三角形。", a: false, why: "3 + 3 = 6，正好等于第三边，两条短边压成一条线段，围不成。" },
+        { q: "三角形有三条高。", a: true, why: "从每个顶点向它的对边都能作一条高，所以有三组互相对应的底和高。" },
+        { q: "钝角三角形的三条高都在三角形内部。", a: false, why: "钝角三角形中，夹钝角的两条边上的高落在<b>图形外面</b>，要先延长底边。" },
+        { q: "直角三角形的两条直角边，就是一组互相对应的底和高。", a: true, why: "两条直角边互相垂直，一条作底时另一条正好是高。" },
+        { q: "三角形的面积等于底乘高。", a: false, why: "还要<b>除以 2</b>。因为两个完全一样的三角形才拼成一个底和高相同的平行四边形。" },
+        { q: "两个面积相等的三角形，形状一定相同。", a: false, why: "只要底和高的乘积相同，面积就相等，形状可以完全不同。" },
+        { q: "等底等高的两个三角形，面积一定相等。", a: true, why: "S = 底 × 高 ÷ 2，底和高都相同，面积必然相同。" },
+        { q: "三角形的面积是与它等底等高的平行四边形面积的一半。", a: true, why: "两个完全一样的三角形正好拼成这个平行四边形。" },
+        { q: "把一个三角形分成两个小三角形，每个小三角形的内角和是 90°。", a: false, why: "只要是三角形，内角和就是 <b>180°</b>，与它是不是被分出来的无关。" },
+        { q: "直角三角形的两个锐角的和是 90°。", a: true, why: "180° − 90° = 90°，所以两个锐角互余。" },
+        { q: "三角形具有稳定性，所以自行车的三角架很牢固。", a: true, why: "三条边长确定后形状唯一，怎么拉都不变形。" }
+    ];
+    let judgeIdx = -1, judgeDone = false, judgeOrder = [];
+    function loadJudge() {
+        if (!judgeOrder.length) judgeOrder = shuffle(judgeBank.map((_, i) => i));
+        judgeIdx = judgeOrder.pop();
+        judgeDone = false;
+        $("judgeQ").innerHTML = judgeBank[judgeIdx].q;
+        $("judgeFeedback").hidden = true;
+        $("judgeNext").hidden = true;
+        $("judgeYes").hidden = false;
+        $("judgeNo").hidden = false;
+    }
+    function answerJudge(said) {
+        if (judgeDone) return;
+        judgeDone = true;
+        const item = judgeBank[judgeIdx];
+        const right = said === item.a;
+        const box = $("judgeFeedback");
+        box.className = `feedback ${right ? "good" : "try"}`;
+        box.innerHTML = `${right ? "✓ 判断正确！" : `✗ 判断错了，这句话是<b>${item.a ? "对" : "错"}</b>的。`} ${item.why}`;
+        box.hidden = false;
+        $("judgeNext").hidden = false;
+        $("judgeYes").hidden = true;
+        $("judgeNo").hidden = true;
+    }
+    $("judgeYes").addEventListener("click", () => answerJudge(true));
+    $("judgeNo").addEventListener("click", () => answerJudge(false));
+    $("judgeNext").addEventListener("click", loadJudge);
+    loadJudge();
+
+    /* ============================================================
+       Tab 4 · 内角和
+       ============================================================ */
+    let sumMode = "tear";
+    document.querySelectorAll("[data-smode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            sumMode = btn.dataset.smode;
+            document.querySelectorAll("[data-smode]").forEach(b => b.classList.toggle("active", b === btn));
+            $("sumTearBox").hidden = sumMode !== "tear";
+            $("sumFoldBox").hidden = sumMode !== "fold";
+            $("sumCalcBox").hidden = sumMode !== "calc";
+            if (sumMode === "tear") drawTear();
+            if (sumMode === "fold") drawFold();
+            if (sumMode === "calc") drawCalc();
+        });
+    });
+
+    /* ---- 撕角拼平角 ---- */
+    let tearShape = 35, tearProg = 0, tearTimer = null;
+    function tearGeometry() {
+        const B = [160, 210], Cp = [430, 210];
+        const A = [160 + tearShape * 2.4, 60];
+        return { A, B, C: Cp };
+    }
+    function drawTear() {
+        const svg = $("tearSvg");
+        clear(svg);
+        const { A, B, C: Cp } = tearGeometry();
+        const angs = anglesOf(A, B, Cp);
+        const p = tearProg / 100;
+
+        // 原三角形（淡显）
+        svg.appendChild(poly([A, B, Cp], { fill: "rgba(99,102,241,.08)", stroke: "#c7d2fe", "stroke-width": 2.5, "stroke-dasharray": p > 0.05 ? "6 5" : "none" }));
+
+        const cols = ["#4f46e5", "#0d9488", "#f59e0b"];
+        const nms = ["∠A", "∠B", "∠C"];
+        const verts = [[A, B, Cp], [B, Cp, A], [Cp, A, B]];
+        const R = 62;
+
+        // 目标：平角，顶点在 (310, 300)，从 180° 方向依次排列
+        const O = [310, 296];
+        let acc = 180;
+
+        verts.forEach((v, i) => {
+            const [V, P1, P2] = v;
+            const deg = angs[i];
+            const a1 = Math.atan2(P1[1] - V[1], P1[0] - V[0]);
+            const a2 = Math.atan2(P2[1] - V[1], P2[0] - V[0]);
+            let d = a2 - a1;
+            while (d <= -Math.PI) d += 2 * Math.PI;
+            while (d > Math.PI) d -= 2 * Math.PI;
+            // 扇形按角度递增方向张开，起始边取角度较小的那条
+            const start = d > 0 ? a1 : a2;
+
+            // 扇形：从 startAng 起张开 spanDeg（屏幕坐标 y 向下，角度递增即向上转）
+            const wedge = (cx, cy, startAng, spanDeg, r, fill, stroke, op) => {
+                const s = startAng, e = startAng + spanDeg * Math.PI / 180;
+                const path = `M ${cx} ${cy} L ${cx + r * Math.cos(s)} ${cy + r * Math.sin(s)} A ${r} ${r} 0 ${spanDeg > 180 ? 1 : 0} 1 ${cx + r * Math.cos(e)} ${cy + r * Math.sin(e)} Z`;
+                return el("path", { d: path, fill, stroke, "stroke-width": 2, opacity: op });
+            };
+
+            // 目标：三个角依次贴着平角堆叠，全部落在直线上方
+            // 从 180°（指向左）开始，每个角占掉一段，下一个角接着往右排
+            const targetStart = acc * Math.PI / 180;
+            acc += deg;
+
+            // 插值：位置与角度
+            const cx = V[0] + (O[0] - V[0]) * p;
+            const cy = V[1] + (O[1] - V[1]) * p;
+            // 角度插值（沿最短路径）
+            let sa = start, ta = targetStart;
+            let dd = ta - sa;
+            while (dd <= -Math.PI) dd += 2 * Math.PI;
+            while (dd > Math.PI) dd -= 2 * Math.PI;
+            const curStart = sa + dd * p;
+            const r = R * (0.62 + 0.38 * p);
+
+            svg.appendChild(wedge(cx, cy, curStart, deg, r, cols[i].replace(")", "")
+                .replace("#", "#"), cols[i], 1));
+            const g = svg.lastChild;
+            g.setAttribute("fill", cols[i]);
+            g.setAttribute("fill-opacity", "0.28");
+
+            const midA = curStart + deg / 2 * Math.PI / 180;
+            svg.appendChild(text(cx + r * 0.62 * Math.cos(midA), cy + r * 0.62 * Math.sin(midA) + 4,
+                `${Math.round(deg)}°`, { fill: cols[i], "font-size": 13, "font-weight": 950 }));
+            if (p < 0.5) {
+                svg.appendChild(text(V[0] + (i === 0 ? 0 : (i === 1 ? -24 : 24)), V[1] + (i === 0 ? -18 : 18), nms[i],
+                    { fill: cols[i], "font-size": 14, "font-weight": 950, opacity: 1 - p * 2 }));
+            }
+        });
+
+        // 平角底线
+        if (p > 0.15) {
+            svg.appendChild(line(O[0] - 130, O[1], O[0] + 130, O[1], { stroke: "#7c3aed", "stroke-width": 3, opacity: p }));
+            svg.appendChild(el("circle", { cx: O[0], cy: O[1], r: 5, fill: "#7c3aed", opacity: p }));
+        }
+        if (p > 0.9) {
+            svg.appendChild(text(O[0], O[1] + 26, "三个角正好拼成一个平角 = 180°", { fill: "#6d28d9", "font-size": 14, "font-weight": 950 }));
+        }
+
+        const [a1, a2, a3] = angs.map(Math.round);
+        $("tearReadout").innerHTML = `
+            <div class="stat-pill">∠A = <b>${a1}</b>°</div>
+            <div class="stat-pill">∠B = <b>${a2}</b>°</div>
+            <div class="stat-pill">∠C = <b>${a3}</b>°</div>
+            <div class="stat-pill area">和 = <b>${a1 + a2 + a3}</b>°</div>`;
+        $("tearText").innerHTML = `<b>撕一撕、拼一拼：</b>把三角形的三个角<b>撕下来</b>，把三个顶点<b>对在同一个点</b>上、边靠着边拼起来。
+            结果三个角正好拼成一个<b>平角</b>，中间没有重叠、也没有缝隙。<br>
+            平角是 <span class="formula">180°</span>，所以 <span class="formula">∠A + ∠B + ∠C = 180°</span>。
+            拖动上面的“三角形形状”滑块换一个三角形再试试——<b>结论始终一样</b>。`;
+    }
+    $("tearShape").addEventListener("input", e => { tearShape = +e.target.value; $("tearShapeVal").textContent = e.target.value; drawTear(); });
+    $("tearProg").addEventListener("input", e => { tearProg = +e.target.value; $("tearProgVal").textContent = e.target.value; drawTear(); });
+    $("tearAnim").addEventListener("click", () => {
+        if (tearTimer) { clearInterval(tearTimer); tearTimer = null; $("tearAnim").textContent = "演示撕拼 ▶"; return; }
+        $("tearAnim").textContent = "暂停 ⏸";
+        if (tearProg >= 100) tearProg = 0;
+        tearTimer = setInterval(() => {
+            tearProg += 2;
+            if (tearProg >= 100) { tearProg = 100; clearInterval(tearTimer); tearTimer = null; $("tearAnim").textContent = "重新演示 ↻"; }
+            $("tearProg").value = tearProg; $("tearProgVal").textContent = tearProg;
+            drawTear();
+        }, 35);
+    });
+    drawTear();
+
+    /* ---- 折角 ---- */
+    let foldProg = 0, foldTimer = null;
+    function drawFold() {
+        const svg = $("foldSvg");
+        clear(svg);
+        const p = foldProg / 100;
+        const B = [150, 250], Cp = [470, 250], A = [270, 80];
+        const angs = anglesOf(A, B, Cp);
+
+        // 折痕：过高的中点作平行于底的线
+        const f = footOf(A, B, Cp).pt;
+        const mid = [(A[0] + f[0]) / 2, (A[1] + f[1]) / 2];
+        // 折痕与两腰的交点（中位线）
+        const M1 = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
+        const M2 = [(A[0] + Cp[0]) / 2, (A[1] + Cp[1]) / 2];
+
+        svg.appendChild(poly([A, B, Cp], { fill: "rgba(99,102,241,.10)", stroke: "#a5b4fc", "stroke-width": 2.5, "stroke-dasharray": "6 5" }));
+
+        // 折叠后的顶角：A 落到垂足 f
+        const Apos = [A[0] + (f[0] - A[0]) * p, A[1] + (f[1] - A[1]) * p];
+        svg.appendChild(poly([Apos, M1, M2], { fill: "rgba(79,70,229,.30)", stroke: "#4f46e5", "stroke-width": 2.5 }));
+        svg.appendChild(text((M1[0] + M2[0]) / 2, Apos[1] + (p > 0.5 ? -8 : 26), `∠A ${Math.round(angs[0])}°`, { fill: "#4f46e5", "font-size": 12.5, "font-weight": 950 }));
+
+        // 左下角 B 向上折到 f
+        const B1 = M1, B2 = [(B[0] + f[0]) / 2, (B[1] + f[1]) / 2];
+        const Bpos = [B[0] + (f[0] - B[0]) * p, B[1] + (f[1] - B[1]) * p];
+        svg.appendChild(poly([Bpos, B1, B2], { fill: "rgba(13,148,136,.30)", stroke: "#0d9488", "stroke-width": 2.5 }));
+        svg.appendChild(text(Bpos[0] + 4, Bpos[1] - 10, `∠B ${Math.round(angs[1])}°`, { fill: "#0d9488", "font-size": 12.5, "font-weight": 950 }));
+
+        // 右下角 C
+        const C1 = M2, C2 = [(Cp[0] + f[0]) / 2, (Cp[1] + f[1]) / 2];
+        const Cpos = [Cp[0] + (f[0] - Cp[0]) * p, Cp[1] + (f[1] - Cp[1]) * p];
+        svg.appendChild(poly([Cpos, C1, C2], { fill: "rgba(245,158,11,.30)", stroke: "#f59e0b", "stroke-width": 2.5 }));
+        svg.appendChild(text(Cpos[0] - 4, Cpos[1] - 10, `∠C ${Math.round(angs[2])}°`, { fill: "#b45309", "font-size": 12.5, "font-weight": 950 }));
+
+        // 折痕
+        if (p > 0.02) {
+            [[M1, M2], [M1, B2], [M2, C2]].forEach(([p1, p2]) =>
+                svg.appendChild(line(p1[0], p1[1], p2[0], p2[1], { stroke: "#94a3b8", "stroke-width": 1.8, "stroke-dasharray": "5 4" })));
+        }
+        // 底边
+        svg.appendChild(line(B[0], B[1], Cp[0], Cp[1], { stroke: "#7c3aed", "stroke-width": 3 }));
+        svg.appendChild(el("circle", { cx: f[0], cy: f[1], r: 5, fill: "#7c3aed", opacity: p }));
+        if (p > 0.9) {
+            svg.appendChild(text(310, 292, "三个角拼在同一点，正好组成平角 180°", { fill: "#6d28d9", "font-size": 14, "font-weight": 950 }));
+        } else {
+            svg.appendChild(text(310, 292, "把三个角都向内折到底边的同一点上", { fill: "#64748b", "font-size": 13, "font-weight": 900 }));
+        }
+    }
+    $("foldProg").addEventListener("input", e => { foldProg = +e.target.value; $("foldProgVal").textContent = e.target.value; drawFold(); });
+    $("foldAnim").addEventListener("click", () => {
+        if (foldTimer) { clearInterval(foldTimer); foldTimer = null; $("foldAnim").textContent = "演示折叠 ▶"; return; }
+        $("foldAnim").textContent = "暂停 ⏸";
+        if (foldProg >= 100) foldProg = 0;
+        foldTimer = setInterval(() => {
+            foldProg += 2;
+            if (foldProg >= 100) { foldProg = 100; clearInterval(foldTimer); foldTimer = null; $("foldAnim").textContent = "重新演示 ↻"; }
+            $("foldProg").value = foldProg; $("foldProgVal").textContent = foldProg;
+            drawFold();
+        }, 35);
+    });
+
+    /* ---- 已知两角求第三角 ---- */
+    const calcState = { b: 55, c: 70, last: "b" };
+    function drawCalc() {
+        const svg = $("calcSvg");
+        clear(svg);
+        // 滑块控制 ∠B 和 ∠C，∠A 是待求的第三个角
+        // 保证三角形成立：∠B + ∠C 至多 165°，多出来的部分从“上一次动的那个角”身上扣
+        let aB = calcState.b, aC = calcState.c;
+        if (aB + aC > 165) {
+            if (calcState.last === "c") aB = Math.max(15, 165 - aC);
+            else aC = Math.max(15, 165 - aB);
+        }
+        const aA = 180 - aB - aC;
+
+        // 由两角构造三角形：底边 BC 水平
+        const Bx = 170, By = 265, U = 280;
+        const rB = aB * Math.PI / 180, rC = aC * Math.PI / 180, rA = aA * Math.PI / 180;
+        // 正弦定理：BC / sinA = AC / sinB = AB / sinC
+        const BC = U;
+        const k = BC / Math.sin(rA);
+        const AB = k * Math.sin(rC);
+        const B = [Bx, By], Cp = [Bx + BC, By];
+        const A = [Bx + AB * Math.cos(rB), By - AB * Math.sin(rB)];
+        // 若超出画布则缩放
+        const scale = Math.min(1, 215 / Math.max(1, By - A[1]));
+        const A2 = [Bx + (A[0] - Bx) * scale, By - (By - A[1]) * scale];
+        const C2 = [Bx + (Cp[0] - Bx) * scale, By];
+
+        svg.appendChild(poly([A2, B, C2], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+        angleArc(svg, A2, B, C2, `∠A = ?`, "#7c3aed", 30);
+        angleArc(svg, B, C2, A2, `∠B ${aB}°`, "#0d9488", 30);
+        angleArc(svg, C2, A2, B, `∠C ${aC}°`, "#f59e0b", 30);
+        [[A2, "A", 0, -18], [B, "B", -18, 16], [C2, "C", 18, 16]].forEach(([p, s, dx, dy]) => {
+            svg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 5, fill: "#312e81" }));
+            svg.appendChild(text(p[0] + dx, p[1] + dy, s, { fill: "#312e81", "font-size": 15, "font-weight": 950 }));
+        });
+        svg.appendChild(text(310, 305, `∠A = 180° − ${aB}° − ${aC}° = ${aA}°`, { fill: "#6d28d9", "font-size": 16, "font-weight": 950 }));
+
+        const kind = aA > 90 ? "钝角" : (aA === 90 ? "直角" : "锐角");
+        $("calcReadout").innerHTML = `
+            <div class="stat-pill">已知 ∠B = <b>${aB}</b>°</div>
+            <div class="stat-pill">已知 ∠C = <b>${aC}</b>°</div>
+            <div class="stat-pill area">求得 ∠A = <b>${aA}</b>°（${kind}）</div>`;
+        $("calcText").innerHTML = `<b>求角三步：</b>
+            ① 依据内角和：<span class="formula">∠A + ∠B + ∠C = 180°</span>；
+            ② 把已知的两个角<b>先加起来</b>：${aB}° + ${aC}° = ${aB + aC}°；
+            ③ 用 180° <b>减去</b>这个和：180° − ${aB + aC}° = <b>${aA}°</b>。<br>
+            <b>易错提醒：</b>不要用 180° 分别减两次，也不要写成 180° ÷ 3——只有<b>等边三角形</b>才是每个 60°。`;
+    }
+    ["calcA", "calcB"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            const key = id === "calcA" ? "b" : "c";   // calcA 滑块控制 ∠B，calcB 滑块控制 ∠C
+            calcState[key] = +e.target.value;
+            calcState.last = key;
+            $(id + "Val").textContent = e.target.value;
+            drawCalc();
+        });
+    });
+
+    /* ============================================================
+       Tab 5 · 底和高
+       ============================================================ */
+    const hState = { type: "acute", which: 0, all: false, extend: true };
+    // 顶点都落在 26px 的整格上，这样读出来的底和高是整齐的整数
+    const HU = 26;
+    const hPt = (gx, gy) => [130 + gx * HU, 286 - gy * HU];
+    const hShapes = {
+        // 底 BC = 12，A 到 BC 的高 = 8（三边不等，三个角都是锐角）
+        acute:  { A: hPt(5, 8), B: hPt(1, 0), C: hPt(13, 0) },
+        // 两条直角边：BC = 11，AB = 8
+        right:  { A: hPt(2, 8), B: hPt(2, 0), C: hPt(13, 0) },
+        // 钝角在 C：底 BC = 6，A 到 BC 的垂足落在 BC 的延长线外
+        obtuse: { A: hPt(13, 7), B: hPt(1, 0), C: hPt(7, 0) }
+    };
+
+    function drawHeight() {
+        const svg = $("heightSvg");
+        clear(svg);
+        const S = hShapes[hState.type];
+        const A = S.A, B = S.B, Cp = S.C;
+        const V = [A, B, Cp], NM = ["A", "B", "C"];
+        // 第 i 条高：从顶点 V[i] 向对边（另外两个顶点连成的边）作垂线
+        const opp = [[1, 2], [0, 2], [0, 1]];
+
+        svg.appendChild(poly([A, B, Cp], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+
+        const cols = ["#7c3aed", "#0d9488", "#f59e0b"];
+        const list = hState.all ? [0, 1, 2] : [hState.which];
+        const infos = [];
+
+        list.forEach(i => {
+            const P = V[i], Q = V[opp[i][0]], R = V[opp[i][1]];
+            const { pt: F, t } = footOf(P, Q, R);
+            const outside = t < -0.001 || t > 1.001;
+            const col = hState.all ? cols[i] : "#7c3aed";
+
+            // 需要延长底边
+            if (outside && hState.extend) {
+                const d = norm(sub(R, Q));
+                const ext = 26;
+                const far = t > 1 ? [F[0] + d[0] * ext, F[1] + d[1] * ext] : [F[0] - d[0] * ext, F[1] - d[1] * ext];
+                const from = t > 1 ? R : Q;
+                svg.appendChild(line(from[0], from[1], far[0], far[1], { stroke: "#94a3b8", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+                svg.appendChild(text((from[0] + far[0]) / 2, far[1] + 22, "延长线", { fill: "#64748b", "font-size": 11.5, "font-weight": 900 }));
+            }
+            // 高
+            svg.appendChild(line(P[0], P[1], F[0], F[1], { stroke: col, "stroke-width": 3, "stroke-dasharray": "7 5" }));
+            const u = norm(sub(R, Q)), v = norm(sub(P, F));
+            svg.appendChild(rightAngle(F, u, v, 13, col));
+            svg.appendChild(el("circle", { cx: F[0], cy: F[1], r: 4, fill: col }));
+            // 标注
+            const mx = (P[0] + F[0]) / 2, my = (P[1] + F[1]) / 2;
+            const nrm = [-v[1], v[0]];
+            svg.appendChild(text(mx + nrm[0] * 20, my + nrm[1] * 20 + 4, hState.all ? `高${i + 1}` : "高",
+                { fill: col, "font-size": 13, "font-weight": 950 }));
+            // 底边加粗
+            svg.appendChild(line(Q[0], Q[1], R[0], R[1], { stroke: col, "stroke-width": 5, opacity: hState.all ? 0.35 : 0.75 }));
+
+            infos.push({
+                i, name: `顶点 ${NM[i]} → 底 ${NM[opp[i][0]]}${NM[opp[i][1]]}`,
+                outside, base: len(sub(R, Q)) / HU, h: len(sub(P, F)) / HU, col
+            });
+        });
+
+        [[A, "A", 0, -18], [B, "B", -18, 18], [Cp, "C", 18, 18]].forEach(([p, s, dx, dy]) => {
+            svg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 5, fill: "#312e81" }));
+            svg.appendChild(text(p[0] + dx, p[1] + dy, s, { fill: "#312e81", "font-size": 16, "font-weight": 950 }));
+        });
+
+        // 直角三角形特别提示
+        if (hState.type === "right") {
+            svg.appendChild(rightAngle(B, [1, 0], [0, -1], 16, "#dc2626"));
+        }
+
+        const cur = infos[hState.all ? hState.which : 0] || infos[0];
+        $("heightReadout").innerHTML = hState.all
+            ? infos.map(f => `<div class="stat-pill">${f.name}：高 <b>${nstr(f.h)}</b>${f.outside ? "（在图形外）" : ""}</div>`).join("")
+            : `<div class="stat-pill">当前底 = <b>${nstr(cur.base)}</b></div>
+               <div class="stat-pill area">对应的高 = <b>${nstr(cur.h)}</b></div>
+               <div class="stat-pill">底 × 高 ÷ 2 = <b>${nstr(cur.base * cur.h / 2)}</b></div>
+               <div class="stat-pill ${cur.outside ? "warn" : "ok"}">这条高在图形<b>${cur.outside ? "外面" : "里面"}</b></div>`;
+
+        const texts = {
+            acute: `<b>锐角三角形：</b>三条高<b>都在三角形内部</b>。从任意一个顶点向对边作垂线，垂足都落在对边上。三组底和高分别是：BC 和 A 到 BC 的高、AC 和 B 到 AC 的高、AB 和 C 到 AB 的高。`,
+            right: `<b>直角三角形：</b>两条<b>直角边互为底和高</b>（以 AB 为底时 BC 就是高，以 BC 为底时 AB 就是高），因为它们本来就互相垂直。第三条高是<b>斜边 AC 上的高</b>，从直角顶点 B 画向斜边，落在三角形<b>内部</b>。`,
+            obtuse: `<b>钝角三角形：</b>以夹钝角的两条边为底时，高会落在三角形<b>外面</b>，必须先把底边<b>延长</b>（图中灰色虚线），再从顶点向延长线作垂线。只有以钝角所对的那条边为底时，高才在图形内部。`
+        };
+        $("heightText").innerHTML = texts[hState.type] + `<br><b>不管哪种三角形，都有 3 组互相对应的底和高</b>，算面积时只能用<b>同一组</b>。`;
+    }
+
+    document.querySelectorAll("[data-htype]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            hState.type = btn.dataset.htype;
+            document.querySelectorAll("[data-htype]").forEach(b => b.classList.toggle("active", b === btn));
+            drawHeight();
+        });
+    });
+    document.querySelectorAll("[data-hv]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            hState.which = +btn.dataset.hv;
+            document.querySelectorAll("[data-hv]").forEach(b => b.classList.toggle("active", b === btn));
+            drawHeight();
+        });
+    });
+    toggle($("tglAll3"), v => { hState.all = v; drawHeight(); });
+    toggle($("tglExtend"), v => { hState.extend = v; drawHeight(); });
+    drawHeight();
+
+    /* ============================================================
+       Tab 6 · 面积推导
+       ============================================================ */
+    let areaMode = "pair";
+    document.querySelectorAll("[data-amode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            areaMode = btn.dataset.amode;
+            document.querySelectorAll("[data-amode]").forEach(b => b.classList.toggle("active", b === btn));
+            $("areaPairBox").hidden = areaMode !== "pair";
+            $("areaCutBox").hidden = areaMode !== "cut";
+            $("areaGridBox").hidden = areaMode !== "grid";
+            $("areaEqualBox").hidden = areaMode !== "equal";
+            if (areaMode === "pair") drawPair();
+            if (areaMode === "cut") drawCut();
+            if (areaMode === "grid") drawGrid();
+            if (areaMode === "equal") drawEqual();
+        });
+    });
+
+    /* ---- 拼摆法：两个完全一样的三角形拼成平行四边形 ---- */
+    const pairState = { base: 8, height: 5, prog: 0 };
+    let pairTimer = null;
+    function drawPair() {
+        const svg = $("pairSvg");
+        clear(svg);
+        const p = pairState.prog / 100;
+        // 画布宽 620：起始时要并排放下「三角形① + 间隔 + 三角形②」，
+        // 拼合后要放下「底 + 斜边水平投影」的平行四边形，取两者中更严格的比例
+        const GAP = 70, skewRatio = 0.42;
+        // 起始并排总宽 = 2 × 底 × (1 + skew) × U + GAP ≤ 560
+        // 拼合后宽   = 底 × (1 + skew) × U ≤ 560；高度 ≤ 190
+        const spanUnits = pairState.base * (1 + skewRatio);
+        const U = Math.min(32, (560 - GAP) / (2 * spanUnits), 560 / spanUnits, 190 / pairState.height);
+        const a = pairState.base * U, h = pairState.height * U;
+        const skew = skewRatio * a;   // 顶点相对左端的水平偏移
+        const oy = 252;               // 旋转过程中②号会略微荡到底线下方，留出余量
+        // 让起始的两个三角形整体水平居中
+        const totalW = a + skew + GAP + a + skew;
+        const ox = Math.max(30, (620 - totalW) / 2);
+
+        // 原三角形 T1：B(左下) C(右下) A(顶)
+        const B = [ox, oy], Cp = [ox + a, oy], A = [ox + skew, oy - h];
+        svg.appendChild(poly([A, B, Cp], { fill: "rgba(79,70,229,.24)", stroke: C.stroke, "stroke-width": 3.5 }));
+        svg.appendChild(text((B[0] + Cp[0]) / 2, oy + 24, `底 a = ${pairState.base}`, { fill: "#4338ca", "font-size": 13, "font-weight": 950 }));
+        // 高
+        const f = footOf(A, B, Cp).pt;
+        svg.appendChild(line(A[0], A[1], f[0], f[1], { stroke: C.height, "stroke-width": 2.5, "stroke-dasharray": "6 5" }));
+        svg.appendChild(rightAngle(f, [1, 0], [0, -1], 12, C.height));
+        svg.appendChild(text(A[0] - 26, (A[1] + f[1]) / 2 + 4, `高 h = ${pairState.height}`, { fill: C.height, "font-size": 13, "font-weight": 950 }));
+        svg.appendChild(text((A[0] + B[0] + Cp[0]) / 3, oy - h * 0.32, "①", { fill: "#4338ca", "font-size": 18, "font-weight": 950 }));
+
+        // 第二个三角形 T2：旋转 180° 后拼到右上，形成平行四边形
+        // 起始位置：在右侧待命；结束位置：顶点 D = A + (a, 0)，与 A、C 组成平行四边形
+        const startOff = [a + skew + GAP, 0];
+        const startRot = 0, endRot = 180;
+        const rot = startRot + (endRot - startRot) * p;
+        // 结束时 T2 的三个顶点（旋转 180° 的三角形）
+        const D = [A[0] + a, A[1]];
+        const endPts = [D, Cp, A];         // 与 T1 拼成平行四边形 B-C-D-A
+        const startPts = [[A[0] + startOff[0], A[1]], [B[0] + startOff[0], B[1]], [Cp[0] + startOff[0], Cp[1]]];
+        // 简单插值：按 T2 质心与顶点相对位置，用旋转矩阵
+        const startCen = [(startPts[0][0] + startPts[1][0] + startPts[2][0]) / 3, (startPts[0][1] + startPts[1][1] + startPts[2][1]) / 3];
+        const endCen = [(endPts[0][0] + endPts[1][0] + endPts[2][0]) / 3, (endPts[0][1] + endPts[1][1] + endPts[2][1]) / 3];
+        const cen = [startCen[0] + (endCen[0] - startCen[0]) * p, startCen[1] + (endCen[1] - startCen[1]) * p];
+        const rad = rot * Math.PI / 180;
+        const t2 = startPts.map(pt => {
+            const dx = pt[0] - startCen[0], dy = pt[1] - startCen[1];
+            return [cen[0] + dx * Math.cos(rad) - dy * Math.sin(rad), cen[1] + dx * Math.sin(rad) + dy * Math.cos(rad)];
+        });
+        svg.appendChild(poly(t2, { fill: "rgba(13,148,136,.28)", stroke: "#0d9488", "stroke-width": 3.5 }));
+        const t2c = [(t2[0][0] + t2[1][0] + t2[2][0]) / 3, (t2[0][1] + t2[1][1] + t2[2][1]) / 3];
+        svg.appendChild(text(t2c[0], t2c[1] + 6, "②", { fill: "#0f766e", "font-size": 18, "font-weight": 950 }));
+
+        // 拼合完成后画出平行四边形轮廓
+        if (p > 0.92) {
+            svg.appendChild(poly([B, Cp, D, A], { fill: "none", stroke: "#f59e0b", "stroke-width": 4, "stroke-dasharray": "9 5" }));
+            svg.appendChild(text(310, 42, "两个完全一样的三角形 → 拼成一个平行四边形", { fill: "#b45309", "font-size": 15, "font-weight": 950 }));
+        } else {
+            svg.appendChild(text(310, 42, "把②号三角形旋转 180°，拼到①号旁边", { fill: "#64748b", "font-size": 14, "font-weight": 900 }));
+        }
+
+        const area = pairState.base * pairState.height;
+        $("pairBaseOut").textContent = pairState.base;
+        $("pairHeightOut").textContent = pairState.height;
+        $("pairParaOut").textContent = area;
+        $("pairTriOut").textContent = nstr(area / 2);
+        $("pairTriOut").parentElement.innerHTML = `三角形 S = ${pairState.base} × ${pairState.height} ÷ 2 = <b id="pairTriOut">${nstr(area / 2)}</b>`;
+
+        $("pairStepText").innerHTML = `<b>推导过程（课本的方法）</b>
+            <ul>
+                <li>准备<b>两个完全一样</b>的三角形（能够完全重合）。</li>
+                <li>把其中一个<b>旋转 180°</b>，与另一个拼在一起，正好拼成一个<b>平行四边形</b>。</li>
+                <li>这个平行四边形的<b>底</b>就是三角形的底 ${pairState.base}，<b>高</b>就是三角形的高 ${pairState.height}。</li>
+                <li>平行四边形面积 = 底 × 高 = ${pairState.base} × ${pairState.height} = <b>${area}</b>。</li>
+                <li>三角形只占其中的<b>一半</b>，所以 <span class="formula">S△ = 底 × 高 ÷ 2 = ${nstr(area / 2)}</span>。</li>
+            </ul>
+            <b>“÷ 2”就是这样来的</b>——因为用了<b>两个</b>三角形才拼成一个平行四边形。`;
+    }
+    ["pairBase", "pairHeight", "pairProg"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            pairState[id === "pairBase" ? "base" : id === "pairHeight" ? "height" : "prog"] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawPair();
+        });
+    });
+    $("pairAnim").addEventListener("click", () => {
+        if (pairTimer) { clearInterval(pairTimer); pairTimer = null; $("pairAnim").textContent = "演示拼摆 ▶"; return; }
+        $("pairAnim").textContent = "暂停 ⏸";
+        if (pairState.prog >= 100) pairState.prog = 0;
+        pairTimer = setInterval(() => {
+            pairState.prog += 2;
+            if (pairState.prog >= 100) { pairState.prog = 100; clearInterval(pairTimer); pairTimer = null; $("pairAnim").textContent = "重新演示 ↻"; }
+            $("pairProg").value = pairState.prog; $("pairProgVal").textContent = pairState.prog;
+            drawPair();
+        }, 35);
+    });
+    drawPair();
+
+    /* ---- 割补法：沿中位线剪开拼成长方形 ---- */
+    const cutState = { base: 8, height: 6, prog: 0 };
+    let cutTimer = null;
+    function drawCut() {
+        const svg = $("cutSvg");
+        clear(svg);
+        const U = 30;
+        const a = cutState.base * U, h = cutState.height * U;
+        const p = cutState.prog / 100;
+        const ox = 175, oy = 275;
+        const skew = 0.5 * a;
+        const B = [ox, oy], Cp = [ox + a, oy], A = [ox + skew, oy - h];
+        // 中位线：两腰中点
+        const M1 = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
+        const M2 = [(A[0] + Cp[0]) / 2, (A[1] + Cp[1]) / 2];
+        const halfH = h / 2;
+
+        // 下半部分（梯形）不动
+        svg.appendChild(poly([M1, M2, Cp, B], { fill: "rgba(79,70,229,.22)", stroke: C.stroke, "stroke-width": 3 }));
+
+        // 上半三角形沿中位线剪下，分成左右两块，分别旋转 180° 补到两侧
+        const f = footOf(A, B, Cp).pt;
+        const Mm = [f[0], oy - halfH];   // 高的中点（在中位线上）
+        // 左块：A, M1, Mm  → 旋转 180° 绕 M1
+        // 右块：A, Mm, M2  → 旋转 180° 绕 M2
+        function rotAbout(pt, c, deg) {
+            const r = deg * Math.PI / 180, dx = pt[0] - c[0], dy = pt[1] - c[1];
+            return [c[0] + dx * Math.cos(r) - dy * Math.sin(r), c[1] + dx * Math.sin(r) + dy * Math.cos(r)];
+        }
+        const degNow = 180 * p;
+        const leftPts = [A, M1, Mm].map(pt => rotAbout(pt, M1, degNow));
+        const rightPts = [A, Mm, M2].map(pt => rotAbout(pt, M2, degNow));
+        svg.appendChild(poly(leftPts, { fill: "rgba(13,148,136,.30)", stroke: "#0d9488", "stroke-width": 2.6 }));
+        svg.appendChild(poly(rightPts, { fill: "rgba(245,158,11,.30)", stroke: "#f59e0b", "stroke-width": 2.6 }));
+
+        // 中位线
+        svg.appendChild(line(M1[0], M1[1], M2[0], M2[1], { stroke: "#dc2626", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+        svg.appendChild(text((M1[0] + M2[0]) / 2, M1[1] - 10, "沿高的中点剪开", { fill: "#dc2626", "font-size": 12, "font-weight": 900 }));
+
+        // 完成后画长方形轮廓
+        if (p > 0.92) {
+            svg.appendChild(poly([[M1[0], M1[1]], [M2[0], M2[1]], [Cp[0], Cp[1]], [B[0], B[1]]].map(x => x),
+                { fill: "none", stroke: "#b45309", "stroke-width": 0 }));
+            const rectPts = [[B[0], oy - halfH], [Cp[0], oy - halfH], Cp, B];
+            svg.appendChild(poly(rectPts, { fill: "none", stroke: "#b45309", "stroke-width": 4, "stroke-dasharray": "9 5" }));
+            svg.appendChild(text(310, 42, "拼成了一个长方形：长 = 底，宽 = 高的一半", { fill: "#b45309", "font-size": 15, "font-weight": 950 }));
+        } else {
+            svg.appendChild(text(310, 42, "把上面的两小块分别旋转 180°，补到左右两侧", { fill: "#64748b", "font-size": 14, "font-weight": 900 }));
+        }
+        svg.appendChild(text((B[0] + Cp[0]) / 2, oy + 24, `底 = ${cutState.base}`, { fill: "#4338ca", "font-size": 13, "font-weight": 950 }));
+        svg.appendChild(line(B[0] - 22, oy, B[0] - 22, oy - halfH, { stroke: "#b45309", "stroke-width": 2.5 }));
+        svg.appendChild(text(B[0] - 52, oy - halfH / 2 + 4, `高÷2 = ${nstr(cutState.height / 2)}`, { fill: "#b45309", "font-size": 12, "font-weight": 900 }));
+
+        const area = cutState.base * cutState.height / 2;
+        $("cutBaseOut").textContent = cutState.base;
+        $("cutHeightOut").textContent = cutState.height;
+        $("cutRectW").textContent = cutState.base;
+        $("cutRectH").textContent = nstr(cutState.height / 2);
+        $("cutAreaOut").textContent = nstr(area);
+
+        $("cutStepText").innerHTML = `<b>割补法（另一种推导）</b>
+            <ul>
+                <li>找到高的<b>中点</b>，过中点作一条平行于底的线（中位线），沿这条线把三角形<b>剪开</b>。</li>
+                <li>把上面的小三角形再从高处分成两块，各<b>旋转 180°</b> 补到左右两边。</li>
+                <li>拼成的长方形：<b>长 = 三角形的底 = ${cutState.base}</b>，<b>宽 = 三角形高的一半 = ${nstr(cutState.height / 2)}</b>。</li>
+                <li>面积：${cutState.base} × ${nstr(cutState.height / 2)} = <b>${nstr(area)}</b>，也就是 <span class="formula">底 × 高 ÷ 2</span>。</li>
+            </ul>
+            两种方法（拼摆、割补）得到的<b>结论完全一致</b>，都说明面积公式里必须“÷ 2”。`;
+    }
+    ["cutBase", "cutHeight", "cutProg"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            cutState[id === "cutBase" ? "base" : id === "cutHeight" ? "height" : "prog"] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawCut();
+        });
+    });
+    $("cutAnim").addEventListener("click", () => {
+        if (cutTimer) { clearInterval(cutTimer); cutTimer = null; $("cutAnim").textContent = "演示剪拼 ▶"; return; }
+        $("cutAnim").textContent = "暂停 ⏸";
+        if (cutState.prog >= 100) cutState.prog = 0;
+        cutTimer = setInterval(() => {
+            cutState.prog += 2;
+            if (cutState.prog >= 100) { cutState.prog = 100; clearInterval(cutTimer); cutTimer = null; $("cutAnim").textContent = "重新演示 ↻"; }
+            $("cutProg").value = cutState.prog; $("cutProgVal").textContent = cutState.prog;
+            drawCut();
+        }, 35);
+    });
+
+    /* ---- 数方格法 ---- */
+    const gridState = { base: 6, height: 4, paired: false };
+    function drawGrid() {
+        const svg = $("gridSvg");
+        clear(svg);
+        const a = gridState.base, h = gridState.height;
+        // 补成平行四边形后横向要放下 2 倍的底，格子要相应缩小
+        const spanUnits = gridState.paired ? a * 2 : a + 1;
+        const U = Math.min(34, 540 / spanUnits, 200 / h);
+        const ox = 310 - (gridState.paired ? a * U : a * U / 2), oy = 285;
+        // 网格
+        for (let i = 0; i <= a + 1; i++) {
+            svg.appendChild(line(ox + i * U, oy - h * U, ox + i * U, oy, { stroke: C.grid, "stroke-width": 1.2 }));
+        }
+        for (let j = 0; j <= h; j++) {
+            svg.appendChild(line(ox, oy - j * U, ox + (a + 1) * U, oy - j * U, { stroke: C.grid, "stroke-width": 1.2 }));
+        }
+        const B = [ox, oy], Cp = [ox + a * U, oy], A = [ox + Math.round(a / 2) * U, oy - h * U];
+        svg.appendChild(poly([A, B, Cp], { fill: "rgba(79,70,229,.26)", stroke: C.stroke, "stroke-width": 3.5 }));
+
+        if (gridState.paired) {
+            const D = [A[0] + a * U, A[1]];
+            svg.appendChild(poly([A, D, Cp], { fill: "rgba(13,148,136,.26)", stroke: "#0d9488", "stroke-width": 3.5 }));
+            svg.appendChild(poly([B, Cp, D, A], { fill: "none", stroke: "#f59e0b", "stroke-width": 4, "stroke-dasharray": "9 5" }));
+            svg.appendChild(text(310, 40, `平行四边形一共 ${a} × ${h} = ${a * h} 格，三角形占一半`, { fill: "#b45309", "font-size": 15, "font-weight": 950 }));
+        } else {
+            svg.appendChild(text(310, 40, "先数一数：三角形盖住了多少格？（半格两个凑一整格）", { fill: "#64748b", "font-size": 14, "font-weight": 900 }));
+        }
+        svg.appendChild(text((B[0] + Cp[0]) / 2, oy + 24, `底 ${a} 格`, { fill: "#4338ca", "font-size": 13, "font-weight": 950 }));
+        svg.appendChild(line(ox - 20, oy, ox - 20, oy - h * U, { stroke: C.height, "stroke-width": 2.5 }));
+        svg.appendChild(text(ox - 44, oy - h * U / 2 + 4, `高 ${h} 格`, { fill: C.height, "font-size": 13, "font-weight": 950 }));
+
+        $("gridPara").textContent = a * h;
+        $("gridTri").textContent = nstr(a * h / 2);
+    }
+    ["gridBase", "gridHeight"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            gridState[id === "gridBase" ? "base" : "height"] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawGrid();
+        });
+    });
+    $("gridPair").addEventListener("click", () => {
+        gridState.paired = !gridState.paired;
+        $("gridPair").textContent = gridState.paired ? "只看三角形 ◀" : "补成平行四边形 ▶";
+        drawGrid();
+    });
+
+    /* ---- 等底等高 ---- */
+    const eqState = { shear: 30, base: 8, height: 5, showPara: true };
+    function drawEqual() {
+        const svg = $("eqSvg");
+        clear(svg);
+        // 显示平行四边形时右侧还要多放下一个底，缩放要把它算进去
+        const spanUnits = eqState.base * (eqState.showPara ? 2 : 1);
+        const U = Math.min(32, 480 / spanUnits, 190 / eqState.height);
+        const a = eqState.base * U, h = eqState.height * U;
+        const oy = 275;
+        const ox = eqState.showPara ? 60 : 310 - a / 2;
+        const B = [ox, oy], Cp = [ox + a, oy];
+        // 顶点滑动范围限制在画布内（显示平行四边形时右边要留出一个底的宽度）
+        const maxShift = 600 - ox - a - (eqState.showPara ? a : 0);
+        const A = [ox + Math.max(-ox + 20, Math.min(maxShift, eqState.shear * 1.6)), oy - h];
+
+        // 平行于底的滑动轨迹
+        svg.appendChild(line(Math.max(14, ox - 100), oy - h, Math.min(606, ox + a + 100), oy - h, { stroke: "#cbd5e1", "stroke-width": 2, "stroke-dasharray": "8 6" }));
+        svg.appendChild(text(310, oy - h - 12, "顶点沿这条平行线滑动 → 高始终不变", { fill: "#94a3b8", "font-size": 12, "font-weight": 900 }));
+
+        if (eqState.showPara) {
+            const D = [A[0] + a, A[1]];
+            svg.appendChild(poly([B, Cp, D, A], { fill: "rgba(245,158,11,.13)", stroke: "#f59e0b", "stroke-width": 3, "stroke-dasharray": "8 5" }));
+            svg.appendChild(text((A[0] + D[0]) / 2, A[1] - 30, `等底等高的平行四边形 S = ${eqState.base * eqState.height}`, { fill: "#b45309", "font-size": 13, "font-weight": 950 }));
+        }
+        svg.appendChild(poly([A, B, Cp], { fill: "rgba(79,70,229,.26)", stroke: C.stroke, "stroke-width": 4 }));
+
+        // 高
+        const f = footOf(A, B, Cp).pt;
+        svg.appendChild(line(A[0], A[1], f[0], f[1], { stroke: C.height, "stroke-width": 2.5, "stroke-dasharray": "6 5" }));
+        svg.appendChild(rightAngle(f, [1, 0], [0, -1], 12, C.height));
+        svg.appendChild(text(A[0] + 34, (A[1] + f[1]) / 2 + 4, `高 ${eqState.height}`, { fill: C.height, "font-size": 13, "font-weight": 950 }));
+        svg.appendChild(text((B[0] + Cp[0]) / 2, oy + 26, `底 ${eqState.base}`, { fill: "#4338ca", "font-size": 13, "font-weight": 950 }));
+        // 三边长度（说明周长在变）
+        const s1 = len(sub(A, B)) / U, s2 = len(sub(A, Cp)) / U;
+        svg.appendChild(text(310, oy + 48, `两条腰：${nstr(s1)} 和 ${nstr(s2)}（滑动时会变，但面积不变）`, { fill: "#64748b", "font-size": 12.5, "font-weight": 900 }));
+
+        const tri = eqState.base * eqState.height / 2;
+        $("eqBaseOut").textContent = eqState.base;
+        $("eqHeightOut").textContent = eqState.height;
+        $("eqTriOut").textContent = nstr(tri);
+        $("eqParaOut").textContent = nstr(tri * 2);
+    }
+    ["eqShear", "eqBase", "eqHeight"].forEach(id => {
+        $(id).addEventListener("input", e => {
+            eqState[id === "eqShear" ? "shear" : id === "eqBase" ? "base" : "height"] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawEqual();
+        });
+    });
+    toggle($("tglEqPara"), v => { eqState.showPara = v; drawEqual(); });
+
+    /* ============================================================
+       Tab 7 · 综合练习
+       ============================================================ */
+    const topicNames = {
+        mixed: "综合", concept: "概念与分类", sides: "三边关系",
+        angle: "内角和求角", area: "面积计算", reverse: "反求底和高", transform: "等积变形"
+    };
+    const topicFormulas = {
+        concept: {
+            main: "三条线段围成的图形", mainNote: "按角分：锐角、直角、钝角三角形；按边分：不等边、等腰（含等边）三角形。",
+            second: "至少有两个锐角", secondNote: "一个三角形里最多只有一个直角或一个钝角。",
+            reverse: "等边三角形一定是等腰三角形，等腰三角形不一定是等边三角形。"
+        },
+        sides: {
+            main: "任意两边之和 > 第三边", mainNote: "实际判断只要看：较短两边之和是否大于最长边。",
+            second: "a − b < 第三边 < a + b", secondNote: "大边减小边 < 第三边 < 两边之和，两端都取不到。",
+            reverse: "两边之和正好等于第三边时会压成一条线段，围不成三角形。"
+        },
+        angle: {
+            main: "∠1 + ∠2 + ∠3 = 180°", mainNote: "与三角形的大小、形状无关，永远成立。",
+            second: "第三角 = 180° − 已知两角和", secondNote: "直角三角形两锐角和 90°；等边三角形每个角 60°。",
+            reverse: "等腰三角形：底角 =（180° − 顶角）÷ 2；顶角 = 180° − 底角 × 2。"
+        },
+        area: {
+            main: "S = a × h ÷ 2", mainNote: "a 是底，h 是这条底<b>对应</b>的高，最后一定要 ÷ 2。",
+            second: "两个三角形拼成平行四边形", secondNote: "所以三角形面积是等底等高平行四边形的一半。",
+            reverse: "三组底高都能算：a₁ × h₁ = a₂ × h₂ = a₃ × h₃ = 2S"
+        },
+        reverse: {
+            main: "S = a × h ÷ 2", mainNote: "由面积公式出发，先还原出 a × h = 2S，再用除法。",
+            second: "a = 2S ÷ h　h = 2S ÷ a", secondNote: "反求时别忘了先把面积<b>乘 2</b>。",
+            reverse: "常见错误：直接用面积 ÷ 底，忘了公式里有个 ÷ 2。"
+        },
+        transform: {
+            main: "等底等高 → 面积相等", mainNote: "底和高都不变时，无论顶点滑到哪里，面积都不变。",
+            second: "S△ = S平行四边形 ÷ 2", secondNote: "等底等高时，三角形面积是平行四边形的一半。",
+            reverse: "面积不变时，底越大对应的高就越小（底 × 高 的积不变）。"
+        }
+    };
+
+    /* ---- 概念与分类（选择题） ---- */
+    function makeConceptProblem() {
+        const bank = [
+            {
+                signature: "c-def", tag: "概念辨析", level: "★ 入门",
+                prompt: "下面哪一句话正确地说出了<em>三角形的定义</em>？",
+                choices: [
+                    { t: "由三条线段围成的图形叫做三角形。", ok: true },
+                    { t: "由三条线段组成的图形叫做三角形。", ok: false },
+                    { t: "有三个角的图形叫做三角形。", ok: false },
+                    { t: "三条边都相等的图形叫做三角形。", ok: false }
+                ],
+                known: ["判断定义", "抓住“围成”两个字"],
+                formula: "三角形的定义：由三条线段围成的图形",
+                hint: "关键在“<b>围成</b>”——三条线段必须首尾相连，形成一个封闭的图形。",
+                steps: ["“组成”不等于“围成”：三条线段摆在一起但没连上，不是三角形。", "线段交叉出头、或中间留缺口，都不算“围成”。", "“有三个角”太笼统，不能作为定义。", "所以正确说法是“由三条线段<b>围成</b>的图形”。"],
+                tip: "易错提醒：“组成”和“围成”只差一个字，意思完全不同，考试常在这里设陷阱。",
+                diagram: { kind: "notTri" }
+            },
+            {
+                signature: "c-acute", tag: "按角分类", level: "★★ 进阶",
+                prompt: "一个三角形中有一个角是 <em>50°</em>，这个三角形<em>一定</em>是：",
+                choices: [
+                    { t: "无法确定是哪一类三角形。", ok: true },
+                    { t: "锐角三角形。", ok: false },
+                    { t: "直角三角形。", ok: false },
+                    { t: "钝角三角形。", ok: false }
+                ],
+                known: ["已知一个角 50°", "判断类型"],
+                formula: "按角分类要看<b>最大的那个角</b>",
+                hint: "50° 是锐角，但另外两个角的度数还不知道，最大的角可能是锐角、直角或钝角。",
+                steps: ["剩下两个角的和是 180° − 50° = 130°。", "如果两个角是 60° 和 70°，是<b>锐角</b>三角形。", "如果是 90° 和 40°，是<b>直角</b>三角形。", "如果是 100° 和 30°，是<b>钝角</b>三角形。", "所以只知道一个锐角，<b>无法确定</b>类型。"],
+                tip: "易错提醒：每个三角形至少有两个锐角，看到一个锐角说明不了任何问题。",
+                diagram: { kind: "tri", shape: "acute", note: "只知道一个角 50°" }
+            },
+            {
+                signature: "c-two-right", tag: "概念辨析", level: "★★ 进阶",
+                prompt: "下面关于三角形的角，说法<em>正确</em>的是：",
+                choices: [
+                    { t: "一个三角形中最多只有一个直角或一个钝角。", ok: true },
+                    { t: "一个三角形可以有两个直角。", ok: false },
+                    { t: "一个三角形可以有两个钝角。", ok: false },
+                    { t: "一个三角形可以有一个直角和一个钝角。", ok: false }
+                ],
+                known: ["内角和 180°", "判断角的个数"],
+                formula: "内角和 = 180°",
+                hint: "把两个直角（或钝角）加起来，看看还剩多少度给第三个角。",
+                steps: ["两个直角：90° + 90° = 180°，第三个角只能是 0°，围不成三角形。", "两个钝角：和已经超过 180°，更不可能。", "一个直角加一个钝角：和也超过 180°。", "所以直角和钝角<b>最多只能有一个</b>。"],
+                tip: "易错提醒：正因如此，每个三角形都<b>至少有两个锐角</b>。",
+                diagram: { kind: "tri", shape: "right", note: "直角只能有一个" }
+            },
+            {
+                signature: "c-equi", tag: "按边分类", level: "★★ 进阶",
+                prompt: "关于等边三角形和等腰三角形的关系，正确的是：",
+                choices: [
+                    { t: "等边三角形一定是等腰三角形，等腰三角形不一定是等边三角形。", ok: true },
+                    { t: "等腰三角形一定是等边三角形。", ok: false },
+                    { t: "等边三角形和等腰三角形没有关系。", ok: false },
+                    { t: "等边三角形不是等腰三角形，因为它三边都相等。", ok: false }
+                ],
+                known: ["等边 ⊂ 等腰", "判断包含关系"],
+                formula: "等腰三角形：有<b>两条边</b>相等；等边三角形：<b>三条边</b>都相等",
+                hint: "等腰只要求“有两条边相等”，等边三角形当然满足这个条件。",
+                steps: ["等边三角形三条边都相等，其中任意两条也相等 → 它<b>是</b>等腰三角形。", "等腰三角形只需两条边相等，第三条可以不同 → 不一定是等边。", "所以等边三角形是<b>特殊的</b>等腰三角形。"],
+                tip: "易错提醒：包含关系是单向的，不能反过来说。",
+                diagram: { kind: "tri", shape: "equilateral", note: "三边相等，三角都是 60°" }
+            },
+            {
+                signature: "c-equi-angle", tag: "按边分类", level: "★ 入门",
+                prompt: "等边三角形的每个内角是多少度？",
+                choices: [
+                    { t: "60°，因为三个角相等，180° ÷ 3 = 60°。", ok: true },
+                    { t: "90°，因为它很规整。", ok: false },
+                    { t: "45°，因为 180° ÷ 4 = 45°。", ok: false },
+                    { t: "无法确定，要看三角形的大小。", ok: false }
+                ],
+                known: ["等边三角形", "内角和 180°"],
+                formula: "等边三角形三个角相等，每个角 = 180° ÷ 3 = 60°",
+                hint: "三条边都相等 → 三个角也都相等；再用内角和平均分成三份。",
+                steps: ["等边三角形三条边相等，所以三个角也相等。", "内角和是 180°，平均分成 3 份。", "180° ÷ 3 = <b>60°</b>。", "所以等边三角形又叫<b>正三角形</b>，每个角都是 60°。"],
+                tip: "易错提醒：角的大小与三角形的大小<b>无关</b>，再大的等边三角形每个角还是 60°。",
+                diagram: { kind: "tri", shape: "equilateral", note: "60° + 60° + 60° = 180°" }
+            },
+            {
+                signature: "c-height-count", tag: "底和高", level: "★★ 进阶",
+                prompt: "关于三角形的<em>高</em>，下面说法正确的是：",
+                choices: [
+                    { t: "从一个顶点向对边作垂线，顶点到垂足的线段是高，三角形有三条高。", ok: true },
+                    { t: "三角形只有一条高。", ok: false },
+                    { t: "三角形的高都在图形内部。", ok: false },
+                    { t: "三角形的每条边都可以作为高。", ok: false }
+                ],
+                known: ["高的定义", "高的条数"],
+                formula: "高 = 从顶点向对边（或其延长线）作的垂线段；三角形有 3 条高",
+                hint: "每个顶点都能向它的对边画一条高，一共三个顶点。",
+                steps: ["高必须从<b>顶点</b>出发，垂直画到<b>它的对边</b>上。", "三个顶点各对应一条高，所以有<b>三组</b>底和高。", "<b>钝角</b>三角形中，有两条高落在图形<b>外面</b>。", "边不是高，除非是直角三角形的两条直角边。"],
+                tip: "易错提醒：底和高必须<b>互相对应</b>，算面积时不能一个用底、一个用别的边上的高。",
+                diagram: { kind: "tri", shape: "obtuse", showHeightOut: true, note: "钝角三角形的高在外面" }
+            },
+            {
+                signature: "c-stable", tag: "稳定性", level: "★ 入门",
+                prompt: "下面哪个例子利用了<em>三角形的稳定性</em>？",
+                choices: [
+                    { t: "自行车的三角形车架，骑起来很牢固。", ok: true },
+                    { t: "商场门口的伸缩门可以拉开又推拢。", ok: false },
+                    { t: "升降晾衣架可以上下伸缩。", ok: false },
+                    { t: "活动衣架可以折叠收起来。", ok: false }
+                ],
+                known: ["区分稳定性与不稳定性"],
+                formula: "三角形：三边确定，形状唯一（稳定）；平行四边形：容易变形（不稳定）",
+                hint: "需要<b>牢固不变形</b>的用三角形；需要<b>能伸缩变形</b>的用平行四边形。",
+                steps: ["三角形三条边的长度确定后，形状就唯一确定，怎么拉都不变形。", "自行车车架、房梁、篮球架支撑杆、电线塔都用三角形加固。", "伸缩门、晾衣架、活动衣架利用的是平行四边形<b>容易变形</b>的特点。", "所以正确的是自行车三角形车架。"],
+                tip: "易错提醒：把平行四边形加一根斜杆分成两个三角形，框架就变稳固了。",
+                diagram: { kind: "stable" }
+            }
+        ];
+        const q = pick(bank);
+        return Object.assign({ topic: "concept", type: "choice" }, q);
+    }
+
+    /* ---- 三边关系 ---- */
+    function makeSidesProblem() {
+        const makers = [
+            () => {
+                // 判断哪一组小棒能围成三角形：1 组正例 + 3 组反例
+                const s = [randInt(2, 6), randInt(3, 8)].sort((x, y) => x - y);
+                const bad1 = [s[0], s[1], s[0] + s[1]];                  // 和正好等于第三边
+                const bad2 = [s[0], s[1], s[0] + s[1] + randInt(1, 3)];  // 和小于第三边
+                // 正例：随机生成一组确实能围成的三边
+                let g1, g2, g3;
+                do {
+                    g1 = randInt(3, 8); g2 = randInt(3, 8); g3 = randInt(3, 12);
+                } while (!(g1 + g2 > g3 && g1 + g3 > g2 && g2 + g3 > g1));
+                const good = [g1, g2, g3].sort((x, y) => x - y);
+                const choices = shuffle([
+                    { t: `${good[0]} 厘米、${good[1]} 厘米、${good[2]} 厘米`, ok: true },
+                    { t: `${bad1[0]} 厘米、${bad1[1]} 厘米、${bad1[2]} 厘米`, ok: false },
+                    { t: `${bad2[0]} 厘米、${bad2[1]} 厘米、${bad2[2]} 厘米`, ok: false },
+                    { t: `1 厘米、2 厘米、${randInt(4, 6)} 厘米`, ok: false }
+                ]);
+                return {
+                    type: "choice",
+                    signature: "s-judge", tag: "能否围成", level: "★★ 进阶",
+                    prompt: "下面哪一组小棒<em>能</em>围成一个三角形？",
+                    choices,
+                    known: ["判断三根小棒能否围成三角形"],
+                    formula: "任意两边之和大于第三边（只需检查较短两边之和 > 最长边）",
+                    hint: "把每组的三个数从小到大排好，把<b>较短的两个数相加</b>，看是否大于最大的那个数。",
+                    steps: [`把每组数从小到大排列，用<b>前两个数相加</b>和第三个数比较。`, `${good[0]} + ${good[1]} = ${good[0] + good[1]} > ${good[2]} → <b>能</b>围成。`, `${bad1[0]} + ${bad1[1]} = ${bad1[0] + bad1[1]} = ${bad1[2]} → 正好相等，压成一条线段，<b>围不成</b>。`, `其余几组两短边之和都<b>小于</b>最长边，中间有缺口，也围不成。`],
+                    tip: "易错提醒：“正好等于”也<b>围不成</b>，必须严格大于。",
+                    diagram: { kind: "sticks", vals: good }
+                };
+            },
+            () => {
+                const a = randInt(4, 10), b = randInt(3, a - 1);
+                const lo = a - b, hi = a + b;
+                const count = hi - lo - 1;
+                return {
+                    signature: "s-count", tag: "第三边范围", level: "★★★ 挑战",
+                    prompt: `已知三角形的两条边分别是 <em>${a} 厘米</em>和 <em>${b} 厘米</em>，第三条边的长度是<em>整厘米数</em>。第三条边一共有多少种可能？`,
+                    known: [labelValue("一边", a, "厘米"), labelValue("另一边", b, "厘米"), "第三边取整厘米数"],
+                    answer: count, unit: "种",
+                    formula: "大边 − 小边 < 第三边 < 两边之和",
+                    hint: `第三边要<b>大于</b> ${a} − ${b}，同时<b>小于</b> ${a} + ${b}，两端的数都取不到。`,
+                    steps: [`下限：${a} − ${b} = ${lo}（第三边必须比它<b>大</b>）。`, `上限：${a} + ${b} = ${hi}（第三边必须比它<b>小</b>）。`, `所以 ${lo} < 第三边 < ${hi}。`, `整厘米数有：${Array.from({ length: count }, (_, i) => lo + 1 + i).join("、")}。`, `一共 ${count} 种。`],
+                    tip: `易错提醒：${lo} 和 ${hi} 这两个端点都<b>不能取</b>，取到就围不成三角形了。`,
+                    diagram: { kind: "range", a, b }
+                };
+            },
+            () => {
+                const a = randInt(5, 11), b = randInt(3, a - 1);
+                const answer = a + b - 1;
+                return {
+                    signature: "s-max", tag: "第三边范围", level: "★★ 进阶",
+                    prompt: `三角形的两条边分别长 <em>${a} 厘米</em>和 <em>${b} 厘米</em>，第三条边是整厘米数。第三条边<em>最长</em>可以是多少厘米？`,
+                    known: [labelValue("一边", a, "厘米"), labelValue("另一边", b, "厘米"), "求第三边的最大整数值"],
+                    answer, unit: "厘米",
+                    formula: "第三边 < 两边之和",
+                    hint: `第三边必须<b>小于</b> ${a} + ${b} = ${a + b}，而且是整厘米数。`,
+                    steps: [`两边之和：${a} + ${b} = ${a + b}（厘米）。`, `第三边必须<b>小于</b> ${a + b}，不能等于。`, `取整厘米数中最大的：${a + b} − 1 = ${answer}（厘米）。`, `验算：${a} + ${b} = ${a + b} > ${answer} ✓`],
+                    tip: `易错提醒：不能填 ${a + b}，那样两条短边会压成一条线段。`,
+                    diagram: { kind: "range", a, b, ask: "max" }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), b = randInt(3, a - 2);
+                const answer = a - b + 1;
+                return {
+                    signature: "s-min", tag: "第三边范围", level: "★★ 进阶",
+                    prompt: `三角形的两条边分别长 <em>${a} 厘米</em>和 <em>${b} 厘米</em>，第三条边是整厘米数。第三条边<em>最短</em>可以是多少厘米？`,
+                    known: [labelValue("一边", a, "厘米"), labelValue("另一边", b, "厘米"), "求第三边的最小整数值"],
+                    answer, unit: "厘米",
+                    formula: "第三边 > 大边 − 小边",
+                    hint: `第三边必须<b>大于</b> ${a} − ${b} = ${a - b}，而且是整厘米数。`,
+                    steps: [`两边之差：${a} − ${b} = ${a - b}（厘米）。`, `第三边必须<b>大于</b> ${a - b}，不能等于。`, `取整厘米数中最小的：${a - b} + 1 = ${answer}（厘米）。`, `验算：${answer} + ${b} = ${answer + b} > ${a} ✓`],
+                    tip: `易错提醒：不能填 ${a - b}，那样也围不成三角形。`,
+                    diagram: { kind: "range", a, b, ask: "min" }
+                };
+            },
+            () => {
+                const waist = randInt(5, 12), base = randInt(3, waist * 2 - 1);
+                const answer = waist * 2 + base;
+                return {
+                    signature: "s-iso-peri", tag: "等腰周长", level: "★★ 进阶",
+                    prompt: `一个等腰三角形的腰长 <em>${waist} 厘米</em>，底边长 <em>${base} 厘米</em>。它的周长是多少厘米？`,
+                    known: [labelValue("腰", waist, "厘米"), labelValue("底", base, "厘米"), "求周长"],
+                    answer, unit: "厘米",
+                    formula: "等腰三角形周长 = 腰 × 2 + 底",
+                    hint: "等腰三角形有<b>两条</b>腰，长度相等，所以腰要算两次。",
+                    steps: [`等腰三角形有两条腰，都是 ${waist} 厘米。`, `两条腰：${waist} × 2 = ${waist * 2}（厘米）。`, `加上底边：${waist * 2} + ${base} = ${answer}（厘米）。`, `答：周长是 ${answer} 厘米。`],
+                    tip: "易错提醒：别把腰只算一次；三角形周长就是三条边的和。",
+                    diagram: { kind: "tri", shape: "isosceles", base: `底 ${base} 厘米`, side: `腰 ${waist} 厘米` }
+                };
+            },
+            () => {
+                const waist = randInt(6, 12), base = randInt(3, waist * 2 - 1);
+                const peri = waist * 2 + base;
+                return {
+                    signature: "s-iso-reverse", tag: "等腰反求", level: "★★★ 挑战",
+                    prompt: `一个等腰三角形的周长是 <em>${peri} 厘米</em>，底边长 <em>${base} 厘米</em>。它的腰长是多少厘米？`,
+                    known: [labelValue("周长", peri, "厘米"), labelValue("底", base, "厘米"), "求腰长"],
+                    answer: waist, unit: "厘米",
+                    formula: "腰 = （周长 − 底）÷ 2",
+                    hint: "先从周长里<b>减掉底边</b>，剩下的是两条腰的长度，再除以 2。",
+                    steps: [`两条腰的总长：${peri} − ${base} = ${peri - base}（厘米）。`, `两条腰相等，所以每条腰：${peri - base} ÷ 2 = ${waist}（厘米）。`, `验算：${waist} × 2 + ${base} = ${peri}（厘米）✓`, `答：腰长是 ${waist} 厘米。`],
+                    tip: "易错提醒：减掉底以后<b>还要除以 2</b>，因为剩下的是两条腰。",
+                    diagram: { kind: "tri", shape: "isosceles", base: `底 ${base} 厘米`, side: "腰 ?", perimeter: `周长 ${peri} 厘米` }
+                };
+            }
+        ];
+        const m = pick(makers)();
+        return Object.assign({ topic: "sides", type: "numeric" }, m);
+    }
+
+    /* ---- 内角和求角 ---- */
+    function makeAngleProblem() {
+        const makers = [
+            () => {
+                const a = randInt(20, 80), b = randInt(20, 150 - a);
+                const answer = 180 - a - b;
+                return {
+                    signature: "a-third", tag: "基础应用", level: "★ 入门",
+                    prompt: `一个三角形中，∠1 = <em>${a}°</em>，∠2 = <em>${b}°</em>。∠3 是多少度？`,
+                    known: [`∠1 = ${a}°`, `∠2 = ${b}°`, "求 ∠3"],
+                    answer, unit: "度",
+                    formula: "三角形内角和 = 180°",
+                    hint: "先把已知的两个角<b>加起来</b>，再用 180° 减去这个和。",
+                    steps: [`依据：三角形内角和是 180°。`, `已知两角和：${a}° + ${b}° = ${a + b}°。`, `∠3 = 180° − ${a + b}° = ${answer}°。`, `答：∠3 是 ${answer}°。`],
+                    tip: "易错提醒：不要用 180° 分别去减两次，也不要写成 180° ÷ 3。",
+                    diagram: { kind: "angle", a, b }
+                };
+            },
+            () => {
+                const a = randInt(20, 70);
+                const answer = 90 - a;
+                return {
+                    signature: "a-right", tag: "直角三角形", level: "★★ 进阶",
+                    prompt: `一个直角三角形中，一个锐角是 <em>${a}°</em>。另一个锐角是多少度？`,
+                    known: ["直角三角形（有一个 90° 角）", `一个锐角 ${a}°`, "求另一个锐角"],
+                    answer, unit: "度",
+                    formula: "直角三角形两个锐角的和 = 180° − 90° = 90°",
+                    hint: "直角占去了 90°，剩下的 90° 由两个锐角分掉。",
+                    steps: [`内角和 180°，其中一个角是直角 90°。`, `两个锐角的和：180° − 90° = 90°。`, `另一个锐角：90° − ${a}° = ${answer}°。`, `答：另一个锐角是 ${answer}°。`],
+                    tip: "易错提醒：直接用 90° 减，不要再用 180° 去减。",
+                    diagram: { kind: "angle", a: 90, b: a, right: true }
+                };
+            },
+            () => {
+                const apex = randInt(20, 140) - (randInt(20, 140) % 2);
+                const answer = (180 - apex) / 2;
+                return {
+                    signature: "a-iso-base", tag: "等腰三角形", level: "★★ 进阶",
+                    prompt: `一个等腰三角形的<em>顶角</em>是 <em>${apex}°</em>。它的一个<em>底角</em>是多少度？`,
+                    known: ["等腰三角形（两个底角相等）", `顶角 ${apex}°`, "求底角"],
+                    answer, unit: "度",
+                    formula: "底角 =（180° − 顶角）÷ 2",
+                    hint: "等腰三角形的<b>两个底角相等</b>，先算出两个底角的和，再平均分。",
+                    steps: [`两个底角的和：180° − ${apex}° = ${180 - apex}°。`, `两个底角相等，所以每个：${180 - apex}° ÷ 2 = ${nstr(answer)}°。`, `验算：${apex}° + ${nstr(answer)}° × 2 = 180° ✓`, `答：一个底角是 ${nstr(answer)}°。`],
+                    tip: "易错提醒：减掉顶角后<b>要除以 2</b>，因为剩下的是两个相等的底角。",
+                    diagram: { kind: "tri", shape: "isosceles", note: `顶角 ${apex}°，两个底角相等` }
+                };
+            },
+            () => {
+                const baseAng = randInt(25, 80);
+                const answer = 180 - baseAng * 2;
+                return {
+                    signature: "a-iso-apex", tag: "等腰三角形", level: "★★★ 挑战",
+                    prompt: `一个等腰三角形的一个<em>底角</em>是 <em>${baseAng}°</em>。它的<em>顶角</em>是多少度？`,
+                    known: ["等腰三角形（两个底角相等）", `一个底角 ${baseAng}°`, "求顶角"],
+                    answer, unit: "度",
+                    formula: "顶角 = 180° − 底角 × 2",
+                    hint: "两个底角<b>都是</b>这个度数，所以要先乘 2 再减。",
+                    steps: [`两个底角相等，都是 ${baseAng}°。`, `两个底角的和：${baseAng}° × 2 = ${baseAng * 2}°。`, `顶角：180° − ${baseAng * 2}° = ${answer}°。`, `答：顶角是 ${answer}°。`],
+                    tip: "易错提醒：底角有<b>两个</b>，别只减一次。",
+                    diagram: { kind: "tri", shape: "isosceles", note: `底角 ${baseAng}°，两个底角相等` }
+                };
+            },
+            () => {
+                const k = pick([[1, 2, 3], [1, 1, 2], [2, 3, 4], [1, 2, 2], [3, 4, 5]]);
+                const total = k[0] + k[1] + k[2];
+                const unit = 180 / total;
+                const answer = unit * k[2];
+                return {
+                    signature: "a-ratio", tag: "按比求角", level: "★★★ 挑战",
+                    prompt: `一个三角形三个内角度数的比是 <em>${k[0]} : ${k[1]} : ${k[2]}</em>。其中<em>最大</em>的角是多少度？`,
+                    known: [`三个角的比 ${k[0]} : ${k[1]} : ${k[2]}`, "内角和 180°", "求最大的角"],
+                    answer, unit: "度",
+                    formula: "先求一份 = 180° ÷ 总份数，再求最大角 = 一份 × 最大份数",
+                    hint: `把内角和 180° 平均分成 ${total} 份，最大的角占 ${k[2]} 份。`,
+                    steps: [`总份数：${k[0]} + ${k[1]} + ${k[2]} = ${total}（份）。`, `每份：180° ÷ ${total} = ${nstr(unit)}°。`, `最大的角：${nstr(unit)}° × ${k[2]} = ${nstr(answer)}°。`, `答：最大的角是 ${nstr(answer)}°。`],
+                    tip: `易错提醒：先求出<b>一份是多少度</b>，再乘份数；最大角是 ${answer > 90 ? "钝角，所以这是钝角三角形" : (answer === 90 ? "直角，所以这是直角三角形" : "锐角，所以这是锐角三角形")}。`,
+                    diagram: { kind: "tri", shape: answer > 90 ? "obtuse" : (answer === 90 ? "right" : "acute"), note: `三角比 ${k[0]}:${k[1]}:${k[2]}` }
+                };
+            },
+            () => {
+                const a = randInt(30, 90);
+                const answer = 180 - a;
+                return {
+                    signature: "a-split", tag: "易错辨析", level: "★★★ 挑战",
+                    prompt: `把一个三角形沿一条直线剪成<em>两个</em>小三角形，每个小三角形的<em>内角和</em>是多少度？`,
+                    known: ["原三角形内角和 180°", "剪成两个小三角形", "求每个小三角形的内角和"],
+                    answer: 180, unit: "度",
+                    formula: "任何三角形的内角和都是 180°",
+                    hint: "内角和只和“是不是三角形”有关，与它是怎么来的、有多大<b>无关</b>。",
+                    steps: [`剪开以后得到的两个图形<b>都还是三角形</b>。`, `只要是三角形，内角和就是 180°。`, `所以每个小三角形的内角和还是 <b>180°</b>。`, `注意：两个小三角形内角和相加是 360°，比原来的 180° 多出来的部分，是剪开处新产生的一个平角。`],
+                    tip: "易错提醒：常见错误是答 90°（以为 180° ÷ 2），内角和<b>不会</b>被分掉。",
+                    diagram: { kind: "split" }
+                };
+            }
+        ];
+        return Object.assign({ topic: "angle", type: "numeric" }, pick(makers)());
+    }
+
+    /* ---- 面积 ---- */
+    function makeAreaProblem() {
+        const makers = [
+            () => {
+                const a = randInt(4, 16), h = pick([2, 4, 6, 8, 10, 12]);
+                const answer = a * h / 2;
+                return {
+                    signature: "ar-basic", tag: "基础应用", level: "★ 入门",
+                    prompt: `一个三角形的底是 <em>${a} 厘米</em>，这条底上的高是 <em>${h} 厘米</em>。它的面积是多少平方厘米？`,
+                    known: [labelValue("底", a, "厘米"), labelValue("对应的高", h, "厘米"), "求面积"],
+                    answer, unit: "平方厘米",
+                    formula: "三角形面积 S = 底 × 高 ÷ 2",
+                    hint: "两个完全一样的三角形能拼成一个平行四边形，所以三角形是它的<b>一半</b>，最后要 ÷ 2。",
+                    steps: [`依据：S = 底 × 高 ÷ 2。`, `代入：${a} × ${h} ÷ 2。`, `先算：${a} × ${h} = ${a * h}。`, `再除以 2：${a * h} ÷ 2 = ${nstr(answer)}（平方厘米）。`, `答：面积是 ${nstr(answer)} 平方厘米。`],
+                    tip: "易错提醒：最后一定要 <b>÷ 2</b>，这是最常漏的一步；面积单位是“平方厘米”。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 厘米`, height: `高 ${h} 厘米` }
+                };
+            },
+            () => {
+                const h = randInt(3, 9), a = randInt(5, 13);
+                const side = h + randInt(1, 4);
+                const answer = a * h / 2;
+                return {
+                    signature: "ar-trap-side", tag: "易错辨析", level: "★★ 进阶",
+                    prompt: `一个三角形的底是 <em>${a} 分米</em>，底上的高是 <em>${h} 分米</em>，另一条边长 <em>${side} 分米</em>。它的面积是多少平方分米？`,
+                    known: [labelValue("底", a, "分米"), labelValue("高", h, "分米"), labelValue("另一条边", side, "分米"), "求面积"],
+                    answer, unit: "平方分米",
+                    formula: "S = 底 × <b>对应的高</b> ÷ 2（不是底 × 另一条边）",
+                    hint: `题目给了三个数，其中 ${side} 分米这条边是<b>多余条件</b>，面积只用底和它对应的高。`,
+                    steps: [`辨认：面积公式里乘的是<b>高</b>，不是别的边。`, `代入：${a} × ${h} ÷ 2。`, `计算：${a * h} ÷ 2 = ${nstr(answer)}（平方分米）。`, `如果错用另一条边：${a} × ${side} ÷ 2 = ${nstr(a * side / 2)}，结果偏大，是错的。`, `答：面积是 ${nstr(answer)} 平方分米。`],
+                    tip: "易错提醒：题目里常故意多给一条边的长度，要认准<b>与底对应的高</b>。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 分米`, height: `高 ${h} 分米`, side: `${side} 分米`, showWrong: true }
+                };
+            },
+            () => {
+                const c1 = randInt(4, 12), c2 = pick([4, 6, 8, 10]);
+                const answer = c1 * c2 / 2;
+                return {
+                    signature: "ar-right", tag: "直角三角形", level: "★★ 进阶",
+                    prompt: `一个直角三角形的两条<em>直角边</em>分别是 <em>${c1} 厘米</em>和 <em>${c2} 厘米</em>。它的面积是多少平方厘米？`,
+                    known: [labelValue("直角边", c1, "厘米"), labelValue("直角边", c2, "厘米"), "求面积"],
+                    answer, unit: "平方厘米",
+                    formula: "直角三角形：两条直角边<b>互为底和高</b>，S = 直角边 × 直角边 ÷ 2",
+                    hint: "两条直角边互相垂直，一条当底时另一条正好就是高，不用再另找高。",
+                    steps: [`直角三角形的两条直角边互相垂直，所以互为底和高。`, `代入：${c1} × ${c2} ÷ 2。`, `计算：${c1 * c2} ÷ 2 = ${nstr(answer)}（平方厘米）。`, `答：面积是 ${nstr(answer)} 平方厘米。`],
+                    tip: "易错提醒：不要用<b>斜边</b>去乘，斜边不是这一组的底或高。",
+                    diagram: { kind: "tri", shape: "right", base: `${c1} 厘米`, height: `${c2} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(6, 14), h = pick([4, 6, 8, 10]);
+                const area = a * h / 2;
+                const price = pick([15, 20, 25, 30, 40]);
+                const answer = area * price;
+                return {
+                    signature: "ar-life", tag: "生活情境", level: "★★★ 挑战",
+                    prompt: `一块三角形的花圃，底 <em>${a} 米</em>、高 <em>${h} 米</em>。每平方米种花要 <em>${price} 元</em>，种满这块花圃一共要多少元？`,
+                    known: [labelValue("底", a, "米"), labelValue("高", h, "米"), labelValue("单价", price, "元/平方米"), "求总价"],
+                    answer, unit: "元",
+                    formula: "先求面积 S = 底 × 高 ÷ 2，再算总价 = 面积 × 单价",
+                    hint: "两步走：第一步求出花圃面积（别忘了 ÷ 2），第二步用面积乘每平方米的价钱。",
+                    steps: [`先求面积：${a} × ${h} ÷ 2 = ${nstr(area)}（平方米）。`, `再求总价：${nstr(area)} × ${price}。`, `计算：${nstr(area)} × ${price} = ${answer}（元）。`, `答：一共要 ${answer} 元。`],
+                    tip: "易错提醒：最后一步问的是钱，单位是“元”；中间求面积时不要漏掉 ÷ 2。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 米`, height: `高 ${h} 米`, area: `每平方米 ${price} 元` }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = pick([4, 6, 8]);
+                const tri = a * h / 2;
+                const answer = a * h;
+                return {
+                    signature: "ar-vs-para", tag: "两步计算", level: "★★ 进阶",
+                    prompt: `一个三角形的底是 <em>${a} 米</em>、高是 <em>${h} 米</em>。有一个平行四边形与它<em>等底等高</em>，这个平行四边形的面积是多少平方米？`,
+                    known: [labelValue("底", a, "米"), labelValue("高", h, "米"), "平行四边形与它等底等高"],
+                    answer, unit: "平方米",
+                    formula: "S平行四边形 = 底 × 高 = S△ × 2",
+                    hint: "平行四边形的面积公式<b>不用 ÷ 2</b>，正好是等底等高三角形的 2 倍。",
+                    steps: [`三角形面积：${a} × ${h} ÷ 2 = ${nstr(tri)}（平方米）。`, `等底等高时，平行四边形是三角形的<b>2 倍</b>。`, `平行四边形面积：${a} × ${h} = ${answer}（平方米）。`, `答：平行四边形的面积是 ${answer} 平方米。`],
+                    tip: "易错提醒：三角形要 ÷ 2，平行四边形<b>不要</b> ÷ 2，两个公式别混。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 米`, height: `高 ${h} 米`, withPara: true }
+                };
+            }
+        ];
+        return Object.assign({ topic: "area", type: "numeric" }, pick(makers)());
+    }
+
+    /* ---- 反求底和高 ---- */
+    function makeReverseProblem() {
+        const makers = [
+            () => {
+                const a = randInt(4, 14), h = pick([4, 6, 8, 10]);
+                const area = a * h / 2;
+                return {
+                    signature: "rv-height", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个三角形的面积是 <em>${nstr(area)} 平方厘米</em>，底是 <em>${a} 厘米</em>。这条底上的高是多少厘米？`,
+                    known: [labelValue("面积", area, "平方厘米"), labelValue("底", a, "厘米"), "反求高"],
+                    answer: h, unit: "厘米",
+                    formula: "高 = 面积 × 2 ÷ 底",
+                    hint: "由 S = 底 × 高 ÷ 2 反推：先把面积<b>乘 2</b>，还原成“底 × 高”，再除以底。",
+                    steps: [`关系：S = 底 × 高 ÷ 2。`, `先还原：底 × 高 = S × 2 = ${nstr(area)} × 2 = ${a * h}。`, `再求高：${a * h} ÷ ${a} = ${h}（厘米）。`, `验算：${a} × ${h} ÷ 2 = ${nstr(area)}（平方厘米）✓`, `答：高是 ${h} 厘米。`],
+                    tip: "易错提醒：最常见的错是直接用面积 ÷ 底，<b>忘了先乘 2</b>。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 厘米`, height: "高 ?", area: `面积 ${nstr(area)} 平方厘米` }
+                };
+            },
+            () => {
+                const a = randInt(5, 15), h = pick([4, 6, 8, 10]);
+                const area = a * h / 2;
+                return {
+                    signature: "rv-base", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一块三角形广告牌的面积是 <em>${nstr(area)} 平方米</em>，高是 <em>${h} 米</em>。它的底是多少米？`,
+                    known: [labelValue("面积", area, "平方米"), labelValue("高", h, "米"), "反求底"],
+                    answer: a, unit: "米",
+                    formula: "底 = 面积 × 2 ÷ 高",
+                    hint: "同样先把面积<b>乘 2</b>还原成“底 × 高”，再除以高。",
+                    steps: [`关系：S = 底 × 高 ÷ 2。`, `先还原：底 × 高 = ${nstr(area)} × 2 = ${a * h}。`, `再求底：${a * h} ÷ ${h} = ${a}（米）。`, `验算：${a} × ${h} ÷ 2 = ${nstr(area)}（平方米）✓`, `答：底是 ${a} 米。`],
+                    tip: "易错提醒：结果是长度，单位用“米”，不是“平方米”。",
+                    diagram: { kind: "tri", shape: "acute", base: "底 ?", height: `高 ${h} 米`, area: `面积 ${nstr(area)} 平方米` }
+                };
+            },
+            () => {
+                // 同一个三角形的两组底高
+                let a1, h1, twice, cand;
+                do {
+                    a1 = randInt(6, 12); h1 = pick([4, 6, 8, 10]); twice = a1 * h1;
+                    cand = [];
+                    for (let a2 = 3; a2 <= 24; a2++) if (a2 !== a1 && twice % a2 === 0 && twice / a2 <= 24) cand.push(a2);
+                } while (!cand.length);
+                const a2 = pick(cand), h2 = twice / a2;
+                return {
+                    signature: "rv-two-pairs", tag: "两组底高", level: "★★★ 挑战",
+                    prompt: `一个三角形，一条底是 <em>${a1} 厘米</em>，这条底上的高是 <em>${h1} 厘米</em>。另一条底是 <em>${a2} 厘米</em>，这条底上的高是多少厘米？`,
+                    known: [labelValue("底①", a1, "厘米"), labelValue("高①", h1, "厘米"), labelValue("底②", a2, "厘米"), "求高②"],
+                    answer: h2, unit: "厘米",
+                    formula: "同一个三角形：底① × 高① = 底② × 高② = 面积 × 2",
+                    hint: "同一个图形只有一个面积。先用第一组底和高求出面积，再反求第二条底上的高。",
+                    steps: [`先求面积：${a1} × ${h1} ÷ 2 = ${nstr(a1 * h1 / 2)}（平方厘米）。`, `依据：另一组底和高算出的面积也是这个数。`, `还原：底② × 高② = ${nstr(a1 * h1 / 2)} × 2 = ${twice}。`, `反求：高② = ${twice} ÷ ${a2} = ${nstr(h2)}（厘米）。`, `答：另一条底上的高是 ${nstr(h2)} 厘米。`],
+                    tip: "易错提醒：底大的那条对应的高就小，两组底高不能交叉相乘。",
+                    diagram: { kind: "tri", shape: "acute", base: `底① ${a1} 厘米`, height: `高① ${h1} 厘米`, side: `底② ${a2} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(4, 10), h = pick([4, 6, 8]);
+                const one = a * h / 2;
+                const n = randInt(3, 8);
+                const total = one * n;
+                return {
+                    signature: "rv-count", tag: "生活情境", level: "★★★ 挑战",
+                    prompt: `用底 <em>${a} 分米</em>、高 <em>${h} 分米</em> 的三角形彩纸拼一幅 <em>${nstr(total)} 平方分米</em> 的图案，需要多少张这样的彩纸？`,
+                    known: [labelValue("每张底", a, "分米"), labelValue("每张高", h, "分米"), labelValue("总面积", total, "平方分米"), "求张数"],
+                    answer: n, unit: "张",
+                    formula: "张数 = 总面积 ÷ 每张面积；每张面积 = 底 × 高 ÷ 2",
+                    hint: "先算出一张彩纸的面积（记得 ÷ 2），再看总面积里有几个这样的面积。",
+                    steps: [`每张面积：${a} × ${h} ÷ 2 = ${nstr(one)}（平方分米）。`, `再求张数：${nstr(total)} ÷ ${nstr(one)}。`, `计算：${nstr(total)} ÷ ${nstr(one)} = ${n}（张）。`, `答：需要 ${n} 张彩纸。`],
+                    tip: "易错提醒：最后问张数，单位是“张”，不带“平方分米”。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 分米`, height: `高 ${h} 分米`, area: `共 ${nstr(total)} 平方分米` }
+                };
+            },
+            () => {
+                const a = randInt(6, 14), h = pick([4, 6, 8, 10]);
+                const para = a * h;
+                return {
+                    signature: "rv-from-para", tag: "与平行四边形", level: "★★★ 挑战",
+                    prompt: `一个平行四边形的面积是 <em>${para} 平方分米</em>，底是 <em>${a} 分米</em>。一个三角形与这个平行四边形<em>等底等高</em>，这个三角形的高是多少分米？`,
+                    known: [labelValue("平行四边形面积", para, "平方分米"), labelValue("底", a, "分米"), "等底等高的三角形求高"],
+                    answer: h, unit: "分米",
+                    formula: "平行四边形：高 = 面积 ÷ 底；等底等高 → 三角形的高与它<b>相同</b>",
+                    hint: "“等高”的意思就是<b>高一样</b>。先求平行四边形的高，这个高就是三角形的高。",
+                    steps: [`先求平行四边形的高：${para} ÷ ${a} = ${h}（分米）。`, `“等底等高”说明三角形的高<b>就是</b>这个高。`, `所以三角形的高也是 ${h} 分米。`, `（顺带：这个三角形的面积是 ${a} × ${h} ÷ 2 = ${nstr(para / 2)} 平方分米，是平行四边形的一半。）`],
+                    tip: "易错提醒：等底等高说的是<b>底和高相同</b>，但<b>面积差 2 倍</b>，别把两者搞混。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 分米`, height: "高 ?", withPara: true, area: `平行四边形 ${para} 平方分米` }
+                };
+            }
+        ];
+        return Object.assign({ topic: "reverse", type: "numeric" }, pick(makers)());
+    }
+
+    /* ---- 等积变形 ---- */
+    function makeTransformProblem() {
+        const makers = [
+            () => {
+                const a = randInt(6, 14), h = pick([4, 6, 8, 10]);
+                const answer = a * h / 2;
+                return {
+                    signature: "tf-equal", tag: "等底等高", level: "★★ 进阶",
+                    prompt: `甲、乙两个三角形的底都是 <em>${a} 厘米</em>，高都是 <em>${h} 厘米</em>，但形状完全不同。乙的面积是多少平方厘米？`,
+                    known: [labelValue("底", a, "厘米"), labelValue("高", h, "厘米"), "甲乙等底等高"],
+                    answer, unit: "平方厘米",
+                    formula: "等底等高的三角形，面积一定相等",
+                    hint: "面积只由<b>底和高</b>决定，顶点滑到哪里都不影响面积。",
+                    steps: [`依据：S = 底 × 高 ÷ 2，与形状是否倾斜无关。`, `甲、乙底相同、高相同，所以面积相等。`, `计算：${a} × ${h} ÷ 2 = ${nstr(answer)}（平方厘米）。`, `答：乙的面积也是 ${nstr(answer)} 平方厘米。`],
+                    tip: "易错提醒：等底等高<b>面积相等</b>，但三条边的长度和周长<b>不一定</b>相等。",
+                    diagram: { kind: "equal", a, h }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = pick([4, 6, 8]);
+                const para = a * h;
+                const answer = para / 2;
+                return {
+                    signature: "tf-half", tag: "与平行四边形", level: "★★ 进阶",
+                    prompt: `一个平行四边形的面积是 <em>${para} 平方米</em>。一个三角形与它<em>等底等高</em>，这个三角形的面积是多少平方米？`,
+                    known: [labelValue("平行四边形面积", para, "平方米"), "三角形与它等底等高", "求三角形面积"],
+                    answer, unit: "平方米",
+                    formula: "S△ = S平行四边形 ÷ 2（等底等高时）",
+                    hint: "两个完全一样的三角形正好拼成这个平行四边形，所以三角形是它的<b>一半</b>。",
+                    steps: [`依据：等底等高时，三角形面积是平行四边形的一半。`, `计算：${para} ÷ 2 = ${nstr(answer)}（平方米）。`, `答：三角形的面积是 ${nstr(answer)} 平方米。`],
+                    tip: "易错提醒：这里不需要知道底和高的具体数值，直接除以 2 就行。",
+                    diagram: { kind: "tri", shape: "acute", withPara: true, area: `平行四边形 ${para} 平方米` }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = pick([4, 6, 8]);
+                const area = a * h / 2;
+                const k = pick([2, 3]);
+                const answer = area * k;
+                return {
+                    signature: "tf-scale", tag: "变化规律", level: "★★★ 挑战",
+                    prompt: `一个三角形的底是 <em>${a} 厘米</em>、高是 <em>${h} 厘米</em>。如果<em>高扩大到原来的 ${k} 倍</em>，底不变，新的面积是多少平方厘米？`,
+                    known: [labelValue("原底", a, "厘米"), labelValue("原高", h, "厘米"), `高扩大到 ${k} 倍`],
+                    answer, unit: "平方厘米",
+                    formula: "S = 底 × 高 ÷ 2；底不变、高扩大 k 倍，面积也扩大 k 倍",
+                    hint: "面积与高成正比，高扩大几倍，面积就扩大几倍。",
+                    steps: [`原面积：${a} × ${h} ÷ 2 = ${nstr(area)}（平方厘米）。`, `新高：${h} × ${k} = ${h * k}（厘米）。`, `新面积：${a} × ${h * k} ÷ 2 = ${nstr(answer)}（平方厘米）。`, `规律：${nstr(answer)} ÷ ${nstr(area)} = ${k}，面积也扩大到 ${k} 倍。`],
+                    tip: `易错提醒：如果底和高<b>同时</b>扩大 ${k} 倍，面积会扩大 ${k} × ${k} = ${k * k} 倍。`,
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 厘米`, height: `高 ${h} → ${h * k}` }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = pick([4, 6, 8, 12]);
+                const area = a * h / 2;
+                const a2 = pick([a * 2, a / 2].filter(x => Number.isInteger(x) && x >= 2 && x <= 30));
+                const h2 = area * 2 / a2;
+                return {
+                    signature: "tf-inverse", tag: "变化规律", level: "★★★ 挑战",
+                    prompt: `两个三角形的<em>面积相等</em>。甲的底是 <em>${a} 分米</em>、高是 <em>${h} 分米</em>；乙的底是 <em>${a2} 分米</em>。乙的高是多少分米？`,
+                    known: [labelValue("甲的底", a, "分米"), labelValue("甲的高", h, "分米"), labelValue("乙的底", a2, "分米"), "两者面积相等"],
+                    answer: h2, unit: "分米",
+                    formula: "面积相等 → 底 × 高 的积相等：a₁ × h₁ = a₂ × h₂",
+                    hint: "面积相等说明“底 × 高”相等。底变大，高就要按<b>相同的倍数</b>变小。",
+                    steps: [`甲的面积：${a} × ${h} ÷ 2 = ${nstr(area)}（平方分米）。`, `乙的面积也是 ${nstr(area)}，所以 ${a2} × 乙的高 ÷ 2 = ${nstr(area)}。`, `还原：${a2} × 乙的高 = ${nstr(area * 2)}。`, `求高：${nstr(area * 2)} ÷ ${a2} = ${nstr(h2)}（分米）。`, `答：乙的高是 ${nstr(h2)} 分米。`],
+                    tip: "易错提醒：底和高是<b>反过来</b>变的——底扩大几倍，高就缩小到几分之一。",
+                    diagram: { kind: "equal", a, h, note: "面积相等，形状不同" }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = pick([4, 6, 8]);
+                const para = a * h;
+                const answer = para / 2;
+                return {
+                    signature: "tf-diag", tag: "分割图形", level: "★★ 进阶",
+                    prompt: `一个平行四边形的底是 <em>${a} 厘米</em>、高是 <em>${h} 厘米</em>。沿一条<em>对角线</em>把它剪成两个三角形，<em>每个</em>三角形的面积是多少平方厘米？`,
+                    known: [labelValue("底", a, "厘米"), labelValue("高", h, "厘米"), "沿对角线剪开", "求一个三角形的面积"],
+                    answer, unit: "平方厘米",
+                    formula: "S平行四边形 = a × h；对角线把它分成两个<b>完全一样</b>的三角形",
+                    hint: "一条对角线把平行四边形分成两个能<b>完全重合</b>的三角形，所以是平均分。",
+                    steps: [`先求平行四边形面积：${a} × ${h} = ${para}（平方厘米）。`, `对角线把它分成两个完全一样的三角形。`, `每个三角形：${para} ÷ 2 = ${nstr(answer)}（平方厘米）。`, `验证：这个三角形底 ${a}、高 ${h}，${a} × ${h} ÷ 2 = ${nstr(answer)} ✓`],
+                    tip: "易错提醒：两个三角形完全相同，所以直接除以 2；这也正好说明了三角形面积公式为什么要 ÷ 2。",
+                    diagram: { kind: "tri", shape: "acute", base: `底 ${a} 厘米`, height: `高 ${h} 厘米`, withPara: true, diag: true }
+                };
+            }
+        ];
+        return Object.assign({ topic: "transform", type: "numeric" }, pick(makers)());
+    }
+
+    const practiceMakers = {
+        concept: makeConceptProblem, sides: makeSidesProblem, angle: makeAngleProblem,
+        area: makeAreaProblem, reverse: makeReverseProblem, transform: makeTransformProblem
+    };
+    const practiceTopicKeys = Object.keys(practiceMakers);
+
+    let practiceSelected = "mixed";
+    let practiceQuestion = null;
+    let practiceLastSignature = "";
+    let practiceCompleted = 0, practiceScore = 0, practiceStreak = 0;
+    let practiceResolved = false, practiceWrongAttempted = false;
+
+    function renderPracticeFormula(topic) {
+        const f = topicFormulas[topic];
+        const prefix = practiceSelected === "mixed" ? `本题 · ${topicNames[topic]}` : topicNames[topic];
+        $("practiceFormulaDeck").innerHTML = `
+            <div class="formula-card">
+                <span class="formula-label">${prefix} · 主要依据</span>
+                <strong>${f.main}</strong>
+                <small>${f.mainNote}</small>
+            </div>
+            <div class="formula-card area-formula">
+                <span class="formula-label">${prefix} · 相关结论</span>
+                <strong>${f.second}</strong>
+                <small>${f.secondNote}</small>
+            </div>
+            <div class="formula-card reverse-formula">
+                <span class="formula-label">↩ 要点提醒</span>
+                <strong>${f.reverse}</strong>
+                <small>先想清楚题目求的是<b>角度</b>、<b>边长</b>还是<b>面积</b>，再决定用哪条公式；三角形面积别忘了 <b>÷ 2</b>。</small>
+            </div>`;
+    }
+
+    function svgLabel(svg, x, y, str, attrs) {
+        const isUnknown = String(str).includes("?");
+        svg.appendChild(text(x, y, str, Object.assign({
+            fill: isUnknown ? "#7c3aed" : "#4338ca", "font-size": 13, "font-weight": 900
+        }, attrs || {})));
+    }
+
+    const practiceShapes = {
+        acute:       { A: [200, 66], B: [66, 232], C: [356, 232] },
+        right:       { A: [96, 66],  B: [96, 232], C: [356, 232] },
+        obtuse:      { A: [330, 72], B: [60, 232], C: [210, 232] },
+        isosceles:   { A: [210, 60], B: [86, 232], C: [334, 232] },
+        equilateral: { A: [210, 62], B: [125, 232], C: [295, 232] }
+    };
+
+    function renderPracticeDiagram(q) {
+        const svg = $("practiceSvg"), d = q.diagram || {};
+        clear(svg);
+        for (let x = 20; x <= 400; x += 20) svg.appendChild(line(x, 18, x, 280, { stroke: "#eef1f8", "stroke-width": 1 }));
+        for (let y = 20; y <= 280; y += 20) svg.appendChild(line(20, y, 400, y, { stroke: "#eef1f8", "stroke-width": 1 }));
+
+        const kind = d.kind || "tri";
+
+        if (kind === "notTri") {
+            const g = (ox) => [[ox + 52, 82], [ox + 8, 176], [ox + 116, 176]];
+            const t1 = g(24), t2 = g(154), t3 = g(272);
+            svg.appendChild(poly(t1, { fill: C.fill, stroke: C.stroke, "stroke-width": 3.5 }));
+            svgLabel(svg, t1[0][0] + 6, 200, "✓ 围成", { fill: "#047857" });
+            svg.appendChild(el("polyline", { points: `${t2[0].join(",")} ${t2[1].join(",")} ${t2[2][0] - 30},${t2[2][1]}`, fill: "none", stroke: C.wrong, "stroke-width": 3.5, "stroke-linejoin": "round" }));
+            svg.appendChild(line(t2[0][0], t2[0][1], t2[2][0], t2[2][1], { stroke: C.wrong, "stroke-width": 3.5 }));
+            svgLabel(svg, t2[0][0] + 6, 200, "✗ 有缺口", { fill: "#b91c1c" });
+            svg.appendChild(el("polyline", { points: `${t3[0].join(",")} ${t3[1].join(",")} ${t3[2].join(",")} ${t3[0][0] + 8},${t3[0][1] - 20}`, fill: "none", stroke: C.wrong, "stroke-width": 3.5, "stroke-linejoin": "round" }));
+            svgLabel(svg, t3[0][0] + 6, 200, "✗ 出头", { fill: "#b91c1c" });
+            svgLabel(svg, 210, 46, "“围成”≠“组成”", { fill: "#64748b" });
+            return;
+        }
+
+        if (kind === "stable") {
+            svg.appendChild(poly([[110, 70], [50, 200], [180, 200]], { fill: "rgba(16,185,129,.16)", stroke: C.ok, "stroke-width": 4 }));
+            svgLabel(svg, 115, 228, "三角形：稳定", { fill: "#047857" });
+            svg.appendChild(poly([[240, 200], [350, 200], [390, 90], [280, 90]], { fill: "rgba(239,68,68,.12)", stroke: C.wrong, "stroke-width": 4 }));
+            svgLabel(svg, 315, 228, "平行四边形：易变形", { fill: "#b91c1c" });
+            svgLabel(svg, 210, 46, "需要牢固用三角形，需要伸缩用平行四边形", { fill: "#64748b", "font-size": 11.5 });
+            return;
+        }
+
+        if (kind === "sticks") {
+            const v = d.vals || [3, 4, 5], U = 26;
+            const cols = ["#4f46e5", "#0d9488", "#f59e0b"];
+            v.forEach((x, i) => {
+                const y = 70 + i * 26, x0 = 210 - x * U / 2;
+                svg.appendChild(line(x0, y, x0 + x * U, y, { stroke: cols[i], "stroke-width": 8, "stroke-linecap": "round" }));
+                svgLabel(svg, x0 - 20, y + 5, String(x), { fill: cols[i] });
+            });
+            const s = v.slice().sort((p, q2) => p - q2);
+            svg.appendChild(poly([[210, 160], [130, 250], [290, 250]], { fill: "rgba(16,185,129,.16)", stroke: C.ok, "stroke-width": 3.5 }));
+            svgLabel(svg, 210, 46, `${s[0]} + ${s[1]} = ${s[0] + s[1]} > ${s[2]} ✓`, { fill: "#047857" });
+            return;
+        }
+
+        if (kind === "range") {
+            const a = Math.max(d.a, d.b), b = Math.min(d.a, d.b);
+            const lo = a - b, hi = a + b;
+            const X = v => 40 + 340 * v / Math.max(24, hi + 2);
+            svg.appendChild(line(40, 170, 390, 170, { stroke: "#94a3b8", "stroke-width": 2 }));
+            svg.appendChild(el("rect", { x: X(lo), y: 156, width: X(hi) - X(lo), height: 14, fill: "rgba(16,185,129,.25)" }));
+            [lo, hi].forEach(v => {
+                svg.appendChild(line(X(v), 146, X(v), 180, { stroke: "#dc2626", "stroke-width": 2.5 }));
+                svg.appendChild(el("circle", { cx: X(v), cy: 170, r: 5, fill: "#fff", stroke: "#dc2626", "stroke-width": 2.5 }));
+                svgLabel(svg, X(v), 200, String(v), { fill: "#dc2626" });
+            });
+            svgLabel(svg, 210, 60, `已知两边：${d.a} 和 ${d.b}`);
+            svgLabel(svg, 210, 90, `${lo} < 第三边 < ${hi}`, { fill: "#7c3aed", "font-size": 16 });
+            svgLabel(svg, 210, 122, d.ask === "max" ? "求最大的整数值" : (d.ask === "min" ? "求最小的整数值" : "求有多少种整数取值"), { fill: "#64748b" });
+            svgLabel(svg, 210, 232, "两个端点都取不到（空心圆）", { fill: "#64748b", "font-size": 11.5 });
+            return;
+        }
+
+        if (kind === "angle") {
+            const A = [200, 70], B = [70, 232], Cp = [350, 232];
+            svg.appendChild(poly([A, B, Cp], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+            if (d.right) {
+                svg.appendChild(rightAngle(B, [1, 0], [0, -1], 15, "#dc2626"));
+                svgLabel(svg, 108, 200, "90°", { fill: "#dc2626" });
+                angleArc(svg, Cp, A, B, `${d.b}°`, "#0d9488", 30);
+                angleArc(svg, A, B, Cp, "?", "#7c3aed", 30);
+            } else {
+                angleArc(svg, B, Cp, A, `∠1 ${d.a}°`, "#4f46e5", 30);
+                angleArc(svg, Cp, A, B, `∠2 ${d.b}°`, "#0d9488", 30);
+                angleArc(svg, A, B, Cp, "∠3 = ?", "#7c3aed", 30);
+            }
+            svgLabel(svg, 210, 268, "内角和 = 180°", { fill: "#64748b" });
+            return;
+        }
+
+        if (kind === "split") {
+            const A = [200, 66], B = [60, 232], Cp = [360, 232];
+            const M = [215, 232];
+            svg.appendChild(poly([A, B, M], { fill: "rgba(79,70,229,.20)", stroke: C.stroke, "stroke-width": 3 }));
+            svg.appendChild(poly([A, M, Cp], { fill: "rgba(13,148,136,.20)", stroke: "#0d9488", "stroke-width": 3 }));
+            svg.appendChild(line(A[0], A[1], M[0], M[1], { stroke: "#dc2626", "stroke-width": 3, "stroke-dasharray": "7 5" }));
+            svgLabel(svg, 130, 190, "180°", { fill: "#4338ca", "font-size": 15 });
+            svgLabel(svg, 290, 190, "180°", { fill: "#0f766e", "font-size": 15 });
+            svgLabel(svg, 210, 46, "剪成两个小三角形", { fill: "#64748b" });
+            svgLabel(svg, 210, 266, "每个还是三角形 → 内角和还是 180°", { fill: "#64748b", "font-size": 11.5 });
+            return;
+        }
+
+        if (kind === "equal") {
+            const y0 = 236, h = 110;
+            svg.appendChild(line(40, y0 - h, 390, y0 - h, { stroke: "#cbd5e1", "stroke-width": 1.8, "stroke-dasharray": "7 5" }));
+            svg.appendChild(poly([[130, y0 - h], [60, y0], [220, y0]], { fill: "rgba(79,70,229,.22)", stroke: C.stroke, "stroke-width": 3 }));
+            svg.appendChild(poly([[330, y0 - h], [200, y0], [360, y0]], { fill: "rgba(13,148,136,.22)", stroke: "#0d9488", "stroke-width": 3 }));
+            svgLabel(svg, 140, y0 + 22, "甲", { fill: "#4338ca", "font-size": 14 });
+            svgLabel(svg, 280, y0 + 22, "乙", { fill: "#0f766e", "font-size": 14 });
+            svgLabel(svg, 210, 46, d.note || "等底等高 → 面积相等", { fill: "#64748b" });
+            svgLabel(svg, 210, 70, `底 ${d.a}，高 ${d.h}`, { fill: "#4338ca" });
+            svgLabel(svg, 210, y0 - h - 12, "顶点在同一条平行线上 → 高相同", { fill: "#94a3b8", "font-size": 11 });
+            return;
+        }
+
+        // 默认：单个三角形
+        const S = practiceShapes[d.shape || "acute"];
+        const A = S.A, B = S.B, Cp = S.C;
+
+        if (d.withPara) {
+            const D = [A[0] + (Cp[0] - B[0]), A[1]];
+            svg.appendChild(poly([B, Cp, D, A], { fill: "rgba(245,158,11,.12)", stroke: "#f59e0b", "stroke-width": 3, "stroke-dasharray": "8 5" }));
+        }
+        svg.appendChild(poly([A, B, Cp], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+
+        if (d.shape === "right") svg.appendChild(rightAngle(B, [1, 0], [0, -1], 15, "#dc2626"));
+        if (d.shape === "isosceles" || d.shape === "equilateral") {
+            const marks = d.shape === "equilateral" ? [[A, B], [A, Cp], [B, Cp]] : [[A, B], [A, Cp]];
+            marks.forEach(([p, q2]) => {
+                const mx = (p[0] + q2[0]) / 2, my = (p[1] + q2[1]) / 2;
+                const ang = Math.atan2(q2[1] - p[1], q2[0] - p[0]) * 180 / Math.PI;
+                svg.appendChild(el("line", { x1: mx, y1: my - 6, x2: mx, y2: my + 6, stroke: C.stroke, "stroke-width": 2.5, transform: `rotate(${ang} ${mx} ${my})` }));
+            });
+        }
+        if (d.diag) {
+            const D = [A[0] + (Cp[0] - B[0]), A[1]];
+            svg.appendChild(line(A[0], A[1], Cp[0], Cp[1], { stroke: "#0d9488", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+        }
+        if (d.height || d.showHeightOut) {
+            const { pt: F } = footOf(A, B, Cp);
+            const out = F[0] < Math.min(B[0], Cp[0]) - 1 || F[0] > Math.max(B[0], Cp[0]) + 1;
+            if (out) {
+                svg.appendChild(line(Cp[0], Cp[1], F[0], F[1], { stroke: "#94a3b8", "stroke-width": 2, "stroke-dasharray": "6 5" }));
+            }
+            svg.appendChild(line(A[0], A[1], F[0], F[1], { stroke: C.height, "stroke-width": 2.5, "stroke-dasharray": "6 5" }));
+            svg.appendChild(rightAngle(F, [1, 0], [0, -1], 12, C.height));
+            if (d.height) svgLabel(svg, A[0] + 34, (A[1] + F[1]) / 2, d.height, { fill: C.height });
+            if (d.showHeightOut) svgLabel(svg, F[0] + 6, F[1] + 24, "高在图形外", { fill: C.height, "font-size": 11.5 });
+        }
+        if (d.showWrong && d.side) {
+            svg.appendChild(line(A[0], A[1], Cp[0], Cp[1], { stroke: C.wrong, "stroke-width": 4 }));
+        }
+        if (d.base) svgLabel(svg, (B[0] + Cp[0]) / 2, 256, d.base);
+        if (d.side) svgLabel(svg, (A[0] + Cp[0]) / 2 + 44, (A[1] + Cp[1]) / 2, d.side, { fill: d.showWrong ? C.wrong : "#4338ca" });
+        if (d.perimeter) svgLabel(svg, 210, 44, d.perimeter, { fill: "#7c3aed" });
+        if (d.area) svgLabel(svg, 210, d.withPara ? 44 : 190, d.area, { fill: "#b45309" });
+        if (d.note) svgLabel(svg, 210, 44, d.note, { fill: "#64748b" });
+    }
+
+    function updatePracticeStats() {
+        const current = Math.min(practiceCompleted + 1, 10);
+        $("practiceProgressText").textContent = practiceCompleted >= 10 ? "本轮已完成" : `第 ${current} / 10 题`;
+        $("practiceScore").textContent = practiceScore;
+        $("practiceStreak").textContent = practiceStreak;
+        $("practiceProgressBar").style.width = `${Math.min(100, practiceCompleted * 10)}%`;
+    }
+
+    function createPracticeProblem(forcedTopic) {
+        const topic = forcedTopic || (practiceSelected === "mixed" ? pick(practiceTopicKeys) : practiceSelected);
+        let q = practiceMakers[topic]();
+        let guard = 0;
+        while (q.signature === practiceLastSignature && guard++ < 8) q = practiceMakers[topic]();
+        practiceLastSignature = q.signature;
+        return q;
+    }
+
+    function renderChoices(q) {
+        const box = $("practiceChoices");
+        box.innerHTML = "";
+        q._order = shuffle(q.choices.map((_, i) => i));
+        q._order.forEach((idx, pos) => {
+            const b = document.createElement("button");
+            b.className = "choice-btn";
+            b.innerHTML = `${"ABCD"[pos]}. ${q.choices[idx].t}`;
+            b.addEventListener("click", () => {
+                if (practiceResolved) return;
+                const right = q.choices[idx].ok;
+                box.querySelectorAll(".choice-btn").forEach(x => x.classList.remove("picked"));
+                b.classList.add("picked");
+                if (right) {
+                    b.classList.add("right");
+                    resolvePractice(true, false);
+                } else {
+                    b.classList.add("wrong");
+                    practiceWrongAttempted = true;
+                    practiceStreak = 0;
+                    updatePracticeStats();
+                    showPracticeFeedback("try", `这个选项不对。${q.hint} 再想一想，选别的试试。`);
+                }
+            });
+            box.appendChild(b);
+        });
+    }
+
+    function markRightChoice() {
+        const q = practiceQuestion;
+        if (q.type !== "choice") return;
+        const btns = $("practiceChoices").querySelectorAll(".choice-btn");
+        q._order.forEach((idx, pos) => {
+            if (q.choices[idx].ok) btns[pos].classList.add("right");
+        });
+    }
+
+    function loadPracticeProblem(forcedTopic) {
+        practiceQuestion = createPracticeProblem(forcedTopic);
+        const q = practiceQuestion;
+        practiceResolved = false;
+        practiceWrongAttempted = false;
+        renderPracticeFormula(q.topic);
+        $("practiceTopicName").textContent = topicNames[q.topic];
+        $("practiceTag").textContent = q.tag;
+        $("practiceLevel").textContent = q.level;
+        $("practicePrompt").innerHTML = q.prompt;
+        $("practiceKnown").innerHTML = q.known.map(k => `<span class="known-item">${k}</span>`).join("");
+
+        const isChoice = q.type === "choice";
+        $("practiceNumericArea").hidden = isChoice;
+        $("practiceChoiceArea").hidden = !isChoice;
+        if (isChoice) {
+            renderChoices(q);
+        } else {
+            $("practiceUnit").textContent = q.unit;
+            $("practiceAnswer").value = "";
+            $("practiceAnswer").disabled = false;
+            $("practiceSubmit").hidden = false;
+        }
+        $("practiceNext").hidden = true;
+        $("practiceHint").hidden = false;
+        $("practiceReveal").hidden = false;
+        $("practiceRefresh").hidden = false;
+        $("practiceFeedback").hidden = true;
+        $("practiceSolution").hidden = true;
+        $("practiceVisualNote").textContent = q.note || "示意图不一定按实际比例绘制，请以题目给出的数据为准。紫色虚线表示高或待求量。";
+        renderPracticeDiagram(q);
+        updatePracticeStats();
+        if (!isChoice) setTimeout(() => $("practiceAnswer").focus({ preventScroll: true }), 0);
+    }
+
+    function showPracticeFeedback(kind, html) {
+        const box = $("practiceFeedback");
+        box.className = `feedback ${kind}`;
+        box.innerHTML = html;
+        box.hidden = false;
+    }
+
+    function showPracticeSolution() {
+        const q = practiceQuestion;
+        $("practiceBasis").innerHTML = `解题依据：${q.formula}`;
+        $("practiceSteps").innerHTML = q.steps.map((s, i) => `<li><i>${i + 1}</i>${s}</li>`).join("");
+        $("practiceMistake").innerHTML = q.tip;
+        $("practiceSolution").hidden = false;
+    }
+
+    function answerText(q) {
+        return q.type === "choice"
+            ? q.choices.find(c => c.ok).t
+            : `${nstr(q.answer)} ${q.unit}`;
+    }
+
+    function resolvePractice(correct, byReveal) {
+        if (practiceResolved) return;
+        practiceResolved = true;
+        practiceCompleted++;
+        if (correct) {
+            practiceScore++;
+            practiceStreak = practiceWrongAttempted ? 0 : practiceStreak + 1;
+        } else {
+            practiceStreak = 0;
+        }
+        const q = practiceQuestion;
+        if (q.type === "choice") markRightChoice();
+        else {
+            $("practiceAnswer").disabled = true;
+            $("practiceSubmit").hidden = true;
+        }
+        $("practiceNext").hidden = false;
+        $("practiceNext").textContent = practiceCompleted >= 10 ? "再练一轮 ↻" : "下一题 →";
+        $("practiceHint").hidden = true;
+        $("practiceReveal").hidden = true;
+        $("practiceRefresh").hidden = true;
+        showPracticeSolution();
+        const roundText = practiceCompleted >= 10 ? ` 本轮完成：答对 ${practiceScore} / 10 题。` : "";
+        if (correct) {
+            showPracticeFeedback("good", `✓ 答对了！答案是 <b>${answerText(q)}</b>。${roundText}`);
+        } else if (byReveal) {
+            showPracticeFeedback("hint", `已展开完整解析，正确答案是 <b>${answerText(q)}</b>。先对照每一步，再做下一题。${roundText}`);
+        }
+        updatePracticeStats();
+    }
+
+    function submitPracticeAnswer() {
+        if (practiceResolved || practiceQuestion.type === "choice") return;
+        const raw = $("practiceAnswer").value.trim();
+        if (!raw) {
+            showPracticeFeedback("try", "先填入一个数值答案，再点“检查答案”。单位已经写在输入框右侧，不用重复输入。");
+            return;
+        }
+        const value = Number(raw);
+        if (!Number.isFinite(value)) {
+            showPracticeFeedback("try", "请输入有效的数字。");
+            return;
+        }
+        if (Math.abs(value - practiceQuestion.answer) <= 0.01) {
+            resolvePractice(true, false);
+        } else {
+            practiceWrongAttempted = true;
+            practiceStreak = 0;
+            updatePracticeStats();
+            const direction = value > practiceQuestion.answer ? "偏大" : "偏小";
+            showPracticeFeedback("try", `还差一点，这个结果<b>${direction}</b>。${practiceQuestion.hint} 可以修改后再试。`);
+        }
+    }
+
+    function nextPracticeProblem() {
+        if (practiceCompleted >= 10) {
+            practiceCompleted = 0; practiceScore = 0; practiceStreak = 0; practiceLastSignature = "";
+        }
+        loadPracticeProblem();
+    }
+
+    function startPracticeRound() {
+        practiceCompleted = 0; practiceScore = 0; practiceStreak = 0; practiceLastSignature = "";
+        loadPracticeProblem();
+    }
+
+    $("practiceTopicPicker").querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            practiceSelected = btn.dataset.topic;
+            $("practiceTopicPicker").querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+            startPracticeRound();
+        });
+    });
+    $("practiceSubmit").addEventListener("click", submitPracticeAnswer);
+    $("practiceNext").addEventListener("click", nextPracticeProblem);
+    $("practiceHint").addEventListener("click", () => showPracticeFeedback("hint", `提示：${practiceQuestion.hint}<br>可用依据：<b>${practiceQuestion.formula}</b>`));
+    $("practiceReveal").addEventListener("click", () => resolvePractice(false, true));
+    $("practiceRefresh").addEventListener("click", () => loadPracticeProblem(practiceQuestion.topic));
+    $("practiceAnswer").addEventListener("keydown", e => {
+        if (e.key === "Enter") practiceResolved ? nextPracticeProblem() : submitPracticeAnswer();
+    });
+    startPracticeRound();
+
+    /* ============================================================
+       标签切换
+       ============================================================ */
+    function activateTabView(viewName) {
+        const target = document.querySelector(`.tab[data-view="${viewName}"]`);
+        if (!target) return;
+        document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === target));
+        document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + viewName));
+    }
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            activateTabView(btn.dataset.view);
+            history.replaceState(null, "", "#" + btn.dataset.view);
+        });
+    });
+    const initialView = location.hash.slice(1);
+    if (initialView) activateTabView(initialView);
+    </script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

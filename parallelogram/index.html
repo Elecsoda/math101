@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平行四边形系统学习 | Math101</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --line: #dbe4ef;
+            --blue: #2563eb;
+            --indigo: #4f46e5;
+            --purple: #7c3aed;
+            --amber: #f59e0b;
+            --green: #10b981;
+            --teal: #0d9488;
+            --red: #ef4444;
+            --shadow: 0 18px 45px rgba(15, 23, 42, .10);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #e0e7ff 0, transparent 32rem), var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+        .page { width: 100%; max-width: 1080px; margin: 0 auto; padding: 24px; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand > div:last-child { min-width: 0; }
+        .brand-icon {
+            width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+            background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff;
+            box-shadow: 0 12px 24px rgba(79, 70, 229, .28); font-size: 22px; font-weight: 950;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); }
+        .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+        .btn {
+            border: 1px solid var(--line); background: #fff; color: var(--text);
+            border-radius: 10px; padding: 10px 14px; font-weight: 800;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, .06); text-decoration: none; white-space: nowrap;
+        }
+        .btn:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .btn.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+        .btn.primary:hover { color: #fff; filter: brightness(1.06); }
+        .btn.small { padding: 7px 11px; font-size: 13px; }
+        .card {
+            background: rgba(255,255,255,.96); border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 18px; box-shadow: var(--shadow);
+        }
+        .panel { padding: 22px; }
+        .tabs {
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+            margin-bottom: 18px; padding: 6px; border: 1px solid var(--line);
+            border-radius: 16px; background: #fff;
+        }
+        .tab {
+            border: 0; border-radius: 12px; padding: 12px 6px; color: var(--muted);
+            background: transparent; font-weight: 950; text-align: center; line-height: 1.25; font-size: 14px;
+        }
+        .tab small { display: block; font-weight: 750; font-size: 11px; margin-top: 3px; opacity: .82; }
+        .tab.active { background: var(--indigo); color: #fff; box-shadow: 0 8px 18px rgba(79,70,229,.26); }
+        .view { display: none; animation: fade .22s ease; }
+        .view.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+        h2 { margin: 0 0 4px; font-size: 20px; }
+        h3.blk { margin: 18px 0 8px; font-size: 16px; color: #4338ca; }
+        .lead { color: var(--muted); font-size: 14px; margin: 0 0 16px; line-height: 1.6; }
+        .lead b { color: var(--indigo); }
+        code { background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-weight: 850; }
+
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; align-items: center; }
+        .chip { padding: 8px 13px; border-radius: 999px; background: #f1f5f9; color: #334155; font-weight: 850;
+            border: 1px solid transparent; font-size: 13px; }
+        .chip:hover { border-color: #c7d2fe; color: var(--indigo); }
+        .chip.active { background: var(--indigo); color: #fff; }
+
+        .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex-wrap: wrap; }
+        .seg button { border: 0; background: #fff; padding: 8px 14px; font-weight: 850; color: var(--muted); font-size: 13px; border-right: 1px solid var(--line); }
+        .seg button:last-child { border-right: 0; }
+        .seg button.active { background: var(--indigo); color: #fff; }
+
+        .stage {
+            position: relative; border-radius: 16px; border: 1px solid var(--line);
+            background: linear-gradient(180deg,#fdfdff,#eef1fb); padding: 14px; text-align: center;
+            overflow-x: auto;
+        }
+        svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .readout { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+        .stat-pill { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px; padding: 8px 16px;
+            font-weight: 850; font-size: 14px; color: #3730a3; }
+        .stat-pill b { color: var(--indigo); font-size: 18px; }
+        .stat-pill.area { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+        .stat-pill.area b { color: #d97706; }
+        .stat-pill.warn { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .stat-pill.warn b { color: #dc2626; }
+
+        .hintbox { border: 1px solid #c7d2fe; background: #eef2ff; border-radius: 14px; padding: 12px 16px;
+            line-height: 1.7; font-size: 14px; margin-top: 14px; color: #312e81; }
+        .hintbox b { color: var(--indigo); }
+        .hintbox .formula { display: inline-block; background: #fff; border: 1px solid #c7d2fe; border-radius: 8px;
+            padding: 2px 10px; font-weight: 900; color: #4338ca; margin: 2px 0; }
+        .hintbox ul { margin: 8px 0 0; padding-left: 20px; }
+        .hintbox li { margin: 4px 0; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 6px 0 14px; }
+        .control { display: flex; align-items: center; gap: 8px; font-weight: 850; font-size: 13px; color: #334155; }
+        .control input[type=range] { accent-color: var(--indigo); width: 130px; }
+        .control .val { display: inline-block; min-width: 30px; text-align: center; color: var(--indigo); font-weight: 950; font-size: 15px; }
+
+        .toggle-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+        .tgl { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 13px;
+            font-weight: 850; font-size: 13px; color: var(--muted); }
+        .tgl.on { background: #e0e7ff; border-color: #a5b4fc; color: #4338ca; }
+
+        .step-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 12px; }
+        .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        [hidden] { display: none !important; }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 10px; font-size: 13px; color: var(--muted); font-weight: 800; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+        /* 属性清单 */
+        .prop-list { display: grid; gap: 9px; margin: 12px 0 0; }
+        .prop-item { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 12px;
+            border: 1px solid var(--line); background: #fff; font-size: 13.5px; line-height: 1.6; }
+        .prop-item .ico { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center;
+            background: #e0e7ff; color: #4338ca; font-weight: 950; font-size: 12px; }
+        .prop-item.on { border-color: #a5b4fc; background: #f5f3ff; }
+        .prop-item b { color: #4338ca; }
+
+        /* 关系图（集合） */
+        .rel-note { display: grid; gap: 8px; margin-top: 12px; }
+        .rel-row { padding: 10px 13px; border-radius: 11px; font-size: 13.5px; line-height: 1.6; border: 1px solid var(--line); background: #fff; }
+        .rel-row b { color: #4338ca; }
+        .rel-row.yes { border-color: #a7f3d0; background: #ecfdf5; }
+        .rel-row.yes b { color: #047857; }
+        .rel-row.no { border-color: #fed7aa; background: #fff7ed; }
+        .rel-row.no b { color: #c2410c; }
+
+        /* 判断题 */
+        .judge-box { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: #fff; }
+        .judge-q { font-size: clamp(15px,2.4vw,17px); font-weight: 850; line-height: 1.7; margin: 0 0 12px; color: #1e293b; }
+        .judge-q em { color: var(--indigo); font-style: normal; }
+        .judge-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+        /* 练习区 */
+        .practice-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 16px; }
+        .practice-round { min-width: 190px; padding: 12px 14px; border: 1px solid #c7d2fe; background: #eef2ff; border-radius: 14px; }
+        .practice-round-line { display: flex; justify-content: space-between; gap: 12px; color: #475569; font-size: 12px; font-weight: 850; }
+        .practice-round-line b { color: #4338ca; font-size: 16px; }
+        .progress-track { height: 7px; border-radius: 999px; background: #dbeafe; overflow: hidden; margin-top: 9px; }
+        .progress-track i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#6366f1,#a855f7); border-radius: inherit; transition: width .25s ease; }
+
+        .topic-picker { display: grid; grid-template-columns: repeat(6, minmax(84px, 1fr)); gap: 8px; margin-bottom: 14px; }
+        .topic-choice { border: 1px solid var(--line); background: #fff; border-radius: 13px; min-height: 54px; padding: 8px 6px; color: #475569; font-weight: 900; font-size: 13px; }
+        .topic-choice:hover { border-color: #a5b4fc; color: #4338ca; }
+        .topic-choice.active { border-color: var(--indigo); background: #eef2ff; color: #4338ca; box-shadow: inset 0 0 0 1px var(--indigo); }
+        .topic-choice span { display: block; color: #94a3b8; font-size: 10px; font-weight: 750; margin-top: 2px; }
+        .topic-choice.active span { color: #4338ca; }
+
+        .formula-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .formula-deck > *, .practice-grid > *, .practice-head > * { min-width: 0; }
+        .formula-card { border-radius: 14px; padding: 12px 14px; border: 1px solid #c7d2fe; background: #eef2ff; }
+        .formula-card.area-formula { border-color: #fde68a; background: #fffbeb; }
+        .formula-card .formula-label { color: #64748b; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+        .formula-card strong { display: block; margin: 3px 0 2px; color: #4338ca; font-size: clamp(17px,2.8vw,22px); overflow-wrap: anywhere; }
+        .formula-card.area-formula strong { color: #b45309; }
+        .formula-card small { color: #64748b; line-height: 1.45; }
+        .formula-card.reverse-formula { grid-column: 1 / -1; border-color: #c4b5fd; background: #faf5ff; }
+        .formula-card.reverse-formula strong { color: #6d28d9; font-size: 15px; line-height: 1.55; }
+
+        .practice-grid { display: grid; grid-template-columns: minmax(290px,.85fr) minmax(360px,1.15fr); gap: 14px; align-items: stretch; }
+        .practice-visual, .question-box { border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+        .practice-visual { display: flex; flex-direction: column; min-height: 390px; background: linear-gradient(180deg,#fbfbff,#f1f5f9); }
+        .visual-title { display: flex; justify-content: space-between; gap: 10px; padding: 14px 16px 0; color: #64748b; font-size: 12px; font-weight: 850; }
+        .visual-title b { color: #4338ca; }
+        #practiceSvg { width: 100%; flex: 1; min-height: 270px; }
+        .visual-note { margin: 0 14px 14px; padding: 9px 11px; border-radius: 10px; background: #fff; color: #64748b; font-size: 12px; line-height: 1.55; border: 1px dashed #cbd5e1; }
+
+        .question-box { padding: 18px; }
+        .q-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .q-tag { padding: 5px 10px; border-radius: 999px; color: #4338ca; background: #e0e7ff; font-size: 12px; font-weight: 900; }
+        .q-level { color: #94a3b8; font-size: 12px; font-weight: 800; }
+        .q-prompt { margin: 0; color: #1e293b; font-size: clamp(17px,2.5vw,20px); line-height: 1.7; font-weight: 800; }
+        .q-prompt em { color: var(--indigo); font-style: normal; }
+        .known-box { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 0; }
+        .known-item { max-width: 100%; overflow-wrap: anywhere; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; border-radius: 9px; padding: 6px 9px; font-size: 12px; font-weight: 800; }
+
+        .answer-label { color: #334155; font-size: 13px; font-weight: 900; display: block; margin: 14px 0 7px; }
+        .answer-line { display: flex; align-items: stretch; gap: 8px; }
+        .answer-input-wrap { flex: 1; display: flex; align-items: center; border: 2px solid #cbd5e1; background: #fff; border-radius: 11px; overflow: hidden; transition: border-color .18s; }
+        .answer-input-wrap:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,.10); }
+        .answer-input-wrap input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 11px 12px; font-weight: 900; font-size: 17px; }
+        .answer-unit { padding: 0 11px; color: #64748b; font-size: 12px; font-weight: 850; border-left: 1px solid #e2e8f0; }
+        .answer-line .btn { box-shadow: none; }
+        .choice-list { display: grid; gap: 8px; margin-top: 4px; }
+        .choice-btn { text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 11px; padding: 11px 13px;
+            font-weight: 850; font-size: 14px; color: #334155; line-height: 1.55; }
+        .choice-btn:hover { border-color: #a5b4fc; color: #4338ca; }
+        .choice-btn.picked { border-color: var(--indigo); background: #eef2ff; color: #4338ca; }
+        .choice-btn.right { border-color: #6ee7b7; background: #ecfdf5; color: #047857; }
+        .choice-btn.wrong { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+        .question-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .question-actions .btn { box-shadow: none; }
+        .feedback { margin-top: 11px; border-radius: 11px; padding: 10px 12px; font-size: 13px; font-weight: 800; line-height: 1.55; }
+        .feedback.good { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .feedback.try { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .feedback.hint { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+        .solution-box { margin-top: 14px; border-radius: 14px; border: 1px solid #c4b5fd; background: #faf5ff; overflow: hidden; }
+        .solution-title { padding: 11px 14px; color: #6d28d9; font-weight: 950; border-bottom: 1px solid #ddd6fe; background: #f5f3ff; }
+        .basis-line { margin: 12px 13px 0; padding: 9px 11px; border-radius: 9px; background: #fff; color: #5b21b6; font-weight: 900; font-size: 14px; }
+        .solution-steps { list-style: none; margin: 10px 13px 12px; padding: 0; display: grid; gap: 8px; }
+        .solution-steps li { position: relative; padding: 9px 10px 9px 40px; background: rgba(255,255,255,.8); border-radius: 9px; color: #475569; line-height: 1.55; font-size: 13px; }
+        .solution-steps li i { position: absolute; left: 10px; top: 9px; width: 21px; height: 21px; display: grid; place-items: center; border-radius: 50%; background: #8b5cf6; color: #fff; font-style: normal; font-size: 11px; font-weight: 950; }
+        .mistake-tip { margin: 0 13px 13px; padding: 8px 10px; color: #9a3412; background: #fff7ed; border-radius: 9px; font-size: 12px; line-height: 1.55; }
+
+        @media (max-width: 720px) {
+            .tabs { grid-template-columns: repeat(3, 1fr); }
+            .topbar { display: block; }
+            .topbar .btn { display: inline-flex; margin-top: 14px; }
+            .twocol { grid-template-columns: 1fr; }
+            .practice-head { display: block; }
+            .practice-round { margin-top: 12px; }
+            .topic-picker { grid-template-columns: repeat(3, 1fr); }
+            .formula-deck, .practice-grid { grid-template-columns: 1fr; }
+            .formula-card.reverse-formula { grid-column: 1; }
+            .practice-visual { min-height: 330px; }
+            .answer-line { flex-wrap: wrap; }
+            .answer-input-wrap { flex-basis: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-icon">▰</div>
+                <div>
+                    <h1>平行四边形系统学习</h1>
+                    <p class="sub">从认识特征、画高、不稳定性、图形关系，到面积公式推导与等积变形（小学四至五年级）</p>
+                </div>
+            </div>
+            <a class="btn" href="../">返回首页</a>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-view="know">1 认识<small>定义·特征</small></button>
+            <button class="tab" data-view="height">2 底和高<small>画高·对应</small></button>
+            <button class="tab" data-view="stable">3 易变形<small>不稳定性</small></button>
+            <button class="tab" data-view="relation">4 图形关系<small>与长方形等</small></button>
+            <button class="tab" data-view="area">5 面积推导<small>割补法</small></button>
+            <button class="tab" data-view="practice">6 综合练习<small>六类题型</small></button>
+        </div>
+
+        <!-- ============ Tab1 认识平行四边形 ============ -->
+        <section class="card view active" id="view-know">
+            <div class="panel">
+                <h2>1 · 什么是平行四边形</h2>
+                <p class="lead">两组对边分别<b>平行</b>的四边形，叫做平行四边形。拖动滑块改变它的形状，观察哪些性质<b>始终不变</b>。</p>
+
+                <div class="controls">
+                    <label class="control">邻边夹角
+                        <input type="range" id="knowAngle" min="25" max="90" value="60" step="1">
+                        <span class="val" id="knowAngleVal">60</span>°
+                    </label>
+                    <label class="control">底 a
+                        <input type="range" id="knowBase" min="4" max="10" value="8" step="1">
+                        <span class="val" id="knowBaseVal">8</span>
+                    </label>
+                    <label class="control">邻边 b
+                        <input type="range" id="knowSide" min="3" max="8" value="5" step="1">
+                        <span class="val" id="knowSideVal">5</span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <button class="tgl on" id="tglSide">对边相等</button>
+                    <button class="tgl on" id="tglAngle">对角相等</button>
+                    <button class="tgl" id="tglAdj">邻角互补</button>
+                    <button class="tgl" id="tglDiag">对角线互相平分</button>
+                    <button class="tgl" id="tglArrow">平行标记</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="knowSvg" viewBox="0 0 620 340" width="620" height="340" role="img" aria-label="平行四边形特征演示"></svg>
+                </div>
+
+                <div class="readout">
+                    <div class="stat-pill">周长 C = <b id="knowPeri">26</b></div>
+                    <div class="stat-pill">∠A = ∠C = <b id="knowA">60</b>°</div>
+                    <div class="stat-pill">∠B = ∠D = <b id="knowB">120</b>°</div>
+                    <div class="stat-pill">内角和 = <b>360</b>°</div>
+                </div>
+
+                <div class="prop-list" id="knowProps"></div>
+
+                <div class="hintbox">
+                    <b>要点小结</b>
+                    <ul>
+                        <li><b>定义：</b>两组对边分别平行的四边形是平行四边形，记作 <code>▱ABCD</code>。</li>
+                        <li><b>对边：</b>两组对边分别平行，而且<b>分别相等</b>（AB = CD，AD = BC）。</li>
+                        <li><b>对角：</b>两组对角分别相等（∠A = ∠C，∠B = ∠D）。</li>
+                        <li><b>邻角：</b>相邻两角<b>互补</b>，和是 180°；四个内角和是 360°。</li>
+                        <li><b>对角线：</b>两条对角线<b>互相平分</b>（交点是各自的中点），并把它分成 4 个面积相等的三角形。</li>
+                        <li><b>周长：</b>C =（a + b）× 2，其中 a、b 是<b>相邻</b>的两条边。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab2 底和高 ============ -->
+        <section class="card view" id="view-height">
+            <div class="panel">
+                <h2>2 · 认识底和高：高一定要和底“垂直”</h2>
+                <p class="lead">从平行四边形<b>一条边上的任意一点</b>，向<b>对边</b>作垂线，这点和垂足之间的线段叫做平行四边形的<b>高</b>，这条对边叫做它的<b>底</b>。一个平行四边形有<b>无数条高</b>，但只有<b>两组不同长度</b>的高。</p>
+
+                <div class="chip-row">
+                    <span class="control" style="margin-right:4px">选择底边：</span>
+                    <button class="chip active" data-hbase="bottom">以 BC（下底）为底</button>
+                    <button class="chip" data-hbase="left">以 AB（左边）为底</button>
+                </div>
+
+                <div class="controls">
+                    <label class="control">垂足位置
+                        <input type="range" id="hFoot" min="0" max="100" value="35" step="1">
+                        <span class="val" id="hFootVal">35</span>%
+                    </label>
+                    <label class="control">倾斜程度
+                        <input type="range" id="hSlant" min="25" max="90" value="55" step="1">
+                        <span class="val" id="hSlantVal">55</span>°
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <button class="tgl" id="tglAllHeight">显示多条高（无数条）</button>
+                    <button class="tgl" id="tglOutside">高画在图形外面</button>
+                    <button class="tgl on" id="tglWrongH">对比：斜边不是高</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="heightSvg" viewBox="0 0 620 340" width="620" height="340" role="img" aria-label="平行四边形的底和高"></svg>
+                </div>
+
+                <div class="readout">
+                    <div class="stat-pill">当前底 = <b id="hBaseLen">8</b></div>
+                    <div class="stat-pill area">对应高 = <b id="hHeightLen">4.1</b></div>
+                    <div class="stat-pill warn">斜边（不是高）= <b id="hSlantLen">5</b></div>
+                </div>
+
+                <div class="hintbox">
+                    <b>画高三步法</b>
+                    <ul>
+                        <li><b>①定底：</b>先确定以哪条边为底，高必须画到<b>它的对边</b>上。</li>
+                        <li><b>②过点作垂线：</b>用三角尺的直角边贴住底边，从对边上一点向底边画垂线。</li>
+                        <li><b>③标直角、写“高”：</b>在垂足处画上直角符号 <code>⌐</code>，虚线表示高。</li>
+                        <li><b>易错：</b>斜边比高长，<b>斜边不是高</b>；底和高必须是<b>互相对应</b>的一组，不能一个用底、一个用另一条边上的高。</li>
+                        <li><b>钝角平行四边形</b>中，高可能落在图形<b>外面</b>，这时要把底边<b>延长</b>再作垂线。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab3 不稳定性 ============ -->
+        <section class="card view" id="view-stable">
+            <div class="panel">
+                <h2>3 · 平行四边形容易变形（不稳定性）</h2>
+                <p class="lead">用 4 根木条钉成的平行四边形，一拉就<b>变形</b>；三角形却拉不动。这是因为三角形<b>三条边确定后形状唯一</b>，具有<b>稳定性</b>。</p>
+
+                <div class="controls">
+                    <label class="control">拉动框架
+                        <input type="range" id="stableAngle" min="20" max="90" value="90" step="1">
+                        <span class="val" id="stableAngleVal">90</span>°
+                    </label>
+                    <button class="btn small primary" id="stableAnim">自动拉动 ▶</button>
+                    <button class="btn small" id="stableReset">复位</button>
+                </div>
+
+                <div class="toggle-row">
+                    <button class="tgl" id="tglBrace">加一根斜杆（变成三角形）</button>
+                </div>
+
+                <div class="stage">
+                    <svg id="stableSvg" viewBox="0 0 620 320" width="620" height="320" role="img" aria-label="平行四边形不稳定性演示"></svg>
+                </div>
+
+                <div class="readout">
+                    <div class="stat-pill">四条边长 <b id="stableSides">不变</b></div>
+                    <div class="stat-pill">周长 <b id="stablePeri">28</b>（不变）</div>
+                    <div class="stat-pill area">面积 <b id="stableArea">40</b>（变小了！）</div>
+                </div>
+
+                <div class="hintbox">
+                    <b>想一想</b>
+                    <ul>
+                        <li>拉动时四条边的长度<b>没有变</b>，所以<b>周长不变</b>；但高变小了，<b>面积变小</b>。</li>
+                        <li>这说明：<b>周长相等的平行四边形，面积不一定相等</b>。</li>
+                        <li>生活应用：伸缩门、升降晾衣架、活动衣架利用了平行四边形<b>容易变形</b>的特点；</li>
+                        <li>自行车三角架、房梁、篮球架支撑杆利用了三角形的<b>稳定性</b>。加一根斜杆，就把平行四边形分成两个三角形，框架就稳固了。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab4 图形关系 ============ -->
+        <section class="card view" id="view-relation">
+            <div class="panel">
+                <h2>4 · 平行四边形与其他四边形的关系</h2>
+                <p class="lead">长方形和正方形都是<b>特殊的平行四边形</b>；梯形<b>只有一组对边平行</b>，不是平行四边形。点击下面的图形，看它们之间的包含关系。</p>
+
+                <div class="chip-row" id="relPicker">
+                    <button class="chip active" data-rel="para">一般平行四边形</button>
+                    <button class="chip" data-rel="rect">长方形</button>
+                    <button class="chip" data-rel="rhombus">菱形</button>
+                    <button class="chip" data-rel="square">正方形</button>
+                    <button class="chip" data-rel="trap">梯形</button>
+                </div>
+
+                <div class="twocol">
+                    <div class="stage">
+                        <svg id="relShapeSvg" viewBox="0 0 320 260" width="320" height="260" role="img" aria-label="当前图形"></svg>
+                    </div>
+                    <div class="stage">
+                        <svg id="relSetSvg" viewBox="0 0 340 260" width="340" height="260" role="img" aria-label="四边形关系集合图"></svg>
+                    </div>
+                </div>
+
+                <div class="rel-note" id="relNote"></div>
+
+                <div class="hintbox">
+                    <b>关系小结</b>
+                    <ul>
+                        <li>四边形 ⊃ 平行四边形 ⊃ 长方形 ⊃ 正方形；菱形也是平行四边形，<b>正方形既是长方形又是菱形</b>。</li>
+                        <li><b>长方形</b>是四个角都是直角的平行四边形；<b>菱形</b>是四条边都相等的平行四边形；<b>正方形</b>两者都满足。</li>
+                        <li><b>梯形</b>只有<b>一组</b>对边平行，另一组不平行，所以梯形<b>不是</b>平行四边形。</li>
+                        <li>常见判断：“平行四边形一定是长方形” <b>✗</b>；“长方形一定是平行四边形” <b>✓</b>。</li>
+                    </ul>
+                </div>
+
+                <h3 class="blk">判一判（点击选择）</h3>
+                <div class="judge-box">
+                    <p class="judge-q" id="judgeQ">加载中…</p>
+                    <div class="judge-actions">
+                        <button class="btn primary" id="judgeYes">✓ 对</button>
+                        <button class="btn" id="judgeNo">✗ 错</button>
+                        <button class="btn small" id="judgeNext" hidden>下一题 →</button>
+                    </div>
+                    <div class="feedback" id="judgeFeedback" hidden></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab5 面积推导 ============ -->
+        <section class="card view" id="view-area">
+            <div class="panel">
+                <h2>5 · 面积公式的推导：割补成长方形</h2>
+                <p class="lead">沿着<b>一条高</b>把平行四边形剪开，把三角形<b>平移</b>到另一边，就拼成一个<b>长方形</b>。面积没有变，于是得到 <b>S = 底 × 高</b>。</p>
+
+                <div class="chip-row">
+                    <span class="control" style="margin-right:4px">方式：</span>
+                    <button class="chip active" data-mode="cut">割补法（剪拼）</button>
+                    <button class="chip" data-mode="grid">数方格法</button>
+                    <button class="chip" data-mode="equal">等底等高</button>
+                </div>
+
+                <!-- 割补 -->
+                <div id="areaCutBox">
+                    <div class="controls">
+                        <label class="control">底 a
+                            <input type="range" id="cutBase" min="4" max="10" value="7" step="1">
+                            <span class="val" id="cutBaseVal">7</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="cutHeight" min="2" max="7" value="4" step="1">
+                            <span class="val" id="cutHeightVal">4</span>
+                        </label>
+                        <label class="control">剪拼进度
+                            <input type="range" id="cutProg" min="0" max="100" value="0" step="1">
+                            <span class="val" id="cutProgVal">0</span>%
+                        </label>
+                        <button class="btn small primary" id="cutAnim">演示剪拼 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="cutSvg" viewBox="0 0 620 320" width="620" height="320" role="img" aria-label="割补法推导面积"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">底 = <b id="cutBaseOut">7</b></div>
+                        <div class="stat-pill">高 = <b id="cutHeightOut">4</b></div>
+                        <div class="stat-pill area">面积 = 7 × 4 = <b id="cutAreaOut">28</b></div>
+                    </div>
+                    <div class="hintbox" id="cutStepText"></div>
+                </div>
+
+                <!-- 数方格 -->
+                <div id="areaGridBox" hidden>
+                    <div class="controls">
+                        <label class="control">底 a
+                            <input type="range" id="gridBase" min="3" max="9" value="6" step="1">
+                            <span class="val" id="gridBaseVal">6</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="gridHeight" min="2" max="6" value="4" step="1">
+                            <span class="val" id="gridHeightVal">4</span>
+                        </label>
+                        <button class="btn small primary" id="gridMerge">合并半格 ▶</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="gridSvg" viewBox="0 0 620 320" width="620" height="320" role="img" aria-label="数方格法求面积"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">整格 <b id="gridFull">0</b> 个</div>
+                        <div class="stat-pill">半格 <b id="gridHalf">0</b> 个（凑成 <span id="gridHalfPair">0</span> 整格）</div>
+                        <div class="stat-pill area">共 <b id="gridTotal">24</b> 格 = 底 × 高</div>
+                    </div>
+                    <div class="hintbox">
+                        <b>数方格法：</b>不满一格的按<b>半格</b>算，左右两个半格正好<b>拼成一整格</b>。数出的总格数，正好等于 <span class="formula">底 × 高</span>。这与割补法的结论完全一致。
+                    </div>
+                </div>
+
+                <!-- 等底等高 -->
+                <div id="areaEqualBox" hidden>
+                    <div class="controls">
+                        <label class="control">顶边滑动
+                            <input type="range" id="eqShear" min="-70" max="70" value="0" step="1">
+                            <span class="val" id="eqShearVal">0</span>
+                        </label>
+                        <label class="control">底 a
+                            <input type="range" id="eqBase" min="4" max="9" value="7" step="1">
+                            <span class="val" id="eqBaseVal">7</span>
+                        </label>
+                        <label class="control">高 h
+                            <input type="range" id="eqHeight" min="2" max="6" value="4" step="1">
+                            <span class="val" id="eqHeightVal">4</span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <button class="tgl on" id="tglEqTri">同时显示等底等高的三角形</button>
+                    </div>
+                    <div class="stage">
+                        <svg id="eqSvg" viewBox="0 0 620 320" width="620" height="320" role="img" aria-label="等底等高演示"></svg>
+                    </div>
+                    <div class="readout">
+                        <div class="stat-pill">底 = <b id="eqBaseOut">7</b></div>
+                        <div class="stat-pill">高 = <b id="eqHeightOut">4</b></div>
+                        <div class="stat-pill area">平行四边形 S = <b id="eqAreaOut">28</b></div>
+                        <div class="stat-pill">三角形 S = <b id="eqTriOut">14</b></div>
+                    </div>
+                    <div class="hintbox">
+                        <b>等底等高结论</b>
+                        <ul>
+                            <li>顶边左右滑动时，<b>底和高都没变</b>，所以<b>面积不变</b>（周长却变了）。</li>
+                            <li><b>等底等高的平行四边形，面积一定相等</b>；但面积相等的平行四边形，形状不一定相同。</li>
+                            <li>等底等高时，<b>三角形面积 = 平行四边形面积 ÷ 2</b>，即 S△ = a × h ÷ 2。</li>
+                            <li>一条对角线把平行四边形分成<b>两个完全一样</b>的三角形，每个是它的一半。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ Tab6 综合练习 ============ -->
+        <section class="card view" id="view-practice">
+            <div class="panel">
+                <div class="practice-head">
+                    <div>
+                        <h2>6 · 平行四边形综合练习</h2>
+                        <p class="lead" style="margin-bottom:0">按知识点分类练习：概念判断、周长、面积正算、反求底与高、等积变形、生活情境。</p>
+                    </div>
+                    <div class="practice-round">
+                        <div class="practice-round-line"><span id="practiceProgressText">第 1 / 10 题</span></div>
+                        <div class="practice-round-line" style="margin-top:6px"><span>答对 <b id="practiceScore">0</b></span><span>连对 <b id="practiceStreak">0</b></span></div>
+                        <div class="progress-track"><i id="practiceProgressBar"></i></div>
+                    </div>
+                </div>
+
+                <div class="topic-picker" id="practiceTopicPicker">
+                    <button class="topic-choice active" data-topic="mixed">综合<span>全部混合</span></button>
+                    <button class="topic-choice" data-topic="concept">概念<span>特征判断</span></button>
+                    <button class="topic-choice" data-topic="perimeter">周长<span>(a+b)×2</span></button>
+                    <button class="topic-choice" data-topic="area">面积<span>a×h</span></button>
+                    <button class="topic-choice" data-topic="reverse">反求<span>求底/求高</span></button>
+                    <button class="topic-choice" data-topic="transform">等积<span>等底等高</span></button>
+                </div>
+
+                <div class="formula-deck" id="practiceFormulaDeck"></div>
+
+                <div class="practice-grid">
+                    <div class="practice-visual">
+                        <div class="visual-title"><span>示意图</span><b id="practiceTopicName">平行四边形</b></div>
+                        <svg id="practiceSvg" viewBox="0 0 420 300" role="img" aria-label="题目示意图"></svg>
+                        <div class="visual-note" id="practiceVisualNote"></div>
+                    </div>
+
+                    <div class="question-box">
+                        <div class="q-meta">
+                            <span class="q-tag" id="practiceTag">基础应用</span>
+                            <span class="q-level" id="practiceLevel">★ 入门</span>
+                        </div>
+                        <p class="q-prompt" id="practicePrompt">加载中…</p>
+                        <div class="known-box" id="practiceKnown"></div>
+
+                        <div id="practiceNumericArea">
+                            <label class="answer-label" for="practiceAnswer">你的答案</label>
+                            <div class="answer-line">
+                                <div class="answer-input-wrap">
+                                    <input id="practiceAnswer" type="text" inputmode="decimal" autocomplete="off" placeholder="填写数值">
+                                    <span class="answer-unit" id="practiceUnit">厘米</span>
+                                </div>
+                                <button class="btn primary" id="practiceSubmit">检查答案</button>
+                            </div>
+                        </div>
+
+                        <div id="practiceChoiceArea" hidden>
+                            <label class="answer-label">选择正确的说法</label>
+                            <div class="choice-list" id="practiceChoices"></div>
+                        </div>
+
+                        <div class="question-actions">
+                            <button class="btn small" id="practiceHint">看提示</button>
+                            <button class="btn small" id="practiceReveal">看解析</button>
+                            <button class="btn small" id="practiceRefresh">换一题</button>
+                            <button class="btn small primary" id="practiceNext" hidden>下一题 →</button>
+                        </div>
+
+                        <div class="feedback" id="practiceFeedback" hidden></div>
+
+                        <div class="solution-box" id="practiceSolution" hidden>
+                            <div class="solution-title">解题过程</div>
+                            <div class="basis-line" id="practiceBasis"></div>
+                            <ol class="solution-steps" id="practiceSteps"></ol>
+                            <div class="mistake-tip" id="practiceMistake"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+    const $ = id => document.getElementById(id);
+    const SVGNS = "http://www.w3.org/2000/svg";
+    function el(tag, attrs) {
+        const e = document.createElementNS(SVGNS, tag);
+        for (const k in attrs) e.setAttribute(k, attrs[k]);
+        return e;
+    }
+    function clear(svg) { while (svg.firstChild) svg.removeChild(svg.firstChild); }
+    function num(n) { return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString(); }
+    function text(x, y, str, attrs) {
+        const t = el("text", Object.assign({ x, y, "text-anchor": "middle", "font-family": "Segoe UI, Microsoft YaHei, sans-serif" }, attrs || {}));
+        t.textContent = str;
+        return t;
+    }
+    function poly(pts, attrs) {
+        return el("polygon", Object.assign({ points: pts.map(p => p.join(",")).join(" "), "stroke-linejoin": "round" }, attrs || {}));
+    }
+    function line(x1, y1, x2, y2, attrs) { return el("line", Object.assign({ x1, y1, x2, y2 }, attrs || {})); }
+    /** 在垂足 f 处画直角符号，u 为底边方向单位向量，v 为高方向单位向量 */
+    function rightAngle(f, u, v, size, color) {
+        const s = size || 13;
+        const p1 = [f[0] + u[0] * s, f[1] + u[1] * s];
+        const p2 = [p1[0] + v[0] * s, p1[1] + v[1] * s];
+        const p3 = [f[0] + v[0] * s, f[1] + v[1] * s];
+        return el("polyline", {
+            points: [p1, p2, p3].map(p => p.join(",")).join(" "),
+            fill: "none", stroke: color || "#7c3aed", "stroke-width": 2
+        });
+    }
+    function toggle(btn, onChange) {
+        btn.addEventListener("click", () => { btn.classList.toggle("on"); onChange(btn.classList.contains("on")); });
+    }
+    const C = { stroke: "#4f46e5", fill: "rgba(99,102,241,.13)", height: "#7c3aed", wrong: "#ef4444", grid: "#e5e9f5" };
+
+    /* ============================================================
+       Tab 1 · 认识平行四边形
+       ============================================================ */
+    const knowState = { angle: 60, base: 8, side: 5, showSide: true, showAngle: true, showAdj: false, showDiag: false, showArrow: false };
+
+    function knowGeometry() {
+        const U = 34;                                   // 每单位像素
+        const rad = knowState.angle * Math.PI / 180;
+        const a = knowState.base * U, b = knowState.side * U;
+        const dx = b * Math.cos(rad), dy = b * Math.sin(rad);
+        // A 左上，B 左下，C 右下，D 右上（沿逆时针视觉排布）
+        const w = a + dx, h = dy;
+        const ox = (620 - w) / 2, oy = 45 + (250 - h) / 2;
+        const B = [ox, oy + h], Cp = [ox + a, oy + h], D = [ox + a + dx, oy], A = [ox + dx, oy];
+        return { A, B, C: Cp, D, a, b, dx, dy, U };
+    }
+
+    function drawKnow() {
+        const svg = $("knowSvg");
+        clear(svg);
+        const g = knowGeometry();
+        const { A, B, C: Cp, D } = g;
+        const other = 180 - knowState.angle;
+
+        svg.appendChild(poly([A, D, Cp, B], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+
+        // 对角线互相平分
+        if (knowState.showDiag) {
+            const mid = [(A[0] + Cp[0]) / 2, (A[1] + Cp[1]) / 2];
+            svg.appendChild(line(A[0], A[1], Cp[0], Cp[1], { stroke: "#0d9488", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+            svg.appendChild(line(B[0], B[1], D[0], D[1], { stroke: "#0d9488", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+            svg.appendChild(el("circle", { cx: mid[0], cy: mid[1], r: 5, fill: "#0d9488" }));
+            svg.appendChild(text(mid[0], mid[1] - 12, "O", { fill: "#0f766e", "font-size": 13, "font-weight": 900 }));
+            // 半段等长标记
+            [[A, mid], [mid, Cp], [B, mid], [mid, D]].forEach(([p, q]) => {
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+                svg.appendChild(el("line", {
+                    x1: mx, y1: my - 6, x2: mx, y2: my + 6, stroke: "#0d9488", "stroke-width": 2.5,
+                    transform: `rotate(${ang} ${mx} ${my})`
+                }));
+            });
+        }
+
+        // 对边相等标记（单杠 / 双杠）
+        if (knowState.showSide) {
+            const marks = [[B, Cp, 1], [A, D, 1], [A, B, 2], [D, Cp, 2]];
+            marks.forEach(([p, q, n]) => {
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+                for (let i = 0; i < n; i++) {
+                    const off = (i - (n - 1) / 2) * 7;
+                    svg.appendChild(el("line", {
+                        x1: mx + off, y1: my - 7, x2: mx + off, y2: my + 7,
+                        stroke: C.stroke, "stroke-width": 2.6, transform: `rotate(${ang} ${mx} ${my})`
+                    }));
+                }
+            });
+        }
+
+        // 平行标记（箭头）
+        if (knowState.showArrow) {
+            const arrows = [[B, Cp, 1], [A, D, 1], [B, A, 2], [Cp, D, 2]];
+            arrows.forEach(([p, q, n]) => {
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+                for (let i = 0; i < n; i++) {
+                    const off = i * 8 - 3;
+                    svg.appendChild(el("polyline", {
+                        points: `${mx + off - 5},${my - 6} ${mx + off + 3},${my} ${mx + off - 5},${my + 6}`,
+                        fill: "none", stroke: "#f59e0b", "stroke-width": 2.6,
+                        transform: `rotate(${ang} ${mx} ${my})`
+                    }));
+                }
+            });
+        }
+
+        // 角标注
+        function angleArc(vertex, p1, p2, deg, color, r) {
+            const a1 = Math.atan2(p1[1] - vertex[1], p1[0] - vertex[0]);
+            const a2 = Math.atan2(p2[1] - vertex[1], p2[0] - vertex[0]);
+            let diff = a2 - a1;
+            while (diff <= -Math.PI) diff += 2 * Math.PI;
+            while (diff > Math.PI) diff -= 2 * Math.PI;
+            const rr = r || 30;
+            const s = [vertex[0] + rr * Math.cos(a1), vertex[1] + rr * Math.sin(a1)];
+            const e = [vertex[0] + rr * Math.cos(a2), vertex[1] + rr * Math.sin(a2)];
+            svg.appendChild(el("path", {
+                d: `M ${s[0]} ${s[1]} A ${rr} ${rr} 0 0 ${diff > 0 ? 1 : 0} ${e[0]} ${e[1]}`,
+                fill: "none", stroke: color, "stroke-width": 2.5
+            }));
+            const mid = a1 + diff / 2;
+            svg.appendChild(text(vertex[0] + (rr + 15) * Math.cos(mid), vertex[1] + (rr + 15) * Math.sin(mid) + 4,
+                `${deg}°`, { fill: color, "font-size": 13, "font-weight": 900 }));
+        }
+        if (knowState.showAngle || knowState.showAdj) {
+            angleArc(B, Cp, A, knowState.angle, "#4f46e5");
+            angleArc(D, A, Cp, knowState.angle, "#4f46e5");
+            angleArc(A, B, D, other, "#0d9488", 26);
+            angleArc(Cp, D, B, other, "#0d9488", 26);
+        }
+        if (knowState.showAdj) {
+            svg.appendChild(text(310, 322, `邻角互补：${knowState.angle}° + ${other}° = 180°`,
+                { fill: "#0d9488", "font-size": 14, "font-weight": 900 }));
+        }
+
+        // 顶点字母
+        const labels = [[A, "A", -14, -8], [B, "B", -14, 18], [Cp, "C", 14, 18], [D, "D", 14, -8]];
+        labels.forEach(([p, s, ox2, oy2]) => {
+            svg.appendChild(text(p[0] + ox2, p[1] + oy2, s, { fill: "#312e81", "font-size": 16, "font-weight": 950 }));
+        });
+
+        // 边长标注
+        const bm = [(B[0] + Cp[0]) / 2, B[1] + 24];
+        svg.appendChild(text(bm[0], bm[1], `a = ${knowState.base}`, { fill: C.stroke, "font-size": 14, "font-weight": 900 }));
+        const lm = [(A[0] + B[0]) / 2 - 26, (A[1] + B[1]) / 2 + 5];
+        svg.appendChild(text(lm[0], lm[1], `b = ${knowState.side}`, { fill: C.stroke, "font-size": 14, "font-weight": 900 }));
+
+        $("knowPeri").textContent = (knowState.base + knowState.side) * 2;
+        $("knowA").textContent = knowState.angle;
+        $("knowB").textContent = other;
+        renderKnowProps();
+    }
+
+    function renderKnowProps() {
+        const other = 180 - knowState.angle;
+        const a = knowState.base, b = knowState.side;
+        const items = [
+            { on: knowState.showSide, ico: "边", html: `<b>对边分别相等：</b>AB = CD = ${b}，AD = BC = ${a}。相同的杠数表示相等的边。` },
+            { on: knowState.showAngle, ico: "角", html: `<b>对角分别相等：</b>∠A = ∠C = ${other}°，∠B = ∠D = ${knowState.angle}°。` },
+            { on: knowState.showAdj, ico: "补", html: `<b>邻角互补：</b>${knowState.angle}° + ${other}° = 180°；四个内角和 = 360°。` },
+            { on: knowState.showDiag, ico: "线", html: `<b>对角线互相平分：</b>AO = OC，BO = OD，交点 O 是两条对角线的中点。` },
+            { on: knowState.showArrow, ico: "∥", html: `<b>两组对边分别平行：</b>AB ∥ DC，AD ∥ BC —— 这是平行四边形的<b>定义</b>。` },
+            { on: true, ico: "C", html: `<b>周长：</b>C = (a + b) × 2 = (${a} + ${b}) × 2 = ${(a + b) * 2}。只要相邻两条边，不要把四条边当成都不同。` }
+        ];
+        $("knowProps").innerHTML = items.map(i =>
+            `<div class="prop-item${i.on ? " on" : ""}"><span class="ico">${i.ico}</span><span>${i.html}</span></div>`).join("");
+    }
+
+    ["knowAngle", "knowBase", "knowSide"].forEach(id => {
+        const key = { knowAngle: "angle", knowBase: "base", knowSide: "side" }[id];
+        $(id).addEventListener("input", e => {
+            knowState[key] = +e.target.value;
+            $(id + "Val").textContent = e.target.value;
+            drawKnow();
+        });
+    });
+    toggle($("tglSide"), v => { knowState.showSide = v; drawKnow(); });
+    toggle($("tglAngle"), v => { knowState.showAngle = v; drawKnow(); });
+    toggle($("tglAdj"), v => { knowState.showAdj = v; drawKnow(); });
+    toggle($("tglDiag"), v => { knowState.showDiag = v; drawKnow(); });
+    toggle($("tglArrow"), v => { knowState.showArrow = v; drawKnow(); });
+    drawKnow();
+
+    /* ============================================================
+       Tab 2 · 底和高
+       ============================================================ */
+    const hState = { base: "bottom", foot: 35, slant: 55, all: false, outside: false, wrong: true };
+
+    function drawHeight() {
+        const svg = $("heightSvg");
+        clear(svg);
+        const U = 36, aLen = 8, bLen = 5;
+        const rad = hState.slant * Math.PI / 180;
+        const a = aLen * U, b = bLen * U;
+        const dx = b * Math.cos(rad), dy = b * Math.sin(rad);
+        const ox = (620 - (a + dx)) / 2, oy = 55 + (210 - dy) / 2;
+        const B = [ox, oy + dy], Cp = [ox + a, oy + dy], D = [ox + a + dx, oy], A = [ox + dx, oy];
+
+        svg.appendChild(poly([A, D, Cp, B], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+        [[A, "A", -15, -8], [B, "B", -15, 19], [Cp, "C", 15, 19], [D, "D", 15, -8]].forEach(([p, s, x, y]) => {
+            svg.appendChild(text(p[0] + x, p[1] + y, s, { fill: "#312e81", "font-size": 16, "font-weight": 950 }));
+        });
+
+        const isBottom = hState.base === "bottom";
+        // 底边（起点→终点），以及它的对边
+        const baseP = isBottom ? [B, Cp] : [B, A];
+        const oppP = isBottom ? [A, D] : [Cp, D];
+        const baseLen = isBottom ? aLen : bLen;
+        // 底边方向单位向量
+        const bv = [baseP[1][0] - baseP[0][0], baseP[1][1] - baseP[0][1]];
+        const bl = Math.hypot(bv[0], bv[1]);
+        const u = [bv[0] / bl, bv[1] / bl];
+        // 高的方向：垂直于底，指向底边一侧
+        let nrm = [-u[1], u[0]];
+        const toOpp = [oppP[0][0] - baseP[0][0], oppP[0][1] - baseP[0][1]];
+        if (nrm[0] * toOpp[0] + nrm[1] * toOpp[1] < 0) nrm = [-nrm[0], -nrm[1]];
+        // 高的长度 = 平行四边形面积 / 底
+        const areaPx = Math.abs((Cp[0] - B[0]) * (A[1] - B[1]) - (A[0] - B[0]) * (Cp[1] - B[1]));
+        const hPx = areaPx / bl;
+        const hLen = hPx / U;
+
+        // 底边高亮
+        svg.appendChild(line(baseP[0][0], baseP[0][1], baseP[1][0], baseP[1][1],
+            { stroke: "#f59e0b", "stroke-width": 6, "stroke-linecap": "round", opacity: .85 }));
+
+        function drawOneHeight(t, strong) {
+            // t: 对边上的取点比例 → 垂足 = 该点 - 高向量
+            const top = [oppP[0][0] + (oppP[1][0] - oppP[0][0]) * t, oppP[0][1] + (oppP[1][1] - oppP[0][1]) * t];
+            const foot = [top[0] - nrm[0] * hPx, top[1] - nrm[1] * hPx];
+            svg.appendChild(line(top[0], top[1], foot[0], foot[1], {
+                stroke: C.height, "stroke-width": strong ? 3 : 2,
+                "stroke-dasharray": "6 5", opacity: strong ? 1 : .45
+            }));
+            if (strong) {
+                svg.appendChild(rightAngle(foot, u, nrm, 13, C.height));
+                svg.appendChild(el("circle", { cx: top[0], cy: top[1], r: 4.5, fill: C.height }));
+                const mx = (top[0] + foot[0]) / 2, my = (top[1] + foot[1]) / 2;
+                svg.appendChild(text(mx - nrm[0] * 0 - u[0] * 22, my - u[1] * 22 + 5, `高 ${num(Math.round(hLen * 10) / 10)}`,
+                    { fill: C.height, "font-size": 14, "font-weight": 900 }));
+            }
+            return { top, foot };
+        }
+
+        if (hState.all) {
+            for (let t = 0.08; t <= 0.95; t += 0.145) drawOneHeight(t, false);
+        }
+
+        if (hState.outside) {
+            // 把底边延长，从对边端点向延长线作垂线
+            const ext = 105;
+            const s0 = [baseP[0][0] - u[0] * ext, baseP[0][1] - u[1] * ext];
+            const s1 = [baseP[1][0] + u[0] * ext, baseP[1][1] + u[1] * ext];
+            svg.appendChild(line(s0[0], s0[1], s1[0], s1[1], { stroke: "#94a3b8", "stroke-width": 2, "stroke-dasharray": "9 6" }));
+            const top = oppP[1];
+            const foot = [top[0] - nrm[0] * hPx, top[1] - nrm[1] * hPx];
+            svg.appendChild(line(top[0], top[1], foot[0], foot[1], { stroke: "#0d9488", "stroke-width": 3, "stroke-dasharray": "6 5" }));
+            svg.appendChild(rightAngle(foot, [-u[0], -u[1]], nrm, 13, "#0d9488"));
+            svg.appendChild(text(foot[0] + 46, foot[1] + 22, "高画在图形外", { fill: "#0f766e", "font-size": 13, "font-weight": 900 }));
+        }
+
+        drawOneHeight(hState.foot / 100, true);
+
+        // 斜边对比
+        if (hState.wrong) {
+            const sideP = isBottom ? [B, A] : [B, Cp];
+            svg.appendChild(line(sideP[0][0], sideP[0][1], sideP[1][0], sideP[1][1],
+                { stroke: C.wrong, "stroke-width": 4, opacity: .9 }));
+            const mx = (sideP[0][0] + sideP[1][0]) / 2, my = (sideP[0][1] + sideP[1][1]) / 2;
+            svg.appendChild(text(mx - 46, my - 4, "✗ 斜边不是高", { fill: C.wrong, "font-size": 13, "font-weight": 900 }));
+        }
+
+        // 底边文字
+        const bmx = (baseP[0][0] + baseP[1][0]) / 2, bmy = (baseP[0][1] + baseP[1][1]) / 2;
+        svg.appendChild(text(bmx + (isBottom ? 0 : -54), bmy + (isBottom ? 26 : 4), `底 ${baseLen}`,
+            { fill: "#b45309", "font-size": 14, "font-weight": 900 }));
+
+        $("hBaseLen").textContent = baseLen;
+        $("hHeightLen").textContent = num(Math.round(hLen * 10) / 10);
+        $("hSlantLen").textContent = isBottom ? bLen : aLen;
+    }
+
+    document.querySelectorAll("[data-hbase]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            hState.base = btn.dataset.hbase;
+            document.querySelectorAll("[data-hbase]").forEach(b => b.classList.toggle("active", b === btn));
+            drawHeight();
+        });
+    });
+    $("hFoot").addEventListener("input", e => { hState.foot = +e.target.value; $("hFootVal").textContent = e.target.value; drawHeight(); });
+    $("hSlant").addEventListener("input", e => { hState.slant = +e.target.value; $("hSlantVal").textContent = e.target.value; drawHeight(); });
+    toggle($("tglAllHeight"), v => { hState.all = v; drawHeight(); });
+    toggle($("tglOutside"), v => { hState.outside = v; drawHeight(); });
+    toggle($("tglWrongH"), v => { hState.wrong = v; drawHeight(); });
+    drawHeight();
+
+    /* ============================================================
+       Tab 3 · 不稳定性
+       ============================================================ */
+    const stState = { angle: 90, brace: false, anim: null };
+
+    function drawStable() {
+        const svg = $("stableSvg");
+        clear(svg);
+        const U = 36, aLen = 9, bLen = 5;
+        const rad = stState.angle * Math.PI / 180;
+        const a = aLen * U, b = bLen * U;
+        const dx = b * Math.cos(rad), dy = b * Math.sin(rad);
+        const ox = (620 - (a + dx)) / 2, oy = 50 + (200 - dy) / 2;
+        const B = [ox, oy + dy], Cp = [ox + a, oy + dy], D = [ox + a + dx, oy], A = [ox + dx, oy];
+
+        // 原始位置（虚影）
+        if (stState.angle < 89) {
+            const ox0 = (620 - a) / 2, oy0 = 50 + (200 - b) / 2;
+            svg.appendChild(poly([[ox0, oy0], [ox0 + a, oy0], [ox0 + a, oy0 + b], [ox0, oy0 + b]],
+                { fill: "none", stroke: "#cbd5e1", "stroke-width": 2, "stroke-dasharray": "7 6" }));
+        }
+
+        svg.appendChild(poly([A, D, Cp, B], { fill: C.fill, stroke: C.stroke, "stroke-width": 6, "stroke-linejoin": "round" }));
+
+        // 高（显示面积变化）
+        svg.appendChild(line(A[0], A[1], A[0], B[1], { stroke: C.height, "stroke-width": 2.5, "stroke-dasharray": "6 5" }));
+        svg.appendChild(text(A[0] - 24, (A[1] + B[1]) / 2 + 5, "高", { fill: C.height, "font-size": 13, "font-weight": 900 }));
+
+        if (stState.brace) {
+            svg.appendChild(line(B[0], B[1], D[0], D[1], { stroke: "#0d9488", "stroke-width": 6, "stroke-linecap": "round" }));
+            svg.appendChild(text((B[0] + D[0]) / 2 + 40, (B[1] + D[1]) / 2 - 10, "斜杆：分成两个三角形 → 稳固",
+                { fill: "#0f766e", "font-size": 13, "font-weight": 900 }));
+        }
+
+        // 钉子
+        [A, B, Cp, D].forEach(p => {
+            svg.appendChild(el("circle", { cx: p[0], cy: p[1], r: 7, fill: "#fff", stroke: "#334155", "stroke-width": 3 }));
+        });
+
+        const hUnits = dy / U;
+        const area = Math.round(aLen * hUnits * 10) / 10;
+        $("stableSides").textContent = `${aLen}、${bLen}、${aLen}、${bLen}`;
+        $("stablePeri").textContent = (aLen + bLen) * 2;
+        $("stableArea").textContent = num(area);
+    }
+
+    $("stableAngle").addEventListener("input", e => {
+        stState.angle = +e.target.value; $("stableAngleVal").textContent = e.target.value; drawStable();
+    });
+    $("stableAnim").addEventListener("click", () => {
+        if (stState.anim) { cancelAnimationFrame(stState.anim); stState.anim = null; $("stableAnim").textContent = "自动拉动 ▶"; return; }
+        $("stableAnim").textContent = "暂停 ⏸";
+        let dir = -1;
+        const step = () => {
+            stState.angle += dir * 0.7;
+            if (stState.angle <= 20) { stState.angle = 20; dir = 1; }
+            if (stState.angle >= 90) { stState.angle = 90; dir = -1; }
+            $("stableAngle").value = Math.round(stState.angle);
+            $("stableAngleVal").textContent = Math.round(stState.angle);
+            drawStable();
+            stState.anim = requestAnimationFrame(step);
+        };
+        stState.anim = requestAnimationFrame(step);
+    });
+    $("stableReset").addEventListener("click", () => {
+        if (stState.anim) { cancelAnimationFrame(stState.anim); stState.anim = null; $("stableAnim").textContent = "自动拉动 ▶"; }
+        stState.angle = 90; $("stableAngle").value = 90; $("stableAngleVal").textContent = 90; drawStable();
+    });
+    toggle($("tglBrace"), v => { stState.brace = v; drawStable(); });
+    drawStable();
+
+    /* ============================================================
+       Tab 4 · 图形关系
+       ============================================================ */
+    const relShapes = {
+        para:    { name: "一般平行四边形", pts: [[70,60],[250,60],[210,200],[30,200]] },
+        rect:    { name: "长方形",        pts: [[45,60],[275,60],[275,200],[45,200]] },
+        rhombus: { name: "菱形",          pts: [[100,55],[265,55],[220,195],[55,195]] },
+        square:  { name: "正方形",        pts: [[90,55],[230,55],[230,195],[90,195]] },
+        trap:    { name: "梯形",          pts: [[105,60],[225,60],[285,200],[35,200]] }
+    };
+    const relFacts = {
+        para: [
+            { ok: true,  html: "<b>是平行四边形。</b>两组对边分别平行且相等，对角相等。" },
+            { ok: false, html: "<b>不一定是长方形。</b>四个角不都是直角，所以一般平行四边形不是长方形。" },
+            { ok: null,  html: "周长 C =（a + b）× 2，面积 S = 底 × 高。" }
+        ],
+        rect: [
+            { ok: true,  html: "<b>是特殊的平行四边形。</b>它的两组对边同样分别平行且相等。" },
+            { ok: true,  html: "<b>特殊在哪里：</b>四个角都是直角，所以<b>邻边就是高</b>。" },
+            { ok: null,  html: "面积 S = 长 × 宽，其实就是 S = 底 × 高 在直角情况下的样子。" }
+        ],
+        rhombus: [
+            { ok: true,  html: "<b>是特殊的平行四边形。</b>对边平行，所以它属于平行四边形。" },
+            { ok: true,  html: "<b>特殊在哪里：</b>四条边都相等，周长 = 边长 × 4。" },
+            { ok: false, html: "<b>但角不一定是直角</b>，所以菱形不一定是长方形。" }
+        ],
+        square: [
+            { ok: true,  html: "<b>是特殊的平行四边形。</b>正方形既是<b>长方形</b>，又是<b>菱形</b>。" },
+            { ok: true,  html: "<b>特殊在哪里：</b>四条边都相等，四个角都是直角。" },
+            { ok: null,  html: "包含关系：正方形 ⊂ 长方形 ⊂ 平行四边形 ⊂ 四边形。" }
+        ],
+        trap: [
+            { ok: false, html: "<b>不是平行四边形。</b>梯形<b>只有一组</b>对边平行，另一组不平行。" },
+            { ok: null,  html: "平行的一组叫<b>上底、下底</b>，不平行的一组叫<b>腰</b>。" },
+            { ok: null,  html: "面积 S =（上底 + 下底）× 高 ÷ 2。" }
+        ]
+    };
+    let relCur = "para";
+
+    function drawRelShape() {
+        const svg = $("relShapeSvg");
+        clear(svg);
+        const sh = relShapes[relCur];
+        svg.appendChild(poly(sh.pts, { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+        svg.appendChild(text(160, 34, sh.name, { fill: "#312e81", "font-size": 17, "font-weight": 950 }));
+
+        // 直角标记
+        if (relCur === "rect" || relCur === "square") {
+            sh.pts.forEach((p, i) => {
+                const prev = sh.pts[(i + 3) % 4], next = sh.pts[(i + 1) % 4];
+                const u = norm(sub(next, p)), v = norm(sub(prev, p));
+                svg.appendChild(rightAngle(p, u, v, 15, "#4f46e5"));
+            });
+        }
+        // 等边标记
+        if (relCur === "rhombus" || relCur === "square") {
+            sh.pts.forEach((p, i) => {
+                const q = sh.pts[(i + 1) % 4];
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+                svg.appendChild(el("line", { x1: mx, y1: my - 7, x2: mx, y2: my + 7, stroke: C.stroke, "stroke-width": 2.6, transform: `rotate(${ang} ${mx} ${my})` }));
+            });
+        }
+        // 平行标记
+        const parallelPairs = relCur === "trap" ? [[0, 1]] : [[0, 1], [1, 2]];
+        parallelPairs.forEach(([i], k) => {
+            const pairs = relCur === "trap" ? [[sh.pts[0], sh.pts[1]], [sh.pts[3], sh.pts[2]]]
+                : (k === 0 ? [[sh.pts[0], sh.pts[1]], [sh.pts[3], sh.pts[2]]] : [[sh.pts[1], sh.pts[2]], [sh.pts[0], sh.pts[3]]]);
+            pairs.forEach(([p, q]) => {
+                const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+                const ang = Math.atan2(q[1] - p[1], q[0] - p[0]) * 180 / Math.PI;
+                for (let n = 0; n <= k; n++) {
+                    const off = n * 8 - 3;
+                    svg.appendChild(el("polyline", {
+                        points: `${mx + off - 5},${my - 6} ${mx + off + 3},${my} ${mx + off - 5},${my + 6}`,
+                        fill: "none", stroke: "#f59e0b", "stroke-width": 2.4, transform: `rotate(${ang} ${mx} ${my})`
+                    }));
+                }
+            });
+        });
+        if (relCur === "trap") {
+            const p = sh.pts[1], q = sh.pts[2];
+            svg.appendChild(text((p[0] + q[0]) / 2 + 34, (p[1] + q[1]) / 2, "腰（不平行）", { fill: "#c2410c", "font-size": 12, "font-weight": 900 }));
+        }
+        svg.appendChild(text(160, 236, "橙色箭头表示互相平行的一组对边", { fill: "#94a3b8", "font-size": 12, "font-weight": 800 }));
+    }
+    function sub(p, q) { return [p[0] - q[0], p[1] - q[1]]; }
+    function norm(v) { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; }
+
+    function drawRelSet() {
+        const svg = $("relSetSvg");
+        clear(svg);
+        const inPara = relCur !== "trap";
+        const rings = [
+            { x: 12, y: 22, w: 316, h: 224, label: "四边形", color: "#94a3b8", active: true },
+            { x: 34, y: 52, w: 240, h: 182, label: "平行四边形", color: "#4f46e5", active: inPara },
+            { x: 54, y: 84, w: 150, h: 138, label: "长方形", color: "#0d9488", active: relCur === "rect" || relCur === "square" },
+            { x: 150, y: 84, w: 140, h: 138, label: "菱形", color: "#d97706", active: relCur === "rhombus" || relCur === "square" }
+        ];
+        rings.forEach(r => {
+            svg.appendChild(el("rect", {
+                x: r.x, y: r.y, width: r.w, height: r.h, rx: 20,
+                fill: r.active ? "rgba(99,102,241,.07)" : "none",
+                stroke: r.color, "stroke-width": r.active ? 3 : 1.6,
+                "stroke-dasharray": r.active ? "none" : "6 5", opacity: r.active ? 1 : .5
+            }));
+            svg.appendChild(text(r.x + (r.label === "四边形" || r.label === "平行四边形" ? r.w / 2 : r.w / 2), r.y + 17, r.label,
+                { fill: r.color, "font-size": 13, "font-weight": 950, opacity: r.active ? 1 : .55 }));
+        });
+        // 正方形位于长方形与菱形的交叠区
+        const sqActive = relCur === "square";
+        svg.appendChild(el("rect", {
+            x: 152, y: 112, width: 50, height: 104, rx: 12,
+            fill: sqActive ? "rgba(124,58,237,.16)" : "none",
+            stroke: "#7c3aed", "stroke-width": sqActive ? 3 : 1.6,
+            "stroke-dasharray": sqActive ? "none" : "6 5", opacity: sqActive ? 1 : .55
+        }));
+        svg.appendChild(text(177, 168, "正", { fill: "#7c3aed", "font-size": 13, "font-weight": 950, opacity: sqActive ? 1 : .55 }));
+        svg.appendChild(text(177, 184, "方", { fill: "#7c3aed", "font-size": 13, "font-weight": 950, opacity: sqActive ? 1 : .55 }));
+        svg.appendChild(text(177, 200, "形", { fill: "#7c3aed", "font-size": 13, "font-weight": 950, opacity: sqActive ? 1 : .55 }));
+        // 梯形在平行四边形之外
+        const trapActive = relCur === "trap";
+        svg.appendChild(el("rect", {
+            x: 288, y: 60, width: 34, height: 78, rx: 10,
+            fill: trapActive ? "rgba(239,68,68,.12)" : "none",
+            stroke: "#ef4444", "stroke-width": trapActive ? 3 : 1.6,
+            "stroke-dasharray": trapActive ? "none" : "6 5", opacity: trapActive ? 1 : .55
+        }));
+        ["梯", "形"].forEach((ch, i) => {
+            svg.appendChild(text(305, 88 + i * 18, ch, { fill: "#ef4444", "font-size": 13, "font-weight": 950, opacity: trapActive ? 1 : .55 }));
+        });
+    }
+
+    function renderRelNote() {
+        $("relNote").innerHTML = relFacts[relCur].map(f =>
+            `<div class="rel-row${f.ok === true ? " yes" : f.ok === false ? " no" : ""}">${f.ok === true ? "✓ " : f.ok === false ? "✗ " : "· "}${f.html}</div>`).join("");
+    }
+    function updateRel() { drawRelShape(); drawRelSet(); renderRelNote(); }
+    $("relPicker").querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            relCur = btn.dataset.rel;
+            $("relPicker").querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+            updateRel();
+        });
+    });
+    updateRel();
+
+    /* ---- 判一判 ---- */
+    const judgeBank = [
+        { q: "长方形一定是平行四边形。", a: true, why: "长方形的两组对边也分别平行且相等，所以它是<b>特殊的平行四边形</b>。" },
+        { q: "平行四边形一定是长方形。", a: false, why: "一般平行四边形的四个角<b>不都是直角</b>，只有角是直角时才是长方形。" },
+        { q: "梯形也是平行四边形。", a: false, why: "梯形<b>只有一组</b>对边平行，平行四边形要求<b>两组</b>对边都平行。" },
+        { q: "正方形既是长方形，也是菱形。", a: true, why: "正方形四个角是直角（长方形），四条边又都相等（菱形）。" },
+        { q: "平行四边形的两组对边分别相等。", a: true, why: "这是平行四边形的基本特征：AB = CD，AD = BC。" },
+        { q: "平行四边形的四条边都相等。", a: false, why: "只有<b>对边</b>相等；四条边都相等的平行四边形是<b>菱形</b>。" },
+        { q: "平行四边形相邻两个角的和是 180°。", a: true, why: "邻角互补，例如 60° + 120° = 180°；四个内角和是 360°。" },
+        { q: "平行四边形是轴对称图形。", a: false, why: "一般平行四边形<b>不是</b>轴对称图形，但它是<b>中心对称</b>图形（绕对角线交点转 180° 能重合）。长方形、菱形、正方形才是轴对称图形。" },
+        { q: "从平行四边形一条边上的一点向对边作垂线，这条垂线段就是高。", a: true, why: "高必须<b>垂直于底</b>，并且画到<b>对边</b>上。" },
+        { q: "平行四边形的高只有一条。", a: false, why: "有<b>无数条</b>高，但只有<b>两组</b>不同长度的高（对应两组不同的底）。" },
+        { q: "平行四边形容易变形，三角形具有稳定性。", a: true, why: "所以伸缩门用平行四边形，自行车三角架用三角形。" },
+        { q: "把平行四边形拉成长方形后，周长和面积都不变。", a: false, why: "四条边没变所以<b>周长不变</b>，但高变大了，<b>面积变大</b>。" },
+        { q: "两个完全一样的三角形一定能拼成一个平行四边形。", a: true, why: "把其中一个绕一条边的中点旋转 180°，就能与另一个拼成平行四边形。" },
+        { q: "等底等高的两个平行四边形，面积一定相等。", a: true, why: "面积 = 底 × 高，底和高都相同，积就相同。" },
+        { q: "面积相等的两个平行四边形，形状一定相同。", a: false, why: "底和高的搭配可以不同，例如 8×3 和 6×4 面积都是 24，形状却不同。" },
+        { q: "平行四边形的面积等于底乘以斜边。", a: false, why: "必须乘<b>这条底对应的高</b>，斜边比高长，用斜边会算大。" },
+        { q: "平行四边形的一条对角线把它分成两个完全一样的三角形。", a: true, why: "这两个三角形能完全重合，每个面积是平行四边形的一半。" },
+        { q: "与平行四边形等底等高的三角形，面积是它的一半。", a: true, why: "S△ = a × h ÷ 2，正好是 a × h 的一半。" }
+    ];
+    let judgeIdx = -1, judgeDone = false, judgeOrder = [];
+    function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+        return a;
+    }
+    function loadJudge() {
+        if (!judgeOrder.length) judgeOrder = shuffle(judgeBank.map((_, i) => i));
+        judgeIdx = judgeOrder.pop();
+        judgeDone = false;
+        $("judgeQ").innerHTML = judgeBank[judgeIdx].q;
+        $("judgeFeedback").hidden = true;
+        $("judgeNext").hidden = true;
+        $("judgeYes").hidden = false;
+        $("judgeNo").hidden = false;
+    }
+    function answerJudge(said) {
+        if (judgeDone) return;
+        judgeDone = true;
+        const item = judgeBank[judgeIdx];
+        const right = said === item.a;
+        const box = $("judgeFeedback");
+        box.className = `feedback ${right ? "good" : "try"}`;
+        box.innerHTML = `${right ? "✓ 判断正确！" : "✗ 判断错误。"}这句话是<b>${item.a ? "对" : "错"}</b>的。${item.why}`;
+        box.hidden = false;
+        $("judgeNext").hidden = false;
+        $("judgeYes").hidden = true;
+        $("judgeNo").hidden = true;
+    }
+    $("judgeYes").addEventListener("click", () => answerJudge(true));
+    $("judgeNo").addEventListener("click", () => answerJudge(false));
+    $("judgeNext").addEventListener("click", loadJudge);
+    loadJudge();
+
+    /* ============================================================
+       Tab 5 · 面积推导
+       ============================================================ */
+    const AU = 42;   // 面积演示每单位像素
+
+    /* ---- 5a 割补法 ---- */
+    const cutState = { base: 7, height: 4, prog: 0, anim: null };
+
+    function drawCut() {
+        const svg = $("cutSvg");
+        clear(svg);
+        const a = cutState.base * AU, h = cutState.height * AU;
+        const slant = 0.55 * h;                       // 顶边右移量
+        const ox = (620 - a - slant) / 2, oy = 60 + (180 - h) / 2;
+        const t = cutState.prog / 100;
+
+        // BL 左下, BR 右下, TR 右上, TL 左上
+        const BL = [ox, oy + h], BR = [ox + a, oy + h], TR = [ox + a + slant, oy], TL = [ox + slant, oy];
+
+        // 目标长方形（虚线参考）
+        svg.appendChild(poly([[ox, oy], [ox + a, oy], [ox + a, oy + h], [ox, oy + h]],
+            { fill: "none", stroke: "#cbd5e1", "stroke-width": 2, "stroke-dasharray": "8 6" }));
+
+        // 右侧梯形主体：TL, TR, BR, BL 中减去左边三角形
+        // 左边三角形 = TL, [ox+slant, oy+h]? —— 沿 TL 向下的高把图形切成 左三角 + 右梯形
+        const footTL = [TL[0], oy + h];               // TL 垂足
+        const leftTri = [TL, footTL, BL];
+        const rightPart = [TL, TR, BR, footTL];
+
+        // 主体（右侧梯形）保持不动
+        svg.appendChild(poly(rightPart, { fill: C.fill, stroke: C.stroke, "stroke-width": 3 }));
+
+        // 左三角形平移到右边：位移向量 = (a, 0)
+        const shift = [t * a, 0];
+        const movedTri = leftTri.map(p => [p[0] + shift[0], p[1] + shift[1]]);
+        svg.appendChild(poly(movedTri, { fill: "rgba(245,158,11,.28)", stroke: "#d97706", "stroke-width": 3 }));
+
+        // 剪切线（高）
+        svg.appendChild(line(TL[0], TL[1], footTL[0], footTL[1],
+            { stroke: C.height, "stroke-width": 3, "stroke-dasharray": "7 5" }));
+        svg.appendChild(rightAngle(footTL, [1, 0], [0, -1], 13, C.height));
+        svg.appendChild(text(footTL[0] - 26, (TL[1] + footTL[1]) / 2 + 5, `高 ${cutState.height}`,
+            { fill: C.height, "font-size": 14, "font-weight": 900 }));
+
+        // 底标注
+        svg.appendChild(text(ox + a / 2, oy + h + 30, `底 ${cutState.base}`, { fill: C.stroke, "font-size": 15, "font-weight": 900 }));
+
+        // 平移箭头
+        if (t > 0 && t < 1) {
+            const y = oy + h * 0.55;
+            svg.appendChild(line(TL[0] + 12, y, TL[0] + shift[0] + 4, y,
+                { stroke: "#d97706", "stroke-width": 2.5, "stroke-dasharray": "5 4" }));
+            svg.appendChild(el("polygon", {
+                points: `${TL[0] + shift[0] + 12},${y} ${TL[0] + shift[0] + 2},${y - 6} ${TL[0] + shift[0] + 2},${y + 6}`,
+                fill: "#d97706"
+            }));
+            svg.appendChild(text(TL[0] + shift[0] / 2, y - 14, "平移", { fill: "#b45309", "font-size": 13, "font-weight": 900 }));
+        }
+
+        const step = t === 0 ? 0 : (t < 1 ? 1 : 2);
+        const stepTexts = [
+            `<b>第 1 步：沿高剪开。</b>沿着平行四边形的一条<b>高</b>，把左边的直角三角形剪下来（紫色虚线就是剪切线）。拖动“剪拼进度”看下一步。`,
+            `<b>第 2 步：把三角形平移。</b>把剪下的三角形<b>水平平移</b>到右边，正好补上缺口。剪、拼的过程中<b>面积没有增加也没有减少</b>。`,
+            `<b>第 3 步：得到长方形。</b>拼成的长方形，<b>长 = 平行四边形的底 = ${cutState.base}</b>，<b>宽 = 平行四边形的高 = ${cutState.height}</b>。<br>
+             因为长方形面积 = 长 × 宽，所以 <span class="formula">平行四边形面积 S = 底 a × 高 h = ${cutState.base} × ${cutState.height} = ${cutState.base * cutState.height}</span>`
+        ];
+        $("cutStepText").innerHTML = stepTexts[step];
+        $("cutBaseOut").textContent = cutState.base;
+        $("cutHeightOut").textContent = cutState.height;
+        $("cutAreaOut").textContent = cutState.base * cutState.height;
+        const areaPill = $("cutAreaOut").parentElement;
+        areaPill.childNodes[0].textContent = `面积 = ${cutState.base} × ${cutState.height} = `;
+    }
+
+    $("cutBase").addEventListener("input", e => { cutState.base = +e.target.value; $("cutBaseVal").textContent = e.target.value; drawCut(); });
+    $("cutHeight").addEventListener("input", e => { cutState.height = +e.target.value; $("cutHeightVal").textContent = e.target.value; drawCut(); });
+    $("cutProg").addEventListener("input", e => { cutState.prog = +e.target.value; $("cutProgVal").textContent = e.target.value; drawCut(); });
+    $("cutAnim").addEventListener("click", () => {
+        if (cutState.anim) cancelAnimationFrame(cutState.anim);
+        cutState.prog = 0;
+        const step = () => {
+            cutState.prog = Math.min(100, cutState.prog + 1.4);
+            $("cutProg").value = Math.round(cutState.prog);
+            $("cutProgVal").textContent = Math.round(cutState.prog);
+            drawCut();
+            if (cutState.prog < 100) cutState.anim = requestAnimationFrame(step);
+            else cutState.anim = null;
+        };
+        cutState.anim = requestAnimationFrame(step);
+    });
+    drawCut();
+
+    /* ---- 5b 数方格法 ---- */
+    const gridState = { base: 6, height: 4, merged: false };
+
+    function drawAreaGrid() {
+        const svg = $("gridSvg");
+        clear(svg);
+        const G = 34;
+        const a = gridState.base, h = gridState.height;
+        const w = (a + 1) * G, ht = h * G;                  // 顶边整体右移 1 格
+        const ox = (620 - w) / 2, oy = 45 + (200 - ht) / 2;
+        // 第 j 行（自上而下）左边界相对 ox 的偏移：上沿 offTop、下沿 offBot，每行错开 1/h 格
+        const offAt = j => G * (h - j) / h;
+
+        for (let i = 0; i <= a + 1; i++) svg.appendChild(line(ox + i * G, oy, ox + i * G, oy + ht, { stroke: C.grid, "stroke-width": 1 }));
+        for (let j = 0; j <= h; j++) svg.appendChild(line(ox, oy + j * G, ox + w, oy + j * G, { stroke: C.grid, "stroke-width": 1 }));
+
+        const merged = gridState.merged;
+        let full = 0, half = 0;
+
+        for (let j = 0; j < h; j++) {
+            const yTop = oy + j * G;
+            const offTop = offAt(j), offBot = offAt(j + 1);
+            // 整格区间：左端取两沿较大的偏移，右端取较小的偏移，向内取整格
+            const gs = Math.ceil(Math.max(offTop, offBot) / G) * G;
+            const ge = a * G + Math.floor(Math.min(offTop, offBot) / G) * G;
+            for (let x = gs; x + G <= ge + 0.5; x += G) {
+                svg.appendChild(el("rect", { x: ox + x, y: yTop, width: G, height: G, fill: "rgba(99,102,241,.30)", stroke: "#a5b4fc", "stroke-width": 1 }));
+                full++;
+            }
+            // 左端不满一格的部分
+            const leftHalf = [[ox + offTop, yTop], [ox + gs, yTop], [ox + gs, yTop + G], [ox + offBot, yTop + G]];
+            svg.appendChild(poly(leftHalf, { fill: "rgba(245,158,11,.35)", stroke: "#d97706", "stroke-width": 1.5 }));
+            // 右端不满一格的部分；合并时向左平移 a 格，正好与左端半格拼成整格
+            const mv = merged ? -a * G : 0;
+            const rightHalf = [[ox + ge + mv, yTop], [ox + a * G + offTop + mv, yTop],
+                               [ox + a * G + offBot + mv, yTop + G], [ox + ge + mv, yTop + G]];
+            svg.appendChild(poly(rightHalf, { fill: "rgba(245,158,11,.35)", stroke: "#d97706", "stroke-width": 1.5 }));
+            half += 2;
+        }
+
+        // 轮廓
+        const BL = [ox, oy + ht], BR = [ox + a * G, oy + ht], TR = [ox + w, oy], TL = [ox + G, oy];
+        svg.appendChild(poly([TL, TR, BR, BL], { fill: "none", stroke: C.stroke, "stroke-width": 3.5 }));
+
+        // 底、高标注
+        svg.appendChild(line(ox, oy + ht + 16, ox + a * G, oy + ht + 16, { stroke: C.stroke, "stroke-width": 2 }));
+        svg.appendChild(text(ox + a * G / 2, oy + ht + 34, `底 = ${a} 格`, { fill: C.stroke, "font-size": 14, "font-weight": 900 }));
+        svg.appendChild(line(ox - 16, oy, ox - 16, oy + ht, { stroke: C.height, "stroke-width": 2 }));
+        svg.appendChild(text(ox - 40, oy + ht / 2 + 5, `高 = ${h} 格`, { fill: C.height, "font-size": 14, "font-weight": 900 }));
+
+        $("gridFull").textContent = full;
+        $("gridHalf").textContent = half;
+        $("gridHalfPair").textContent = num(half / 2);
+        $("gridTotal").textContent = `${num(full + half / 2)}`;
+    }
+
+    $("gridBase").addEventListener("input", e => { gridState.base = +e.target.value; $("gridBaseVal").textContent = e.target.value; drawAreaGrid(); });
+    $("gridHeight").addEventListener("input", e => { gridState.height = +e.target.value; $("gridHeightVal").textContent = e.target.value; drawAreaGrid(); });
+    $("gridMerge").addEventListener("click", () => {
+        gridState.merged = !gridState.merged;
+        $("gridMerge").textContent = gridState.merged ? "还原半格 ↺" : "合并半格 ▶";
+        drawAreaGrid();
+    });
+    drawAreaGrid();
+
+    /* ---- 5c 等底等高 ---- */
+    const eqState = { shear: 0, base: 7, height: 4, tri: true };
+
+    function drawEqual() {
+        const svg = $("eqSvg");
+        clear(svg);
+        const a = eqState.base * AU, h = eqState.height * AU, s = eqState.shear;
+        const ox = (620 - a) / 2, oy = 55 + (180 - h) / 2;
+        const BL = [ox, oy + h], BR = [ox + a, oy + h], TR = [ox + a + s, oy], TL = [ox + s, oy];
+
+        // 参考长方形
+        svg.appendChild(poly([[ox, oy], [ox + a, oy], [ox + a, oy + h], [ox, oy + h]],
+            { fill: "none", stroke: "#cbd5e1", "stroke-width": 2, "stroke-dasharray": "8 6" }));
+        // 上下两条平行线（说明高不变）
+        svg.appendChild(line(ox - 80, oy, ox + a + 90, oy, { stroke: "#a5b4fc", "stroke-width": 1.5, "stroke-dasharray": "5 5" }));
+        svg.appendChild(line(ox - 80, oy + h, ox + a + 90, oy + h, { stroke: "#a5b4fc", "stroke-width": 1.5, "stroke-dasharray": "5 5" }));
+
+        svg.appendChild(poly([TL, TR, BR, BL], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+
+        if (eqState.tri) {
+            const apex = [ox + a / 2 + s * 1.15, oy];
+            svg.appendChild(poly([BL, BR, apex], { fill: "rgba(13,148,136,.16)", stroke: "#0d9488", "stroke-width": 3, "stroke-dasharray": "6 4" }));
+            svg.appendChild(text(apex[0], oy - 10, "等底等高的三角形", { fill: "#0f766e", "font-size": 13, "font-weight": 900 }));
+        }
+
+        // 高
+        svg.appendChild(line(ox - 22, oy, ox - 22, oy + h, { stroke: C.height, "stroke-width": 2.5 }));
+        svg.appendChild(text(ox - 48, oy + h / 2 + 5, `高 ${eqState.height}`, { fill: C.height, "font-size": 14, "font-weight": 900 }));
+        // 底
+        svg.appendChild(text(ox + a / 2, oy + h + 32, `底 ${eqState.base}`, { fill: C.stroke, "font-size": 15, "font-weight": 900 }));
+
+        const area = eqState.base * eqState.height;
+        $("eqBaseOut").textContent = eqState.base;
+        $("eqHeightOut").textContent = eqState.height;
+        $("eqAreaOut").textContent = area;
+        $("eqTriOut").textContent = num(area / 2);
+    }
+
+    $("eqShear").addEventListener("input", e => { eqState.shear = +e.target.value; $("eqShearVal").textContent = e.target.value; drawEqual(); });
+    $("eqBase").addEventListener("input", e => { eqState.base = +e.target.value; $("eqBaseVal").textContent = e.target.value; drawEqual(); });
+    $("eqHeight").addEventListener("input", e => { eqState.height = +e.target.value; $("eqHeightVal").textContent = e.target.value; drawEqual(); });
+    toggle($("tglEqTri"), v => { eqState.tri = v; drawEqual(); });
+    drawEqual();
+
+    document.querySelectorAll("[data-mode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const m = btn.dataset.mode;
+            document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("active", b === btn));
+            $("areaCutBox").hidden = m !== "cut";
+            $("areaGridBox").hidden = m !== "grid";
+            $("areaEqualBox").hidden = m !== "equal";
+        });
+    });
+
+    /* ============================================================
+       Tab 6 · 综合练习
+       题型：概念判断 / 周长 / 面积 / 反求底高 / 等积变形 / 生活情境
+       ============================================================ */
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function nstr(n) { return num(Math.round(n * 100) / 100); }
+    function labelValue(name, value, unit) { return `${name} ${nstr(value)} ${unit}`; }
+
+    const topicNames = {
+        mixed: "综合", concept: "概念特征", perimeter: "周长",
+        area: "面积计算", reverse: "反求底和高", transform: "等积变形"
+    };
+    const topicFormulas = {
+        concept: {
+            main: "两组对边分别平行", mainNote: "这是平行四边形的定义；对边相等、对角相等、邻角互补由此得到。",
+            second: "高 ⊥ 底", secondNote: "高必须垂直于底，并画到对边上；斜边不是高。",
+            reverse: "长方形、正方形、菱形都是特殊的平行四边形；梯形只有一组对边平行，不是平行四边形。"
+        },
+        perimeter: {
+            main: "C = (a + b) × 2", mainNote: "a、b 是相邻的两条边；两组对边分别相等。",
+            second: "a + b = C ÷ 2", secondNote: "周长的一半正好是一组相邻边的和。",
+            reverse: "已知周长和一条边：另一边 = C ÷ 2 − 已知边"
+        },
+        area: {
+            main: "S = a × h", mainNote: "a 是底，h 是这条底<b>对应</b>的高。",
+            second: "长方形 S = 长 × 宽", secondNote: "割补后底变成长、高变成宽，所以两个公式是一致的。",
+            reverse: "两组底高都能算：a₁ × h₁ = a₂ × h₂ = S"
+        },
+        reverse: {
+            main: "S = a × h", mainNote: "由面积公式出发，用除法反求未知量。",
+            second: "a = S ÷ h　h = S ÷ a", secondNote: "求底就除以高，求高就除以底。",
+            reverse: "同一个平行四边形有两组底和高：已知一组可以先求面积，再求另一组。"
+        },
+        transform: {
+            main: "等底等高 → 面积相等", mainNote: "底和高都不变时，无论怎样倾斜，面积都不变。",
+            second: "S△ = a × h ÷ 2", secondNote: "与平行四边形等底等高的三角形，面积是它的一半。",
+            reverse: "拉动平行四边形：周长不变，高变小，面积变小。"
+        }
+    };
+
+    /* ---- 概念判断题（选择题） ---- */
+    function makeConceptProblem() {
+        const bank = [
+            {
+                signature: "concept-def", tag: "概念辨析", level: "★ 入门",
+                prompt: "下面哪一句话正确地说出了<em>平行四边形的定义</em>？",
+                choices: [
+                    { t: "两组对边分别平行的四边形，叫做平行四边形。", ok: true },
+                    { t: "四条边都相等的四边形，叫做平行四边形。", ok: false },
+                    { t: "有一组对边平行的四边形，叫做平行四边形。", ok: false },
+                    { t: "四个角都相等的四边形，叫做平行四边形。", ok: false }
+                ],
+                known: ["判断定义", "抓住“两组对边分别平行”"],
+                formula: "平行四边形的定义：两组对边分别平行",
+                hint: "定义抓住的是“边的位置关系”——平行，而且是<b>两组</b>都平行。",
+                steps: ["定义只看对边是否平行，不看边长和角度。", "只有一组对边平行的是<b>梯形</b>。", "四条边都相等的是<b>菱形</b>（它是特殊的平行四边形）。", "所以正确说法是“两组对边分别平行的四边形”。"],
+                tip: "易错提醒：一组对边平行 → 梯形；两组对边分别平行 → 平行四边形。",
+                diagram: { kind: "para", base: "两组对边分别平行", arrows: true }
+            },
+            {
+                signature: "concept-rect", tag: "图形关系", level: "★★ 进阶",
+                prompt: "关于平行四边形和长方形的关系，下面说法<em>正确</em>的是：",
+                choices: [
+                    { t: "长方形一定是平行四边形，平行四边形不一定是长方形。", ok: true },
+                    { t: "平行四边形一定是长方形。", ok: false },
+                    { t: "长方形和平行四边形没有关系。", ok: false },
+                    { t: "长方形不是平行四边形，因为它有直角。", ok: false }
+                ],
+                known: ["长方形 ⊂ 平行四边形", "判断包含关系"],
+                formula: "长方形是四个角都是直角的平行四边形",
+                hint: "长方形的两组对边也分别平行，所以它属于平行四边形这个大家族。",
+                steps: ["长方形两组对边分别平行且相等 → 它<b>是</b>平行四边形。", "一般平行四边形的角不是直角 → 它<b>不是</b>长方形。", "所以是“长方形一定是平行四边形，反过来不一定”。"],
+                tip: "易错提醒：包含关系是单向的，不能反过来说。",
+                diagram: { kind: "rect" }
+            },
+            {
+                signature: "concept-trap", tag: "图形关系", level: "★ 入门",
+                prompt: "下面哪个图形<em>不是</em>平行四边形？",
+                choices: [
+                    { t: "梯形——只有一组对边平行。", ok: true },
+                    { t: "长方形——四个角都是直角。", ok: false },
+                    { t: "正方形——四边相等且四角是直角。", ok: false },
+                    { t: "菱形——四条边都相等。", ok: false }
+                ],
+                known: ["找出不属于平行四边形的图形"],
+                formula: "平行四边形要求两组对边<b>都</b>平行",
+                hint: "逐个检查：它的两组对边是不是都平行？",
+                steps: ["长方形、正方形、菱形的两组对边都分别平行 → 都是平行四边形。", "梯形只有一组对边平行，另一组（两腰）不平行。", "所以梯形不是平行四边形。"],
+                tip: "易错提醒：梯形和平行四边形是<b>并列</b>关系，互不包含。",
+                diagram: { kind: "trap" }
+            },
+            {
+                signature: "concept-height", tag: "底和高", level: "★★ 进阶",
+                prompt: "关于平行四边形的<em>高</em>，下面说法正确的是：",
+                choices: [
+                    { t: "从一条边上的一点向对边作垂线，这条垂线段是高，高有无数条。", ok: true },
+                    { t: "平行四边形的斜边就是它的高。", ok: false },
+                    { t: "平行四边形只有一条高。", ok: false },
+                    { t: "高可以不垂直于底，只要连接两条对边就行。", ok: false }
+                ],
+                known: ["高的定义", "高 ⊥ 底"],
+                formula: "高：从一边上一点向对边作的垂线段",
+                hint: "关键词是<b>垂直</b>和<b>对边</b>；取点位置可以有很多个。",
+                steps: ["高必须<b>垂直</b>于底，斜边是斜着的，不是高。", "对边上可以取<b>无数个点</b>，所以高有无数条。", "但不同长度的高只有<b>两组</b>，分别对应两组不同的底。"],
+                tip: "易错提醒：斜边比高长，用斜边算面积会算大。",
+                diagram: { kind: "para", base: "底", height: "高", showWrong: true }
+            },
+            {
+                signature: "concept-stable", tag: "不稳定性", level: "★ 入门",
+                prompt: "伸缩门能拉长又能缩短，是利用了平行四边形的什么特性？",
+                choices: [
+                    { t: "平行四边形容易变形（不稳定性）。", ok: true },
+                    { t: "平行四边形的稳定性。", ok: false },
+                    { t: "平行四边形的对边相等。", ok: false },
+                    { t: "平行四边形的面积公式。", ok: false }
+                ],
+                known: ["生活中的应用", "不稳定性 vs 稳定性"],
+                formula: "平行四边形容易变形；三角形具有稳定性",
+                hint: "想一想：拉动四根木条钉成的框架，形状会不会变？",
+                steps: ["四条边长度确定后，平行四边形的形状<b>还能改变</b>，这叫不稳定性。", "伸缩门、升降晾衣架都利用了这个特点。", "而三角形三条边定了形状就唯一，自行车三角架利用的是<b>稳定性</b>。"],
+                tip: "易错提醒：稳定性是三角形的特点，不要张冠李戴。",
+                diagram: { kind: "para", base: "拉一拉就变形" }
+            },
+            {
+                signature: "concept-symmetry", tag: "概念辨析", level: "★★★ 挑战",
+                prompt: "关于一般平行四边形的<em>对称性</em>，正确的说法是：",
+                choices: [
+                    { t: "它不是轴对称图形，但绕对角线交点旋转 180° 能与自己重合。", ok: true },
+                    { t: "它是轴对称图形，对角线就是它的对称轴。", ok: false },
+                    { t: "它有 4 条对称轴。", ok: false },
+                    { t: "它既不是轴对称图形，旋转后也不能重合。", ok: false }
+                ],
+                known: ["一般平行四边形的对称性"],
+                formula: "一般平行四边形是中心对称图形，不是轴对称图形",
+                hint: "试着沿对角线对折，两半能完全重合吗？",
+                steps: ["沿对角线对折，两个三角形<b>不能</b>完全重合 → 不是轴对称图形。", "绕两条对角线的交点旋转 180°，能与原图重合 → 是中心对称图形。", "长方形（2 条）、菱形（2 条）、正方形（4 条）才有对称轴。"],
+                tip: "易错提醒：一般平行四边形没有对称轴，这是常见的判断陷阱。",
+                diagram: { kind: "para", diag: true }
+            }
+        ];
+        const q = pick(bank);
+        return Object.assign({ topic: "concept", type: "choice" }, q);
+    }
+
+    /* ---- 周长 ---- */
+    function makePerimeterProblem() {
+        const makers = [
+            () => {
+                const a = randInt(6, 15), b = randInt(3, a - 1), answer = (a + b) * 2;
+                return {
+                    signature: "peri-basic", tag: "基础应用", level: "★ 入门",
+                    prompt: `一个平行四边形的两条邻边分别长 <em>${a} 厘米</em>和 <em>${b} 厘米</em>。它的周长是多少厘米？`,
+                    known: [labelValue("邻边", a, "厘米"), labelValue("邻边", b, "厘米"), "求周长"],
+                    answer, unit: "厘米",
+                    formula: "平行四边形周长 C = (a + b) × 2",
+                    hint: "两组对边分别相等，所以周长里有 2 条 a 和 2 条 b。",
+                    steps: [`依据：对边相等，C = (a + b) × 2。`, `代入：(${a} + ${b}) × 2。`, `计算：${a + b} × 2 = ${answer}。`, `答：周长是 ${answer} 厘米。`],
+                    tip: "易错提醒：不要把四条边当成四个不同的数，也不要只算 a + b。",
+                    diagram: { kind: "para", base: `${a} 厘米`, side: `${b} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(7, 16), b = randInt(4, 12), c = (a + b) * 2;
+                return {
+                    signature: "peri-reverse", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个平行四边形的周长是 <em>${c} 分米</em>，其中一条边长 <em>${a} 分米</em>。与它相邻的边长是多少分米？`,
+                    known: [labelValue("周长", c, "分米"), labelValue("一条边", a, "分米"), "求邻边"],
+                    answer: b, unit: "分米",
+                    formula: "邻边 = 周长 ÷ 2 − 已知边",
+                    hint: "周长的一半正好是一组相邻边的和，再减去已知的那条边。",
+                    steps: [`先求一组相邻边的和：${c} ÷ 2 = ${a + b}（分米）。`, `再求邻边：${a + b} − ${a} = ${b}（分米）。`, `验算：(${a} + ${b}) × 2 = ${c}（分米）。`, `答：相邻的边长 ${b} 分米。`],
+                    tip: "易错提醒：不能用周长直接减去 a，周长里包含两条 a。",
+                    diagram: { kind: "para", base: `${a} 分米`, side: "? 分米", perimeter: `周长 ${c} 分米` }
+                };
+            },
+            () => {
+                const a = randInt(5, 12), b = randInt(3, 9), h = randInt(2, b);
+                const c = (a + b) * 2, area = a * h;
+                return {
+                    signature: "peri-vs-area", tag: "易错辨析", level: "★★★ 挑战",
+                    prompt: `一个平行四边形的底是 <em>${a} 米</em>，这条底上的高是 <em>${h} 米</em>，斜边（邻边）长 <em>${b} 米</em>。它的<em>周长</em>是多少米？`,
+                    known: [labelValue("底", a, "米"), labelValue("高", h, "米"), labelValue("邻边", b, "米"), "求周长（不是面积）"],
+                    answer: c, unit: "米",
+                    formula: "周长 C = (底 + 邻边) × 2　（高不参与周长计算）",
+                    hint: "周长是四条边的总长，用的是<b>底和邻边</b>；高只在算面积时才用。",
+                    steps: [`辨认：求周长，要用四条边，<b>不能用高</b>。`, `代入：C = (${a} + ${b}) × 2。`, `计算：${a + b} × 2 = ${c}（米）。`, `对比：如果求面积才用高，S = ${a} × ${h} = ${area}（平方米）。`, `答：周长是 ${c} 米。`],
+                    tip: "易错提醒：高不是边！算周长只能用底和邻边，别把高加进去。",
+                    diagram: { kind: "para", base: `${a} 米`, side: `${b} 米`, height: `高 ${h} 米` }
+                };
+            }
+        ];
+        return Object.assign({ topic: "perimeter", type: "numeric" }, pick(makers)());
+    }
+
+    /* ---- 面积 ---- */
+    function makeAreaProblem() {
+        const makers = [
+            () => {
+                const a = randInt(5, 15), h = randInt(3, 9), answer = a * h;
+                return {
+                    signature: "area-basic", tag: "基础应用", level: "★ 入门",
+                    prompt: `一块平行四边形菜地，底是 <em>${a} 米</em>，这条底上的高是 <em>${h} 米</em>。这块菜地的面积是多少平方米？`,
+                    known: [labelValue("底", a, "米"), labelValue("对应的高", h, "米"), "求面积"],
+                    answer, unit: "平方米",
+                    formula: "平行四边形面积 S = 底 × 高",
+                    hint: "把平行四边形割补成长方形后，长就是底、宽就是高。",
+                    steps: [`依据：S = 底 × 高（由割补成长方形得到）。`, `代入：S = ${a} × ${h}。`, `计算：${a} × ${h} = ${answer}。`, `答：菜地的面积是 ${answer} 平方米。`],
+                    tip: "易错提醒：面积单位是“平方米”，不要写成“米”。",
+                    diagram: { kind: "para", base: `底 ${a} 米`, height: `高 ${h} 米` }
+                };
+            },
+            () => {
+                const a = randInt(6, 14), h = randInt(3, 8), b = h + randInt(1, 4), answer = a * h;
+                return {
+                    signature: "area-trap-side", tag: "易错辨析", level: "★★ 进阶",
+                    prompt: `一个平行四边形的底是 <em>${a} 厘米</em>，邻边（斜边）长 <em>${b} 厘米</em>，底上的高是 <em>${h} 厘米</em>。它的面积是多少平方厘米？`,
+                    known: [labelValue("底", a, "厘米"), labelValue("邻边", b, "厘米"), labelValue("高", h, "厘米"), "求面积"],
+                    answer, unit: "平方厘米",
+                    formula: "S = 底 × 对应的高（不是底 × 邻边）",
+                    hint: "题目给了三个数，其中<b>邻边是多余条件</b>，面积只用底和高。",
+                    steps: [`辨认：面积公式里乘的是<b>高</b>，不是斜边。`, `代入：S = ${a} × ${h}。`, `计算：${a} × ${h} = ${answer}（平方厘米）。`, `如果错用邻边：${a} × ${b} = ${a * b}，结果偏大，是错的。`, `答：面积是 ${answer} 平方厘米。`],
+                    tip: "易错提醒：斜边比高长，用斜边算出的面积一定偏大。",
+                    diagram: { kind: "para", base: `底 ${a} 厘米`, side: `${b} 厘米`, height: `高 ${h} 厘米`, showWrong: true }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = randInt(3, 8), area = a * h;
+                const price = pick([25, 30, 35, 40, 45, 50]);
+                const answer = area * price;
+                return {
+                    signature: "area-life-cost", tag: "生活情境", level: "★★★ 挑战",
+                    prompt: `一块平行四边形的草坪，底 <em>${a} 米</em>、高 <em>${h} 米</em>。每平方米铺草皮要 <em>${price} 元</em>，铺满这块草坪一共要多少元？`,
+                    known: [labelValue("底", a, "米"), labelValue("高", h, "米"), labelValue("单价", price, "元/平方米"), "求总价"],
+                    answer, unit: "元",
+                    formula: "先求面积 S = 底 × 高，再算总价 = 面积 × 单价",
+                    hint: "两步走：第一步求出草坪面积，第二步用面积乘每平方米的价钱。",
+                    steps: [`先求面积：${a} × ${h} = ${area}（平方米）。`, `再求总价：${area} × ${price}。`, `计算：${area} × ${price} = ${answer}（元）。`, `答：一共要 ${answer} 元。`],
+                    tip: "易错提醒：最后一步问的是钱，单位是“元”，不要写“平方米”。",
+                    diagram: { kind: "para", base: `底 ${a} 米`, height: `高 ${h} 米`, area: `每平方米 ${price} 元` }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = randInt(4, 9), answer = a * h / 2;
+                return {
+                    signature: "area-half-tri", tag: "两步计算", level: "★★ 进阶",
+                    prompt: `一个平行四边形的底是 <em>${a} 分米</em>，高是 <em>${h} 分米</em>。沿一条对角线把它剪成两个三角形，<em>每个三角形</em>的面积是多少平方分米？`,
+                    known: [labelValue("底", a, "分米"), labelValue("高", h, "分米"), "求其中一个三角形的面积"],
+                    answer, unit: "平方分米",
+                    formula: "S平行四边形 = a × h；每个三角形 = S ÷ 2",
+                    hint: "一条对角线把平行四边形分成两个<b>完全一样</b>的三角形。",
+                    steps: [`先求平行四边形面积：${a} × ${h} = ${a * h}（平方分米）。`, `对角线把它分成两个完全一样的三角形。`, `每个三角形：${a * h} ÷ 2 = ${nstr(answer)}（平方分米）。`, `答：每个三角形的面积是 ${nstr(answer)} 平方分米。`],
+                    tip: "易错提醒：两个三角形完全相同，所以是平均分，直接除以 2。",
+                    diagram: { kind: "para", base: `底 ${a} 分米`, height: `高 ${h} 分米`, diag: true }
+                };
+            }
+        ];
+        return Object.assign({ topic: "area", type: "numeric" }, pick(makers)());
+    }
+
+    /* ---- 反求底和高 ---- */
+    function makeReverseProblem() {
+        const makers = [
+            () => {
+                const a = randInt(5, 14), h = randInt(3, 9), area = a * h;
+                return {
+                    signature: "rev-height", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一个平行四边形的面积是 <em>${area} 平方厘米</em>，底是 <em>${a} 厘米</em>。这条底上的高是多少厘米？`,
+                    known: [labelValue("面积", area, "平方厘米"), labelValue("底", a, "厘米"), "反求高"],
+                    answer: h, unit: "厘米",
+                    formula: "高 = 面积 ÷ 底",
+                    hint: "由 S = 底 × 高 反过来想：知道积和一个因数，求另一个因数用<b>除法</b>。",
+                    steps: [`关系：S = 底 × 高。`, `反求：高 = S ÷ 底。`, `代入：${area} ÷ ${a} = ${h}（厘米）。`, `验算：${a} × ${h} = ${area}（平方厘米）。`, `答：高是 ${h} 厘米。`],
+                    tip: "易错提醒：结果是长度，单位用“厘米”，不是“平方厘米”。",
+                    diagram: { kind: "para", base: `底 ${a} 厘米`, height: "高 ?", area: `面积 ${area} 平方厘米` }
+                };
+            },
+            () => {
+                const a = randInt(5, 13), h = randInt(3, 9), area = a * h;
+                return {
+                    signature: "rev-base", tag: "反求未知量", level: "★★ 进阶",
+                    prompt: `一块平行四边形广告牌的面积是 <em>${area} 平方米</em>，高是 <em>${h} 米</em>。它的底是多少米？`,
+                    known: [labelValue("面积", area, "平方米"), labelValue("高", h, "米"), "反求底"],
+                    answer: a, unit: "米",
+                    formula: "底 = 面积 ÷ 高",
+                    hint: "已知面积和高，求底就用面积除以高。",
+                    steps: [`关系：S = 底 × 高。`, `反求：底 = S ÷ 高。`, `代入：${area} ÷ ${h} = ${a}（米）。`, `验算：${a} × ${h} = ${area}（平方米）。`, `答：底是 ${a} 米。`],
+                    tip: "易错提醒：面积除以高得到的是底，别再乘回去。",
+                    diagram: { kind: "para", base: "底 ?", height: `高 ${h} 米`, area: `面积 ${area} 平方米` }
+                };
+            },
+            () => {
+                // 取 area = a1 × h1，并保证存在另一组整数底高（a2 ≠ a1，且都在合理范围内）
+                let a1, h1, area, cand;
+                do {
+                    a1 = randInt(6, 12); h1 = randInt(3, 8); area = a1 * h1;
+                    cand = [];
+                    for (let a2 = 3; a2 <= 20; a2++) if (a2 !== a1 && area % a2 === 0 && area / a2 <= 20) cand.push(a2);
+                } while (!cand.length);
+                const a2 = pick(cand);
+                const h2 = area / a2;
+                return {
+                    signature: "rev-two-pairs", tag: "两组底高", level: "★★★ 挑战",
+                    prompt: `一个平行四边形，一条底是 <em>${a1} 厘米</em>，这条底上的高是 <em>${h1} 厘米</em>。另一条底是 <em>${a2} 厘米</em>，这条底上的高是多少厘米？`,
+                    known: [labelValue("底①", a1, "厘米"), labelValue("高①", h1, "厘米"), labelValue("底②", a2, "厘米"), "求高②"],
+                    answer: h2, unit: "厘米",
+                    formula: "同一个平行四边形：底① × 高① = 底② × 高② = S",
+                    hint: "同一个图形面积只有一个。先用第一组底和高求出面积，再用面积除以第二条底。",
+                    steps: [`先求面积：${a1} × ${h1} = ${area}（平方厘米）。`, `依据：另一组底和高的乘积也等于这个面积。`, `反求：高② = ${area} ÷ ${a2} = ${nstr(h2)}（厘米）。`, `答：另一条底上的高是 ${nstr(h2)} 厘米。`],
+                    tip: "易错提醒：底大的那条对应的高就小，两组底高不能交叉相乘。",
+                    diagram: { kind: "para", base: `底① ${a1} 厘米`, height: `高① ${h1} 厘米`, side: `底② ${a2} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(5, 12), h = randInt(3, 8), area = a * h;
+                const total = area * randInt(2, 5);
+                const n = total / area;
+                return {
+                    signature: "rev-count", tag: "生活情境", level: "★★★ 挑战",
+                    prompt: `用底 <em>${a} 分米</em>、高 <em>${h} 分米</em> 的平行四边形地砖铺一块 <em>${total} 平方分米</em> 的地面，需要多少块地砖？`,
+                    known: [labelValue("每块底", a, "分米"), labelValue("每块高", h, "分米"), labelValue("总面积", total, "平方分米"), "求块数"],
+                    answer: n, unit: "块",
+                    formula: "块数 = 总面积 ÷ 每块面积；每块面积 = 底 × 高",
+                    hint: "先算出一块地砖的面积，再看总面积里有几个这样的面积。",
+                    steps: [`先求每块面积：${a} × ${h} = ${area}（平方分米）。`, `再求块数：${total} ÷ ${area}。`, `计算：${total} ÷ ${area} = ${n}（块）。`, `答：需要 ${n} 块地砖。`],
+                    tip: "易错提醒：最后问块数，单位是“块”，不带“平方分米”。",
+                    diagram: { kind: "para", base: `底 ${a} 分米`, height: `高 ${h} 分米`, area: `共 ${total} 平方分米` }
+                };
+            }
+        ];
+        return Object.assign({ topic: "reverse", type: "numeric" }, pick(makers)());
+    }
+
+    /* ---- 等积变形 ---- */
+    function makeTransformProblem() {
+        const makers = [
+            () => {
+                const a = randInt(6, 12), h = randInt(3, 8), area = a * h;
+                return {
+                    signature: "tr-equal-area", tag: "等底等高", level: "★★ 进阶",
+                    prompt: `甲、乙两个平行四边形的底都是 <em>${a} 厘米</em>，高都是 <em>${h} 厘米</em>，但形状不同。乙的面积是多少平方厘米？`,
+                    known: [labelValue("底", a, "厘米"), labelValue("高", h, "厘米"), "等底等高"],
+                    answer: area, unit: "平方厘米",
+                    formula: "等底等高的平行四边形，面积相等",
+                    hint: "面积只由底和高决定，形状倾斜不影响面积。",
+                    steps: [`依据：S = 底 × 高，与倾斜程度无关。`, `甲、乙底相同、高相同，所以面积相等。`, `计算：${a} × ${h} = ${area}（平方厘米）。`, `答：乙的面积也是 ${area} 平方厘米。`],
+                    tip: "易错提醒：等底等高面积一定相等，但周长不一定相等。",
+                    diagram: { kind: "para", base: `底 ${a} 厘米`, height: `高 ${h} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = randInt(4, 9), answer = a * h / 2;
+                return {
+                    signature: "tr-tri-half", tag: "等底等高", level: "★★ 进阶",
+                    prompt: `一个三角形与一个平行四边形<em>等底等高</em>，平行四边形的底是 <em>${a} 米</em>、高是 <em>${h} 米</em>。这个三角形的面积是多少平方米？`,
+                    known: [labelValue("底", a, "米"), labelValue("高", h, "米"), "三角形与它等底等高"],
+                    answer, unit: "平方米",
+                    formula: "S△ = 底 × 高 ÷ 2 = S平行四边形 ÷ 2",
+                    hint: "两个完全一样的三角形能拼成一个平行四边形，所以三角形是它的一半。",
+                    steps: [`先求平行四边形面积：${a} × ${h} = ${a * h}（平方米）。`, `等底等高时，三角形面积是它的一半。`, `计算：${a * h} ÷ 2 = ${nstr(answer)}（平方米）。`, `答：三角形的面积是 ${nstr(answer)} 平方米。`],
+                    tip: "易错提醒：三角形面积公式最后一定要“÷ 2”，这是最常漏的一步。",
+                    diagram: { kind: "para", base: `底 ${a} 米`, height: `高 ${h} 米`, tri: true }
+                };
+            },
+            () => {
+                const a = randInt(7, 13), b = randInt(4, 9);
+                const h1 = b, h2 = randInt(2, b - 1);
+                const s1 = a * h1, s2 = a * h2;
+                return {
+                    signature: "tr-pull", tag: "拉动变形", level: "★★★ 挑战",
+                    prompt: `一个长方形长 <em>${a} 厘米</em>、宽 <em>${b} 厘米</em>。把它拉成一个平行四边形后，高变成了 <em>${h2} 厘米</em>。这个平行四边形的<em>面积</em>是多少平方厘米？`,
+                    known: [labelValue("原长方形长", a, "厘米"), labelValue("原宽", b, "厘米"), labelValue("拉后的高", h2, "厘米"), "求拉后面积"],
+                    answer: s2, unit: "平方厘米",
+                    formula: "拉动后边长不变（周长不变），面积 = 底 × 新的高",
+                    hint: `拉动时四条边长度没变，所以底还是 ${a} 厘米；但高变小了，面积要用新的高算。`,
+                    steps: [`原长方形面积：${a} × ${b} = ${s1}（平方厘米）。`, `拉动后四条边不变，底仍是 ${a} 厘米，周长也不变。`, `但高变成 ${h2} 厘米，面积 = ${a} × ${h2} = ${s2}（平方厘米）。`, `比较：面积减少了 ${s1} − ${s2} = ${s1 - s2}（平方厘米）。`, `答：平行四边形的面积是 ${s2} 平方厘米。`],
+                    tip: "易错提醒：拉成平行四边形后<b>周长不变、面积变小</b>，不能再用原来的宽当高。",
+                    diagram: { kind: "para", base: `底 ${a} 厘米`, height: `新高 ${h2} 厘米`, side: `边 ${b} 厘米` }
+                };
+            },
+            () => {
+                const a = randInt(6, 12), h = randInt(3, 8), area = a * h;
+                const k = pick([2, 3]);
+                const answer = area * k;
+                return {
+                    signature: "tr-scale", tag: "变化规律", level: "★★★ 挑战",
+                    prompt: `一个平行四边形的底是 <em>${a} 厘米</em>、高是 <em>${h} 厘米</em>。如果<em>高扩大到原来的 ${k} 倍</em>，底不变，新的面积是多少平方厘米？`,
+                    known: [labelValue("原底", a, "厘米"), labelValue("原高", h, "厘米"), `高扩大到 ${k} 倍`],
+                    answer, unit: "平方厘米",
+                    formula: "S = 底 × 高；底不变、高扩大 k 倍，面积也扩大 k 倍",
+                    hint: "面积是底和高的乘积，一个因数扩大几倍，积就扩大几倍。",
+                    steps: [`原面积：${a} × ${h} = ${area}（平方厘米）。`, `新高：${h} × ${k} = ${h * k}（厘米）。`, `新面积：${a} × ${h * k} = ${answer}（平方厘米）。`, `规律：${answer} ÷ ${area} = ${k}，面积也扩大到 ${k} 倍。`],
+                    tip: "易错提醒：如果底和高<b>同时</b>扩大 k 倍，面积会扩大 k × k 倍。",
+                    diagram: { kind: "para", base: `底 ${a} 厘米`, height: `高 ${h} → ${h * k}` }
+                };
+            }
+        ];
+        return Object.assign({ topic: "transform", type: "numeric" }, pick(makers)());
+    }
+
+    const practiceMakers = {
+        concept: makeConceptProblem, perimeter: makePerimeterProblem,
+        area: makeAreaProblem, reverse: makeReverseProblem, transform: makeTransformProblem
+    };
+    const practiceTopicKeys = Object.keys(practiceMakers);
+
+    let practiceSelected = "mixed";
+    let practiceQuestion = null;
+    let practiceLastSignature = "";
+    let practiceCompleted = 0, practiceScore = 0, practiceStreak = 0;
+    let practiceResolved = false, practiceWrongAttempted = false;
+
+    function renderPracticeFormula(topic) {
+        const f = topicFormulas[topic];
+        const prefix = practiceSelected === "mixed" ? `本题 · ${topicNames[topic]}` : topicNames[topic];
+        $("practiceFormulaDeck").innerHTML = `
+            <div class="formula-card">
+                <span class="formula-label">${prefix} · 主要依据</span>
+                <strong>${f.main}</strong>
+                <small>${f.mainNote}</small>
+            </div>
+            <div class="formula-card area-formula">
+                <span class="formula-label">${prefix} · 相关结论</span>
+                <strong>${f.second}</strong>
+                <small>${f.secondNote}</small>
+            </div>
+            <div class="formula-card reverse-formula">
+                <span class="formula-label">↩ 要点提醒</span>
+                <strong>${f.reverse}</strong>
+                <small>先想清楚题目求的是<b>周长</b>还是<b>面积</b>，再决定用哪条边、哪个高。</small>
+            </div>`;
+    }
+
+    function svgLabel(svg, x, y, str, attrs) {
+        const isUnknown = String(str).includes("?");
+        svg.appendChild(text(x, y, str, Object.assign({
+            fill: isUnknown ? "#7c3aed" : "#4338ca", "font-size": 13, "font-weight": 900
+        }, attrs || {})));
+    }
+
+    function renderPracticeDiagram(q) {
+        const svg = $("practiceSvg"), d = q.diagram || {};
+        clear(svg);
+        for (let x = 20; x <= 400; x += 20) svg.appendChild(line(x, 18, x, 280, { stroke: "#eef1f8", "stroke-width": 1 }));
+        for (let y = 20; y <= 280; y += 20) svg.appendChild(line(20, y, 400, y, { stroke: "#eef1f8", "stroke-width": 1 }));
+
+        const kind = d.kind || "para";
+        if (kind === "rect") {
+            const pts = [[70, 70], [350, 70], [350, 230], [70, 230]];
+            svg.appendChild(poly(pts, { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+            pts.forEach((p, i) => {
+                const prev = pts[(i + 3) % 4], next = pts[(i + 1) % 4];
+                svg.appendChild(rightAngle(p, norm(sub(next, p)), norm(sub(prev, p)), 14, C.stroke));
+            });
+            svgLabel(svg, 210, 55, "长方形：四个角都是直角");
+            svgLabel(svg, 210, 256, "也是特殊的平行四边形", { fill: "#64748b" });
+            return;
+        }
+        if (kind === "trap") {
+            svg.appendChild(poly([[130, 70], [290, 70], [360, 230], [55, 230]], { fill: "rgba(239,68,68,.10)", stroke: "#ef4444", "stroke-width": 4 }));
+            svgLabel(svg, 210, 55, "梯形：只有一组对边平行", { fill: "#b91c1c" });
+            svgLabel(svg, 210, 256, "另一组（两腰）不平行 → 不是平行四边形", { fill: "#64748b" });
+            return;
+        }
+
+        // 平行四边形
+        const TL = [130, 68], TR = [360, 68], BR = [290, 232], BL = [60, 232];
+        svg.appendChild(poly([TL, TR, BR, BL], { fill: C.fill, stroke: C.stroke, "stroke-width": 4 }));
+
+        if (d.diag) {
+            svg.appendChild(line(TL[0], TL[1], BR[0], BR[1], { stroke: "#0d9488", "stroke-width": 2.5, "stroke-dasharray": "7 5" }));
+        }
+        if (d.tri) {
+            svg.appendChild(poly([BL, BR, [245, 68]], { fill: "rgba(13,148,136,.16)", stroke: "#0d9488", "stroke-width": 2.5, "stroke-dasharray": "6 4" }));
+        }
+        if (d.height) {
+            svg.appendChild(line(TL[0], TL[1], TL[0], BL[1], { stroke: C.height, "stroke-width": 2.5, "stroke-dasharray": "6 5" }));
+            svg.appendChild(rightAngle([TL[0], BL[1]], [1, 0], [0, -1], 13, C.height));
+            svgLabel(svg, TL[0] - 16, 158, d.height, { fill: C.height, transform: `rotate(-90 ${TL[0] - 16} 158)` });
+        }
+        if (d.showWrong) {
+            svg.appendChild(line(BL[0], BL[1], TL[0], TL[1], { stroke: C.wrong, "stroke-width": 4 }));
+            svgLabel(svg, 62, 150, "✗ 斜边", { fill: C.wrong, transform: "rotate(-66 62 150)" });
+        }
+        if (d.arrows) {
+            [[BL, BR, 1], [TL, TR, 1], [BL, TL, 2], [BR, TR, 2]].forEach(([p, q2, n]) => {
+                const mx = (p[0] + q2[0]) / 2, my = (p[1] + q2[1]) / 2;
+                const ang = Math.atan2(q2[1] - p[1], q2[0] - p[0]) * 180 / Math.PI;
+                for (let i = 0; i < n; i++) {
+                    const off = i * 8 - 3;
+                    svg.appendChild(el("polyline", {
+                        points: `${mx + off - 5},${my - 6} ${mx + off + 3},${my} ${mx + off - 5},${my + 6}`,
+                        fill: "none", stroke: "#f59e0b", "stroke-width": 2.4, transform: `rotate(${ang} ${mx} ${my})`
+                    }));
+                }
+            });
+        }
+        if (d.base) svgLabel(svg, 175, 258, d.base);
+        if (d.side) svgLabel(svg, 340, 155, d.side, { transform: "rotate(66 340 155)" });
+        if (d.perimeter) svgLabel(svg, 250, 44, d.perimeter, { fill: "#7c3aed" });
+        if (d.area) svgLabel(svg, 235, 155, d.area, { fill: "#b45309" });
+    }
+
+    function updatePracticeStats() {
+        const current = Math.min(practiceCompleted + 1, 10);
+        $("practiceProgressText").textContent = practiceCompleted >= 10 ? "本轮已完成" : `第 ${current} / 10 题`;
+        $("practiceScore").textContent = practiceScore;
+        $("practiceStreak").textContent = practiceStreak;
+        $("practiceProgressBar").style.width = `${Math.min(100, practiceCompleted * 10)}%`;
+    }
+
+    function createPracticeProblem(forcedTopic) {
+        const topic = forcedTopic || (practiceSelected === "mixed" ? pick(practiceTopicKeys) : practiceSelected);
+        let q = practiceMakers[topic]();
+        let guard = 0;
+        while (q.signature === practiceLastSignature && guard++ < 8) q = practiceMakers[topic]();
+        practiceLastSignature = q.signature;
+        return q;
+    }
+
+    function renderChoices(q) {
+        const box = $("practiceChoices");
+        box.innerHTML = "";
+        q._order = shuffle(q.choices.map((_, i) => i));
+        q._order.forEach((idx, pos) => {
+            const b = document.createElement("button");
+            b.className = "choice-btn";
+            b.innerHTML = `${"ABCD"[pos]}. ${q.choices[idx].t}`;
+            b.addEventListener("click", () => {
+                if (practiceResolved) return;
+                const right = q.choices[idx].ok;
+                box.querySelectorAll(".choice-btn").forEach(x => x.classList.remove("picked"));
+                b.classList.add("picked");
+                if (right) {
+                    b.classList.add("right");
+                    resolvePractice(true, false);
+                } else {
+                    b.classList.add("wrong");
+                    practiceWrongAttempted = true;
+                    practiceStreak = 0;
+                    updatePracticeStats();
+                    showPracticeFeedback("try", `这个选项不对。${q.hint} 再想一想，选别的试试。`);
+                }
+            });
+            box.appendChild(b);
+        });
+    }
+
+    function markRightChoice() {
+        const q = practiceQuestion;
+        if (q.type !== "choice") return;
+        const btns = $("practiceChoices").querySelectorAll(".choice-btn");
+        q._order.forEach((idx, pos) => {
+            if (q.choices[idx].ok) btns[pos].classList.add("right");
+        });
+    }
+
+    function loadPracticeProblem(forcedTopic) {
+        practiceQuestion = createPracticeProblem(forcedTopic);
+        const q = practiceQuestion;
+        practiceResolved = false;
+        practiceWrongAttempted = false;
+        renderPracticeFormula(q.topic);
+        $("practiceTopicName").textContent = topicNames[q.topic];
+        $("practiceTag").textContent = q.tag;
+        $("practiceLevel").textContent = q.level;
+        $("practicePrompt").innerHTML = q.prompt;
+        $("practiceKnown").innerHTML = q.known.map(k => `<span class="known-item">${k}</span>`).join("");
+
+        const isChoice = q.type === "choice";
+        $("practiceNumericArea").hidden = isChoice;
+        $("practiceChoiceArea").hidden = !isChoice;
+        if (isChoice) {
+            renderChoices(q);
+        } else {
+            $("practiceUnit").textContent = q.unit;
+            $("practiceAnswer").value = "";
+            $("practiceAnswer").disabled = false;
+            $("practiceSubmit").hidden = false;
+        }
+        $("practiceNext").hidden = true;
+        $("practiceHint").hidden = false;
+        $("practiceReveal").hidden = false;
+        $("practiceRefresh").hidden = false;
+        $("practiceFeedback").hidden = true;
+        $("practiceSolution").hidden = true;
+        $("practiceVisualNote").textContent = q.note || "示意图不一定按实际比例绘制，请以题目给出的数据为准。紫色虚线表示高或待求量。";
+        renderPracticeDiagram(q);
+        updatePracticeStats();
+        if (!isChoice) setTimeout(() => $("practiceAnswer").focus({ preventScroll: true }), 0);
+    }
+
+    function showPracticeFeedback(kind, html) {
+        const box = $("practiceFeedback");
+        box.className = `feedback ${kind}`;
+        box.innerHTML = html;
+        box.hidden = false;
+    }
+
+    function showPracticeSolution() {
+        const q = practiceQuestion;
+        $("practiceBasis").textContent = `解题依据：${q.formula}`;
+        $("practiceSteps").innerHTML = q.steps.map((s, i) => `<li><i>${i + 1}</i>${s}</li>`).join("");
+        $("practiceMistake").innerHTML = q.tip;
+        $("practiceSolution").hidden = false;
+    }
+
+    function answerText(q) {
+        return q.type === "choice"
+            ? q.choices.find(c => c.ok).t
+            : `${nstr(q.answer)} ${q.unit}`;
+    }
+
+    function resolvePractice(correct, byReveal) {
+        if (practiceResolved) return;
+        practiceResolved = true;
+        practiceCompleted++;
+        if (correct) {
+            practiceScore++;
+            practiceStreak = practiceWrongAttempted ? 0 : practiceStreak + 1;
+        } else {
+            practiceStreak = 0;
+        }
+        const q = practiceQuestion;
+        if (q.type === "choice") markRightChoice();
+        else {
+            $("practiceAnswer").disabled = true;
+            $("practiceSubmit").hidden = true;
+        }
+        $("practiceNext").hidden = false;
+        $("practiceNext").textContent = practiceCompleted >= 10 ? "再练一轮 ↻" : "下一题 →";
+        $("practiceHint").hidden = true;
+        $("practiceReveal").hidden = true;
+        $("practiceRefresh").hidden = true;
+        showPracticeSolution();
+        const roundText = practiceCompleted >= 10 ? ` 本轮完成：答对 ${practiceScore} / 10 题。` : "";
+        if (correct) {
+            showPracticeFeedback("good", `✓ 答对了！答案是 <b>${answerText(q)}</b>。${roundText}`);
+        } else if (byReveal) {
+            showPracticeFeedback("hint", `已展开完整解析，正确答案是 <b>${answerText(q)}</b>。先对照每一步，再做下一题。${roundText}`);
+        }
+        updatePracticeStats();
+    }
+
+    function submitPracticeAnswer() {
+        if (practiceResolved || practiceQuestion.type === "choice") return;
+        const raw = $("practiceAnswer").value.trim();
+        if (!raw) {
+            showPracticeFeedback("try", "先填入一个数值答案，再点“检查答案”。单位已经写在输入框右侧，不用重复输入。");
+            return;
+        }
+        const value = Number(raw);
+        if (!Number.isFinite(value)) {
+            showPracticeFeedback("try", "请输入有效的数字。");
+            return;
+        }
+        if (Math.abs(value - practiceQuestion.answer) <= 0.01) {
+            resolvePractice(true, false);
+        } else {
+            practiceWrongAttempted = true;
+            practiceStreak = 0;
+            updatePracticeStats();
+            const direction = value > practiceQuestion.answer ? "偏大" : "偏小";
+            showPracticeFeedback("try", `还差一点，这个结果<b>${direction}</b>。${practiceQuestion.hint} 可以修改后再试。`);
+        }
+    }
+
+    function nextPracticeProblem() {
+        if (practiceCompleted >= 10) {
+            practiceCompleted = 0; practiceScore = 0; practiceStreak = 0; practiceLastSignature = "";
+        }
+        loadPracticeProblem();
+    }
+
+    function startPracticeRound() {
+        practiceCompleted = 0; practiceScore = 0; practiceStreak = 0; practiceLastSignature = "";
+        loadPracticeProblem();
+    }
+
+    $("practiceTopicPicker").querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            practiceSelected = btn.dataset.topic;
+            $("practiceTopicPicker").querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+            startPracticeRound();
+        });
+    });
+    $("practiceSubmit").addEventListener("click", submitPracticeAnswer);
+    $("practiceNext").addEventListener("click", nextPracticeProblem);
+    $("practiceHint").addEventListener("click", () => showPracticeFeedback("hint", `提示：${practiceQuestion.hint}<br>可用依据：<b>${practiceQuestion.formula}</b>`));
+    $("practiceReveal").addEventListener("click", () => resolvePractice(false, true));
+    $("practiceRefresh").addEventListener("click", () => loadPracticeProblem(practiceQuestion.topic));
+    $("practiceAnswer").addEventListener("keydown", e => {
+        if (e.key === "Enter") practiceResolved ? nextPracticeProblem() : submitPracticeAnswer();
+    });
+    startPracticeRound();
+
+    /* ============================================================
+       标签切换
+       ============================================================ */
+    function activateTabView(viewName) {
+        const target = document.querySelector(`.tab[data-view="${viewName}"]`);
+        if (!target) return;
+        document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === target));
+        document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + viewName));
+    }
+    document.querySelectorAll(".tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+            activateTabView(btn.dataset.view);
+            history.replaceState(null, "", "#" + btn.dataset.view);
+        });
+    });
+    const initialView = location.hash.slice(1);
+    if (initialView) activateTabView(initialView);
+    </script>
+    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

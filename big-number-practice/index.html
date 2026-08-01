@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="大数的认识分类练习题库，按选择、填空、排序、判断、作图和解答六类整理。">
+    <title>大数的认识·分类练习 | Math101</title>
+    <style>
+        :root {
+            --ink: #172033;
+            --muted: #667085;
+            --line: #dfe6ef;
+            --paper: #ffffff;
+            --bg: #f5f7fb;
+            --blue: #3157d5;
+            --blue-soft: #edf2ff;
+            --teal: #0f8b8d;
+            --amber: #d97706;
+            --purple: #7c3aed;
+            --rose: #d9466f;
+            --green: #16865b;
+            --shadow: 0 16px 40px rgba(36, 51, 86, .09);
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 8% 0%, rgba(107, 139, 255, .14), transparent 30rem),
+                radial-gradient(circle at 96% 12%, rgba(15, 139, 141, .10), transparent 26rem),
+                var(--bg);
+            font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
+        }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+
+        .page { width: min(1180px, calc(100% - 30px)); margin: 0 auto; padding: 22px 0 40px; }
+        .hero {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,.75);
+            border-radius: 26px;
+            padding: 30px clamp(22px, 5vw, 54px);
+            color: #fff;
+            background: linear-gradient(128deg, #233fba 0%, #4265dc 48%, #0f8b8d 100%);
+            box-shadow: var(--shadow);
+        }
+        .hero::after {
+            content: "亿";
+            position: absolute;
+            right: 32px;
+            top: -42px;
+            color: rgba(255,255,255,.10);
+            font: 900 190px/1 Georgia, serif;
+            pointer-events: none;
+        }
+        .home {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: rgba(255,255,255,.88);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .home:hover { color: #fff; }
+        .eyebrow { position: relative; z-index: 1; margin: 28px 0 8px; font-size: 13px; font-weight: 900; letter-spacing: .12em; opacity: .82; }
+        h1 { position: relative; z-index: 1; margin: 0; font-size: clamp(30px, 5vw, 48px); line-height: 1.13; letter-spacing: -.03em; }
+        .hero-copy { position: relative; z-index: 1; max-width: 720px; margin: 12px 0 0; color: rgba(255,255,255,.84); font-size: 15px; line-height: 1.75; }
+        .hero-stats { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+        .hero-stat { min-width: 108px; padding: 10px 14px; border: 1px solid rgba(255,255,255,.25); border-radius: 14px; background: rgba(255,255,255,.12); backdrop-filter: blur(5px); }
+        .hero-stat strong { display: block; font-size: 22px; line-height: 1; }
+        .hero-stat span { display: block; margin-top: 5px; color: rgba(255,255,255,.76); font-size: 12px; font-weight: 700; }
+
+        .category-nav {
+            position: sticky;
+            z-index: 20;
+            top: 0;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin: 16px 0 0;
+            padding: 9px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255,255,255,.94);
+            box-shadow: 0 8px 24px rgba(36, 51, 86, .08);
+            backdrop-filter: blur(10px);
+            scrollbar-width: none;
+        }
+        .category-nav::-webkit-scrollbar { display: none; }
+        .category-btn {
+            flex: 0 0 auto;
+            min-width: 104px;
+            border: 0;
+            border-radius: 11px;
+            padding: 9px 13px;
+            color: #526078;
+            background: transparent;
+            font-weight: 900;
+            transition: .18s ease;
+        }
+        .category-btn small { display: block; margin-top: 2px; font-size: 11px; font-weight: 750; opacity: .68; }
+        .category-btn:hover { background: #f2f5fa; }
+        .category-btn.active { color: #fff; background: var(--blue); box-shadow: 0 7px 16px rgba(49, 87, 213, .24); }
+
+        .toolbar {
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) auto auto auto;
+            gap: 10px;
+            align-items: center;
+            margin: 14px 0 18px;
+        }
+        .search-wrap { position: relative; }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8490a5; pointer-events: none; }
+        .search {
+            width: 100%;
+            min-height: 46px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            padding: 9px 14px 9px 42px;
+            color: var(--ink);
+            background: #fff;
+            outline: none;
+            box-shadow: 0 4px 14px rgba(36, 51, 86, .05);
+        }
+        .search:focus { border-color: #9ab0ff; box-shadow: 0 0 0 4px rgba(49,87,213,.10); }
+        .tool-btn {
+            min-height: 46px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            padding: 0 16px;
+            color: #40506a;
+            background: #fff;
+            font-weight: 900;
+            box-shadow: 0 4px 14px rgba(36, 51, 86, .05);
+        }
+        .tool-btn:hover { border-color: #aebef3; color: var(--blue); }
+        .tool-btn.primary { color: #fff; border-color: var(--blue); background: var(--blue); }
+        .tool-btn.primary:hover { background: #2448bd; }
+
+        .overview-modal {
+            width: min(980px, calc(100% - 28px));
+            max-height: min(84vh, 860px);
+            margin: auto;
+            padding: 0;
+            overflow: hidden;
+            border: 0;
+            border-radius: 22px;
+            color: var(--ink);
+            background: #f7f9fc;
+            box-shadow: 0 28px 80px rgba(15, 23, 42, .28);
+        }
+        .overview-modal::backdrop { background: rgba(20, 29, 48, .55); backdrop-filter: blur(4px); }
+        .overview-head {
+            position: sticky;
+            z-index: 2;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 19px 22px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255,255,255,.96);
+        }
+        .overview-head h2 { font-size: 22px; }
+        .overview-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+        .close-overview {
+            flex: 0 0 auto;
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            color: #5b677b;
+            background: #fff;
+            font-size: 22px;
+            line-height: 1;
+        }
+        .close-overview:hover { color: var(--blue); border-color: #aebef3; }
+        .overview-body { max-height: calc(min(84vh, 860px) - 80px); overflow-y: auto; padding: 20px 22px 26px; }
+        .overview-group + .overview-group { margin-top: 24px; }
+        .overview-group-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 2px 10px; }
+        .overview-group-title h3 { margin: 0; font-size: 17px; }
+        .overview-group-title span { color: var(--muted); font-size: 12px; font-weight: 800; }
+        .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+        .overview-item {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            gap: 11px;
+            align-items: start;
+            min-height: 78px;
+            border: 1px solid #dfe6ef;
+            border-radius: 13px;
+            padding: 11px 12px;
+            color: var(--ink);
+            background: #fff;
+            text-align: left;
+            box-shadow: 0 3px 10px rgba(36,51,86,.035);
+        }
+        .overview-item:hover { color: #213fa8; border-color: #9fb1f0; background: #f8faff; transform: translateY(-1px); }
+        .overview-number { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 11px; color: var(--blue); background: var(--blue-soft); font-size: 13px; font-weight: 950; }
+        .overview-preview { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #445169; font-size: 13px; font-weight: 700; line-height: 1.55; }
+        .overview-item:hover .overview-preview { color: #213fa8; }
+
+        .notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 18px;
+            padding: 12px 15px;
+            border: 1px solid #cdd8fb;
+            border-radius: 13px;
+            color: #33446a;
+            background: var(--blue-soft);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .notice strong { color: #2345b1; }
+
+        .single-nav {
+            display: grid;
+            grid-template-columns: auto minmax(150px, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 18px;
+            padding: 11px;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: #fff;
+            box-shadow: 0 5px 18px rgba(36, 51, 86, .055);
+        }
+        .nav-btn {
+            min-height: 42px;
+            border: 1px solid #d5deea;
+            border-radius: 11px;
+            padding: 0 16px;
+            color: #40506a;
+            background: #f8fafc;
+            font-weight: 900;
+        }
+        .nav-btn:hover:not(:disabled) { color: var(--blue); border-color: #aebef3; background: #f2f5ff; }
+        .nav-btn:disabled { color: #aab3c0; cursor: not-allowed; opacity: .62; }
+        .progress-box { text-align: center; }
+        .progress-box strong { display: block; color: #263d89; font-size: 16px; }
+        .progress-box span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; font-weight: 750; }
+
+        .category-section { margin-top: 28px; scroll-margin-top: 92px; }
+        .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 0 2px 12px; }
+        .section-title { display: flex; align-items: center; gap: 12px; }
+        .section-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; color: #fff; background: var(--section-color, var(--blue)); font-size: 20px; font-weight: 950; box-shadow: 0 8px 18px color-mix(in srgb, var(--section-color, var(--blue)) 24%, transparent); }
+        h2 { margin: 0; font-size: 23px; }
+        .section-desc { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+        .section-count { color: var(--muted); font-size: 13px; font-weight: 850; white-space: nowrap; }
+
+        .question-list { display: grid; gap: 13px; }
+        .question-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 21px 22px 21px 76px;
+            background: var(--paper);
+            box-shadow: 0 5px 18px rgba(36, 51, 86, .055);
+            scroll-margin-top: 102px;
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+        }
+        .question-card:hover { border-color: #c6d2ec; box-shadow: 0 10px 24px rgba(36, 51, 86, .08); }
+        .question-card.random-focus { border-color: #6480ed; box-shadow: 0 0 0 4px rgba(49,87,213,.13), 0 16px 34px rgba(36,51,86,.12); animation: lift .45s ease; }
+        @keyframes lift { from { transform: translateY(8px); } to { transform: none; } }
+        .number {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border-radius: 12px;
+            color: var(--section-color, var(--blue));
+            background: color-mix(in srgb, var(--section-color, var(--blue)) 10%, white);
+            font-size: 15px;
+            font-weight: 950;
+        }
+        .question-text { font-size: 17px; line-height: 1.82; font-weight: 650; word-break: break-word; }
+        .question-text p { margin: 0 0 7px; }
+        .question-text p:last-child { margin-bottom: 0; }
+        .subquestion { margin-top: 8px; padding-left: 2px; }
+        .blank { display: inline-block; min-width: 82px; height: 1.15em; margin: 0 3px; vertical-align: -.05em; border-bottom: 1.8px solid #8994a6; }
+        .blank.wide { min-width: 150px; }
+        .compare-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; margin-top: 12px; }
+        .compare-item { white-space: nowrap; }
+
+        .choices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+        .choice {
+            min-height: 42px;
+            border: 1px solid #dce3ee;
+            border-radius: 11px;
+            padding: 8px 12px;
+            color: #43506a;
+            background: #f8fafc;
+            text-align: left;
+            font-weight: 750;
+        }
+        .choice:hover { border-color: #aebef3; background: #f2f5ff; }
+        .choice.selected { color: #2648b7; border-color: #7891ed; background: #edf2ff; box-shadow: inset 0 0 0 1px #7891ed; }
+        .interaction-note { margin-top: 9px; color: #8691a4; font-size: 12px; font-weight: 650; }
+
+        .data-table { width: min(620px, 100%); margin: 14px 0; border-collapse: collapse; font-size: 15px; font-weight: 600; }
+        .data-table th, .data-table td { border: 1px solid #cfd8e6; padding: 9px 12px; text-align: left; }
+        .data-table th { color: #2d456f; background: #f0f4fb; }
+        .data-table tr:nth-child(even) td { background: #fbfcfe; }
+
+        .figure { margin: 15px 0 4px; padding: 14px; overflow-x: auto; border: 1px solid #e2e8f1; border-radius: 13px; background: #fcfdff; }
+        .figure img { display: block; width: 100%; height: auto; min-width: 540px; }
+        .figure.compact img { min-width: 420px; }
+        .figure figcaption { margin-top: 8px; color: #8893a5; text-align: center; font-size: 12px; }
+
+        .judgement { display: flex; gap: 8px; margin-top: 12px; }
+        .judgement .choice { min-width: 92px; text-align: center; }
+
+        .diamond-board { margin-top: 14px; padding: 14px; border: 1px dashed #cbd5e1; border-radius: 13px; background: #fbfdff; }
+        .diamond-row { display: flex; align-items: center; gap: 13px; min-height: 46px; padding: 4px 0; }
+        .row-label { flex: 0 0 68px; color: #536078; font-size: 14px; font-weight: 900; }
+        .diamonds { display: flex; flex-wrap: wrap; gap: 10px; min-height: 34px; align-items: center; }
+        .diamond {
+            width: 25px;
+            height: 25px;
+            border: 1.5px solid #3e6676;
+            border-radius: 2px;
+            background: #ccebf6;
+            transform: rotate(45deg);
+            transition: transform .15s ease, background .15s ease;
+        }
+        .diamond:hover { background: #9edcec; transform: rotate(45deg) scale(1.1); }
+
+        .paint-sentence { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+        .swatch { display: inline-block; width: 48px; height: 25px; border: 1.5px solid #667085; background: #fff; vertical-align: middle; }
+        .swatch.blue { background: #bde5f7; }
+        .paint-wrap { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; margin-top: 14px; }
+        .paint-grid { display: grid; grid-template-columns: repeat(6, 54px); border-top: 1px solid #667085; border-left: 1px solid #667085; }
+        .paint-cell { width: 54px; height: 42px; border: 0; border-right: 1px solid #667085; border-bottom: 1px solid #667085; background: #fff; }
+        .paint-cell:hover { background: #edf8fd; }
+        .paint-cell.filled { background: #bde5f7; }
+        .mini-btn { min-height: 34px; border: 1px solid #d5deea; border-radius: 9px; padding: 0 12px; color: #5d697e; background: #fff; font-size: 12px; font-weight: 850; }
+        .mini-btn:hover { color: var(--blue); border-color: #aebef3; }
+
+        .zero-boxes { max-width: 760px; }
+        .empty-state { display: none; padding: 52px 20px; border: 1px dashed #cbd5e1; border-radius: 18px; color: var(--muted); background: #fff; text-align: center; }
+        .result-line { min-height: 20px; margin: 0 2px 8px; color: var(--muted); font-size: 13px; font-weight: 800; }
+        footer { padding: 30px 16px 0; color: #94a3b8; text-align: center; font-size: 13px; line-height: 1.7; }
+
+        @media (max-width: 760px) {
+            .page { width: min(100% - 20px, 1180px); padding-top: 10px; }
+            .hero { border-radius: 20px; padding: 24px 20px; }
+            .hero::after { right: -12px; font-size: 145px; }
+            .eyebrow { margin-top: 22px; }
+            .toolbar { grid-template-columns: 1fr 1fr; }
+            .search-wrap { grid-column: 1 / -1; }
+            .tool-btn { padding: 0 10px; }
+            #printBtn { grid-column: 1 / -1; }
+            .overview-modal { width: calc(100% - 16px); max-height: 92vh; border-radius: 17px; }
+            .overview-head { padding: 15px 16px; }
+            .overview-body { max-height: calc(92vh - 74px); padding: 16px; }
+            .overview-grid { grid-template-columns: 1fr; }
+            .single-nav { grid-template-columns: 1fr 1fr; }
+            .progress-box { grid-column: 1 / -1; grid-row: 1; }
+            .nav-btn { width: 100%; }
+            .question-card { padding: 68px 16px 18px; }
+            .number { left: 16px; top: 16px; }
+            .question-text { font-size: 16px; }
+            .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .compare-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .paint-grid { grid-template-columns: repeat(6, minmax(36px, 1fr)); width: 100%; }
+            .paint-cell { width: auto; }
+            .paint-wrap { display: block; }
+            .paint-wrap .mini-btn { margin-top: 10px; }
+            .section-head { align-items: flex-start; }
+        }
+
+        @media print {
+            @page { size: A4; margin: 14mm; }
+            body { background: #fff; }
+            .page { width: 100%; padding: 0; }
+            .hero { color: #111827; border: 0; border-radius: 0; padding: 0 0 14px; background: #fff; box-shadow: none; }
+            .hero::after, .home, .hero-copy, .hero-stats, .category-nav, .toolbar, .notice, .result-line, .single-nav, .interaction-note, .mini-btn, footer { display: none !important; }
+            .eyebrow { margin: 0 0 4px; color: #64748b; }
+            h1 { font-size: 25px; }
+            .category-section { margin: 18px 0 0; break-before: auto; }
+            .section-icon { color: #111827; border: 1px solid #94a3b8; background: #fff; box-shadow: none; }
+            .question-list { gap: 8px; }
+            .question-card { break-inside: avoid; border: 1px solid #b8c1ce; border-radius: 8px; padding: 15px 14px 15px 58px; box-shadow: none; }
+            .number { left: 13px; top: 13px; color: #111827; border: 1px solid #b8c1ce; background: #fff; }
+            .question-text { font-size: 14px; }
+            .choice { min-height: 32px; padding: 5px 9px; background: #fff; }
+            .figure { padding: 8px; }
+        }
+    </style>
+    <link rel="stylesheet" href="../ipad-touch-adapter.css">
+    <script src="../ipad-touch-adapter.js" defer></script>
+</head>
+<body>
+<div class="page">
+    <header class="hero">
+        <a class="home" href="/" aria-label="返回工具主页">← 返回工具主页</a>
+        <div class="eyebrow">四年级 · 数与代数</div>
+        <h1>大数的认识·分类练习</h1>
+        <p class="hero-copy">将原文档中的题目按题型完整整理，保留原题号与必要题图。每次只显示一道题，可逐题切换、关键词检索、随机抽题或打印当前题目。</p>
+        <div class="hero-stats" aria-label="题库概览">
+            <div class="hero-stat"><strong>34</strong><span>原卷题目</span></div>
+            <div class="hero-stat"><strong>6</strong><span>题型大类</span></div>
+            <div class="hero-stat"><strong>0</strong><span>答案与解析</span></div>
+        </div>
+    </header>
+
+    <nav class="category-nav" aria-label="题型分类">
+        <button class="category-btn active" data-category="all" type="button">全部题目<small>34 题</small></button>
+        <button class="category-btn" data-category="choice" type="button">选择题<small>8 题</small></button>
+        <button class="category-btn" data-category="fill" type="button">填空题<small>15 题</small></button>
+        <button class="category-btn" data-category="sort" type="button">排序题<small>2 题</small></button>
+        <button class="category-btn" data-category="judge" type="button">判断题<small>2 题</small></button>
+        <button class="category-btn" data-category="draw" type="button">作图题<small>3 题</small></button>
+        <button class="category-btn" data-category="solve" type="button">解答题<small>4 题</small></button>
+    </nav>
+
+    <div class="toolbar">
+        <label class="search-wrap">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input class="search" id="searchInput" type="search" placeholder="搜索题目，如：四舍五入、读作、万……" aria-label="搜索题目">
+        </label>
+        <button class="tool-btn primary" id="randomBtn" type="button">随机抽一题</button>
+        <button class="tool-btn" id="browseBtn" type="button">浏览全部问题</button>
+        <button class="tool-btn" id="printBtn" type="button" title="打印当前筛选结果">打印当前题目</button>
+    </div>
+
+    <div class="notice">
+        <span aria-hidden="true">✦</span>
+        <div><strong>纯练习模式：</strong>本工具不提供答案、解析或正误判断。选择项与作图操作仅用于记录自己的作答。</div>
+    </div>
+    <div class="result-line" id="resultLine" aria-live="polite">当前：选择题 · 原题第1题</div>
+    <div class="empty-state" id="emptyState">没有找到匹配的题目，请换个关键词试试。</div>
+
+    <div class="single-nav" id="singleNav" aria-label="单题切换">
+        <button class="nav-btn" id="prevBtn" type="button">← 上一题</button>
+        <div class="progress-box"><strong id="progressText">1 / 34</strong><span id="progressHint">一次只显示一道题</span></div>
+        <button class="nav-btn" id="nextBtn" type="button">下一题 →</button>
+    </div>
+
+    <main id="questionBank">
+        <section class="category-section" data-section="choice" style="--section-color: var(--blue)">
+            <div class="section-head">
+                <div class="section-title"><span class="section-icon">选</span><div><h2>一、选择题</h2><p class="section-desc">点击选项可标记自己的选择，不显示正误。</p></div></div>
+                <span class="section-count">第 1—8 题 · 8 题</span>
+            </div>
+            <div class="question-list">
+                <article class="question-card" data-category="choice" id="q1" tabindex="-1">
+                    <span class="number">01</span>
+                    <div class="question-text">在写八千零七万三千二百时，要写出（&nbsp;&nbsp;&nbsp;&nbsp;）个0。</div>
+                    <div class="choices"><button class="choice" type="button">A．2</button><button class="choice" type="button">B．3</button><button class="choice" type="button">C．4</button><button class="choice" type="button">D．5</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q2" tabindex="-1">
+                    <span class="number">02</span>
+                    <div class="question-text">三十六万八千改写成用“万”作单位的数是（&nbsp;&nbsp;&nbsp;&nbsp;）。</div>
+                    <div class="choices"><button class="choice" type="button">A．36万</button><button class="choice" type="button">B．37万</button><button class="choice" type="button">C．36.8万</button><button class="choice" type="button">D．36.08万</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q3" tabindex="-1">
+                    <span class="number">03</span>
+                    <div class="question-text">80320801中左边的“8”表示（&nbsp;&nbsp;&nbsp;&nbsp;）。</div>
+                    <div class="choices"><button class="choice" type="button">A．8个千</button><button class="choice" type="button">B．8个百万</button><button class="choice" type="button">C．8个千万</button><button class="choice" type="button">D．8个百</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q4" tabindex="-1">
+                    <span class="number">04</span>
+                    <div class="question-text">160□307≈160万，□里可以填（&nbsp;&nbsp;&nbsp;&nbsp;）。</div>
+                    <div class="choices"><button class="choice" type="button">A．0、1、2、3、4</button><button class="choice" type="button">B．1、2、3、4、5</button><button class="choice" type="button">C．5、6、7、8、9</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q5" tabindex="-1">
+                    <span class="number">05</span>
+                    <div class="question-text">一个数用“四舍五入法”凑整到十万位得到的数是300000，这个数最大是（&nbsp;&nbsp;&nbsp;&nbsp;）。</div>
+                    <div class="choices"><button class="choice" type="button">A．299999</button><button class="choice" type="button">B．250000</button><button class="choice" type="button">C．349999</button><button class="choice" type="button">D．350000</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q6" tabindex="-1">
+                    <span class="number">06</span>
+                    <div class="question-text">上半年某品牌汽车总产量约是46万辆，那么上半年该品牌汽车的实际产量最多可能是（&nbsp;&nbsp;&nbsp;&nbsp;）辆。</div>
+                    <div class="choices"><button class="choice" type="button">A．459999</button><button class="choice" type="button">B．460009</button><button class="choice" type="button">C．464999</button><button class="choice" type="button">D．465999</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q7" tabindex="-1">
+                    <span class="number">07</span>
+                    <div class="question-text">下面四个数中，用“四舍五入法”精确到万位是80万的是（&nbsp;&nbsp;&nbsp;&nbsp;）。</div>
+                    <div class="choices"><button class="choice" type="button">A．79999</button><button class="choice" type="button">B．794800</button><button class="choice" type="button">C．795000</button><button class="choice" type="button">D．805600</button></div>
+                </article>
+                <article class="question-card" data-category="choice" id="q8" tabindex="-1">
+                    <span class="number">08</span>
+                    <div class="question-text">要使25□97≈2.6万，□里有（&nbsp;&nbsp;&nbsp;&nbsp;）种不同的填法。</div>
+                    <div class="choices"><button class="choice" type="button">A．9</button><button class="choice" type="button">B．5</button><button class="choice" type="button">C．4</button><button class="choice" type="button">D．1</button></div>
+                </article>
+            </div>
+        </section>
+
+        <section class="category-section" data-section="fill" style="--section-color: var(--teal)">
+            <div class="section-head">
+                <div class="section-title"><span class="section-icon">填</span><div><h2>二、填空题</h2><p class="section-desc">涵盖数的组成、读写、比较、改写与近似数。</p></div></div>
+                <span class="section-count">第 9—23 题 · 15 题</span>
+            </div>
+            <div class="question-list">
+                <article class="question-card" data-category="fill" id="q9" tabindex="-1">
+                    <span class="number">09</span><div class="question-text">按规律填数：5800，5500，5200，<span class="blank"></span>，<span class="blank"></span>。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q10" tabindex="-1">
+                    <span class="number">10</span><div class="question-text">珠穆朗玛峰是世界第一高峰，海拔为8849米，接近<span class="blank"></span>米（填整千数）。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q11" tabindex="-1">
+                    <span class="number">11</span><div class="question-text">下面箭头所指的数中，近似数是5000的有哪些？在下面圈出来。</div>
+                    <figure class="figure"><img src="assets/q11-number-line.png" alt="从3000到7000的数轴，箭头分别指向3619、4023、4907、5256和5903"><figcaption>请在图中圈出符合要求的数。</figcaption></figure>
+                </article>
+                <article class="question-card" data-category="fill" id="q12" tabindex="-1">
+                    <span class="number">12</span><div class="question-text">一万一万地数，256000后面的一个数是<span class="blank"></span>。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q13" tabindex="-1">
+                    <span class="number">13</span>
+                    <div class="question-text">
+                        <p>下面是第七次全国人口普查部分地区的人口情况。</p>
+                        <table class="data-table"><thead><tr><th>地区</th><th>人口数</th></tr></thead><tbody><tr><td>北京</td><td>21893095</td></tr><tr><td>天津</td><td>13866009</td></tr><tr><td>四川</td><td>八千三百六十七万四千八百六十六</td></tr><tr><td>广西</td><td>50126804</td></tr><tr><td>青海</td><td>五百九十二万三千九百五十七</td></tr></tbody></table>
+                        <div class="subquestion"><p>（1）读出下列各数。</p><p>21893095　读作：<span class="blank wide"></span></p><p>13866009　读作：<span class="blank wide"></span></p><p>50126804　读作：<span class="blank wide"></span></p></div>
+                        <div class="subquestion"><p>（2）写出下列各数。</p><p>八千三百六十七万四千八百六十六　写作：<span class="blank wide"></span></p><p>五百九十二万三千九百五十七　写作：<span class="blank wide"></span></p></div>
+                        <div class="subquestion"><p>（3）把下面的数改写成以“万”为单位的近似数。</p><p>21893095≈<span class="blank"></span>万　　13866009≈<span class="blank"></span>万</p></div>
+                        <div class="subquestion">（4）将上面表格中的数据按从小到大的顺序排列。（用数表示）<span class="blank wide"></span></div>
+                    </div>
+                </article>
+                <article class="question-card" data-category="fill" id="q14" tabindex="-1">
+                    <span class="number">14</span><div class="question-text"><p>用7、5、4、1、0这5个数字，按下列要求分别组成一个五位数。</p><p>（1）最大的数：<span class="blank"></span>。</p><p>（2）最小的数：<span class="blank"></span>。</p><p>（3）最接近7万的数：<span class="blank"></span>，读作<span class="blank wide"></span>。</p></div>
+                </article>
+                <article class="question-card" data-category="fill" id="q15" tabindex="-1">
+                    <span class="number">15</span><div class="question-text">天津上合峰会某论坛活动前五天，线上预约参与的人数达到了三十六万五千七百一十人次，横线上的数写作<span class="blank"></span>，用“四舍五入”法省略万位后面的尾数约是<span class="blank"></span>万。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q16" tabindex="-1">
+                    <span class="number">16</span><div class="question-text">由2个十万、5个万和6个一组成的数是<span class="blank"></span>。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q17" tabindex="-1">
+                    <span class="number">17</span><div class="question-text">4个一千万，3个十万，8个万，2个百，9个十，能组成一个<span class="blank"></span>位数，这个数写作<span class="blank"></span>，读作<span class="blank wide"></span>，四舍五入到万位约是<span class="blank"></span>万。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q18" tabindex="-1">
+                    <span class="number">18</span><div class="question-text">最大的七位数要变成八位数，至少要加上<span class="blank"></span>。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q19" tabindex="-1">
+                    <span class="number">19</span><div class="question-text">地球与太阳的距离约是149600000千米，横线上的数读作<span class="blank wide"></span>。这是一个<span class="blank"></span>位数，9在<span class="blank"></span>位上，表示<span class="blank"></span>。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q20" tabindex="-1">
+                    <span class="number">20</span><div class="question-text"><p>在括号里填上“＞”“＜”或“＝”。</p><div class="compare-grid"><span class="compare-item">26000（　）26万</span><span class="compare-item">5亿（　）50000001</span><span class="compare-item">7380000（　）7亿</span><span class="compare-item">500万（　）1亿</span><span class="compare-item">60万（　）600000</span><span class="compare-item">10万（　）99999</span><span class="compare-item">567900（　）567万</span><span class="compare-item">12万（　）102000</span></div></div>
+                </article>
+                <article class="question-card" data-category="fill" id="q21" tabindex="-1">
+                    <span class="number">21</span><div class="question-text">国家大剧院位于北京市中心天安门广场西侧，是目前亚洲最大的剧院综合体，北京十六景之一的地标性建筑。中国国家大剧院占地面积约118900平方米（改写成用“万”作单位的数：<span class="blank"></span>），总建筑面积约165000平方米（改写成用“万”作单位的数：<span class="blank"></span>），总投资额约3100000000元（改写成用“亿”作单位的数：<span class="blank"></span>）。</div>
+                </article>
+                <article class="question-card" data-category="fill" id="q22" tabindex="-1">
+                    <span class="number">22</span><div class="question-text"><p>画一画，填一填。</p><p>（1）415000和421900“四舍五入”后是<span class="blank"></span>万，在图中画出这两个数的大致位置。</p></div>
+                    <figure class="figure compact"><img src="assets/q22-number-line.png" alt="从41万到43万的空白数轴"><figcaption>在数轴上标出两个数的大致位置。</figcaption></figure>
+                    <div class="question-text"><p>（2）在415000和421900中，<span class="blank"></span>比较接近42万。</p></div>
+                </article>
+                <article class="question-card" data-category="fill" id="q23" tabindex="-1">
+                    <span class="number">23</span><div class="question-text">一个五位数的千位上是8，这个五位数的近似数最小是<span class="blank"></span>万，最大是<span class="blank"></span>万。</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="category-section" data-section="sort" style="--section-color: var(--amber)">
+            <div class="section-head"><div class="section-title"><span class="section-icon">序</span><div><h2>三、排序题</h2><p class="section-desc">统一数的表示形式，再比较数的大小。</p></div></div><span class="section-count">第 24—25 题 · 2 题</span></div>
+            <div class="question-list">
+                <article class="question-card" data-category="sort" id="q24" tabindex="-1">
+                    <span class="number">24</span><div class="question-text"><p>按要求做题。</p><p>俄罗斯国土面积约是17098200平方千米；加拿大国土面积约是9980000平方千米；中国国土面积约是9600000平方千米；美国国土面积约是9370000平方千米。</p><div class="subquestion"><p>（1）读出俄罗斯和我国的国土面积数。</p><p>17098200读作：<span class="blank wide"></span>。　9600000读作：<span class="blank wide"></span>。</p></div><div class="subquestion"><p>（2）将我国和美国国土面积改写成用“万”作单位的数。</p><p>9600000＝<span class="blank"></span>万。　9370000＝<span class="blank"></span>万。</p></div><div class="subquestion">（3）把四个国家的国土面积数据按从大到小的顺序排列。<span class="blank wide"></span></div></div>
+                </article>
+                <article class="question-card" data-category="sort" id="q25" tabindex="-1">
+                    <span class="number">25</span><div class="question-text">把47.89万、0.008亿、470000、3300000按从大到小的顺序排列。<div style="margin-top:14px"><span class="blank wide"></span></div></div>
+                </article>
+            </div>
+        </section>
+
+        <section class="category-section" data-section="judge" style="--section-color: var(--purple)">
+            <div class="section-head"><div class="section-title"><span class="section-icon">判</span><div><h2>四、判断题</h2><p class="section-desc">选择“正确”或“错误”只会记录作答，不显示答案。</p></div></div><span class="section-count">第 26—27 题 · 2 题</span></div>
+            <div class="question-list">
+                <article class="question-card" data-category="judge" id="q26" tabindex="-1">
+                    <span class="number">26</span><div class="question-text">比79999多一万的数是179999。（&nbsp;&nbsp;&nbsp;&nbsp;）</div><div class="judgement choices"><button class="choice" type="button">正确</button><button class="choice" type="button">错误</button></div>
+                </article>
+                <article class="question-card" data-category="judge" id="q27" tabindex="-1">
+                    <span class="number">27</span><div class="question-text">704008500这个数中只读了一个零。（&nbsp;&nbsp;&nbsp;&nbsp;）</div><div class="judgement choices"><button class="choice" type="button">正确</button><button class="choice" type="button">错误</button></div>
+                </article>
+            </div>
+        </section>
+
+        <section class="category-section" data-section="draw" style="--section-color: var(--rose)">
+            <div class="section-head"><div class="section-title"><span class="section-icon">画</span><div><h2>五、作图题</h2><p class="section-desc">保留原题图；第29、30题支持直接操作。</p></div></div><span class="section-count">第 28—30 题 · 3 题</span></div>
+            <div class="question-list">
+                <article class="question-card" data-category="draw" id="q28" tabindex="-1">
+                    <span class="number">28</span><div class="question-text">在下图中标出3508的大致位置。</div><figure class="figure"><img src="assets/q28-number-line.png" alt="从3000到4000、平均分成十格的空白数轴"><figcaption>请在图中标出3508。</figcaption></figure>
+                </article>
+                <article class="question-card" data-category="draw" id="q29" tabindex="-1">
+                    <span class="number">29</span><div class="question-text">要使第一排的数量是第二排的2倍，可以怎样移动？画一画。</div>
+                    <div class="diamond-board" id="diamondBoard"><div class="diamond-row"><span class="row-label">第一排：</span><div class="diamonds" data-diamond-row="first" aria-label="第一排菱形"></div></div><div class="diamond-row"><span class="row-label">第二排：</span><div class="diamonds" data-diamond-row="second" aria-label="第二排菱形"></div></div></div>
+                    <div class="interaction-note">可点击任意菱形，把它移动到另一排；工具不判断答案。　<button class="mini-btn" id="resetDiamonds" type="button">重置图形</button></div>
+                </article>
+                <article class="question-card" data-category="draw" id="q30" tabindex="-1">
+                    <span class="number">30</span><div class="question-text paint-sentence">涂一涂，使 <span class="swatch" aria-label="白色方格"></span> 是 <span class="swatch blue" aria-label="蓝色方格"></span> 的5倍。</div>
+                    <div class="paint-wrap"><div class="paint-grid" id="paintGrid" aria-label="三行六列可涂色方格"></div><button class="mini-btn" id="resetPaint" type="button">清空涂色</button></div>
+                    <div class="interaction-note">点击方格可涂成蓝色，再次点击可擦除；工具不判断答案。</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="category-section" data-section="solve" style="--section-color: var(--green)">
+            <div class="section-head"><div class="section-title"><span class="section-icon">答</span><div><h2>六、解答题</h2><p class="section-desc">按要求写数、组数，并写出必要过程。</p></div></div><span class="section-count">第 31—34 题 · 4 题</span></div>
+            <div class="question-list">
+                <article class="question-card" data-category="solve" id="q31" tabindex="-1">
+                    <span class="number">31</span><div class="question-text">一个数是由9个百万、8个千、3个十和7个一组成的，这个数是多少？</div>
+                </article>
+                <article class="question-card" data-category="solve" id="q32" tabindex="-1">
+                    <span class="number">32</span><div class="question-text">用0、0、0、3、6、5、8七个数字按下列要求分别组成一个七位数。（各写一个即可）</div>
+                    <figure class="figure zero-boxes"><img src="assets/q32-zero-reading.png" alt="四个作答框，依次为所有的0都不读、只读一个0、读两个0、读三个0"><figcaption>在对应框中写出符合要求的七位数。</figcaption></figure>
+                </article>
+                <article class="question-card" data-category="solve" id="q33" tabindex="-1">
+                    <span class="number">33</span><div class="question-text">海海用3，7，4，9，0，0，5这7个数字组成一个七位数。请先写出他组成的最大数和最小数，再把它们分别改写成用“万”作单位的数。</div>
+                </article>
+                <article class="question-card" data-category="solve" id="q34" tabindex="-1">
+                    <span class="number">34</span><div class="question-text"><p>按下列要求用三个0和三个5组成不同的六位数。</p><p>（1）只读一个0。</p><p>（2）读两个0。</p><p>（3）所有的0都不读。</p></div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>题目整理自《大数的认识》文档 · 不含答案与解析<br>©孙维刚教育研究院 小宇老师 版权所有</footer>
+</div>
+
+<dialog class="overview-modal" id="overviewDialog" aria-labelledby="overviewTitle">
+    <div class="overview-head">
+        <div><h2 id="overviewTitle">浏览全部问题</h2><p>按题型浏览，点击任意题目进入单题模式。</p></div>
+        <button class="close-overview" id="closeOverview" type="button" aria-label="关闭全部问题">×</button>
+    </div>
+    <div class="overview-body" id="overviewBody"></div>
+</dialog>
+
+<script>
+    (() => {
+        const categoryNames = { all: "全部", choice: "选择题", fill: "填空题", sort: "排序题", judge: "判断题", draw: "作图题", solve: "解答题" };
+        const categoryButtons = [...document.querySelectorAll(".category-btn")];
+        const sections = [...document.querySelectorAll(".category-section")];
+        const cards = [...document.querySelectorAll(".question-card")];
+        const searchInput = document.getElementById("searchInput");
+        const resultLine = document.getElementById("resultLine");
+        const emptyState = document.getElementById("emptyState");
+        const singleNav = document.getElementById("singleNav");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const progressText = document.getElementById("progressText");
+        const progressHint = document.getElementById("progressHint");
+        const overviewDialog = document.getElementById("overviewDialog");
+        const overviewBody = document.getElementById("overviewBody");
+        let activeCategory = "all";
+        let filteredCards = cards;
+        let currentIndex = 0;
+
+        function normalize(value) {
+            return String(value).toLocaleLowerCase("zh-CN").replace(/\s+/g, "");
+        }
+
+        function renderCurrent(shouldFocus = false) {
+            cards.forEach(card => {
+                card.hidden = true;
+                card.classList.remove("random-focus");
+            });
+            sections.forEach(section => { section.hidden = true; });
+
+            if (!filteredCards.length) {
+                emptyState.style.display = "block";
+                singleNav.hidden = true;
+                resultLine.textContent = "没有找到匹配的题目";
+                return;
+            }
+
+            currentIndex = Math.max(0, Math.min(currentIndex, filteredCards.length - 1));
+            const card = filteredCards[currentIndex];
+            const section = card.closest(".category-section");
+            const sourceNumber = Number(card.id.replace("q", ""));
+            card.hidden = false;
+            section.hidden = false;
+            emptyState.style.display = "none";
+            singleNav.hidden = false;
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === filteredCards.length - 1;
+            progressText.textContent = `${currentIndex + 1} / ${filteredCards.length}`;
+            progressHint.textContent = filteredCards.length === 1 ? "当前筛选结果仅有这一题" : "一次只显示一道题";
+            resultLine.textContent = `当前：${categoryNames[card.dataset.category]} · 原题第${sourceNumber}题`;
+
+            if (shouldFocus) {
+                card.classList.add("random-focus");
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+                window.setTimeout(() => card.focus({ preventScroll: true }), 420);
+            }
+        }
+
+        function applyFilters() {
+            const term = normalize(searchInput.value);
+            filteredCards = cards.filter(card => {
+                const categoryMatch = activeCategory === "all" || card.dataset.category === activeCategory;
+                const textMatch = !term || normalize(card.textContent).includes(term);
+                return categoryMatch && textMatch;
+            });
+            currentIndex = 0;
+            renderCurrent();
+        }
+
+        function closeOverviewDialog() {
+            if (typeof overviewDialog.close === "function" && overviewDialog.open) overviewDialog.close();
+            else overviewDialog.removeAttribute("open");
+        }
+
+        function selectQuestion(card) {
+            activeCategory = "all";
+            searchInput.value = "";
+            categoryButtons.forEach(button => button.classList.toggle("active", button.dataset.category === "all"));
+            filteredCards = cards;
+            currentIndex = cards.indexOf(card);
+            closeOverviewDialog();
+            window.setTimeout(() => renderCurrent(true), 0);
+        }
+
+        function buildOverview() {
+            const categoryOrder = ["choice", "fill", "sort", "judge", "draw", "solve"];
+            categoryOrder.forEach(category => {
+                const categoryCards = cards.filter(card => card.dataset.category === category);
+                const group = document.createElement("section");
+                group.className = "overview-group";
+
+                const titleRow = document.createElement("div");
+                titleRow.className = "overview-group-title";
+                const title = document.createElement("h3");
+                title.textContent = categoryNames[category];
+                const count = document.createElement("span");
+                count.textContent = `${categoryCards.length}题`;
+                titleRow.append(title, count);
+
+                const grid = document.createElement("div");
+                grid.className = "overview-grid";
+                categoryCards.forEach(card => {
+                    const sourceNumber = Number(card.id.replace("q", ""));
+                    const item = document.createElement("button");
+                    item.type = "button";
+                    item.className = "overview-item";
+                    item.setAttribute("aria-label", `选择原题第${sourceNumber}题`);
+
+                    const number = document.createElement("span");
+                    number.className = "overview-number";
+                    number.textContent = String(sourceNumber).padStart(2, "0");
+                    const preview = document.createElement("span");
+                    preview.className = "overview-preview";
+                    preview.textContent = card.querySelector(".question-text")?.textContent.trim() || "查看题目";
+                    item.append(number, preview);
+                    item.addEventListener("click", () => selectQuestion(card));
+                    grid.appendChild(item);
+                });
+
+                group.append(titleRow, grid);
+                overviewBody.appendChild(group);
+            });
+        }
+
+        categoryButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                activeCategory = button.dataset.category;
+                categoryButtons.forEach(item => item.classList.toggle("active", item === button));
+                applyFilters();
+                document.getElementById("questionBank").scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        });
+
+        searchInput.addEventListener("input", applyFilters);
+        document.getElementById("printBtn").addEventListener("click", () => window.print());
+        document.getElementById("browseBtn").addEventListener("click", () => {
+            if (typeof overviewDialog.showModal === "function") overviewDialog.showModal();
+            else overviewDialog.setAttribute("open", "");
+        });
+        document.getElementById("closeOverview").addEventListener("click", closeOverviewDialog);
+        overviewDialog.addEventListener("click", event => {
+            const rect = overviewDialog.getBoundingClientRect();
+            const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+            if (!inside) closeOverviewDialog();
+        });
+        prevBtn.addEventListener("click", () => {
+            if (currentIndex <= 0) return;
+            currentIndex -= 1;
+            renderCurrent(true);
+        });
+        nextBtn.addEventListener("click", () => {
+            if (currentIndex >= filteredCards.length - 1) return;
+            currentIndex += 1;
+            renderCurrent(true);
+        });
+        document.getElementById("randomBtn").addEventListener("click", () => {
+            if (!filteredCards.length) return;
+            currentIndex = Math.floor(Math.random() * filteredCards.length);
+            renderCurrent(true);
+        });
+
+        document.querySelectorAll(".choices").forEach(group => {
+            group.querySelectorAll(".choice").forEach(choice => {
+                choice.setAttribute("aria-pressed", "false");
+                choice.addEventListener("click", () => {
+                    const selected = choice.classList.contains("selected");
+                    group.querySelectorAll(".choice").forEach(item => {
+                        item.classList.remove("selected");
+                        item.setAttribute("aria-pressed", "false");
+                    });
+                    if (!selected) {
+                        choice.classList.add("selected");
+                        choice.setAttribute("aria-pressed", "true");
+                    }
+                });
+            });
+        });
+
+        const diamondRows = {
+            first: document.querySelector('[data-diamond-row="first"]'),
+            second: document.querySelector('[data-diamond-row="second"]')
+        };
+
+        function makeDiamond(rowName) {
+            const diamond = document.createElement("button");
+            diamond.type = "button";
+            diamond.className = "diamond";
+            diamond.setAttribute("aria-label", `移动${rowName === "first" ? "第一排" : "第二排"}的一个菱形`);
+            diamond.addEventListener("click", () => {
+                const targetName = diamond.parentElement.dataset.diamondRow === "first" ? "second" : "first";
+                diamondRows[targetName].appendChild(diamond);
+                diamond.setAttribute("aria-label", `移动${targetName === "first" ? "第一排" : "第二排"}的一个菱形`);
+            });
+            return diamond;
+        }
+
+        function resetDiamonds() {
+            Object.values(diamondRows).forEach(row => row.replaceChildren());
+            for (let index = 0; index < 10; index += 1) diamondRows.first.appendChild(makeDiamond("first"));
+            for (let index = 0; index < 2; index += 1) diamondRows.second.appendChild(makeDiamond("second"));
+        }
+
+        const paintGrid = document.getElementById("paintGrid");
+        function resetPaint() {
+            paintGrid.replaceChildren();
+            for (let index = 0; index < 18; index += 1) {
+                const cell = document.createElement("button");
+                cell.type = "button";
+                cell.className = "paint-cell";
+                cell.setAttribute("aria-label", `第${index + 1}个方格，点击涂色`);
+                cell.setAttribute("aria-pressed", "false");
+                cell.addEventListener("click", () => {
+                    const filled = cell.classList.toggle("filled");
+                    cell.setAttribute("aria-pressed", String(filled));
+                    cell.setAttribute("aria-label", `第${index + 1}个方格，点击${filled ? "擦除" : "涂色"}`);
+                });
+                paintGrid.appendChild(cell);
+            }
+        }
+
+        document.getElementById("resetDiamonds").addEventListener("click", resetDiamonds);
+        document.getElementById("resetPaint").addEventListener("click", resetPaint);
+        buildOverview();
+        resetDiamonds();
+        resetPaint();
+        applyFilters();
+    })();
+</script>
+</body>
+</html>

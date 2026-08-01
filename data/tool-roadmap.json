@@ -438,6 +438,25 @@
           ]
         },
         {
+          "id": "solid-unfold",
+          "name": "展开图与截面",
+          "grade": "4-6",
+          "status": "ready",
+          "route": "/solid-unfold",
+          "knowledgeNodeIds": [
+            "shape-solid",
+            "cuboid-cube",
+            "cylinder-cone"
+          ],
+          "tabs": [
+            "展开动画",
+            "哪些能折成正方体",
+            "展开图求表面积",
+            "切一刀看截面",
+            "练一练"
+          ]
+        },
+        {
           "id": "perimeter-area-lab",
           "name": "周长面积与六图形练习",
           "grade": "3-5",

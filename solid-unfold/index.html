@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>展开图与截面 | Math101</title>
+    <link rel="stylesheet" href="../ipad-touch-adapter.css">
+    <script src="../ipad-touch-adapter.js" defer></script>
+    <style>
+        :root {
+            --ink: #172033; --muted: #667085; --line: #d9e2f0; --paper: #fff;
+            --blue: #4f46e5; --cyan: #0891b2; --green: #059669; --amber: #d97706; --red: #dc2626;
+            --shadow: 0 18px 45px rgba(30, 41, 59, .11);
+        }
+        * { box-sizing: border-box; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0; min-height: 100vh; color: var(--ink);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+            background:
+                radial-gradient(circle at 12% 0, #dbeafe 0, transparent 25rem),
+                radial-gradient(circle at 92% 14%, #fce7f3 0, transparent 22rem), #f5f7fb;
+        }
+        button, input, select { font: inherit; }
+        button { cursor: pointer; -webkit-user-select: none; user-select: none; }
+        .page { width: min(1120px, 100%); margin: 0 auto; padding: 20px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+        .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .brand-icon {
+            width: 48px; height: 48px; flex: 0 0 auto; border-radius: 15px; color: #fff;
+            display: grid; place-items: center; font-size: 25px; font-weight: 900;
+            background: linear-gradient(135deg, #4f46e5, #0891b2); box-shadow: 0 10px 24px #4f46e548;
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3.5vw, 31px); }
+        .sub { margin: 3px 0 0; color: var(--muted); font-size: 13px; font-weight: 700; }
+        .home, .small-btn, .tool-btn {
+            min-height: 42px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 13px;
+            background: #fff; color: #344054; font-weight: 850; text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            box-shadow: 0 3px 9px rgba(15, 23, 42, .05);
+        }
+        .small-btn:hover, .tool-btn:hover, .home:hover { border-color: #818cf8; color: #4338ca; }
+        .small-btn.primary, .tool-btn.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+        .tabs {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; padding: 6px;
+            border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.92); margin-bottom: 14px;
+        }
+        .tab {
+            min-height: 46px; border: 0; border-radius: 12px; color: var(--muted); background: transparent;
+            font-size: 15px; font-weight: 900;
+        }
+        .tab.active { color: #fff; background: var(--blue); box-shadow: 0 8px 18px #4f46e544; }
+        .tab.quiz.active { background: var(--green); box-shadow: 0 8px 18px #05966944; }
+        .panel {
+            background: rgba(255,255,255,.96); border: 1px solid #e2e8f0; border-radius: 20px;
+            box-shadow: var(--shadow); padding: 20px;
+        }
+        .view { display: none; animation: show .2s ease; }
+        .view.active { display: block; }
+        @keyframes show { from { opacity: 0; transform: translateY(5px); } }
+        .view-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        h2 { margin: 0; font-size: clamp(18px, 2.8vw, 23px); }
+        .mini-tip { color: var(--muted); font-size: 13px; font-weight: 750; white-space: nowrap; }
+        .chips, .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .chips { margin-bottom: 12px; }
+        .chip {
+            min-height: 40px; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px;
+            background: #f8fafc; color: #475467; font-weight: 850;
+        }
+        .chip.active { color: #fff; border-color: var(--blue); background: var(--blue); }
+        .stage {
+            position: relative; border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+            background-color: #fbfdff;
+            background-image: linear-gradient(#e9eef6 1px, transparent 1px), linear-gradient(90deg,#e9eef6 1px,transparent 1px);
+            background-size: 24px 24px;
+        }
+        .stage svg { width: 100%; height: auto; min-height: 300px; display: block; touch-action: none; }
+        .stage.tall svg { min-height: 400px; }
+        .result {
+            position: absolute; right: 12px; top: 12px; min-width: 104px; min-height: 42px;
+            border-radius: 999px; padding: 8px 14px; display: flex; align-items: center; justify-content: center;
+            gap: 6px; font-weight: 950; color: #065f46; background: #ecfdf5e8; border: 2px solid #6ee7b7;
+            backdrop-filter: blur(5px); pointer-events: none; text-align: center;
+        }
+        .result.warn { color: #92400e; background: #fffbebe8; border-color: #fcd34d; }
+        .result.bad { color: #991b1b; background: #fff1f2e8; border-color: #fda4af; }
+        .result.info { color: #3730a3; background: #eef2ffe8; border-color: #a5b4fc; }
+        .underbar { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .formula {
+            min-height: 42px; border-radius: 12px; padding: 9px 15px; display: inline-flex; align-items: center;
+            gap: 7px; background: #eef2ff; color: #3730a3; font-size: 16px; font-weight: 950;
+        }
+        .formula.green { background: #ecfdf5; color: #047857; }
+        .formula.amber { background: #fffbeb; color: #92400e; }
+        .formula input[type=range] { width: 140px; }
+        .split { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+        .tray-title { margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 850; }
+        .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
+        .legend-item { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 800; }
+        .swatch { width: 15px; height: 15px; border-radius: 4px; }
+        .net-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+        .net-card {
+            border: 2px solid var(--line); border-radius: 15px; background: #fff; padding: 8px 6px 6px;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            font-size: 12px; font-weight: 850; color: #475467; box-shadow: 0 3px 8px rgba(15,23,42,.05);
+        }
+        .net-card svg { width: 100%; height: 82px; pointer-events: none; }
+        .net-card.active { border-color: var(--blue); background: #eef2ff; color: #4338ca; }
+        .net-card.right { border-color: var(--green); background: #ecfdf5; color: #047857; }
+        .net-card.wrong { border-color: var(--red); background: #fff1f2; color: #b91c1c; }
+        .dims { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .dim-field { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 850; color: #475467; }
+        .dim-field input {
+            width: 74px; min-height: 42px; border: 1px solid var(--line); border-radius: 11px;
+            padding: 6px 9px; text-align: center; font-weight: 900; color: var(--ink);
+        }
+        .calc-lines { margin-top: 12px; display: grid; gap: 7px; }
+        .calc-line {
+            border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; padding: 9px 13px;
+            font-size: 15px; font-weight: 850; color: #475467;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .calc-line.total { background: #ecfdf5; border-color: #6ee7b7; color: #047857; font-size: 16px; font-weight: 950; }
+        .qbar { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
+        .qtext { flex: 1 1 220px; min-width: 0; font-size: 15px; font-weight: 850; color: #344054; }
+        .ans-btn {
+            min-height: 44px; min-width: 62px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px;
+            background: #fff; color: #344054; font-weight: 900;
+        }
+        .ans-btn.right { color: #fff; background: var(--green); border-color: var(--green); }
+        .ans-btn.wrong { color: #fff; background: var(--red); border-color: var(--red); }
+        .score { color: var(--muted); font-size: 13px; font-weight: 850; }
+        @media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+        @media (max-width: 760px) {
+            .page { padding: 12px; }
+            .topbar { align-items: flex-start; }
+            .home { min-height: 40px; padding: 7px 10px; font-size: 13px; }
+            .tabs { grid-template-columns: repeat(5, minmax(78px, 1fr)); overflow-x: auto; }
+            .tab { font-size: 14px; }
+            .panel { padding: 13px; }
+            .mini-tip { display: none; }
+        }
+        @media (max-width: 470px) {
+            .brand-icon { width: 42px; height: 42px; }
+            .sub { font-size: 12px; }
+            .chip { min-height: 38px; padding: 6px 11px; font-size: 13px; }
+            .result { top: 8px; right: 8px; min-width: 86px; min-height: 38px; font-size: 13px; }
+            .formula { font-size: 14px; padding: 8px 11px; }
+            .net-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-icon" aria-hidden="true">⬢</div>
+            <div><h1>展开图与截面</h1><p class="sub">展开来看 · 切开来看</p></div>
+        </div>
+        <a class="home" href="/">⌂ 首页</a>
+    </header>
+
+    <nav class="tabs" aria-label="学习步骤">
+        <button class="tab active" data-view="unfold">展开动画</button>
+        <button class="tab" data-view="nets">哪些能折成正方体</button>
+        <button class="tab" data-view="area">展开图求表面积</button>
+        <button class="tab" data-view="section">切一刀看截面</button>
+        <button class="tab quiz" data-view="quiz">练一练</button>
+    </nav>
+
+    <main class="panel">
+        <!-- 1 展开动画 -->
+        <section class="view active" id="view-unfold">
+            <div class="view-head"><h2>把立体图形摊平</h2><span class="mini-tip">拖动滑块展开 · 拖画面可旋转</span></div>
+            <div class="chips" id="unfoldShapes">
+                <button class="chip active" data-solid="cube">正方体</button>
+                <button class="chip" data-solid="cuboid">长方体</button>
+                <button class="chip" data-solid="cylinder">圆柱</button>
+                <button class="chip" data-solid="cone">圆锥</button>
+                <button class="chip" data-solid="prism3">三棱柱</button>
+                <button class="chip" data-solid="pyramid4">四棱锥</button>
+            </div>
+            <div class="stage tall"><svg id="unfoldSvg" viewBox="0 0 900 430" role="application" aria-label="立体图形展开演示"></svg>
+                <div class="result info" id="unfoldResult">立体的样子</div>
+            </div>
+            <div class="underbar">
+                <label class="formula">展开 <input id="unfoldSlider" type="range" min="0" max="100" value="0" aria-label="展开进度"></label>
+                <button class="small-btn" id="unfoldRun">▶ 展开／还原</button>
+                <button class="small-btn" id="unfoldReset">↺ 复位</button>
+            </div>
+            <div class="formula green" id="unfoldFact" style="margin-top:12px;display:flex">正方体有 6 个一样大的正方形面</div>
+        </section>
+
+        <!-- 2 正方体展开图判断 -->
+        <section class="view" id="view-nets">
+            <div class="view-head"><h2>这张展开图能折成正方体吗？</h2><span class="mini-tip">6 块面各一种颜色，折起来盯住同一块</span></div>
+            <div class="chips">
+                <span class="formula amber">正方体的展开图一共有 <b id="netsFoundCount">0</b>／11 种</span>
+                <button class="chip" id="netsShuffle">🔀 换一批</button>
+                <button class="chip" id="netsReset">↺ 重来</button>
+            </div>
+            <div class="net-grid" id="netGrid"></div>
+            <div class="split" style="margin-top:12px">
+                <div>
+                    <p class="tray-title">选中的展开图</p>
+                    <div class="stage"><svg id="netPickSvg" viewBox="0 0 400 340" role="img" aria-label="选中的展开图"></svg></div>
+                </div>
+                <div>
+                    <p class="tray-title">折起来的样子</p>
+                    <div class="stage"><svg id="netFoldSvg" viewBox="0 0 400 340" role="img" aria-label="折叠过程"></svg>
+                        <div class="result info" id="netFoldResult">点一张图</div>
+                    </div>
+                </div>
+            </div>
+            <div class="underbar">
+                <label class="formula">折起来 <input id="netFoldSlider" type="range" min="0" max="100" value="0" aria-label="折叠进度"></label>
+                <button class="small-btn primary" id="netFoldRun">▶ 折给我看</button>
+                <div class="formula green" id="netVerdict">选一张展开图</div>
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="swatch" style="background:#f9a8d4"></span>1</span>
+                <span class="legend-item"><span class="swatch" style="background:#fcd34d"></span>2</span>
+                <span class="legend-item"><span class="swatch" style="background:#86efac"></span>3</span>
+                <span class="legend-item"><span class="swatch" style="background:#7dd3fc"></span>4</span>
+                <span class="legend-item"><span class="swatch" style="background:#c4b5fd"></span>5</span>
+                <span class="legend-item"><span class="swatch" style="background:#fdba74"></span>6</span>
+                <span class="legend-item"><span class="swatch" style="background:#fda4af;border:2px solid #be123c"></span>红色＝两块面撞在一起，折不成</span>
+            </div>
+        </section>
+
+        <!-- 3 展开图求表面积 -->
+        <section class="view" id="view-area">
+            <div class="view-head"><h2>展开图上，把每块面积加起来</h2><span class="mini-tip">改数字，图和算式一起变</span></div>
+            <div class="chips" id="areaShapes">
+                <button class="chip active" data-solid="cuboid">长方体</button>
+                <button class="chip" data-solid="cube">正方体</button>
+                <button class="chip" data-solid="cylinder">圆柱</button>
+            </div>
+            <div class="dims" id="areaDims"></div>
+            <div class="stage tall" style="margin-top:12px"><svg id="areaSvg" viewBox="0 0 900 420" role="img" aria-label="展开图与各面面积"></svg>
+                <div class="result" id="areaResult">表面积 = 0</div>
+            </div>
+            <div class="calc-lines" id="areaCalc"></div>
+        </section>
+
+        <!-- 4 截面 -->
+        <section class="view" id="view-section">
+            <div class="view-head"><h2>用一个平面切开，切口是什么形状？</h2><span class="mini-tip">三个滑块：切哪里 · 斜多少 · 朝哪转</span></div>
+            <div class="chips" id="sectionShapes">
+                <button class="chip active" data-solid="cube">正方体</button>
+                <button class="chip" data-solid="cuboid">长方体</button>
+                <button class="chip" data-solid="cylinder">圆柱</button>
+                <button class="chip" data-solid="cone">圆锥</button>
+                <button class="chip" data-solid="sphere">球</button>
+            </div>
+            <div class="chips" id="sectionCuts"></div>
+            <div class="split">
+                <div>
+                    <p class="tray-title">切开的样子</p>
+                    <div class="stage tall"><svg id="sectionSvg" viewBox="0 0 460 400" role="application" aria-label="立体图形被平面切开"></svg></div>
+                </div>
+                <div>
+                    <p class="tray-title">切口（截面）的形状</p>
+                    <div class="stage tall"><svg id="faceSvg" viewBox="0 0 460 400" role="img" aria-label="截面形状"></svg>
+                        <div class="result" id="sectionResult">正方形</div>
+                    </div>
+                </div>
+            </div>
+            <div class="underbar">
+                <label class="formula">切的位置 <input id="sectionPos" type="range" min="0" max="100" value="50" aria-label="切面位置"><b id="secPosVal">50%</b></label>
+                <label class="formula amber">倾斜角度 <input id="sectionTilt" type="range" min="0" max="90" value="0" aria-label="切面倾斜角度"><b id="secTiltVal">0°</b></label>
+                <label class="formula green">绕轴转 <input id="sectionSpin" type="range" min="0" max="180" value="0" aria-label="切面绕竖直轴旋转"><b id="secSpinVal">0°</b></label>
+                <button class="small-btn primary" id="sectionFaceOn">👁 正对切口看</button>
+                <button class="small-btn" id="sectionSpinView">🔄 换个角度看</button>
+            </div>
+            <div class="formula amber" id="sectionFact" style="margin-top:12px;display:flex">横着切正方体，切口是正方形</div>
+        </section>
+
+        <!-- 5 练一练 -->
+        <section class="view" id="view-quiz">
+            <div class="view-head"><h2>练一练</h2><span class="mini-tip">答完自动出下一题</span></div>
+            <div class="stage tall"><svg id="quizSvg" viewBox="0 0 900 380" role="img" aria-label="题目图形"></svg>
+                <div class="result info" id="quizResult">第 1 题</div>
+            </div>
+            <div class="qbar">
+                <div class="qtext" id="quizText">出题中…</div>
+                <div class="chips" id="quizAnswers" style="margin:0"></div>
+            </div>
+            <div class="underbar">
+                <div class="formula" id="quizFeedback">选一个答案</div>
+                <button class="small-btn" id="quizNext">下一题 ›</button>
+                <span class="score" id="quizScore">答对 0／0</span>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const $ = (id) => document.getElementById(id);
+    const el = (name, attrs, parent) => {
+        const node = document.createElementNS(NS, name);
+        for (const key in attrs) node.setAttribute(key, attrs[key]);
+        if (parent) parent.appendChild(node);
+        return node;
+    };
+    const clear = (svg) => { while (svg.firstChild) svg.removeChild(svg.firstChild); };
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const round2 = (v) => Math.round(v * 100) / 100;
+    const fmt = (v) => String(round2(v));
+    const pts = (list) => list.map((p) => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
+
+    /* ---------- 3D 工具：绕 y、x 轴旋转后正交投影 ---------- */
+    function project(p, view) {
+        const cy = Math.cos(view.yaw), sy = Math.sin(view.yaw);
+        const cx = Math.cos(view.pitch), sx = Math.sin(view.pitch);
+        let x = p[0] * cy + p[2] * sy;
+        let z = -p[0] * sy + p[2] * cy;
+        let y = p[1] * cx - z * sx;
+        z = p[1] * sx + z * cx;
+        return [view.cx + x * view.scale, view.cy - y * view.scale, z];
+    }
+    const projAll = (list, view) => list.map((p) => project(p, view));
+    // 多边形在屏幕上的有向面积，>0 表示正面朝向观察者
+    function facing(poly2) {
+        let s = 0;
+        for (let i = 0; i < poly2.length; i++) {
+            const a = poly2[i], b = poly2[(i + 1) % poly2.length];
+            s += a[0] * b[1] - b[0] * a[1];
+        }
+        return s / 2;
+    }
+    const depth = (poly3, view) => poly3.reduce((sum, p) => sum + project(p, view)[2], 0) / poly3.length;
+
+    /* 画一组三维多边形，按远近排序，背面淡显 */
+    function drawFaces(svg, faces, view, opts) {
+        const o = opts || {};
+        const list = faces.map((f) => ({ f, d: depth(f.poly, view) }));
+        list.sort((a, b) => a.d - b.d);
+        list.forEach((item) => {
+            const f = item.f;
+            const p2 = projAll(f.poly, view);
+            const front = facing(p2) > 0;
+            if (o.hideBack && !front) return;
+            el('polygon', {
+                points: pts(p2),
+                fill: f.fill || '#c7d2fe',
+                'fill-opacity': front ? (f.opacity != null ? f.opacity : 0.92) : (f.backOpacity != null ? f.backOpacity : 0.3),
+                stroke: f.stroke || '#3730a3',
+                'stroke-width': f.width || 2,
+                'stroke-linejoin': 'round',
+                'stroke-dasharray': front ? 'none' : '6 5'
+            }, svg);
+            // 面上的编号：跟着面一起排序，才不会被后画的面盖住
+            if (f.label) {
+                const mx = p2.reduce((s, q) => s + q[0], 0) / p2.length;
+                const my = p2.reduce((s, q) => s + q[1], 0) / p2.length;
+                const t = el('text', {
+                    x: mx, y: my + 7, 'text-anchor': 'middle', 'font-size': 21, 'font-weight': 900,
+                    fill: f.ink || '#3730a3', 'fill-opacity': front ? 1 : 0.75
+                }, svg);
+                t.textContent = f.label;
+            }
+        });
+    }
+
+    /* 让画布可以拖动旋转 */
+    function makeSpinnable(svg, view, redraw) {
+        let last = null;
+        const point = (e) => {
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX, y: t.clientY };
+        };
+        const start = (e) => { last = point(e); };
+        const move = (e) => {
+            if (!last) return;
+            const p = point(e);
+            view.yaw += (p.x - last.x) * 0.012;
+            view.pitch = clamp(view.pitch + (p.y - last.y) * 0.012, -1.2, 1.2);
+            last = p;
+            e.preventDefault();
+            redraw();
+        };
+        const end = () => { last = null; };
+        svg.addEventListener('mousedown', start);
+        svg.addEventListener('touchstart', start, { passive: true });
+        window.addEventListener('mousemove', move);
+        svg.addEventListener('touchmove', move, { passive: false });
+        window.addEventListener('mouseup', end);
+        window.addEventListener('touchend', end);
+    }
+
+    /* ================= 1. 展开动画 ================= */
+    const unfoldSvg = $('unfoldSvg');
+    const unfoldView = { cx: 300, cy: 215, scale: 78, yaw: 0.62, pitch: 0.42 };
+    let unfoldSolid = 'cube';
+    let unfoldT = 0;
+    let unfoldTimer = null;
+
+    const UNFOLD_FACTS = {
+        cube: '正方体有 6 个一样大的正方形面，展开图是 6 个小正方形连在一起',
+        cuboid: '长方体有 6 个面，相对的两个面完全一样，所以展开图里有 3 对相同的长方形',
+        cylinder: '圆柱展开成 1 个长方形加 2 个圆，长方形的长就是底面圆的周长',
+        cone: '圆锥展开成 1 个扇形加 1 个圆，扇形的弧长就是底面圆的周长',
+        prism3: '三棱柱有 5 个面：2 个三角形底面 + 3 个长方形侧面',
+        pyramid4: '四棱锥有 5 个面：1 个正方形底面 + 4 个三角形侧面'
+    };
+
+    // 绕任意轴（过点 p、方向 axis）把点 q 转 angle
+    function rotAround(q, p, axis, angle) {
+        const c = Math.cos(angle), s = Math.sin(angle);
+        const [ax, ay, az] = axis;
+        const v = [q[0] - p[0], q[1] - p[1], q[2] - p[2]];
+        const dot = v[0] * ax + v[1] * ay + v[2] * az;
+        const cr = [ay * v[2] - az * v[1], az * v[0] - ax * v[2], ax * v[1] - ay * v[0]];
+        return [
+            p[0] + v[0] * c + cr[0] * s + ax * dot * (1 - c),
+            p[1] + v[1] * c + cr[1] * s + ay * dot * (1 - c),
+            p[2] + v[2] * c + cr[2] * s + az * dot * (1 - c)
+        ];
+    }
+    const unit = (v) => { const L = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / L, v[1] / L, v[2] / L]; };
+
+    /*
+     * 长方体/正方体展开：底面固定在 y = y0 平面上。
+     * 4 个侧面各绕底面的一条边向外翻 90°→0°；顶面挂在“后”侧面的外边上，
+     * 先跟着后侧面一起转，再绕自己的铰链转，两次旋转按顺序复合，
+     * 所以 t=0 是闭合的长方体、t=1 是摊平的十字展开图。
+     */
+    function boxUnfoldFaces(t, w, d, hh) {
+        const ang = (Math.PI / 2) * (1 - t);   // 侧面与底面的夹角：90° → 0°
+        const x0 = w / 2, z0 = d / 2, y0 = -hh / 2;
+        const faces = [];
+        const bottom = [[-x0, y0, -z0], [x0, y0, -z0], [x0, y0, z0], [-x0, y0, z0]];
+        faces.push({ poly: bottom, fill: '#a5b4fc' });
+
+        // 每个侧面：铰链两端点 + 沿外法线伸出的两点（未翻转时立起来）
+        const sides = [
+            { p: [-x0, y0, z0], q: [x0, y0, z0], out: [0, 0, 1], fill: '#c7d2fe' },    // 前
+            { p: [x0, y0, -z0], q: [-x0, y0, -z0], out: [0, 0, -1], fill: '#c7d2fe' }, // 后
+            { p: [x0, y0, z0], q: [x0, y0, -z0], out: [1, 0, 0], fill: '#bae6fd' },    // 右
+            { p: [-x0, y0, -z0], q: [-x0, y0, z0], out: [-1, 0, 0], fill: '#bae6fd' }  // 左
+        ];
+        const sideOf = (s) => {
+            // 铰链方向：p→q；未翻转（ang=90°）时侧面竖直向上，翻平（ang=0）时沿外法线躺下
+            const axis = unit([s.q[0] - s.p[0], s.q[1] - s.p[1], s.q[2] - s.p[2]]);
+            const up = [s.out[0] * Math.cos(ang) * hh, Math.sin(ang) * hh, s.out[2] * Math.cos(ang) * hh];
+            const r1 = [s.q[0] + up[0], s.q[1] + up[1], s.q[2] + up[2]];
+            const r2 = [s.p[0] + up[0], s.p[1] + up[1], s.p[2] + up[2]];
+            return { poly: [s.p, s.q, r1, r2], axis, top: [r2, r1] };
+        };
+        const built = sides.map(sideOf);
+        built.forEach((b, i) => faces.push({ poly: b.poly, fill: sides[i].fill }));
+
+        // 顶面挂在“后”侧面（索引 1）的外边上
+        const back = built[1];
+        const [e0, e1] = back.top;                       // 外边的两个端点
+        const hingeAxis = unit([e1[0] - e0[0], e1[1] - e0[1], e1[2] - e0[2]]);
+        // 顶面在“跟随后侧面”坐标系里的初始位置：继续沿后侧面所在平面往外伸 d
+        const dir = unit([
+            back.poly[3][0] - back.poly[0][0],
+            back.poly[3][1] - back.poly[0][1],
+            back.poly[3][2] - back.poly[0][2]
+        ]);
+        const flatA = [e0[0] + dir[0] * d, e0[1] + dir[1] * d, e0[2] + dir[2] * d];
+        const flatB = [e1[0] + dir[0] * d, e1[1] + dir[1] * d, e1[2] + dir[2] * d];
+        const a2 = rotAround(flatA, e0, hingeAxis, -ang);
+        const b2 = rotAround(flatB, e0, hingeAxis, -ang);
+        faces.push({ poly: [e0, e1, b2, a2], fill: '#ddd6fe' });
+        return faces;
+    }
+
+    const cubeUnfoldFaces = (t, a) => boxUnfoldFaces(t, a, a, a);
+    const cuboidUnfoldFaces = (t, w, d, hh) => boxUnfoldFaces(t, w, d, hh);
+
+    function prismUnfoldFaces(t, n, r, hh) {
+        // n 棱柱：底面 n 边形固定，n 个侧面向外翻，顶面接在第一个侧面上
+        const faces = [];
+        const y0 = -hh / 2;
+        const base = [];
+        for (let i = 0; i < n; i++) {
+            const a = (Math.PI * 2 * i) / n - Math.PI / 2;
+            base.push([r * Math.cos(a), y0, r * Math.sin(a)]);
+        }
+        faces.push({ poly: base, fill: '#a5b4fc' });
+        const ang = (Math.PI / 2) * (1 - t);
+        const c = Math.cos(ang), s = Math.sin(ang);
+        for (let i = 0; i < n; i++) {
+            const p = base[i], q = base[(i + 1) % n];
+            // 铰链方向与外法线
+            const ex = q[0] - p[0], ez = q[2] - p[2];
+            const len = Math.hypot(ex, ez);
+            const nx = ez / len, nz = -ex / len; // 外法线
+            const ox = nx * hh * c, oz = nz * hh * c, oy = hh * s;
+            faces.push({
+                poly: [p, q, [q[0] + ox, y0 + oy, q[2] + oz], [p[0] + ox, y0 + oy, p[2] + oz]],
+                fill: i % 2 ? '#bae6fd' : '#c7d2fe'
+            });
+        }
+        // 顶面：挂在第 0 个侧面的外边上，跟着侧面转，再绕自己的铰链转
+        const p = base[0], q = base[1];
+        const ex = q[0] - p[0], ez = q[2] - p[2];
+        const len = Math.hypot(ex, ez);
+        const nx = ez / len, nz = -ex / len;
+        // 侧面外边（铰链）的两个端点
+        const e0 = [p[0] + nx * hh * c, y0 + hh * s, p[2] + nz * hh * c];
+        const e1 = [q[0] + nx * hh * c, y0 + hh * s, q[2] + nz * hh * c];
+        const hingeAxis = unit([e1[0] - e0[0], e1[1] - e0[1], e1[2] - e0[2]]);
+        // 侧面所在平面的“向外”方向：从底边指向外边
+        const outDir = unit([e0[0] - p[0], e0[1] - p[1], e0[2] - p[2]]);
+        /*
+         * 顶面是底面平移到高处的副本（棱柱，不是反棱柱）。
+         * 它挂在第 0 个侧面的外边上：当侧面立起来（ang=90°）时正好盖在柱顶，
+         * 侧面躺平后再绕这条外边把顶面转出去，得到摊平的展开图。
+         */
+        const top = base.map((b) => {
+            const lifted = [b[0], y0 + hh, b[2]];          // 闭合时顶面的位置
+            // 先把它随侧面一起转到当前角度：绕底边 p→q 转 (ang - 90°)
+            const withSide = rotAround(lifted, p, unit([ex, 0, ez]), ang - Math.PI / 2);
+            // 再绕侧面外边把顶面自己翻开
+            return rotAround(withSide, e0, hingeAxis, ang - Math.PI / 2);
+        });
+        faces.push({ poly: top, fill: '#ddd6fe' });
+        return faces;
+    }
+
+    function pyramidUnfoldFaces(t, r, hh) {
+        const faces = [];
+        const y0 = -hh / 2;
+        const base = [];
+        for (let i = 0; i < 4; i++) {
+            const a = (Math.PI * 2 * i) / 4 + Math.PI / 4;
+            base.push([r * Math.cos(a), y0, r * Math.sin(a)]);
+        }
+        faces.push({ poly: base, fill: '#a5b4fc' });
+        // 边心距：底面中心到一条边中点的距离
+        const apo = Math.hypot((base[0][0] + base[1][0]) / 2, (base[0][2] + base[1][2]) / 2);
+        const slant = Math.hypot(hh, apo);                  // 斜高
+        const ang0 = Math.atan2(hh, apo);
+        /*
+         * 侧面绕底边刚性转动，顶点始终离底边中点 slant 远，
+         * 于是它在“外法线—竖直”这个平面里画一段圆弧，用 phi 表示与外法线的夹角：
+         *   phi = 0        → 顶点在中点外侧 slant 处（完全摊平）
+         *   phi = π - ang0 → 水平分量 -apo、高 hh，正好落在中心正上方（合拢成棱锥）
+         */
+        const phi = (Math.PI - ang0) * (1 - t);
+        for (let i = 0; i < 4; i++) {
+            const p = base[i], q = base[(i + 1) % 4];
+            const mx = (p[0] + q[0]) / 2, mz = (p[2] + q[2]) / 2;
+            // 从底面中心指向边中点，就是这条边的外法线方向
+            const nl = Math.hypot(mx, mz) || 1;
+            const nx = mx / nl, nz = mz / nl;
+            const reach = slant * Math.cos(phi);
+            const apex = [
+                mx + nx * reach,
+                y0 + slant * Math.sin(phi),
+                mz + nz * reach
+            ];
+            faces.push({ poly: [p, q, apex], fill: i % 2 ? '#bae6fd' : '#c7d2fe' });
+        }
+        return faces;
+    }
+
+    // 圆柱／圆锥用专门的画法（含曲面），不走 drawFaces
+    // 与 drawCylinderUnfold / drawConeUnfold 保持一致的极值点，用来自动取景
+    function cylinderPoints(t) {
+        const r = 0.75, hh = 1.5, circ = 2 * Math.PI * r, seg = 24;
+        const y0 = -hh / 2;
+        const out = [];
+        for (let i = 0; i <= seg; i++) {
+            const a = (Math.PI * 2 * i) / seg, arc = r * a;
+            const x = lerp(r * Math.cos(a), arc - circ / 2, t);
+            const z = lerp(r * Math.sin(a), r + 0.02, t);
+            out.push([x, y0, z], [x, y0 + hh, z]);
+        }
+        const gap = 0.3;
+        for (let i = 0; i <= seg; i++) {
+            const a = (Math.PI * 2 * i) / seg;
+            out.push([r * Math.cos(a), y0, r * Math.sin(a) + t * (-r - gap)]);
+            out.push([r * Math.cos(a), lerp(y0 + hh, y0, t), r * Math.sin(a) + t * (hh + r + gap)]);
+        }
+        return out;
+    }
+
+    function conePoints(t) {
+        const r = 0.85, hh = 1.6, seg = 24;
+        const y0 = -hh / 2;
+        const slant = Math.hypot(r, hh);
+        const sweep = (2 * Math.PI * r) / slant;
+        const out = [[0, lerp(y0 + hh, y0, t), 0]];
+        for (let i = 0; i <= seg; i++) {
+            const ang = (Math.PI * 2 * i) / seg;
+            const flatAng = -Math.PI / 2 + (ang / (Math.PI * 2)) * sweep - sweep / 2;
+            out.push([
+                lerp(r * Math.cos(ang), slant * Math.cos(flatAng), t),
+                lerp(y0, y0 + hh, t),
+                lerp(r * Math.sin(ang), slant * Math.sin(flatAng) + slant, t)
+            ]);
+            out.push([
+                r * Math.cos(ang) - t * (slant * 0.62), y0,
+                r * Math.sin(ang) - t * (r + 0.45)
+            ]);
+        }
+        return out;
+    }
+
+    function drawCylinderUnfold(svg, t, view) {
+        const r = 0.75, hh = 1.5;
+        const circ = 2 * Math.PI * r;
+        const seg = 48;
+        const y0 = -hh / 2;
+        const ring = (y) => {
+            const list = [];
+            for (let i = 0; i <= seg; i++) {
+                const a = (Math.PI * 2 * i) / seg;
+                list.push([r * Math.cos(a), y, r * Math.sin(a)]);
+            }
+            return list;
+        };
+        // 侧面：从卷起的圆柱到展开的长方形，逐段插值
+        const strips = [];
+        for (let i = 0; i < seg; i++) {
+            const a0 = (Math.PI * 2 * i) / seg, a1 = (Math.PI * 2 * (i + 1)) / seg;
+            const arc0 = r * a0, arc1 = r * a1;
+            const roll = (ang, arc) => {
+                // t=0 圆周上；t=1 摊平成沿 x 轴、z=r 的直线
+                const cx = lerp(r * Math.cos(ang), arc - circ / 2, t);
+                const cz = lerp(r * Math.sin(ang), r + 0.02, t);
+                return [cx, cz];
+            };
+            const [x0, z0] = roll(a0, arc0), [x1, z1] = roll(a1, arc1);
+            strips.push({
+                poly: [[x0, y0, z0], [x1, y0, z1], [x1, y0 + hh, z1], [x0, y0 + hh, z0]],
+                fill: '#c7d2fe', stroke: 'none', width: 0
+            });
+        }
+        /*
+         * 上下底圆：展开时都落到侧面所在的平面上（y = y0），
+         * 一个移到长方形的这一侧、一个移到另一侧，与长方形错开不重叠。
+         * 摊平后长方形占 z ∈ [r, r+hh]，所以底圆放在 z < r、顶圆放在 z > r+hh。
+         */
+        const gap = 0.3;
+        const bottom = ring(y0).map((p) => [p[0], p[1], p[2] + t * (-r - gap)]);
+        const top = ring(y0 + hh).map((p) => [
+            p[0], lerp(p[1], y0, t), p[2] + t * (hh + r + gap)
+        ]);
+        const faces = strips.concat([
+            { poly: bottom, fill: '#a5b4fc' },
+            { poly: top, fill: '#ddd6fe' }
+        ]);
+        drawFaces(svg, faces, view);
+        // 侧面轮廓线
+        const outline = [];
+        for (let i = 0; i <= seg; i++) {
+            const a = (Math.PI * 2 * i) / seg, arc = r * a;
+            outline.push([lerp(r * Math.cos(a), arc - circ / 2, t), y0, lerp(r * Math.sin(a), r + 0.02, t)]);
+        }
+        el('polyline', {
+            points: pts(projAll(outline, view)), fill: 'none', stroke: '#3730a3', 'stroke-width': 2
+        }, svg);
+        const outlineTop = outline.map((p) => [p[0], y0 + hh, p[2]]);
+        el('polyline', {
+            points: pts(projAll(outlineTop, view)), fill: 'none', stroke: '#3730a3', 'stroke-width': 2
+        }, svg);
+    }
+
+    function drawConeUnfold(svg, t, view) {
+        const r = 0.85, hh = 1.6;
+        const seg = 48;
+        const y0 = -hh / 2;
+        const slant = Math.hypot(r, hh);
+        const sweep = (2 * Math.PI * r) / slant;  // 展开扇形的圆心角
+        const apex = [0, y0 + hh, 0];
+        const faces = [];
+        for (let i = 0; i < seg; i++) {
+            const a0 = (Math.PI * 2 * i) / seg, a1 = (Math.PI * 2 * (i + 1)) / seg;
+            const pt = (ang) => {
+                // t=0：圆锥侧面上的母线端点；t=1：平面上的扇形边缘
+                const flatAng = -Math.PI / 2 + (ang / (Math.PI * 2)) * sweep - sweep / 2;
+                const x = lerp(r * Math.cos(ang), slant * Math.cos(flatAng), t);
+                const z = lerp(r * Math.sin(ang), slant * Math.sin(flatAng) + slant, t);
+                const y = lerp(y0, y0 + hh, t);
+                return [x, y, z];
+            };
+            const apexNow = [0, lerp(y0 + hh, y0 + hh, 1) * (1 - t) + (y0 + hh) * t, lerp(0, slant, t) * 0 + t * 0];
+            apexNow[1] = lerp(apex[1], y0, t);
+            apexNow[2] = lerp(0, 0, t);
+            faces.push({ poly: [apexNow, pt(a0), pt(a1)], fill: '#c7d2fe', stroke: 'none', width: 0 });
+        }
+        /*
+         * 底面圆：扇形的圆心角接近 169°，几乎是半个圆盘，顶点两侧都被占住，
+         * 所以摊平时把底圆放到扇形顶点的正后方（-z）再往旁边挪开，避免压在扇形上。
+         */
+        const circle = [];
+        const cz = -t * (r + 0.45), cx = -t * (slant * 0.62);
+        for (let i = 0; i <= seg; i++) {
+            const a = (Math.PI * 2 * i) / seg;
+            circle.push([r * Math.cos(a) + cx, y0, r * Math.sin(a) + cz]);
+        }
+        faces.push({ poly: circle, fill: '#a5b4fc' });
+        drawFaces(svg, faces, view);
+        // 扇形／圆锥的外轮廓
+        const outline = [];
+        for (let i = 0; i <= seg; i++) {
+            const ang = (Math.PI * 2 * i) / seg;
+            const flatAng = -Math.PI / 2 + (ang / (Math.PI * 2)) * sweep - sweep / 2;
+            outline.push([
+                lerp(r * Math.cos(ang), slant * Math.cos(flatAng), t),
+                lerp(y0, y0 + hh, t),
+                lerp(r * Math.sin(ang), slant * Math.sin(flatAng) + slant, t)
+            ]);
+        }
+        el('polyline', { points: pts(projAll(outline, view)), fill: 'none', stroke: '#3730a3', 'stroke-width': 2 }, svg);
+    }
+
+    /*
+     * 展开过程中图形会越摊越大（圆柱侧面摊开有 2πr 宽），
+     * 所以每一帧都按当前内容重新定居中和缩放，保证始终完整、居中地显示。
+     */
+    function fitView(view, points, box) {
+        const probe = Object.assign({}, view, { cx: 0, cy: 0, scale: 1 });
+        const p2 = points.map((p) => project(p, probe));
+        const xs = p2.map((p) => p[0]), ys = p2.map((p) => p[1]);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        const w = Math.max(maxX - minX, 1e-6), h = Math.max(maxY - minY, 1e-6);
+        const scale = Math.min((box.w - box.pad * 2) / w, (box.h - box.pad * 2) / h);
+        // 探针投影用的是 cx=cy=0、scale=1，所以这里直接按缩放后的包围盒中心回推平移量
+        view.scale = scale;
+        view.cx = box.w / 2 - ((minX + maxX) / 2) * scale;
+        view.cy = box.h / 2 - ((minY + maxY) / 2) * scale;
+    }
+
+    function unfoldGeometry(t) {
+        if (unfoldSolid === 'cube') return { faces: cubeUnfoldFaces(t, 1.5) };
+        if (unfoldSolid === 'cuboid') return { faces: cuboidUnfoldFaces(t, 1.9, 1.2, 1.5) };
+        if (unfoldSolid === 'prism3') return { faces: prismUnfoldFaces(t, 3, 1.1, 1.5) };
+        if (unfoldSolid === 'pyramid4') return { faces: pyramidUnfoldFaces(t, 1.15, 1.5) };
+        return null; // 圆柱、圆锥单独画
+    }
+
+    function drawUnfold() {
+        clear(unfoldSvg);
+        const t = unfoldT;
+        const view = unfoldView;
+        const box = { w: 900, h: 430, pad: 46 };
+        if (unfoldSolid === 'cylinder' || unfoldSolid === 'cone') {
+            const probe = unfoldSolid === 'cylinder'
+                ? cylinderPoints(t) : conePoints(t);
+            fitView(view, probe, box);
+            if (unfoldSolid === 'cylinder') drawCylinderUnfold(unfoldSvg, t, view);
+            else drawConeUnfold(unfoldSvg, t, view);
+        } else {
+            const geo = unfoldGeometry(t);
+            fitView(view, geo.faces.reduce((acc, f) => acc.concat(f.poly), []), box);
+            drawFaces(unfoldSvg, geo.faces, view);
+        }
+        const r = $('unfoldResult');
+        r.textContent = t < 0.02 ? '立体的样子' : (t > 0.98 ? '完全展开' : '展开 ' + Math.round(t * 100) + '%');
+        r.className = 'result ' + (t > 0.98 ? '' : 'info');
+        $('unfoldFact').textContent = UNFOLD_FACTS[unfoldSolid];
+    }
+
+    function animateUnfold() {
+        if (unfoldTimer) { clearInterval(unfoldTimer); unfoldTimer = null; return; }
+        const dir = unfoldT > 0.5 ? -1 : 1;
+        unfoldTimer = setInterval(() => {
+            unfoldT = clamp(unfoldT + dir * 0.025, 0, 1);
+            $('unfoldSlider').value = unfoldT * 100;
+            drawUnfold();
+            if (unfoldT <= 0 || unfoldT >= 1) { clearInterval(unfoldTimer); unfoldTimer = null; }
+        }, 24);
+    }
+
+    $('unfoldShapes').addEventListener('click', (e) => {
+        const b = e.target.closest('.chip');
+        if (!b) return;
+        $('unfoldShapes').querySelectorAll('.chip').forEach((c) => c.classList.toggle('active', c === b));
+        unfoldSolid = b.dataset.solid;
+        unfoldT = 0;
+        $('unfoldSlider').value = 0;
+        drawUnfold();
+    });
+    $('unfoldSlider').addEventListener('input', (e) => {
+        if (unfoldTimer) { clearInterval(unfoldTimer); unfoldTimer = null; }
+        unfoldT = e.target.value / 100;
+        drawUnfold();
+    });
+    $('unfoldRun').addEventListener('click', animateUnfold);
+    $('unfoldReset').addEventListener('click', () => {
+        if (unfoldTimer) { clearInterval(unfoldTimer); unfoldTimer = null; }
+        unfoldT = 0; $('unfoldSlider').value = 0;
+        unfoldView.yaw = 0.62; unfoldView.pitch = 0.42;
+        drawUnfold();
+    });
+    makeSpinnable(unfoldSvg, unfoldView, drawUnfold);
+
+    /* ================= 2. 正方体展开图判断 ================= */
+    // 每种图案用格子坐标 [列, 行] 表示，第 0 个格子是折叠时的“底面”
+    // 正方体的 11 种展开图（经穷举验证：35 种六连方中恰有这 11 种能折成正方体）
+    const NETS = [
+        { cells: [[1,0],[2,0],[0,1],[1,1],[1,2],[1,3]], ok: true, name: '一四一型' },
+        { cells: [[1,0],[0,1],[1,1],[1,2],[2,2],[1,3]], ok: true, name: '一四一型' },
+        { cells: [[1,0],[0,1],[1,1],[1,2],[1,3],[2,3]], ok: true, name: '一四一型' },
+        { cells: [[0,0],[1,0],[1,1],[1,2],[1,3],[2,3]], ok: true, name: '一四一型' },
+        { cells: [[3,0],[0,1],[1,1],[2,1],[3,1],[3,2]], ok: true, name: '一四一型' },
+        { cells: [[1,0],[0,1],[1,1],[2,1],[3,1],[1,2]], ok: true, name: '一四一型' },
+        { cells: [[2,0],[1,1],[2,1],[0,2],[1,2],[1,3]], ok: true, name: '一三二型' },
+        { cells: [[0,0],[1,0],[1,1],[1,2],[2,2],[2,3]], ok: true, name: '一三二型' },
+        { cells: [[2,0],[3,0],[0,1],[1,1],[2,1],[2,2]], ok: true, name: '一三二型' },
+        { cells: [[0,0],[0,1],[1,1],[1,2],[2,2],[2,3]], ok: true, name: '二二二型' },
+        { cells: [[0,0],[0,1],[0,2],[1,2],[1,3],[1,4]], ok: true, name: '三三型' },
+        // 不能折成正方体的
+        { cells: [[0,0],[1,0],[0,1],[1,1],[0,2],[1,2]], ok: false, why: '有“田”字，折起来会重叠' },
+        { cells: [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]], ok: false, why: '有“田”字，折起来会重叠' },
+        { cells: [[0,0],[1,0],[1,1],[2,1],[1,2],[0,2]], ok: false, why: '有“凹”字形，会重叠' },
+        { cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0]], ok: false, why: '一字排开，折起来会重叠' },
+        { cells: [[1,0],[0,1],[1,1],[2,1],[1,2],[0,2]], ok: false, why: '左下两格会叠在一起，还缺一个面' },
+        { cells: [[0,0],[0,1],[1,1],[1,2],[0,2],[2,2]], ok: false, why: '有“田”字，折起来会重叠' }
+    ];
+
+    let netPool = [];
+    let netPicked = -1;
+    let netFoldT = 0;
+    let netTimer = null;
+    const netTried = new Set();
+
+    function drawNetThumb(svg, cells, size, pad, opts) {
+        clear(svg);
+        const o = opts || {};
+        const cols = cells.map((c) => c[0]), rows = cells.map((c) => c[1]);
+        const w = Math.max(...cols) - Math.min(...cols) + 1;
+        const h = Math.max(...rows) - Math.min(...rows) + 1;
+        const s = Math.min((size.w - pad * 2) / w, (size.h - pad * 2) / h);
+        const ox = (size.w - w * s) / 2 - Math.min(...cols) * s;
+        const oy = (size.h - h * s) / 2 - Math.min(...rows) * s;
+        cells.forEach((c, i) => {
+            const x = ox + c[0] * s, y = oy + c[1] * s;
+            el('rect', {
+                x, y, width: s, height: s,
+                fill: NET_COLORS[i], stroke: '#3730a3', 'stroke-width': 2, rx: 2
+            }, svg);
+            if (o.labels && s > 26) {
+                const t = el('text', {
+                    x: x + s / 2, y: y + s / 2 + s * 0.13, 'text-anchor': 'middle',
+                    'font-size': Math.min(s * 0.42, 30), 'font-weight': 900, fill: NET_INK[i]
+                }, svg);
+                t.textContent = String(i + 1);
+            }
+        });
+    }
+
+    function renderNetGrid() {
+        const grid = $('netGrid');
+        grid.innerHTML = '';
+        netPool.forEach((idx, i) => {
+            const net = NETS[idx];
+            const card = document.createElement('button');
+            card.className = 'net-card';
+            card.type = 'button';
+            card.dataset.i = String(i);
+            const svg = document.createElementNS(NS, 'svg');
+            svg.setAttribute('viewBox', '0 0 120 90');
+            drawNetThumb(svg, net.cells, { w: 120, h: 90 }, 6, { labels: true });
+            card.appendChild(svg);
+            const cap = document.createElement('span');
+            cap.textContent = '图 ' + (i + 1);
+            card.appendChild(cap);
+            grid.appendChild(card);
+        });
+        $('netsFoundCount').textContent = String(netTried.size);
+    }
+
+    // 折叠动画：把展开图的每个格子按“树”结构绕铰链依次折起
+    function buildFoldTree(cells) {
+        // 以第 0 个格子为根，广度优先找相邻格子，记录折叠轴
+        const key = (c) => c[0] + ',' + c[1];
+        const map = new Map();
+        cells.forEach((c, i) => map.set(key(c), i));
+        const nodes = cells.map(() => ({ parent: -1, dir: null }));
+        const seen = new Set([0]);
+        const queue = [0];
+        while (queue.length) {
+            const cur = queue.shift();
+            const c = cells[cur];
+            [[1, 0, 'R'], [-1, 0, 'L'], [0, 1, 'D'], [0, -1, 'U']].forEach((d) => {
+                const nk = key([c[0] + d[0], c[1] + d[1]]);
+                if (!map.has(nk)) return;
+                const ni = map.get(nk);
+                if (seen.has(ni)) return;
+                seen.add(ni);
+                nodes[ni] = { parent: cur, dir: d[2] };
+                queue.push(ni);
+            });
+        }
+        return { nodes, connected: seen.size === cells.length };
+    }
+
+    // 把格子从平面折成立体：递归地对每个面应用父面的变换
+    function foldedFaces(cells, t) {
+        const { nodes } = buildFoldTree(cells);
+        const a = 1; // 边长
+        const ang = (Math.PI / 2) * t;
+        // 每个面用 origin(三维) + 两个方向向量(u 沿列 +x，v 沿行 +y 的平面方向)描述
+        const frames = new Array(cells.length).fill(null);
+        frames[0] = { o: [0, 0, 0], u: [1, 0, 0], v: [0, 0, -1] };
+        const rot = (vec, axis, angle) => {
+            const c = Math.cos(angle), s = Math.sin(angle);
+            const [x, y, z] = vec, [ax, ay, az] = axis;
+            const dot = x * ax + y * ay + z * az;
+            return [
+                x * c + (ay * z - az * y) * s + ax * dot * (1 - c),
+                y * c + (az * x - ax * z) * s + ay * dot * (1 - c),
+                z * c + (ax * y - ay * x) * s + az * dot * (1 - c)
+            ];
+        };
+        const add = (p, q, k) => [p[0] + q[0] * k, p[1] + q[1] * k, p[2] + q[2] * k];
+        // 逐层处理，保证父面先算好
+        const order = cells.map((_, i) => i).sort((x, y) => {
+            const dep = (i) => { let d = 0, c = i; while (nodes[c].parent >= 0) { c = nodes[c].parent; d++; } return d; };
+            return dep(x) - dep(y);
+        });
+        order.forEach((i) => {
+            if (i === 0) return;
+            const p = nodes[i].parent;
+            if (p < 0 || !frames[p]) return;
+            const pf = frames[p];
+            let hinge, hingeAxis;
+            if (nodes[i].dir === 'R') {
+                hinge = add(pf.o, pf.u, a); hingeAxis = pf.v;
+            } else if (nodes[i].dir === 'L') {
+                hinge = pf.o; hingeAxis = [-pf.v[0], -pf.v[1], -pf.v[2]];
+            } else if (nodes[i].dir === 'D') {
+                hinge = add(pf.o, pf.v, a); hingeAxis = [-pf.u[0], -pf.u[1], -pf.u[2]];
+            } else {
+                hinge = pf.o; hingeAxis = pf.u;
+            }
+            const u2 = rot(pf.u, hingeAxis, ang);
+            const v2 = rot(pf.v, hingeAxis, ang);
+            let o2;
+            if (nodes[i].dir === 'R') o2 = hinge;
+            else if (nodes[i].dir === 'D') o2 = hinge;
+            else if (nodes[i].dir === 'L') o2 = add(hinge, u2, -a);
+            else o2 = add(hinge, v2, -a);
+            frames[i] = { o: o2, u: u2, v: v2 };
+        });
+        const faces = [];
+        cells.forEach((c, i) => {
+            const f = frames[i];
+            if (!f) return;
+            const p0 = f.o;
+            const p1 = add(p0, f.u, a);
+            const p2 = add(p1, f.v, a);
+            const p3 = add(p0, f.v, a);
+            // 每块保留自己的编号和颜色，从展开图一直跟到折好的立体上
+            faces.push({ poly: [p0, p1, p2, p3], fill: NET_COLORS[i], idx: i });
+        });
+        return faces;
+    }
+
+    // 6 块面各用一种颜色，展开图和折叠动画共用，方便一块块对上号
+    const NET_COLORS = ['#f9a8d4', '#fcd34d', '#86efac', '#7dd3fc', '#c4b5fd', '#fdba74'];
+    const NET_INK = ['#9d174d', '#92400e', '#166534', '#075985', '#5b21b6', '#9a3412'];
+
+    /*
+     * 折好之后，把 6 块面按中心分组：
+     * 能折成正方体时，6 个中心两两不同、且都离体心半个棱长；
+     * 折不成时会有两块面压在一起（中心重合），把它们标出来就能看见“为什么不行”。
+     */
+    function foldClash(faces) {
+        const key = (f) => {
+            const c = [0, 1, 2].map((k) => f.poly.reduce((s, p) => s + p[k], 0) / f.poly.length);
+            return c.map((v) => Math.round(v * 100) / 100).join(',');
+        };
+        const seen = new Map();
+        const clash = new Set();
+        faces.forEach((f) => {
+            const k = key(f);
+            if (seen.has(k)) { clash.add(f.idx); clash.add(seen.get(k)); }
+            else seen.set(k, f.idx);
+        });
+        return { clash, distinct: seen.size };
+    }
+
+    const netView = { cx: 200, cy: 180, scale: 46, yaw: 0.6, pitch: 0.5 };
+
+    function drawNetFold() {
+        clear($('netFoldSvg'));
+        if (netPicked < 0) return;
+        const net = NETS[netPool[netPicked]];
+        const cells = net.cells;
+        const faces = foldedFaces(cells, netFoldT);
+        // 折到最后才判断有没有面压在一起
+        const { clash } = foldClash(foldedFaces(cells, 1));
+        const showClash = netFoldT > 0.55 && clash.size > 0;
+        // 居中：用所有顶点的包围盒
+        const all = faces.reduce((acc, f) => acc.concat(f.poly), []);
+        const cx = all.reduce((s, p) => s + p[0], 0) / all.length;
+        const cy = all.reduce((s, p) => s + p[1], 0) / all.length;
+        const cz = all.reduce((s, p) => s + p[2], 0) / all.length;
+        /*
+         * 重叠的面如果原地叠着，从外面根本看不出来（后面那块被前面那块完全挡住）。
+         * 所以把撞在一起的面沿着它自己的法线抬开一点，
+         * 就能明明白白看到“同一个位置上摞了两块面”——这正是折不成的原因。
+         */
+        const lift = showClash ? 0.28 : 0;
+        const seenClash = new Map();
+        const centered = faces.map((f) => {
+            let poly = f.poly.map((p) => [p[0] - cx, p[1] - cy, p[2] - cz]);
+            const hit = showClash && clash.has(f.idx);
+            if (hit) {
+                const c = [0, 1, 2].map((k) => poly.reduce((s, p) => s + p[k], 0) / poly.length);
+                const key = c.map((v) => Math.round(v * 100) / 100).join(',');
+                const rank = seenClash.get(key) || 0;
+                seenClash.set(key, rank + 1);
+                const L = Math.hypot(c[0], c[1], c[2]) || 1;
+                const d = lift * (rank === 0 ? 1 : -1);
+                poly = poly.map((p) => [p[0] + (c[0] / L) * d, p[1] + (c[1] / L) * d, p[2] + (c[2] / L) * d]);
+            }
+            return {
+                poly,
+                fill: hit ? '#fda4af' : f.fill,
+                stroke: hit ? '#be123c' : '#3730a3',
+                width: hit ? 3.5 : 2,
+                opacity: 1,
+                backOpacity: 0.62,   // 背面也要看得清编号，才好确认每块面折到哪儿
+                label: String(f.idx + 1),
+                ink: hit ? '#9f1239' : NET_INK[f.idx]
+            };
+        });
+        // 展开图摊平时比折好时大很多，每帧重新取景才不会忽大忽小、跑出画面
+        fitView(netView, centered.reduce((acc, f) => acc.concat(f.poly), []), { w: 400, h: 340, pad: 40 });
+        drawFaces($('netFoldSvg'), centered, netView);
+        const res = $('netFoldResult');
+        if (netFoldT < 0.02) { res.textContent = '摊平的样子'; res.className = 'result info'; }
+        else if (netFoldT > 0.98) {
+            if (net.ok) { res.textContent = '✓ 6 个面刚好围成正方体'; res.className = 'result'; }
+            else {
+                const list = [...clash].sort((a, b) => a - b).map((i) => i + 1);
+                res.textContent = '✗ 第 ' + list.join('、') + ' 块重叠了';
+                res.className = 'result bad';
+            }
+        } else { res.textContent = '折了 ' + Math.round(netFoldT * 100) + '%'; res.className = 'result info'; }
+    }
+
+    function pickNet(i) {
+        netPicked = i;
+        netFoldT = 0;
+        $('netFoldSlider').value = 0;
+        const net = NETS[netPool[i]];
+        netTried.add(netPool[i]);
+        drawNetThumb($('netPickSvg'), net.cells, { w: 400, h: 340 }, 30, { labels: true });
+        drawNetFold();
+        const v = $('netVerdict');
+        if (net.ok) {
+            v.textContent = '能折成正方体（' + net.name + '）';
+        } else {
+            const { clash } = foldClash(foldedFaces(net.cells, 1));
+            const list = [...clash].sort((a, b) => a - b).map((k) => k + 1);
+            v.textContent = '折不成：' + net.why
+                + (list.length ? '（第 ' + list.join('、') + ' 块会重叠）' : '');
+        }
+        v.className = 'formula ' + (net.ok ? 'green' : 'amber');
+        $('netGrid').querySelectorAll('.net-card').forEach((c, idx) => {
+            c.classList.toggle('active', idx === i);
+            if (idx === i) c.classList.add(net.ok ? 'right' : 'wrong');
+        });
+        $('netsFoundCount').textContent = String([...netTried].filter((idx) => NETS[idx].ok).length);
+    }
+
+    function shuffleNets() {
+        const okIdx = NETS.map((n, i) => (n.ok ? i : -1)).filter((i) => i >= 0);
+        const badIdx = NETS.map((n, i) => (n.ok ? -1 : i)).filter((i) => i >= 0);
+        const shuffle = (arr) => arr.slice().sort(() => Math.random() - 0.5);
+        netPool = shuffle(shuffle(okIdx).slice(0, 6).concat(shuffle(badIdx).slice(0, 2)));
+        netPicked = -1;
+        renderNetGrid();
+        clear($('netPickSvg'));
+        clear($('netFoldSvg'));
+        $('netFoldResult').textContent = '点一张图';
+        $('netVerdict').textContent = '选一张展开图';
+        $('netVerdict').className = 'formula green';
+    }
+
+    $('netGrid').addEventListener('click', (e) => {
+        const card = e.target.closest('.net-card');
+        if (!card) return;
+        pickNet(Number(card.dataset.i));
+    });
+    $('netFoldSlider').addEventListener('input', (e) => {
+        if (netTimer) { clearInterval(netTimer); netTimer = null; }
+        netFoldT = e.target.value / 100;
+        drawNetFold();
+    });
+    $('netFoldRun').addEventListener('click', () => {
+        if (netPicked < 0) return;
+        if (netTimer) { clearInterval(netTimer); netTimer = null; return; }
+        const dir = netFoldT > 0.5 ? -1 : 1;
+        netTimer = setInterval(() => {
+            netFoldT = clamp(netFoldT + dir * 0.02, 0, 1);
+            $('netFoldSlider').value = netFoldT * 100;
+            drawNetFold();
+            if (netFoldT <= 0 || netFoldT >= 1) { clearInterval(netTimer); netTimer = null; }
+        }, 24);
+    });
+    $('netsShuffle').addEventListener('click', shuffleNets);
+    $('netsReset').addEventListener('click', () => { netTried.clear(); shuffleNets(); });
+    makeSpinnable($('netFoldSvg'), netView, drawNetFold);
+
+    /* ================= 3. 展开图求表面积 ================= */
+    let areaSolid = 'cuboid';
+    const areaVals = { cuboid: { a: 5, b: 3, h: 4 }, cube: { a: 4 }, cylinder: { r: 2, h: 5 } };
+
+    const AREA_DEFS = {
+        cuboid: [{ k: 'a', label: '长', unit: 'cm' }, { k: 'b', label: '宽', unit: 'cm' }, { k: 'h', label: '高', unit: 'cm' }],
+        cube: [{ k: 'a', label: '棱长', unit: 'cm' }],
+        cylinder: [{ k: 'r', label: '底面半径', unit: 'cm' }, { k: 'h', label: '高', unit: 'cm' }]
+    };
+
+    function renderAreaDims() {
+        const box = $('areaDims');
+        box.innerHTML = '';
+        AREA_DEFS[areaSolid].forEach((d) => {
+            const wrap = document.createElement('label');
+            wrap.className = 'dim-field';
+            wrap.innerHTML = '<span>' + d.label + '</span>';
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1'; input.max = '20'; input.step = '0.5';
+            input.value = String(areaVals[areaSolid][d.k]);
+            input.setAttribute('aria-label', d.label);
+            input.addEventListener('input', () => {
+                const v = parseFloat(input.value);
+                if (!isNaN(v) && v > 0) { areaVals[areaSolid][d.k] = clamp(v, 0.5, 20); drawArea(); }
+            });
+            wrap.appendChild(input);
+            const unit = document.createElement('span');
+            unit.textContent = d.unit;
+            wrap.appendChild(unit);
+            box.appendChild(wrap);
+        });
+    }
+
+    function labeledRect(svg, x, y, w, h, fill, text, sub) {
+        el('rect', { x, y, width: w, height: h, fill, stroke: '#3730a3', 'stroke-width': 2 }, svg);
+        if (w > 34 && h > 24) {
+            const t = el('text', {
+                x: x + w / 2, y: y + h / 2 - (sub ? 5 : -5), 'text-anchor': 'middle',
+                'font-size': 13, 'font-weight': 900, fill: '#312e81'
+            }, svg);
+            t.textContent = text;
+            if (sub) {
+                const t2 = el('text', {
+                    x: x + w / 2, y: y + h / 2 + 13, 'text-anchor': 'middle',
+                    'font-size': 12, 'font-weight': 800, fill: '#4338ca'
+                }, svg);
+                t2.textContent = sub;
+            }
+        }
+    }
+
+    function drawArea() {
+        const svg = $('areaSvg');
+        clear(svg);
+        const lines = [];
+        let total = 0;
+        if (areaSolid === 'cuboid' || areaSolid === 'cube') {
+            const v = areaVals[areaSolid];
+            const a = areaSolid === 'cube' ? v.a : v.a;
+            const b = areaSolid === 'cube' ? v.a : v.b;
+            const h = areaSolid === 'cube' ? v.a : v.h;
+            // 展开成十字形：中间一行 b,a,b,a（前右后左），上下各一个 a×b
+            const unit = clamp(300 / (2 * b + 2 * a), 8, 46);
+            const W = (2 * a + 2 * b) * unit, H = (b + h + b) * unit;
+            const ox = (900 - W) / 2, oy = (420 - H) / 2;
+            const rowY = oy + b * unit;
+            let x = ox;
+            const mid = [
+                { w: a, fill: '#c7d2fe', name: '前面', area: a * h, expr: fmt(a) + '×' + fmt(h) },
+                { w: b, fill: '#bae6fd', name: '右面', area: b * h, expr: fmt(b) + '×' + fmt(h) },
+                { w: a, fill: '#c7d2fe', name: '后面', area: a * h, expr: fmt(a) + '×' + fmt(h) },
+                { w: b, fill: '#bae6fd', name: '左面', area: b * h, expr: fmt(b) + '×' + fmt(h) }
+            ];
+            mid.forEach((m) => {
+                labeledRect(svg, x, rowY, m.w * unit, h * unit, m.fill, m.name, fmt(m.area));
+                x += m.w * unit;
+            });
+            labeledRect(svg, ox, oy, a * unit, b * unit, '#a5b4fc', '上面', fmt(a * b));
+            labeledRect(svg, ox, rowY + h * unit, a * unit, b * unit, '#ddd6fe', '下面', fmt(a * b));
+            const side = 2 * (a + b) * h, base = 2 * a * b;
+            total = side + base;
+            lines.push({ label: '侧面积（中间一圈）', expr: '(' + fmt(a) + '+' + fmt(b) + ')×2×' + fmt(h), val: fmt(side) + ' cm²' });
+            lines.push({ label: '上下两个底面', expr: fmt(a) + '×' + fmt(b) + '×2', val: fmt(base) + ' cm²' });
+            lines.push({ label: '表面积', expr: '(' + fmt(a) + '×' + fmt(b) + '+' + fmt(a) + '×' + fmt(h) + '+' + fmt(b) + '×' + fmt(h) + ')×2', val: fmt(total) + ' cm²', total: true });
+        } else {
+            const { r, h } = areaVals.cylinder;
+            const circ = 2 * Math.PI * r;
+            const unit = clamp(520 / (circ + 2 * r + 2), 6, 40);
+            const rectW = circ * unit, rectH = h * unit, rr = r * unit;
+            const totalW = rectW + 2 * rr + 30;
+            const ox = (900 - totalW) / 2, oy = 210 - rectH / 2;
+            labeledRect(svg, ox, oy, rectW, rectH, '#c7d2fe', '侧面（长方形）', fmt(circ * h) + ' cm²');
+            [0, 1].forEach((i) => {
+                const cxp = ox + rectW + 15 + rr;
+                const cyp = 210 + (i === 0 ? -rr - 6 : rr + 6);
+                el('circle', { cx: cxp, cy: cyp, r: rr, fill: i ? '#ddd6fe' : '#a5b4fc', stroke: '#3730a3', 'stroke-width': 2 }, svg);
+                if (rr > 22) {
+                    const t = el('text', { x: cxp, y: cyp + 4, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 900, fill: '#312e81' }, svg);
+                    t.textContent = fmt(Math.PI * r * r);
+                }
+            });
+            const label = el('text', { x: ox + rectW / 2, y: oy + rectH + 22, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 850, fill: '#475467' }, svg);
+            label.textContent = '长 = 底面周长 = 2×3.14×' + fmt(r) + ' = ' + fmt(circ) + ' cm';
+            const side = circ * h, base = 2 * Math.PI * r * r;
+            total = side + base;
+            lines.push({ label: '侧面积 = 底面周长 × 高', expr: fmt(circ) + '×' + fmt(h), val: fmt(side) + ' cm²' });
+            lines.push({ label: '两个底面积', expr: '3.14×' + fmt(r) + '²×2', val: fmt(base) + ' cm²' });
+            lines.push({ label: '表面积', expr: '侧面积 + 底面积×2', val: fmt(total) + ' cm²', total: true });
+        }
+        $('areaResult').textContent = '表面积 = ' + fmt(total) + ' cm²';
+        const box = $('areaCalc');
+        box.innerHTML = '';
+        lines.forEach((l) => {
+            const div = document.createElement('div');
+            div.className = 'calc-line' + (l.total ? ' total' : '');
+            div.innerHTML = '<span>' + l.label + '</span><span>' + l.expr + ' = <b>' + l.val + '</b></span>';
+            box.appendChild(div);
+        });
+    }
+
+    $('areaShapes').addEventListener('click', (e) => {
+        const b = e.target.closest('.chip');
+        if (!b) return;
+        $('areaShapes').querySelectorAll('.chip').forEach((c) => c.classList.toggle('active', c === b));
+        areaSolid = b.dataset.solid;
+        renderAreaDims();
+        drawArea();
+    });
+
+    /* ================= 4. 截面 ================= */
+    /*
+     * 截面用一个真正的平面来切：平面由法线 n 和到中心的距离 off 决定。
+     * 两个滑块分别控制“切到哪里”(off) 和“切面转多少度”(倾角 tilt、绕轴转 spin)，
+     * 截面形状不是预先写死的，而是把立体真的切开算出来的，
+     * 所以任意位置、任意角度都能得到正确的多边形。
+     */
+    let secSolid = 'cube';
+    let secPreset = 'h';
+    let secPos = 0.5;      // 0..1 → 平面沿法线平移
+    let secTilt = 0;       // 与水平面的夹角（度）
+    let secSpin = 0;       // 绕竖直轴旋转（度）
+    const secView = { cx: 230, cy: 200, scale: 72, yaw: 0.62, pitch: 0.4 };
+
+    // 预设只是把三个滑块拨到某个位置，之后用户可以随意再调
+    const SECTION_PRESETS = {
+        cube: [
+            { id: 'h', name: '横着切', tilt: 0, spin: 0, pos: 0.5 },
+            { id: 'v', name: '竖着切', tilt: 90, spin: 0, pos: 0.5 },
+            { id: 'diag', name: '斜着切', tilt: 45, spin: 0, pos: 0.5 },
+            { id: 'hex', name: '切出正六边形', tilt: 54.7356, spin: 45, pos: 0.5 },
+            { id: 'corner', name: '切一个角', tilt: 54.7356, spin: 45, pos: 0.18 }
+        ],
+        cuboid: [
+            { id: 'h', name: '横着切', tilt: 0, spin: 0, pos: 0.5 },
+            { id: 'v', name: '竖着切', tilt: 90, spin: 0, pos: 0.5 },
+            { id: 'diag', name: '斜着切', tilt: 45, spin: 0, pos: 0.5 },
+            { id: 'corner', name: '切一个角', tilt: 55, spin: 45, pos: 0.2 }
+        ],
+        cylinder: [
+            { id: 'h', name: '横着切', tilt: 0, spin: 0, pos: 0.5 },
+            { id: 'v', name: '竖着切', tilt: 90, spin: 0, pos: 0.5 },
+            { id: 'slant', name: '斜着切', tilt: 40, spin: 0, pos: 0.5 }
+        ],
+        cone: [
+            { id: 'h', name: '横着切', tilt: 0, spin: 0, pos: 0.45 },
+            { id: 'v', name: '竖着切（过顶点）', tilt: 90, spin: 0, pos: 0.5 },
+            { id: 'slant', name: '斜着切', tilt: 35, spin: 0, pos: 0.45 }
+        ],
+        sphere: [
+            { id: 'h', name: '怎么切都是圆', tilt: 0, spin: 0, pos: 0.5 }
+        ]
+    };
+
+    // 各立体的尺寸
+    const SEC_DIM = {
+        cube: { w: 1, h: 1, d: 1 },
+        cuboid: { w: 1.35, h: 1, d: 0.8 },
+        cylinder: { r: 0.9, h: 1.15 },
+        cone: { r: 1, h: 1.25 },
+        sphere: { r: 1.15 }
+    };
+
+    // 当前切面：法线 + 平面上一点
+    function secPlane() {
+        const tilt = (secTilt * Math.PI) / 180;
+        const spin = (secSpin * Math.PI) / 180;
+        // tilt=0 时法线朝上（横切）；tilt=90 时法线水平（竖切）
+        const n = [
+            Math.sin(tilt) * Math.cos(spin),
+            Math.cos(tilt),
+            Math.sin(tilt) * Math.sin(spin)
+        ];
+        // 沿法线方向平移：把 pos 映射到立体在该方向上的跨度
+        const dim = SEC_DIM[secSolid];
+        let reach;
+        if (secSolid === 'sphere') reach = dim.r;
+        else if (secSolid === 'cylinder' || secSolid === 'cone') {
+            reach = Math.abs(n[1]) * dim.h + Math.hypot(n[0], n[2]) * dim.r;
+        } else {
+            reach = Math.abs(n[0]) * dim.w + Math.abs(n[1]) * dim.h + Math.abs(n[2]) * dim.d;
+        }
+        const off = (secPos * 2 - 1) * reach * 0.92;
+        return { n, off };
+    }
+
+    const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+    /* 用平面切一个凸多面体，返回截面多边形（三维点，已按顺序排好） */
+    function slicePolyhedron(verts, edges, plane) {
+        const { n, off } = plane;
+        const hits = [];
+        edges.forEach(([i, j]) => {
+            const a = verts[i], b = verts[j];
+            const da = dot3(a, n) - off, db = dot3(b, n) - off;
+            if ((da > 1e-9 && db > 1e-9) || (da < -1e-9 && db < -1e-9)) return;
+            if (Math.abs(da - db) < 1e-12) return;
+            const t = da / (da - db);
+            if (t < -1e-9 || t > 1 + 1e-9) return;
+            hits.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
+        });
+        return orderRing(hits, n);
+    }
+
+    /* 把平面上一堆散点按绕中心的角度排成多边形，并去掉重复点 */
+    function orderRing(points, n) {
+        if (points.length < 3) return [];
+        const c = [0, 1, 2].map((k) => points.reduce((s, p) => s + p[k], 0) / points.length);
+        // 在平面内建一组基
+        let u = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+        let e1 = [
+            u[1] * n[2] - u[2] * n[1], u[2] * n[0] - u[0] * n[2], u[0] * n[1] - u[1] * n[0]
+        ];
+        const L1 = Math.hypot(e1[0], e1[1], e1[2]) || 1;
+        e1 = e1.map((v) => v / L1);
+        const e2 = [
+            n[1] * e1[2] - n[2] * e1[1], n[2] * e1[0] - n[0] * e1[2], n[0] * e1[1] - n[1] * e1[0]
+        ];
+        const withAng = points.map((p) => {
+            const d = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
+            return { p, a: Math.atan2(dot3(d, e2), dot3(d, e1)) };
+        });
+        withAng.sort((x, y) => x.a - y.a);
+        const out = [];
+        withAng.forEach((it) => {
+            const last = out[out.length - 1];
+            if (last && Math.hypot(last[0] - it.p[0], last[1] - it.p[1], last[2] - it.p[2]) < 1e-6) return;
+            out.push(it.p);
+        });
+        if (out.length > 2) {
+            const f = out[0], l = out[out.length - 1];
+            if (Math.hypot(f[0] - l[0], f[1] - l[1], f[2] - l[2]) < 1e-6) out.pop();
+        }
+        return out;
+    }
+
+    /* 长方体/正方体的顶点与棱 */
+    function boxVE(w, h, d) {
+        const verts = [
+            [-w, -h, -d], [w, -h, -d], [w, -h, d], [-w, -h, d],
+            [-w, h, -d], [w, h, -d], [w, h, d], [-w, h, d]
+        ];
+        const edges = [
+            [0,1],[1,2],[2,3],[3,0], [4,5],[5,6],[6,7],[7,4], [0,4],[1,5],[2,6],[3,7]
+        ];
+        const faces = [[0,1,2,3],[7,6,5,4],[0,3,7,4],[1,5,6,2],[0,4,5,1],[3,2,6,7]];
+        return { verts, edges, faces };
+    }
+
+    /* 判断截面多边形的形状名字（按边数、边长、角度） */
+    function nameOfPolygon(poly) {
+        const n = poly.length;
+        if (n < 3) return '没有切到';
+        const sides = poly.map((p, i) => {
+            const q = poly[(i + 1) % n];
+            return Math.hypot(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+        });
+        const maxS = Math.max(...sides), minS = Math.min(...sides);
+        const equal = (maxS - minS) / maxS < 0.06;
+        // 内角
+        const angs = poly.map((p, i) => {
+            const a = poly[(i - 1 + n) % n], b = poly[(i + 1) % n];
+            const u = [a[0] - p[0], a[1] - p[1], a[2] - p[2]];
+            const v = [b[0] - p[0], b[1] - p[1], b[2] - p[2]];
+            const lu = Math.hypot(u[0], u[1], u[2]) || 1, lv = Math.hypot(v[0], v[1], v[2]) || 1;
+            return Math.acos(clamp(dot3(u, v) / (lu * lv), -1, 1)) * 180 / Math.PI;
+        });
+        const allRight = angs.every((a) => Math.abs(a - 90) < 4);
+        if (n === 3) return equal ? '等边三角形' : (Math.abs(sides[0] - sides[1]) / maxS < 0.06 || Math.abs(sides[1] - sides[2]) / maxS < 0.06 || Math.abs(sides[0] - sides[2]) / maxS < 0.06 ? '等腰三角形' : '三角形');
+        if (n === 4) {
+            if (allRight) return equal ? '正方形' : '长方形';
+            if (equal) return '菱形';
+            // 有没有一组对边平行
+            const par = (i, j) => {
+                const a = poly[(i + 1) % n], p = poly[i], b = poly[(j + 1) % n], q = poly[j];
+                const u = [a[0] - p[0], a[1] - p[1], a[2] - p[2]];
+                const v = [b[0] - q[0], b[1] - q[1], b[2] - q[2]];
+                const lu = Math.hypot(u[0], u[1], u[2]) || 1, lv = Math.hypot(v[0], v[1], v[2]) || 1;
+                return Math.abs(Math.abs(dot3(u, v) / (lu * lv)) - 1) < 0.05;
+            };
+            if (par(0, 2) && par(1, 3)) return '平行四边形';
+            if (par(0, 2) || par(1, 3)) return '梯形';
+            return '四边形';
+        }
+        if (n === 5) return '五边形';
+        if (n === 6) return equal && angs.every((a) => Math.abs(a - 120) < 5) ? '正六边形' : '六边形';
+        return n + ' 边形';
+    }
+
+    /* 生成当前立体 + 当前切面的模型 */
+    function sectionModel() {
+        const plane = secPlane();
+        const dim = SEC_DIM[secSolid];
+        const seg = 48;
+
+        if (secSolid === 'cube' || secSolid === 'cuboid') {
+            const { verts, edges, faces } = boxVE(dim.w, dim.h, dim.d);
+            const shells = faces.map((f, i) => ({
+                poly: f.map((k) => verts[k]),
+                fill: i < 2 ? '#a5b4fc' : (i % 2 ? '#c7d2fe' : '#bae6fd'), opacity: 0.4
+            }));
+            const cut = slicePolyhedron(verts, edges, plane);
+            return { faces: shells, cut, flat: { poly: cut, n: plane.n, name: nameOfPolygon(cut) } };
+        }
+
+        if (secSolid === 'sphere') {
+            const R = dim.r;
+            const { n, off } = plane;
+            const rr = Math.sqrt(Math.max(R * R - off * off, 0));
+            // 平面内两组基，画出截面圆
+            let u = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+            let e1 = [u[1]*n[2]-u[2]*n[1], u[2]*n[0]-u[0]*n[2], u[0]*n[1]-u[1]*n[0]];
+            const L1 = Math.hypot(e1[0], e1[1], e1[2]) || 1; e1 = e1.map((v) => v / L1);
+            const e2 = [n[1]*e1[2]-n[2]*e1[1], n[2]*e1[0]-n[0]*e1[2], n[0]*e1[1]-n[1]*e1[0]];
+            const c = n.map((v) => v * off);
+            const cut = [];
+            for (let i = 0; i < seg; i++) {
+                const a = (Math.PI * 2 * i) / seg;
+                cut.push([
+                    c[0] + rr * (Math.cos(a) * e1[0] + Math.sin(a) * e2[0]),
+                    c[1] + rr * (Math.cos(a) * e1[1] + Math.sin(a) * e2[1]),
+                    c[2] + rr * (Math.cos(a) * e1[2] + Math.sin(a) * e2[2])
+                ]);
+            }
+            return {
+                faces: [], sphere: R, cut,
+                flat: { poly: cut, n, name: '圆', note: Math.abs(off) < 0.05 ? '过球心，最大的圆' : '' }
+            };
+        }
+
+        // 圆柱、圆锥：用足够密的多边形近似，再走同一套切割
+        const isCone = secSolid === 'cone';
+        const R = dim.r, hh = dim.h, m = 60;
+        const verts = [];
+        const edges = [];
+        const ringA = [], ringB = [];
+        for (let i = 0; i < m; i++) {
+            const a = (Math.PI * 2 * i) / m;
+            verts.push([R * Math.cos(a), -hh, R * Math.sin(a)]);
+            ringA.push(verts.length - 1);
+        }
+        if (isCone) {
+            verts.push([0, hh, 0]);
+            const apexIdx = verts.length - 1;
+            for (let i = 0; i < m; i++) {
+                edges.push([ringA[i], ringA[(i + 1) % m]]);
+                edges.push([ringA[i], apexIdx]);
+            }
+        } else {
+            for (let i = 0; i < m; i++) {
+                const a = (Math.PI * 2 * i) / m;
+                verts.push([R * Math.cos(a), hh, R * Math.sin(a)]);
+                ringB.push(verts.length - 1);
+            }
+            for (let i = 0; i < m; i++) {
+                edges.push([ringA[i], ringA[(i + 1) % m]]);
+                edges.push([ringB[i], ringB[(i + 1) % m]]);
+                edges.push([ringA[i], ringB[i]]);
+            }
+        }
+        const shells = [{ poly: ringA.map((k) => verts[k]), fill: '#a5b4fc', opacity: 0.4 }];
+        if (!isCone) shells.push({ poly: ringB.map((k) => verts[k]), fill: '#ddd6fe', opacity: 0.4 });
+        for (let i = 0; i < m; i++) {
+            if (isCone) {
+                shells.push({
+                    poly: [verts[verts.length - 1], verts[ringA[i]], verts[ringA[(i + 1) % m]]],
+                    fill: '#c7d2fe', opacity: 0.3, stroke: 'none', width: 0
+                });
+            } else {
+                shells.push({
+                    poly: [verts[ringA[i]], verts[ringA[(i + 1) % m]], verts[ringB[(i + 1) % m]], verts[ringB[i]]],
+                    fill: '#c7d2fe', opacity: 0.3, stroke: 'none', width: 0
+                });
+            }
+        }
+        const cut = slicePolyhedron(verts, edges, plane);
+        // 曲面的截面用专门的名字，不按边数叫“多边形”
+        let name = curvedCutName(cut, plane, isCone);
+        return { faces: shells, cut, flat: { poly: cut, n: plane.n, name, curved: true } };
+    }
+
+    /* 圆柱、圆锥的截面命名：看切面与轴的关系 */
+    function curvedCutName(cut, plane, isCone) {
+        if (cut.length < 3) return '没有切到';
+        const ny = Math.abs(plane.n[1]);
+        if (isCone) {
+            if (ny > 0.999) return '圆';
+            // 过顶点的竖切 → 等腰三角形
+            const apexOnPlane = Math.abs(dot3([0, SEC_DIM.cone.h, 0], plane.n) - plane.off) < 0.02;
+            if (apexOnPlane) return '等腰三角形';
+            // 不过顶点的竖切，切口是一条向上收窄的曲边形（其实是双曲线，中学才学）
+            if (ny < 0.02) return '两边弯的曲边形';
+            return '椭圆';
+        }
+        if (ny > 0.999) return '圆';
+        if (ny < 0.001) return '长方形';
+        // 斜切：如果切面同时碰到上下底面，就是被削平的椭圆
+        const hh = SEC_DIM.cylinder.h;
+        const touchTop = cut.some((p) => Math.abs(p[1] - hh) < 1e-6);
+        const touchBottom = cut.some((p) => Math.abs(p[1] + hh) < 1e-6);
+        if (touchTop || touchBottom) return '椭圆被切掉一块';
+        return '椭圆';
+    }
+
+    function drawSection() {
+        const svg = $('sectionSvg');
+        clear(svg);
+        const m = sectionModel();
+        if (m.sphere) {
+            const c = project([0, 0, 0], secView);
+            el('circle', {
+                cx: c[0], cy: c[1], r: m.sphere * secView.scale,
+                fill: '#c7d2fe', 'fill-opacity': 0.4, stroke: '#3730a3', 'stroke-width': 2
+            }, svg);
+        } else {
+            drawFaces(svg, m.faces, secView);
+        }
+        if (m.cut.length >= 3) {
+            const cut2 = projAll(m.cut, secView);
+            el('polygon', {
+                points: pts(cut2), fill: '#fb7185', 'fill-opacity': 0.6,
+                stroke: '#be123c', 'stroke-width': 3, 'stroke-linejoin': 'round'
+            }, svg);
+            if (m.cut.length <= 8) {
+                cut2.forEach((q) => el('circle', { cx: q[0], cy: q[1], r: 4, fill: '#be123c' }, svg));
+            }
+        }
+        drawFlat(m.flat);
+        const res = $('sectionResult');
+        res.textContent = m.flat.name;
+        res.className = 'result warn';
+        $('sectionFact').textContent = sectionFact(m);
+        $('secPosVal').textContent = Math.round(secPos * 100) + '%';
+        $('secTiltVal').textContent = Math.round(secTilt) + '°';
+        $('secSpinVal').textContent = Math.round(secSpin) + '°';
+    }
+
+    function sectionFact(m) {
+        const name = m.flat.name;
+        const tilt = Math.round(secTilt);
+        const where = tilt < 3 ? '横着（平行底面）' : (tilt > 87 ? '竖着（垂直底面）' : ('倾斜 ' + tilt + '° '));
+        if (m.flat.note) return where + '切，切口是' + name + '（' + m.flat.note + '）';
+        if (m.cut.length < 3) return '切面已经移到立体外面了，没有切到';
+        const extra = m.cut.length >= 3 && !m.flat.curved ? ('，是个 ' + m.cut.length + ' 边形') : '';
+        return where + '切' + solidName() + '，切口是' + name + extra;
+    }
+
+    const SOLID_NAMES = { cube: '正方体', cuboid: '长方体', cylinder: '圆柱', cone: '圆锥', sphere: '球' };
+    const solidName = () => SOLID_NAMES[secSolid];
+
+    /* 右边把截面摊平画出来：把三维截面转到平面上，保持真实比例 */
+    function drawFlat(flat) {
+        const svg = $('faceSvg');
+        clear(svg);
+        const cx = 230, cy = 195, box = 150;
+        const style = { fill: '#fecdd3', 'fill-opacity': 0.9, stroke: '#be123c', 'stroke-width': 3, 'stroke-linejoin': 'round' };
+        const poly = flat.poly || [];
+        if (poly.length >= 3) {
+            const n = flat.n;
+            let u = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+            let e1 = [u[1]*n[2]-u[2]*n[1], u[2]*n[0]-u[0]*n[2], u[0]*n[1]-u[1]*n[0]];
+            const L1 = Math.hypot(e1[0], e1[1], e1[2]) || 1; e1 = e1.map((v) => v / L1);
+            const e2 = [n[1]*e1[2]-n[2]*e1[1], n[2]*e1[0]-n[0]*e1[2], n[0]*e1[1]-n[1]*e1[0]];
+            const flat2 = poly.map((p) => [dot3(p, e1), dot3(p, e2)]);
+            const xs = flat2.map((p) => p[0]), ys = flat2.map((p) => p[1]);
+            const w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+            const s = Math.min(box * 2 / Math.max(w, 1e-6), box * 2 / Math.max(h, 1e-6));
+            const mx = (Math.min(...xs) + Math.max(...xs)) / 2, my = (Math.min(...ys) + Math.max(...ys)) / 2;
+            el('polygon', Object.assign({
+                points: pts(flat2.map((p) => [cx + (p[0] - mx) * s, cy - (p[1] - my) * s]))
+            }, style), svg);
+            // 顶点上标出来，方便数边数
+            if (poly.length <= 8) {
+                flat2.forEach((p) => el('circle', {
+                    cx: cx + (p[0] - mx) * s, cy: cy - (p[1] - my) * s, r: 4.5, fill: '#be123c'
+                }, svg));
+            }
+        }
+        const t = el('text', { x: cx, y: 368, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 900, fill: '#be123c' }, svg);
+        t.textContent = flat.name;
+    }
+
+    function renderSecPresets() {
+        const box = $('sectionCuts');
+        box.innerHTML = '';
+        SECTION_PRESETS[secSolid].forEach((c, i) => {
+            const b = document.createElement('button');
+            b.className = 'chip' + (i === 0 ? ' active' : '');
+            b.dataset.cut = c.id;
+            b.textContent = c.name;
+            box.appendChild(b);
+        });
+        applyPreset(SECTION_PRESETS[secSolid][0]);
+    }
+
+    function applyPreset(pre) {
+        secPreset = pre.id;
+        secTilt = pre.tilt; secSpin = pre.spin; secPos = pre.pos;
+        $('sectionPos').value = secPos * 100;
+        $('sectionTilt').value = secTilt;
+        $('sectionSpin').value = secSpin;
+    }
+
+    $('sectionShapes').addEventListener('click', (e) => {
+        const b = e.target.closest('.chip');
+        if (!b) return;
+        $('sectionShapes').querySelectorAll('.chip').forEach((c) => c.classList.toggle('active', c === b));
+        secSolid = b.dataset.solid;
+        renderSecPresets();
+        drawSection();
+    });
+    $('sectionCuts').addEventListener('click', (e) => {
+        const b = e.target.closest('.chip');
+        if (!b) return;
+        $('sectionCuts').querySelectorAll('.chip').forEach((c) => c.classList.toggle('active', c === b));
+        const pre = SECTION_PRESETS[secSolid].find((c) => c.id === b.dataset.cut);
+        if (pre) applyPreset(pre);
+        drawSection();
+    });
+    // 三个滑块：位置、倾角、绕轴转角，随便调都能得到正确的截面
+    $('sectionPos').addEventListener('input', (e) => { secPos = e.target.value / 100; drawSection(); });
+    $('sectionTilt').addEventListener('input', (e) => { secTilt = +e.target.value; drawSection(); });
+    $('sectionSpin').addEventListener('input', (e) => { secSpin = +e.target.value; drawSection(); });
+    $('sectionSpinView').addEventListener('click', () => { secView.yaw += 0.45; drawSection(); });
+    /*
+     * 切面转到某些角度时，正好和视线平行，看过去就是一条线。
+     * 这个按钮把镜头转到正对切面的方向，切口最大、最好看清楚。
+     */
+    $('sectionFaceOn').addEventListener('click', () => {
+        const n = secPlane().n;
+        secView.yaw = Math.atan2(n[0], n[2]);
+        // 稍微偏一点点，立体感还在，但切口已经基本正对镜头
+        secView.pitch = clamp(Math.asin(clamp(n[1], -1, 1)) - 0.12, -1.2, 1.2);
+        drawSection();
+    });
+    makeSpinnable($('sectionSvg'), secView, drawSection);
+
+
+    /* ================= 5. 练一练 ================= */
+    const QUIZ = [
+        { kind: 'net', cells: NETS[0].cells, q: '这张展开图能折成正方体吗？', opts: ['能', '不能'], ans: 0, why: '一列 4 格、两侧各 1 格，是常见的 1-4-1 型' },
+        { kind: 'net', cells: NETS[11].cells, q: '这张展开图能折成正方体吗？', opts: ['能', '不能'], ans: 1, why: '出现“田”字，折起来会有两个面重叠' },
+        { kind: 'net', cells: NETS[14].cells, q: '这张展开图能折成正方体吗？', opts: ['能', '不能'], ans: 1, why: '6 格排成一条直线，卷起来会重叠' },
+        { kind: 'net', cells: NETS[9].cells, q: '这张展开图能折成正方体吗？', opts: ['能', '不能'], ans: 0, why: '二二二型，可以折成正方体' },
+        { kind: 'sec', solid: 'cube', cut: 'h', q: '横着切正方体，切口是什么形状？', opts: ['正方形', '长方形', '三角形', '圆'], ans: 0, why: '平行于底面切，切口和底面一样是正方形' },
+        { kind: 'sec', solid: 'cube', cut: 'hex', q: '经过六条棱中点斜切正方体，切口是？', opts: ['正六边形', '正方形', '五边形', '三角形'], ans: 0, why: '切面经过 6 条棱，得到正六边形' },
+        { kind: 'sec', solid: 'cylinder', cut: 'v', q: '沿着轴竖着切圆柱，切口是什么形状？', opts: ['长方形', '圆', '椭圆', '三角形'], ans: 0, why: '过轴的截面是长方形，宽是直径、长是高' },
+        { kind: 'sec', solid: 'cylinder', cut: 'slant', q: '斜着切圆柱，切口是什么形状？', opts: ['椭圆', '圆', '长方形', '梯形'], ans: 0, why: '斜切圆柱得到椭圆' },
+        { kind: 'sec', solid: 'cone', cut: 'v', q: '过顶点竖着切圆锥，切口是什么形状？', opts: ['等腰三角形', '圆', '椭圆', '长方形'], ans: 0, why: '两条母线加底面直径，围成等腰三角形' },
+        { kind: 'sec', solid: 'cone', cut: 'h', q: '横着切圆锥，切口是什么形状？', opts: ['圆', '椭圆', '三角形', '扇形'], ans: 0, why: '平行底面切，切口是圆，越往上越小' },
+        { kind: 'sec', solid: 'sphere', cut: 'h', q: '不管从哪个方向切球，切口都是？', opts: ['圆', '椭圆', '正方形', '不一定'], ans: 0, why: '球的任何截面都是圆' },
+        { kind: 'count', solid: 'cylinder', q: '圆柱的展开图由哪些图形组成？', opts: ['1 个长方形 + 2 个圆', '1 个扇形 + 1 个圆', '6 个长方形', '2 个三角形 + 3 个长方形'], ans: 0, why: '侧面展开是长方形，上下两个底面是圆' },
+        { kind: 'count', solid: 'cone', q: '圆锥的展开图由哪些图形组成？', opts: ['1 个扇形 + 1 个圆', '1 个长方形 + 2 个圆', '1 个三角形 + 1 个圆', '4 个三角形'], ans: 0, why: '侧面展开是扇形，底面是一个圆' },
+        { kind: 'count', solid: 'prism3', q: '三棱柱有几个面？', opts: ['5 个', '6 个', '4 个', '9 个'], ans: 0, why: '2 个三角形底面 + 3 个长方形侧面 = 5 个面' },
+        { kind: 'count', solid: 'pyramid4', q: '四棱锥有几个面？', opts: ['5 个', '4 个', '6 个', '8 个'], ans: 0, why: '1 个正方形底面 + 4 个三角形侧面 = 5 个面' },
+        { kind: 'area', q: '一个长方体长 5cm、宽 3cm、高 4cm，表面积是多少？', opts: ['94 cm²', '60 cm²', '47 cm²', '120 cm²'], ans: 0, why: '(5×3 + 5×4 + 3×4)×2 = 47×2 = 94（cm²）' },
+        { kind: 'area', q: '棱长 4cm 的正方体，表面积是多少？', opts: ['96 cm²', '64 cm²', '48 cm²', '16 cm²'], ans: 0, why: '4×4×6 = 96（cm²）' }
+    ];
+
+    let quizOrder = [];
+    let quizIdx = 0;
+    let quizDone = 0;
+    let quizRight = 0;
+    let quizLocked = false;
+    const quizView = { cx: 450, cy: 190, scale: 62, yaw: 0.62, pitch: 0.42 };
+
+    function drawQuizFigure(q) {
+        const svg = $('quizSvg');
+        clear(svg);
+        if (q.kind === 'net') {
+            drawNetThumb(svg, q.cells, { w: 900, h: 380 }, 60);
+        } else if (q.kind === 'sec') {
+            // 借用截面引擎画题目图：临时切到题目指定的立体和切法，画完还原
+            const save = { s: secSolid, p: secPos, t: secTilt, sp: secSpin };
+            const pre = (SECTION_PRESETS[q.solid] || []).find((c) => c.id === q.cut)
+                || SECTION_PRESETS[q.solid][0];
+            secSolid = q.solid; secPos = pre.pos; secTilt = pre.tilt; secSpin = pre.spin;
+            const m = sectionModel();
+            const view = { cx: 450, cy: 190, scale: 92, yaw: quizView.yaw, pitch: quizView.pitch };
+            if (m.sphere) {
+                const c = project([0, 0, 0], view);
+                el('circle', { cx: c[0], cy: c[1], r: m.sphere * view.scale, fill: '#c7d2fe', 'fill-opacity': 0.42, stroke: '#3730a3', 'stroke-width': 2 }, svg);
+            } else drawFaces(svg, m.faces, view);
+            el('polygon', {
+                points: pts(projAll(m.cut, view)), fill: '#fb7185', 'fill-opacity': 0.55,
+                stroke: '#be123c', 'stroke-width': 3, 'stroke-linejoin': 'round'
+            }, svg);
+            secSolid = save.s; secPos = save.p; secTilt = save.t; secSpin = save.sp;
+        } else if (q.kind === 'count') {
+            const view = { cx: 450, cy: 190, scale: 78, yaw: 0.62, pitch: 0.42 };
+            if (q.solid === 'cylinder') drawCylinderUnfold(svg, 0, view);
+            else if (q.solid === 'cone') drawConeUnfold(svg, 0, view);
+            else if (q.solid === 'prism3') drawFaces(svg, prismUnfoldFaces(0, 3, 1.1, 1.5), view);
+            else drawFaces(svg, pyramidUnfoldFaces(0, 1.15, 1.5), view);
+        } else {
+            const view = { cx: 450, cy: 190, scale: 74, yaw: 0.62, pitch: 0.42 };
+            drawFaces(svg, cuboidUnfoldFaces(0, 1.9, 1.2, 1.5), view);
+        }
+    }
+
+    function showQuiz() {
+        const q = QUIZ[quizOrder[quizIdx]];
+        quizLocked = false;
+        drawQuizFigure(q);
+        $('quizText').textContent = q.q;
+        $('quizResult').textContent = '第 ' + (quizIdx + 1) + ' 题';
+        $('quizResult').className = 'result info';
+        const box = $('quizAnswers');
+        box.innerHTML = '';
+        q.opts.forEach((o, i) => {
+            const b = document.createElement('button');
+            b.className = 'ans-btn';
+            b.type = 'button';
+            b.dataset.i = String(i);
+            b.textContent = o;
+            box.appendChild(b);
+        });
+        $('quizFeedback').textContent = '选一个答案';
+        $('quizFeedback').className = 'formula';
+    }
+
+    $('quizAnswers').addEventListener('click', (e) => {
+        const b = e.target.closest('.ans-btn');
+        if (!b || quizLocked) return;
+        quizLocked = true;
+        const q = QUIZ[quizOrder[quizIdx]];
+        const pick = Number(b.dataset.i);
+        const ok = pick === q.ans;
+        quizDone++;
+        if (ok) quizRight++;
+        $('quizAnswers').querySelectorAll('.ans-btn').forEach((btn, i) => {
+            if (i === q.ans) btn.classList.add('right');
+            else if (i === pick) btn.classList.add('wrong');
+        });
+        $('quizFeedback').textContent = (ok ? '✓ 对了！' : '✗ 正确答案：' + q.opts[q.ans] + '。') + q.why;
+        $('quizFeedback').className = 'formula ' + (ok ? 'green' : 'amber');
+        $('quizResult').textContent = ok ? '答对了' : '再想想';
+        $('quizResult').className = 'result ' + (ok ? '' : 'bad');
+        $('quizScore').textContent = '答对 ' + quizRight + '／' + quizDone;
+        setTimeout(() => {
+            if (quizLocked) nextQuiz();
+        }, 1900);
+    });
+
+    function nextQuiz() {
+        quizIdx++;
+        if (quizIdx >= quizOrder.length) {
+            quizOrder = QUIZ.map((_, i) => i).sort(() => Math.random() - 0.5);
+            quizIdx = 0;
+        }
+        showQuiz();
+    }
+    $('quizNext').addEventListener('click', nextQuiz);
+
+    /* ================= 标签切换 ================= */
+    document.querySelectorAll('.tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+            document.querySelectorAll('.view').forEach((v) => {
+                v.classList.toggle('active', v.id === 'view-' + tab.dataset.view);
+            });
+        });
+    });
+
+    /* ================= 初始化 ================= */
+    drawUnfold();
+    shuffleNets();
+    renderAreaDims();
+    drawArea();
+    renderSecPresets();
+    drawSection();
+    quizOrder = QUIZ.map((_, i) => i).sort(() => Math.random() - 0.5);
+    showQuiz();
+})();
+</script>
+</body>
+</html>

@@ -43,7 +43,7 @@
         .small-btn.primary, .tool-btn.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
         .small-btn.danger, .tool-btn.danger { color: var(--red); }
         .tabs {
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; padding: 6px;
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; padding: 6px;
             border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.92); margin-bottom: 14px;
         }
         .tab {
@@ -138,7 +138,7 @@
             .page { padding: 12px; }
             .topbar { align-items: flex-start; }
             .home { min-height: 40px; padding: 7px 10px; font-size: 13px; }
-            .tabs { grid-template-columns: repeat(7, minmax(72px, 1fr)); overflow-x: auto; }
+            .tabs { grid-template-columns: repeat(6, minmax(72px, 1fr)); overflow-x: auto; }
             .tab { font-size: 14px; }
             .panel { padding: 13px; }
             .board-layout { grid-template-columns: 1fr; }
@@ -178,7 +178,6 @@
         <button class="tab" data-view="cut">剪窗花</button>
         <button class="tab" data-view="angle">折角度</button>
         <button class="tab" data-view="corner">折角求度数</button>
-        <button class="tab" data-view="box">折成盒子</button>
         <button class="tab free" data-view="free">自由折纸</button>
     </nav>
 
@@ -235,7 +234,7 @@
 
         <!-- 3 剪窗花 -->
         <section class="view" id="view-cut">
-            <div class="view-head"><h2>折几次，剪一刀</h2><span class="mini-tip">拖动缺口 · 再摊开</span></div>
+            <div class="view-head"><h2>折几次，剪一刀</h2><span class="mini-tip">一步一步折 · 剪 · 一步一步摊开</span></div>
             <div class="chips" id="cutModes">
                 <button class="chip active" data-mode="v">上下对折</button>
                 <button class="chip" data-mode="vh">对折两次</button>
@@ -245,20 +244,43 @@
             </div>
             <div class="split">
                 <div>
-                    <p class="tray-title">折好的样子 · 在这里剪</p>
-                    <div class="stage"><svg id="cutSvg" viewBox="0 0 440 440" role="application" aria-label="在折好的纸上剪缺口"></svg></div>
+                    <p class="tray-title">① 折纸 · 折到最小再剪</p>
+                    <div class="steps" id="cutSteps"></div>
+                    <div class="stage"><svg id="cutSvg" viewBox="0 0 440 440" role="application" aria-label="折纸与剪缺口的分步演示"></svg>
+                        <div class="result info" id="cutStageBadge">整张纸</div>
+                    </div>
+                    <div class="underbar">
+                        <button class="small-btn" id="cutPrev">‹ 上一步</button>
+                        <span class="board-status" id="cutStageTitle">第 1 步</span>
+                        <button class="small-btn primary" id="cutNext">下一步 ›</button>
+                    </div>
                 </div>
                 <div>
-                    <p class="tray-title">摊开的样子</p>
-                    <div class="stage"><svg id="openSvg" viewBox="0 0 440 440" role="img" aria-label="摊开后的图案"></svg>
-                        <div class="result" id="cutResult">1 个洞</div>
+                    <p class="tray-title">② 摊开 · 一次一次打开看</p>
+                    <div class="steps" id="cutOpenSteps"></div>
+                    <div class="stage"><svg id="openSvg" viewBox="0 0 440 440" role="img" aria-label="一步一步摊开的图案"></svg>
+                        <div class="result info" id="cutResult">还没剪</div>
+                    </div>
+                    <div class="underbar">
+                        <button class="small-btn" id="cutOpenPrev">‹ 收回去</button>
+                        <span class="board-status" id="cutOpenTitle">先去左边折纸、剪一刀</span>
+                        <button class="small-btn primary" id="cutOpenNext">摊开一次 ›</button>
                     </div>
                 </div>
             </div>
             <div class="underbar">
-                <div class="formula" id="cutFormula">折 1 次 → 2 层 → 剪 1 刀 = 2 个洞</div>
+                <div class="formula" id="cutFormula">先折，再剪，然后一次一次摊开</div>
+            </div>
+            <div class="underbar">
+                <label class="formula amber">缺口大小 <input id="cutSize" type="range" min="8" max="60" value="26" aria-label="缺口大小"><span id="cutSizeVal">26</span></label>
                 <button class="small-btn" id="cutShape">◆ 换缺口形状</button>
+                <button class="small-btn" id="cutDrawMode">✎ 自己画</button>
                 <button class="small-btn" id="cutReset">↺ 重来</button>
+            </div>
+            <div class="cut-legend">
+                <span class="legend-item"><span class="swatch" style="background:#c7d2fe"></span>折好的纸</span>
+                <span class="legend-item"><span class="swatch" style="background:#eef2ff;border:1px dashed #c7d2fe"></span>被折走的部分</span>
+                <span class="legend-item"><span class="swatch" style="background:#fbfdff;border:2px solid #fb7185"></span>剪掉的缺口</span>
             </div>
         </section>
 
@@ -280,6 +302,11 @@
                 <button class="small-btn" id="anglePrev">‹ 上一步</button>
                 <div class="formula" id="angleFormula">先把纸对折</div>
                 <button class="small-btn primary" id="angleNext">下一步 ›</button>
+            </div>
+            <div class="underbar">
+                <label class="formula amber">折过去 <input id="angleFoldSlider" type="range" min="0" max="100" value="100" aria-label="这一步的折叠进度"></label>
+                <button class="small-btn" id="angleFoldRun">▶ 折一下</button>
+                <button class="small-btn" id="angleFoldOpen">↺ 摊开看折痕</button>
             </div>
         </section>
 
@@ -304,37 +331,7 @@
             </div>
         </section>
 
-        <!-- 6 折成盒子 -->
-        <section class="view" id="view-box">
-            <div class="view-head"><h2>折起来，谁和谁面对面</h2><span class="mini-tip">拖滑块折起来 · 点面标字</span></div>
-            <div class="chips" id="boxNets">
-                <button class="chip active" data-net="n141a">1-4-1 型</button>
-                <button class="chip" data-net="n141b">1-4-1 变式</button>
-                <button class="chip" data-net="n231">2-3-1 型</button>
-                <button class="chip" data-net="n222">2-2-2 型</button>
-                <button class="chip" data-net="n33">3-3 型</button>
-                <button class="chip" data-net="bad">这个折不成</button>
-            </div>
-            <div class="split">
-                <div>
-                    <p class="tray-title">展开图 · 点一个面涂色</p>
-                    <div class="stage"><svg id="netSvg" viewBox="0 0 440 400" role="application" aria-label="正方体展开图"></svg></div>
-                </div>
-                <div>
-                    <p class="tray-title">折起来的样子</p>
-                    <div class="stage"><svg id="boxSvg" viewBox="0 0 440 400" role="img" aria-label="折起来的正方体"></svg>
-                        <div class="result info" id="boxResult">拖滑块折起来</div>
-                    </div>
-                </div>
-            </div>
-            <div class="underbar">
-                <label class="formula">折起来 <input id="boxSlider" type="range" min="0" max="100" value="0" aria-label="折叠进度"></label>
-                <div class="formula green" id="boxFormula">相对的面：中间隔一个</div>
-                <button class="small-btn" id="boxSpin">⟳ 转一转</button>
-            </div>
-        </section>
-
-        <!-- 7 自由折纸 -->
+        <!-- 6 自由折纸 -->
         <section class="view" id="view-free">
             <div class="view-head"><h2>自由折纸</h2><span class="mini-tip">画折痕 · 折 · 剪 · 摊开</span></div>
             <div class="board-layout">
@@ -368,12 +365,17 @@
                         <button class="tool-btn danger" id="freeClear">清空</button>
                         <button class="tool-btn" id="freeSave">保存</button>
                     </div>
+                    <div class="toolbar">
+                        <label class="formula amber">洞的大小 <input id="freeHoleSize" type="range" min="6" max="60" value="17" aria-label="洞的大小"><span id="freeHoleSizeVal">17</span></label>
+                        <label class="formula">纸的大小 <input id="freeZoom" type="range" min="50" max="135" value="100" aria-label="纸张缩放"><span id="freeZoomVal">100%</span></label>
+                        <button class="small-btn danger" id="freeHoleClear">✕ 去掉所有洞</button>
+                    </div>
                     <div class="stage tall"><svg id="freeSvg" viewBox="0 0 900 470" role="application" aria-label="自由折纸画板"></svg>
                         <div class="result info" id="freeResult">1 层</div>
                     </div>
                     <div class="board-footer">
                         <span class="board-status" id="freeStatus">拖动折痕两端的圆点，再点「沿线折」</span>
-                        <span class="board-status"><span class="kbd">拖</span> 移动折痕</span>
+                        <span class="board-status"><span class="kbd">点</span> 打洞 · <span class="kbd">拖</span> 挪洞 · <span class="kbd">再点</span> 去掉</span>
                     </div>
                 </div>
             </div>
@@ -465,6 +467,26 @@
         // 沿垂直方向按 cos 收缩，模拟纸片立起来的投影
         const k = Math.cos(rad(180 * ratio));
         return [fx + (p[0] - fx) * k, fy + (p[1] - fy) * k];
+    };
+    // 把一条（很长的）直线截成落在多边形里面的那一段，用来画折痕，免得伸到纸外面
+    const clipSegment = (a, b, points) => {
+        const hits = [];
+        for (let i = 0; i < points.length; i++) {
+            const c = points[i], d = points[(i + 1) % points.length];
+            const r1 = side(c, a, b), r2 = side(d, a, b);
+            if ((r1 > 0 && r2 > 0) || (r1 < 0 && r2 < 0)) continue;   // 这条边不跨过直线
+            const den = r1 - r2;
+            if (Math.abs(den) < 1e-9) { hits.push(c, d); continue; }
+            const t = r1 / den;
+            hits.push([c[0] + t * (d[0] - c[0]), c[1] + t * (d[1] - c[1])]);
+        }
+        if (hits.length < 2) return null;
+        // 取沿折痕方向最远的两个交点
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        const proj = p => (p[0] - a[0]) * dx + (p[1] - a[1]) * dy;
+        let lo = hits[0], hi = hits[0];
+        hits.forEach(p => { if (proj(p) < proj(lo)) lo = p; if (proj(p) > proj(hi)) hi = p; });
+        return Math.hypot(hi[0] - lo[0], hi[1] - lo[1]) < 1 ? null : [lo, hi];
     };
     const polyArea = points => {
         let s = 0;
@@ -808,7 +830,11 @@
 
     /* ============ 3 剪窗花 ============ */
     const cutSvg = $("#cutSvg"), openSvg = $("#openSvg"), cutResult = $("#cutResult"), cutFormula = $("#cutFormula");
+    const cutStepsBar = $("#cutSteps"), cutStageTitle = $("#cutStageTitle"), cutStageBadge = $("#cutStageBadge");
+    const cutOpenStepsBar = $("#cutOpenSteps"), cutOpenTitle = $("#cutOpenTitle");
+    const cutSizeInput = $("#cutSize"), cutSizeVal = $("#cutSizeVal");
     const SQ = { x: 70, y: 70, w: 300 };  // 整张纸在 440×440 视图里的位置
+    const PAPER = [[SQ.x, SQ.y], [SQ.x + SQ.w, SQ.y], [SQ.x + SQ.w, SQ.y + SQ.w], [SQ.x, SQ.y + SQ.w]];
     const cutModes = {
         v:    { name: "上下对折", folds: 1, layers: 2, kind: "strip" },
         vh:   { name: "对折两次", folds: 2, layers: 4, kind: "strip" },
@@ -817,35 +843,155 @@
         fan8: { name: "八份扇形", folds: 3, layers: 8, kind: "fan" }
     };
     let cutMode = "v";
-    let cutHole = [0.5, 0.42];      // 缺口中心，折好区域内的相对坐标
-    let cutHoleShape = 0;            // 0 圆 1 三角 2 方 3 星
+    let cutHole = [0.62, 0.34];     // 缺口中心，折好区域外接盒内的相对坐标
+    let cutHoleShape = 0;            // 0 圆 1 三角 2 方 3 星 4 自己画的
+    let cutHoleSize = 26;
+    let cutCustom = null;            // 自己画的图形：折好区域内的相对坐标数组
+    let cutDrawing = false;          // 正在画自定义图形
+    let cutDrawPts = [];
     let cutDragging = false;
+    let cutStep = 0;                 // 左边：折到第几步
+    let cutPhase = 1;                // 左边这一步的动画进度 0→1
+    let cutAnimating = false;
+    let cutHasCut = false;           // 剪过没有。没剪之前右边什么都不显示
+    let cutOpenStep = 0;             // 右边：摊开到第几步
+    let cutOpenPhase = 1;            // 右边这一步的动画进度
+    let cutOpenAnimating = false;
 
-    // 折好后的区域（在 cutSvg 里的多边形）
-    function foldedRegion() {
+    // 每一次对折用到的折痕。折的顺序 = 数组顺序
+    // 每一次对折的折痕。折痕必须真正把"当前这一叠"分成相等的两半，
+    // 所以每一条都要按前一次折完剩下的区域来算，不能全都用整张纸的中线。
+    function cutAxes() {
         const m = cutModes[cutMode];
         const { x, y, w } = SQ;
+        const cx = x + w / 2, cy = y + w / 2;
+        const L = w * 2;   // 折痕画得足够长，保证穿过整个区域
+
         if (m.kind === "strip") {
-            if (m.folds === 1) return [[x, y + w/2], [x + w, y + w/2], [x + w, y + w], [x, y + w]];
-            if (m.folds === 2) return [[x + w/2, y + w/2], [x + w, y + w/2], [x + w, y + w], [x + w/2, y + w]];
-            return [[x + w/2, y + w/2], [x + w, y + w/2], [x + w/2, y + w]]; // 三次：对角三角
+            // 上下对折 → 剩上半；左右对折 → 剩左上四分之一；
+            // 第三次沿这个小正方形自己的对角线折（过 (x,y) 和 (cx,cy)）
+            const axes = [[[x - L, cy], [x + w + L, cy]]];
+            if (m.folds >= 2) axes.push([[cx, y - L], [cx, y + w + L]]);
+            if (m.folds >= 3) {
+                // 前两次折完剩下的是右上角那个小正方形 (cx,y)-(x+w,cy)，
+                // 第三次沿它自己的对角线折：从右上角 (x+w,y) 到中心 (cx,cy)
+                axes.push([[x + w + 30, y - 30], [cx - 30, cy + 30]]);
+            }
+            return axes;
         }
-        const cx = x + w/2, cy = y + w/2;
-        if (m.folds === 2) return [[cx, cy], [x + w, cy], [x + w, y + w], [cx, y + w]];
-        return [[cx, cy], [x + w, cy], [x + w, y + w]];
+
+        // 扇形：绕纸的中心一次次对折，每次把角平分，折出来是一块楔形。
+        // 和"对折两次/三次"走的是不同的折痕（这里先沿对角线折），
+        // 所以剪出来的花样也不一样。
+        const ray = angleDeg => {
+            const a = rad(angleDeg);
+            return [[cx - L * Math.cos(a), cy - L * Math.sin(a)],
+                    [cx + L * Math.cos(a), cy + L * Math.sin(a)]];
+        };
+        // 两条对角线折完，剩下的是右边那个三角楔形（顶点在中心，张口 90°）。
+        // 第三次要平分这个楔形自己的角，也就是沿横中线折。
+        const axes = [ray(45), ray(135)];
+        if (m.folds >= 3) axes.push(ray(0));
+        return axes;
+    }
+    // 第 k 次折之前，纸摊在桌上占的区域（k = 0 就是整张纸）
+    function cutRegionAfter(k) {
+        let region = PAPER.map(p => [...p]);
+        const axes = cutAxes();
+        for (let i = 0; i < k; i++) {
+            const [a, b] = axes[i];
+            // 保留“不动的那一半”，折过来的那半盖在它上面
+            region = clipPoly(region, a, b, false);
+        }
+        return region;
+    }
+    // 折好后（全部折完）的区域
+    function foldedRegion() { return cutRegionAfter(cutAxes().length); }
+
+    // 左边的步骤表：整张纸 → 每折一次一步 → 剪。折到最小就到此为止，左边不再摊开。
+    function cutStepList() {
+        const n = cutAxes().length;
+        const steps = [{ kind: "paper", text: "先拿一张正方形的纸" }];
+        for (let i = 0; i < n; i++) {
+            steps.push({ kind: "fold", index: i, text: `第 ${i + 1} 次对折：${2 ** (i + 1)} 层` });
+        }
+        steps.push({ kind: "cut", text: `折到最小了 · ${2 ** n} 层一起剪一刀` });
+        return steps;
+    }
+    // 右边的步骤表：还没剪 → 剪好还没摊开 → 每摊开一次一步
+    function cutOpenStepList() {
+        const n = cutAxes().length;
+        const steps = [{ kind: "folded", opened: 0, text: "剪好了，还没摊开" }];
+        for (let i = 1; i <= n; i++) {
+            steps.push({ kind: "open", opened: i, text: `摊开第 ${i} 次：${2 ** i} 个洞` });
+        }
+        return steps;
     }
 
     // 把折好区域的相对坐标转成绝对点
-    function holePoint() {
-        const region = foldedRegion();
+    function relToAbs(rel, region) {
         const xs = region.map(p => p[0]), ys = region.map(p => p[1]);
         const x0 = Math.min(...xs), y0 = Math.min(...ys);
         const w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
-        return [x0 + cutHole[0] * w, y0 + cutHole[1] * h];
+        return [x0 + rel[0] * w, y0 + rel[1] * h];
+    }
+    // 点到一条直线的距离
+    function distToLine(p, a, b) {
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        const len = Math.hypot(dx, dy) || 1;
+        return Math.abs((p[0] - a[0]) * dy - (p[1] - a[1]) * dx) / len;
+    }
+    // 缺口中心。折好的区域可能是三角形/扇形，光"在区域里"还不够：
+    // 缺口要是贴着折痕，镜像出来的两个洞就会叠在一起，看着像少了一半。
+    // 所以还要离每条折痕都远一点。
+    // 一个点"好不好"：在纸里面，而且离每条折痕都尽量远。
+    // 离折痕太近的话，镜像出来的洞会和它自己叠在一起，摊开就看不出该有的个数。
+    function holeClearance(p, region) {
+        if (!pointInPolyCut(p, region)) return -1;
+        return cutAxes().reduce((min, ax) => Math.min(min, distToLine(p, ax[0], ax[1])), Infinity);
+    }
+    function holePoint() {
+        const region = foldedRegion();
+        const want = cutHoleSize * 0.9 + 4;      // 希望留出的余量
+        const p = relToAbs(cutHole, region);
+        if (holeClearance(p, region) >= want) return p;
+        // 在折好的区域里扫一遍，挑一个离折痕最远的点，
+        // 并且尽量靠近用户本来想放的位置
+        const xs = region.map(q => q[0]), ys = region.map(q => q[1]);
+        const x0 = Math.min(...xs), x1 = Math.max(...xs);
+        const y0 = Math.min(...ys), y1 = Math.max(...ys);
+        let best = null, bestScore = -Infinity;
+        const N = 24;
+        for (let i = 0; i <= N; i++) {
+            for (let j = 0; j <= N; j++) {
+                const q = [x0 + (x1 - x0) * i / N, y0 + (y1 - y0) * j / N];
+                const c = holeClearance(q, region);
+                if (c < 0) continue;
+                // 够远就行，再远没意义；同样远的话，选离原来位置近的
+                const near = Math.hypot(q[0] - p[0], q[1] - p[1]);
+                const score = Math.min(c, want) * 10 - near;
+                if (score > bestScore) { bestScore = score; best = q; }
+            }
+        }
+        if (best) return best;
+        return [region.reduce((t, q) => t + q[0], 0) / region.length,
+                region.reduce((t, q) => t + q[1], 0) / region.length];
+    }
+    function pointInPolyCut(p, points) {
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const xi = points[i][0], yi = points[i][1], xj = points[j][0], yj = points[j][1];
+            if ((yi > p[1]) !== (yj > p[1]) && p[0] < (xj - xi) * (p[1] - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        return inside;
     }
 
-    function holePolygon(center, size = 26) {
+    function holePolygon(center, size = cutHoleSize) {
         const [cx, cy] = center;
+        if (cutHoleShape === 4 && cutCustom && cutCustom.length > 2) {
+            // 自己画的：相对折好区域归一化后，按 size 缩放到中心
+            return cutCustom.map(([rx, ry]) => [cx + rx * size, cy + ry * size]);
+        }
         if (cutHoleShape === 0) return regular(20, cx, cy, size, 0);
         if (cutHoleShape === 1) return regular(3, cx, cy, size * 1.15, -90);
         if (cutHoleShape === 2) return regular(4, cx, cy, size * 1.05, -45);
@@ -855,87 +1001,357 @@
         });
     }
 
-    // 所有折痕（镜像轴）的列表，摊开时依次镜像
-    function cutAxes() {
-        const m = cutModes[cutMode];
-        const { x, y, w } = SQ;
-        const cx = x + w/2, cy = y + w/2;
-        if (m.kind === "strip") {
-            const axes = [[[x, cy], [x + w, cy]]];                    // 横中线
-            if (m.folds >= 2) axes.push([[cx, y], [cx, y + w]]);      // 竖中线
-            if (m.folds >= 3) axes.push([[x, y], [x + w, y + w]]);    // 对角线
-            return axes;
-        }
-        const axes = [[[x, cy], [x + w, cy]], [[cx, y], [cx, y + w]]];
-        if (m.folds >= 3) axes.push([[x, y], [x + w, y + w]]);
-        return axes;
-    }
-
-    function drawCut() {
-        const m = cutModes[cutMode];
-        const region = foldedRegion();
-        const center = holePoint();
-        const hole = holePolygon(center);
-
-        // 左：折好的纸
-        wipe(cutSvg);
-        // 整张纸的淡影，说明折起来占的地方
-        poly(cutSvg, [[SQ.x,SQ.y],[SQ.x+SQ.w,SQ.y],[SQ.x+SQ.w,SQ.y+SQ.w],[SQ.x,SQ.y+SQ.w]],
-            "#eef2ff", { stroke: "#c7d2fe", "stroke-dasharray": "6 6", "stroke-width": 2 });
-        const defsC = svgEl("defs", {}, cutSvg);
-        const cpC = svgEl("clipPath", { id: "cutClip" }, defsC);
-        svgEl("polygon", { points: pts(region) }, cpC);
-        poly(cutSvg, region, "#c7d2fe", { stroke: "#6366f1", "stroke-width": 3 });
-        const gC = svgEl("g", { "clip-path": "url(#cutClip)" }, cutSvg);
-        poly(gC, hole, "#fbfdff", { stroke: "#fb7185", "stroke-width": 3, "stroke-dasharray": "6 5" });
-        // 层数标注
-        label(cutSvg, [SQ.x + SQ.w/2, SQ.y - 26], `折 ${m.folds} 次 → ${m.layers} 层`, { "font-size": 20, fill: "#4338ca" });
-        dot(cutSvg, center, "#fb7185", 9, { class: "drag-dot", "data-hole": "1" });
-
-        // 右：摊开的纸
-        wipe(openSvg);
-        poly(openSvg, [[SQ.x,SQ.y],[SQ.x+SQ.w,SQ.y],[SQ.x+SQ.w,SQ.y+SQ.w],[SQ.x,SQ.y+SQ.w]],
-            "#c7d2fe", { stroke: "#6366f1", "stroke-width": 3 });
-        // 折痕
-        cutAxes().forEach(ax => line(openSvg, ax[0], ax[1], {
-            stroke: "#818cf8", "stroke-width": 2, "stroke-dasharray": "7 6"
-        }));
-        // 依次沿每条折痕镜像，得到所有洞
-        let holes = [hole];
-        cutAxes().forEach(ax => {
+    // 折到第 depth 层时（depth = 已经折了几次），纸上能看到的所有洞。
+    // 缺口是在全部折完（depth = n）时剪的，每往回摊开一次，就沿那条折痕多镜像一批。
+    function holesAtDepth(depth) {
+        const axes = cutAxes();
+        let holes = [holePolygon(holePoint())];
+        for (let i = axes.length - 1; i >= depth; i--) {
+            const ax = axes[i];
             holes = [...holes, ...holes.map(h => h.map(p => mirror(p, ax[0], ax[1])))];
-        });
-        // 只保留落在纸上的洞（去重）
-        const seen = new Set();
-        const kept = [];
+        }
+        return dedupeHoles(holes);
+    }
+    // 位置几乎重合的洞算同一个（镜像回来常常差零点几个像素）
+    function dedupeHoles(holes) {
+        const kept = [], centers = [];
         holes.forEach(h => {
             const cx = h.reduce((t, p) => t + p[0], 0) / h.length;
             const cy = h.reduce((t, p) => t + p[1], 0) / h.length;
-            const key = `${Math.round(cx)},${Math.round(cy)}`;
-            if (seen.has(key)) return;
-            seen.add(key);
+            if (centers.some(c => Math.hypot(c[0] - cx, c[1] - cy) < 1.5)) return;
+            centers.push([cx, cy]);
             kept.push(h);
         });
-        const defsO = svgEl("defs", {}, openSvg);
-        const cpO = svgEl("clipPath", { id: "openClip" }, defsO);
-        svgEl("rect", { x: SQ.x, y: SQ.y, width: SQ.w, height: SQ.w }, cpO);
-        const gO = svgEl("g", { "clip-path": "url(#openClip)" }, openSvg);
-        kept.forEach(h => poly(gO, h, "#fbfdff", { stroke: "#fb7185", "stroke-width": 2.5 }));
+        return kept;
+    }
 
-        setResult(cutResult, "", `${kept.length} 个洞`);
-        cutFormula.textContent = `折 ${m.folds} 次 → ${m.layers} 层 → 剪 1 刀 = ${kept.length} 个洞`;
+    // 左边：只管折。整张纸 → 一次次对折 → 折到最小剪一刀，到此为止，不再摊开。
+    function drawCutStage() {
+        wipe(cutSvg);
+        const steps = cutStepList();
+        const step = steps[Math.min(cutStep, steps.length - 1)];
+        const axes = cutAxes();
+        const n = axes.length;
+        const cutIndex = steps.findIndex(s => s.kind === "cut");
+
+        // 整张纸的淡影，始终提示原来的大小
+        poly(cutSvg, PAPER, "#eef2ff", { stroke: "#c7d2fe", "stroke-dasharray": "6 6", "stroke-width": 2 });
+
+        // 这一步：从 depth 层折到 depth+1 层。ratio = 0 摊平，1 折好
+        let depth, movingAxis = null, ratio = 1;
+        if (step.kind === "paper") { depth = 0; }
+        else if (step.kind === "fold") {
+            depth = step.index;
+            movingAxis = axes[step.index];
+            ratio = cutPhase;
+        } else { depth = n; }              // cut：已经折到最小
+
+        const region = cutRegionAfter(depth);
+        const staying = movingAxis ? clipPoly(region, movingAxis[0], movingAxis[1], false) : region;
+        const moving  = movingAxis ? clipPoly(region, movingAxis[0], movingAxis[1], true)  : [];
+
+        // 剪那一步才有洞，而且只有折到最小的那一份上有——还没摊开呢
+        const holes = cutStep >= cutIndex ? [holePolygon(holePoint())] : [];
+        const defs = svgEl("defs", {}, cutSvg);
+        let clipSeq = 0;
+        const drawHolesOn = (shape, holeSet) => {
+            if (!holeSet.length || shape.length < 3) return;
+            const id = `cutStageClip${clipSeq++}`;
+            const cp = svgEl("clipPath", { id }, defs);
+            svgEl("polygon", { points: pts(shape) }, cp);
+            const g = svgEl("g", { "clip-path": `url(#${id})` }, cutSvg);
+            holeSet.forEach(h => poly(g, h, "#fbfdff", { stroke: "#fb7185", "stroke-width": 2.6 }));
+        };
+
+        // 已经压出来的折痕（浅色），只画落在这块纸里面的那一段
+        const drawCreases = () => {
+            if (depth <= 0 || region.length < 3) return;
+            for (let i = 0; i < depth; i++) {
+                const seg = clipSegment(axes[i][0], axes[i][1], region);
+                if (seg) line(cutSvg, seg[0], seg[1], { stroke: "#a5b4fc", "stroke-width": 2, "stroke-dasharray": "5 5" });
+            }
+        };
+
+        // 不动的那半
+        if (staying.length > 2) poly(cutSvg, staying, "#c7d2fe", { stroke: "#6366f1", "stroke-width": 3 });
+        drawCreases();
+        // 折过去的那半（按进度翻过来）
+        if (moving.length > 2) {
+            if (ratio > 0.02) {
+                poly(cutSvg, moving, "#fb718518", { stroke: "#fda4af", "stroke-dasharray": "6 5", "stroke-width": 2 });
+            }
+            const movedPoly = moving.map(p => partialFold(p, movingAxis[0], movingAxis[1], ratio));
+            poly(cutSvg, movedPoly, ratio > 0.5 ? "#a5b4fc" : "#c7d2fe",
+                { stroke: "#6366f1", "stroke-width": ratio > 0.04 ? 3 : 0, "fill-opacity": ratio > 0.9 ? .95 : 1 });
+        }
+        if (movingAxis) {
+            const seg = clipSegment(movingAxis[0], movingAxis[1], region) || movingAxis;
+            line(cutSvg, seg[0], seg[1], ratio > 0.04
+                ? { stroke: "#334155", "stroke-width": 4 }
+                : { stroke: "#a5b4fc", "stroke-width": 2, "stroke-dasharray": "5 5" });
+        }
+        // 洞画在最上面那一份折好的纸上
+        drawHolesOn(region, holes);
+
+        // 正在自己画图形
+        if (cutDrawing) {
+            const region2 = foldedRegion();
+            poly(cutSvg, region2, "#c7d2fe55", { stroke: "#6366f1", "stroke-width": 2, "stroke-dasharray": "5 5" });
+            if (cutDrawPts.length > 1) {
+                svgEl("polyline", {
+                    points: pts(cutDrawPts), fill: "#fb718522", stroke: "#dc2626",
+                    "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round"
+                }, cutSvg);
+            }
+            label(cutSvg, [SQ.x - 34, SQ.y - 28], "在纸上按住拖一圈，松手自动闭合",
+                { fill: "#b91c1c", "font-size": 15, "text-anchor": "start" });
+        } else {
+            label(cutSvg, [SQ.x - 34, SQ.y - 28], step.text,
+                { fill: "#4338ca", "font-size": 15, "text-anchor": "start" });
+        }
+
+        cutStageTitle.textContent = `第 ${cutStep + 1} / ${steps.length} 步`;
+        // 只有正在折的那一步才会从 depth 层变成 depth+1 层
+        const shownDepth = (movingAxis && ratio > 0.5) ? depth + 1 : depth;
+        const layerNow = 2 ** Math.min(shownDepth, n);
+        setResult(cutStageBadge, step.kind === "cut" ? "warn" : "info",
+            layerNow === 1 ? "整张纸 · 1 层" : `${layerNow} 层`);
+    }
+    // 把一组图形绕折痕折过去的等价 SVG 变换（先镜像、再按 cos 收缩）
+    function foldTransform(a, b, ratio) {
+        const angle = deg(Math.atan2(b[1] - a[1], b[0] - a[0]));
+        const k = Math.cos(rad(180 * ratio));
+        // 平移到 a → 旋转让折痕水平 → 纵向按 k 缩放 → 转回来 → 平移回去
+        return `translate(${a[0]} ${a[1]}) rotate(${angle}) scale(1 ${k}) rotate(${-angle}) translate(${-a[0]} ${-a[1]})`;
+    }
+
+    // 右边：只管摊开。没剪之前什么都不显示，剪完从"折好的一小份"开始，一次次打开。
+    function drawCutOpen() {
+        wipe(openSvg);
+        const axes = cutAxes();
+        const n = axes.length;
+
+        if (!cutHasCut) {
+            // 还没剪，右边先不给答案
+            poly(openSvg, PAPER, "#f8fafc", { stroke: "#e2e8f0", "stroke-dasharray": "7 7", "stroke-width": 2 });
+            label(openSvg, [220, 210], "还没剪呢", { fill: "#94a3b8", "font-size": 22 });
+            label(openSvg, [220, 244], "先在左边折好、剪一刀", { fill: "#cbd5e1", "font-size": 17 });
+            setResult(cutResult, "info", "还没剪");
+            cutOpenTitle.textContent = "先去左边折纸、剪一刀";
+            cutFormula.textContent = "先折，再剪，然后一次一次摊开";
+            return;
+        }
+
+        const openSteps = cutOpenStepList();
+        const step = openSteps[Math.min(cutOpenStep, openSteps.length - 1)];
+        // 已经摊开了几次 → 现在纸折着几层
+        const opened = step.opened;
+        const depth = n - opened;                     // 当前折叠深度
+        const movingAxis = opened > 0 ? axes[depth] : null;   // 这一次掀开的那条折痕
+        const ratio = opened > 0 ? 1 - cutOpenPhase : 1;      // 1 折着 → 0 摊平
+
+        // 摊开这一次之前/之后的区域
+        const region = cutRegionAfter(depth);          // 摊开后（较大）
+        const staying = movingAxis ? clipPoly(region, movingAxis[0], movingAxis[1], false) : region;
+        const moving  = movingAxis ? clipPoly(region, movingAxis[0], movingAxis[1], true)  : [];
+
+        // 整张纸的淡影，看得出还差多少没摊开
+        poly(openSvg, PAPER, "#f8fafc", { stroke: "#e2e8f0", "stroke-dasharray": "7 7", "stroke-width": 2 });
+
+        const holes = holesAtDepth(depth);
+        const defs = svgEl("defs", {}, openSvg);
+        let clipSeq = 0;
+        const drawHolesOn = (shape, axis, r) => {
+            if (!holes.length || shape.length < 3) return;
+            const id = `cutOpenClip${clipSeq++}`;
+            const cp = svgEl("clipPath", { id }, defs);
+            svgEl("polygon", { points: pts(shape) }, cp);
+            const g = svgEl("g", { "clip-path": `url(#${id})` }, openSvg);
+            holes.forEach(h => poly(g, h, "#fbfdff", { stroke: "#fb7185", "stroke-width": 2.5 }));
+            if (axis) g.setAttribute("transform", foldTransform(axis[0], axis[1], r));
+        };
+        // 已经露出来的折痕：只画落在这块纸里面的那一段
+        const drawCreases = () => {
+            if (depth <= 0 || region.length < 3) return;
+            for (let i = 0; i < depth; i++) {
+                const seg = clipSegment(axes[i][0], axes[i][1], region);
+                if (seg) line(openSvg, seg[0], seg[1], { stroke: "#a5b4fc", "stroke-width": 2, "stroke-dasharray": "5 5" });
+            }
+        };
+
+        if (staying.length > 2) {
+            poly(openSvg, staying, "#c7d2fe", { stroke: "#6366f1", "stroke-width": 3 });
+            drawHolesOn(staying, null, 0);
+        }
+        drawCreases();
+        if (moving.length > 2) {
+            const movedPoly = moving.map(p => partialFold(p, movingAxis[0], movingAxis[1], ratio));
+            poly(openSvg, movedPoly, ratio > 0.5 ? "#a5b4fc" : "#c7d2fe",
+                { stroke: "#6366f1", "stroke-width": ratio > 0.04 ? 3 : 0, "fill-opacity": ratio > 0.9 ? .95 : 1 });
+            drawHolesOn(moving, movingAxis, ratio);
+        }
+        if (movingAxis) {
+            const seg = clipSegment(movingAxis[0], movingAxis[1], region) || movingAxis;
+            line(openSvg, seg[0], seg[1], ratio > 0.04
+                ? { stroke: "#334155", "stroke-width": 4 }
+                : { stroke: "#a5b4fc", "stroke-width": 2, "stroke-dasharray": "5 5" });
+        }
+        label(openSvg, [SQ.x - 34, SQ.y - 28], step.text,
+            { fill: "#4338ca", "font-size": 15, "text-anchor": "start" });
+
+        // 现在看得到几个洞：摊平的那部分上的洞
+        const shown = ratio > 0.5 ? holesAtDepth(depth + 1).length : holes.length;
+        const m = cutModes[cutMode];
+        cutOpenTitle.textContent = `第 ${cutOpenStep + 1} / ${openSteps.length} 步`;
+        setResult(cutResult, opened >= n ? "" : "info", `${shown} 个洞`);
+        cutFormula.textContent = opened >= n
+            ? `折 ${m.folds} 次 → ${m.layers} 层 → 剪 1 刀 = ${shown} 个洞`
+            : `已经摊开 ${opened} 次 → 现在 ${shown} 个洞，全部摊开会有 ${m.layers} 个`;
+    }
+
+    function drawCutSteps() {
+        wipe(cutStepsBar);
+        const steps = cutStepList();
+        steps.forEach((s, i) => {
+            const b = document.createElement("button");
+            b.className = `step${i === cutStep ? " active" : ""}${i < cutStep ? " done" : ""}`;
+            b.textContent = s.kind === "cut" ? "✂" : `${i + 1}`;
+            b.title = s.text;
+            b.addEventListener("click", () => { cutStep = i; cutPhase = 1; if (i >= steps.length - 1) cutHasCut = true; drawCut(); });
+            cutStepsBar.appendChild(b);
+        });
+        // 右边的步骤条：没剪之前不能点
+        wipe(cutOpenStepsBar);
+        cutOpenStepList().forEach((s, i) => {
+            const b = document.createElement("button");
+            b.className = `step${cutHasCut && i === cutOpenStep ? " active" : ""}${cutHasCut && i < cutOpenStep ? " done" : ""}`;
+            b.textContent = i === 0 ? "✂" : `${i}`;
+            b.title = s.text;
+            b.disabled = !cutHasCut;
+            if (!cutHasCut) b.style.opacity = ".45";
+            b.addEventListener("click", () => {
+                if (!cutHasCut) return;
+                cutOpenStep = i; cutOpenPhase = 1; drawCut();
+            });
+            cutOpenStepsBar.appendChild(b);
+        });
+    }
+    function drawCut() { drawCutSteps(); drawCutStage(); drawCutOpen(); }
+
+    // 左边一步一步折，带动画
+    function cutGo(delta) {
+        if (cutAnimating || cutDrawing) return;
+        const steps = cutStepList();
+        const next = Math.min(steps.length - 1, Math.max(0, cutStep + delta));
+        if (next === cutStep) return;
+        cutStep = next;
+        const step = steps[cutStep];
+        // 走到"剪"这一步，右边才解锁；往回退就把右边重新锁上
+        if (step.kind === "cut") {
+            cutHasCut = true;
+            cutOpenStep = 0; cutOpenPhase = 1;
+        } else {
+            cutHasCut = false;
+            cutOpenStep = 0; cutOpenPhase = 1;
+        }
+        if (step.kind === "fold") {
+            cutAnimating = true;
+            cutPhase = 0;
+            const start = performance.now();
+            const tick = now => {
+                const t = Math.min(1, (now - start) / 640);
+                cutPhase = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                drawCut();
+                if (t < 1) requestAnimationFrame(tick);
+                else { cutPhase = 1; cutAnimating = false; drawCut(); }
+            };
+            requestAnimationFrame(tick);
+        } else {
+            cutPhase = 1;
+            drawCut();
+        }
+    }
+
+    // 右边一次摊开一步，带动画
+    function cutOpenGo(delta) {
+        if (!cutHasCut || cutOpenAnimating) return;
+        const openSteps = cutOpenStepList();
+        const next = Math.min(openSteps.length - 1, Math.max(0, cutOpenStep + delta));
+        if (next === cutOpenStep) return;
+        const forward = next > cutOpenStep;
+        cutOpenStep = next;
+        if (forward) {
+            cutOpenAnimating = true;
+            cutOpenPhase = 0;
+            const start = performance.now();
+            const tick = now => {
+                const t = Math.min(1, (now - start) / 640);
+                cutOpenPhase = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                drawCutOpen();
+                if (t < 1) requestAnimationFrame(tick);
+                else { cutOpenPhase = 1; cutOpenAnimating = false; drawCut(); }
+            };
+            requestAnimationFrame(tick);
+        } else {
+            cutOpenPhase = 1;
+            drawCut();
+        }
     }
 
     cutSvg.addEventListener("pointerdown", event => {
-        if (!event.target.closest("[data-hole]") && !event.target.closest("polygon")) return;
+        const p = svgPoint(cutSvg, event);
+        if (cutDrawing) {
+            cutDrawPts = [[p.x, p.y]];
+            cutDragging = true;
+            cutSvg.setPointerCapture(event.pointerId);
+            drawCutStage();
+            return;
+        }
+        const steps = cutStepList();
+        if (steps[cutStep] && steps[cutStep].kind !== "cut") return;   // 只有剪那一步能挪缺口
         cutDragging = true;
         cutSvg.setPointerCapture(event.pointerId);
         moveHole(event);
     });
-    cutSvg.addEventListener("pointermove", event => { if (cutDragging) moveHole(event); });
-    const endCut = () => { cutDragging = false; };
+    cutSvg.addEventListener("pointermove", event => {
+        if (!cutDragging) return;
+        if (cutDrawing) {
+            const p = svgPoint(cutSvg, event);
+            const last = cutDrawPts[cutDrawPts.length - 1];
+            if (!last || Math.hypot(p.x - last[0], p.y - last[1]) > 5) {
+                cutDrawPts.push([p.x, p.y]);
+                drawCutStage();
+            }
+            return;
+        }
+        moveHole(event);
+    });
+    const endCut = () => {
+        if (cutDrawing && cutDragging) finishCutDrawing();
+        cutDragging = false;
+    };
     cutSvg.addEventListener("pointerup", endCut);
     cutSvg.addEventListener("pointercancel", endCut);
+
+    function finishCutDrawing() {
+        if (cutDrawPts.length < 4) { cutDrawPts = []; drawCutStage(); return; }
+        // 归一化：以重心为原点，最远点的距离缩放到 1，之后乘 cutHoleSize
+        const cx = cutDrawPts.reduce((t, p) => t + p[0], 0) / cutDrawPts.length;
+        const cy = cutDrawPts.reduce((t, p) => t + p[1], 0) / cutDrawPts.length;
+        const maxR = Math.max(...cutDrawPts.map(p => Math.hypot(p[0] - cx, p[1] - cy))) || 1;
+        cutCustom = cutDrawPts.map(p => [(p[0] - cx) / maxR, (p[1] - cy) / maxR]);
+        cutHoleShape = 4;
+        cutDrawing = false;
+        cutDrawPts = [];
+        $("#cutDrawMode").classList.remove("toggle-on");
+        // 画完直接跳到“剪”那一步，右边回到"还没摊开"
+        cutStep = cutStepList().findIndex(s => s.kind === "cut");
+        cutPhase = 1;
+        cutHasCut = true;
+        cutOpenStep = 0; cutOpenPhase = 1;
+        drawCut();
+    }
+
     function moveHole(event) {
         const p = svgPoint(cutSvg, event);
         const region = foldedRegion();
@@ -943,9 +1359,11 @@
         const x0 = Math.min(...xs), y0 = Math.min(...ys);
         const w = Math.max(...xs) - x0, h = Math.max(...ys) - y0;
         cutHole = [
-            Math.min(0.9, Math.max(0.1, (p.x - x0) / w)),
-            Math.min(0.9, Math.max(0.1, (p.y - y0) / h))
+            Math.min(0.92, Math.max(0.08, (p.x - x0) / w)),
+            Math.min(0.92, Math.max(0.08, (p.y - y0) / h))
         ];
+        // 缺口挪了，右边收回去重新一步步摊
+        cutOpenStep = 0; cutOpenPhase = 1;
         drawCut();
     }
     $("#cutModes").addEventListener("click", event => {
@@ -953,129 +1371,227 @@
         if (!chip) return;
         $$("#cutModes .chip").forEach(c => c.classList.toggle("active", c === chip));
         cutMode = chip.dataset.mode;
+        cutStep = 0; cutPhase = 1;
+        cutHasCut = false; cutOpenStep = 0; cutOpenPhase = 1;
         drawCut();
     });
-    $("#cutShape").addEventListener("click", () => { cutHoleShape = (cutHoleShape + 1) % 4; drawCut(); });
-    $("#cutReset").addEventListener("click", () => { cutHole = [0.5, 0.42]; cutHoleShape = 0; drawCut(); });
+    $("#cutNext").addEventListener("click", () => cutGo(1));
+    $("#cutPrev").addEventListener("click", () => cutGo(-1));
+    $("#cutOpenNext").addEventListener("click", () => cutOpenGo(1));
+    $("#cutOpenPrev").addEventListener("click", () => cutOpenGo(-1));
+    $("#cutShape").addEventListener("click", () => {
+        const max = cutCustom ? 5 : 4;
+        cutHoleShape = (cutHoleShape + 1) % max;
+        cutOpenStep = 0; cutOpenPhase = 1;
+        drawCut();
+    });
+    cutSizeInput.addEventListener("input", () => {
+        cutHoleSize = Number(cutSizeInput.value);
+        cutSizeVal.textContent = cutHoleSize;
+        cutOpenStep = 0; cutOpenPhase = 1;
+        drawCut();
+    });
+    $("#cutDrawMode").addEventListener("click", () => {
+        cutDrawing = !cutDrawing;
+        cutDrawPts = [];
+        $("#cutDrawMode").classList.toggle("toggle-on", cutDrawing);
+        if (cutDrawing) {
+            cutStep = cutStepList().findIndex(s => s.kind === "cut");
+            cutPhase = 1;
+            cutHasCut = true;
+            cutOpenStep = 0; cutOpenPhase = 1;
+        }
+        drawCut();
+    });
+    $("#cutReset").addEventListener("click", () => {
+        cutHole = [0.62, 0.34];
+        cutHoleShape = 0;
+        cutHoleSize = 26; cutSizeInput.value = 26; cutSizeVal.textContent = "26";
+        cutCustom = null; cutDrawing = false; cutDrawPts = [];
+        $("#cutDrawMode").classList.remove("toggle-on");
+        cutStep = 0; cutPhase = 1;
+        cutHasCut = false; cutOpenStep = 0; cutOpenPhase = 1;
+        drawCut();
+    });
     renderers.cut = drawCut;
 
     /* ============ 4 折角度 ============ */
     const angleSvg = $("#angleSvg"), angleResult = $("#angleResult"), angleFormula = $("#angleFormula");
-    const angleStepsBar = $("#angleSteps");
-    // 每个目标角度的折法步骤：画一张纸 + 当前所有折痕 + 高亮角
+    const angleStepsBar = $("#angleSteps"), angleFoldSlider = $("#angleFoldSlider");
+
+    // 纸的基准位置
+    const AP = { x: 290, y: 90, w: 320, h: 260 };
+    const apRect = () => [[AP.x, AP.y], [AP.x + AP.w, AP.y], [AP.x + AP.w, AP.y + AP.h], [AP.x, AP.y + AP.h]];
+
+    // 每一步 = 折之前纸的样子 + 这一步的折痕 + 折过去哪一侧 + 之前留下的折痕 + 角标注
+    // base(): 返回 { poly, creases } —— 前面几步折完、摊开后应该看到的东西
     const angleRecipes = {
         "90": {
+            note: "两条折痕互相垂直 → 直角 90°",
             steps: [
-                { text: "拿一张纸，随便什么形状", creases: [], mark: null },
-                { text: "对折一次，压出一条折痕", creases: [1], mark: null },
-                { text: "沿着这条折痕再对折，让折痕对齐折痕", creases: [1, 2], mark: { at: "cross", value: "90°" } }
-            ],
-            note: "两条折痕互相垂直 → 直角 90°"
+                { text: "拿一张纸，随便什么形状", fold: null },
+                { text: "上下对折一次，压出一条折痕", fold: "h", keep: "upper" },
+                { text: "再左右对折：新折痕把原来那条折痕压成两半，交角就是 90°", fold: "v", keep: "left", mark: "cross" }
+            ]
         },
         "45": {
+            note: "90° ÷ 2 = 45°",
             steps: [
-                { text: "先折出一个直角（90°）", creases: [1, 2], mark: { at: "cross", value: "90°" } },
-                { text: "把直角的两条边对折到一起", creases: [1, 2, 3], mark: { at: "half", value: "45°" } }
-            ],
-            note: "90° ÷ 2 = 45°"
+                { text: "先上下对折", fold: "h", keep: "upper" },
+                { text: "再左右对折，交点处就是 90°", fold: "v", keep: "left", mark: "cross" },
+                { text: "把这个直角的两条边对折到一起", fold: "d45", keep: "upper", mark: "half" }
+            ]
         },
         "22.5": {
+            note: "90° ÷ 2 ÷ 2 = 22.5°",
             steps: [
-                { text: "先折出 90°，再对折成 45°", creases: [1, 2, 3], mark: { at: "half", value: "45°" } },
-                { text: "把 45° 再对折一次", creases: [1, 2, 3, 4], mark: { at: "quarter", value: "22.5°" } }
-            ],
-            note: "90° ÷ 2 ÷ 2 = 22.5°"
+                { text: "先折出 90°：上下、左右各对折一次", fold: "h", keep: "upper" },
+                { text: "左右对折，得到 90°", fold: "v", keep: "left", mark: "cross" },
+                { text: "两边对折，得到 45°", fold: "d45", keep: "upper", mark: "half" },
+                { text: "把 45° 再对折一次", fold: "d225", keep: "upper", mark: "quarter" }
+            ]
         },
         "60": {
+            note: "底边被中线平分 → 直角三角形短边是斜边的一半 → 60°",
             steps: [
-                { text: "长方形纸，先竖着对折压出中线", creases: [1], mark: null },
-                { text: "把左下角往上折，让底边落在中线上", creases: [1, "t60"], mark: { at: "t60", value: "60°" } },
-                { text: "折出来的角就是 60°", creases: [1, "t60"], mark: { at: "t60", value: "60°" }, show: "why" }
-            ],
-            note: "底边被中线平分 → 直角三角形短边是斜边的一半 → 60°"
+                { text: "长方形纸，先竖着对折压出中线", fold: "v", keep: "left" },
+                { text: "把左下角往上折，让底边落到中线上", fold: "t60", keep: "corner", mark: "a60" },
+                { text: "折出来的这个角就是 60°", fold: "t60", keep: "corner", mark: "a60", hold: true }
+            ]
         },
         "30": {
+            note: "60° ÷ 2 = 30°；90° − 60° = 30° 也可以",
             steps: [
-                { text: "先照上面的方法折出 60°", creases: [1, "t60"], mark: { at: "t60", value: "60°" } },
-                { text: "把这个 60° 角再对折", creases: [1, "t60", "t30"], mark: { at: "t30", value: "30°" } }
-            ],
-            note: "60° ÷ 2 = 30°；90° − 60° = 30° 也可以"
+                { text: "先竖着对折压出中线", fold: "v", keep: "left" },
+                { text: "把左下角往上折，折出 60°", fold: "t60", keep: "corner", mark: "a60" },
+                { text: "把这个 60° 角再对折一次", fold: "t30", keep: "corner", mark: "a30" }
+            ]
         }
     };
     let angleTarget = "90";
     let angleStep = 0;
+    let angleFoldRatio = 1;
+    let angleAnimating = false;
+
+    // 某一步用到的折痕（两点）以及“要折过去的那一侧”
+    function angleCrease(kind) {
+        const { x, y, w, h } = AP;
+        const cxm = x + w / 2, cym = y + h / 2;
+        if (kind === "h")  return { a: [x - 30, cym], b: [x + w + 30, cym] };
+        if (kind === "v")  return { a: [cxm, y - 30], b: [cxm, y + h + 30] };
+        if (kind === "d45") {
+            // 从中心出发的 45° 平分线（平分右下直角）
+            const L = 260;
+            return { a: [cxm, cym], b: [cxm + L * Math.cos(rad(45)), cym + L * Math.sin(rad(45))] };
+        }
+        if (kind === "d225") {
+            const L = 260;
+            return { a: [cxm, cym], b: [cxm + L * Math.cos(rad(22.5)), cym + L * Math.sin(rad(22.5))] };
+        }
+        if (kind === "t60") {
+            const P = [x + w / 2, y + h];                              // 底边中点
+            const Q = [x, y + h - (w / 2) * Math.tan(rad(60))];        // 左边上一点
+            return { a: P, b: Q };
+        }
+        if (kind === "t30") {
+            const P = [x + w / 2, y + h];
+            const L = 240;
+            return { a: P, b: [P[0] - L * Math.cos(rad(30)), P[1] - L * Math.sin(rad(30))] };
+        }
+        return null;
+    }
+    // 折之前，纸摊平后的多边形（前面所有步骤只压折痕、不改变外形，所以一直是整张纸）
+    function anglePaper() { return apRect(); }
 
     function drawAngle() {
         wipe(angleSvg);
         const recipe = angleRecipes[angleTarget];
         const step = recipe.steps[angleStep];
-        const x = 290, y = 90, w = 320, h = 260;
+        const { x, y, w, h } = AP;
         const cxm = x + w / 2, cym = y + h / 2;
+        const paper = anglePaper();
+        const ratio = step.fold ? angleFoldRatio : 0;
 
-        poly(angleSvg, [[x,y],[x+w,y],[x+w,y+h],[x,y+h]], "#c7d2fe", { stroke: "#6366f1", "stroke-width": 3 });
-
-        const has = id => step.creases.includes(id);
-        // 折痕 1：竖中线
-        if (has(1)) line(angleSvg, [cxm, y], [cxm, y + h], { stroke: "#334155", "stroke-width": 3.5 });
-        // 折痕 2：横中线（与 1 垂直）
-        if (has(2)) line(angleSvg, [x, cym], [x + w, cym], { stroke: "#334155", "stroke-width": 3.5 });
-        // 折痕 3：45° 平分线
-        if (has(3)) line(angleSvg, [cxm, cym], [x + w, cym + (w / 2)], { stroke: "#0891b2", "stroke-width": 3.5 });
-        // 折痕 4：22.5° 平分线
-        if (has(4)) {
-            const a = rad(22.5), L = 190;
-            line(angleSvg, [cxm, cym], [cxm + L * Math.cos(a), cym + L * Math.sin(a)], { stroke: "#059669", "stroke-width": 3.5 });
+        // 之前几步压出来的折痕（浅色，一直留着）
+        for (let i = 0; i < angleStep; i++) {
+            const prev = recipe.steps[i];
+            if (!prev.fold) continue;
+            const c = angleCrease(prev.fold);
+            if (c) line(angleSvg, c.a, c.b, { stroke: "#a5b4fc", "stroke-width": 2.5, "stroke-dasharray": "6 5" });
         }
-        // 60° 折法：左下角折上去
-        if (has("t60")) {
-            const corner = [x, y + h];
-            // 折痕：从底边中点到左边上一点，把左下角折上去让底边落到中线上
-            const P = [x + w / 2, y + h];             // 底边中点
-            const Q = [x, y + h - (w / 2) * Math.tan(rad(60))];
-            poly(angleSvg, [corner, P, Q], "#fb7185", { "fill-opacity": .85, stroke: "#fff" });
-            line(angleSvg, P, Q, { stroke: "#334155", "stroke-width": 3.5 });
-            // 折过去以后底边的落点
-            const landed = mirror(corner, P, Q);
-            line(angleSvg, P, landed, { stroke: "#dc2626", "stroke-width": 3, "stroke-dasharray": "6 5" });
-            svgEl("path", {
-                d: `M ${P[0] - 52} ${P[1]} A 52 52 0 0 0 ${P[0] + 52 * Math.cos(rad(180 - 60))} ${P[1] + 52 * Math.sin(rad(180 - 60))}`,
-                fill: "none", stroke: "#d97706", "stroke-width": 4
-            }, angleSvg);
-            label(angleSvg, [P[0] - 42, P[1] - 30], "60°", { fill: "#b45309", "font-size": 21 });
-            if (has("t30")) {
-                const M = [P[0] - 52 * Math.cos(rad(30)), P[1] - 52 * Math.sin(rad(30))];
-                line(angleSvg, P, [P[0] - 150 * Math.cos(rad(30)), P[1] - 150 * Math.sin(rad(30))],
-                    { stroke: "#059669", "stroke-width": 3.5 });
-                label(angleSvg, [P[0] - 96, P[1] - 22], "30°", { fill: "#047857", "font-size": 20 });
-                label(angleSvg, [P[0] - 62, P[1] - 66], "30°", { fill: "#047857", "font-size": 20 });
+
+        const crease = step.fold ? angleCrease(step.fold) : null;
+        let staying = paper, moving = [];
+        if (crease) {
+            // keep 描述“哪一半要折过去”
+            const positiveMoves = step.keep === "upper" || step.keep === "left" || step.keep === "corner";
+            staying = clipPoly(paper, crease.a, crease.b, !positiveMoves);
+            moving  = clipPoly(paper, crease.a, crease.b, positiveMoves);
+            // corner：只折角那一小块（三角形），不是整整一半
+            if (step.keep === "corner") {
+                const corner = [x, y + h];
+                // 取包含左下角的那一块
+                if (!pointInPolyA(corner, moving)) {
+                    const t = staying; staying = moving; moving = t;
+                }
             }
         }
 
-        // 角度标记
-        if (step.mark && step.mark.at === "cross") {
+        // 底下不动的部分
+        if (staying.length > 2) poly(angleSvg, staying, "#c7d2fe", { stroke: "#6366f1", "stroke-width": 3 });
+        // 折过去的部分
+        if (moving.length > 2) {
+            if (ratio > 0.03) {
+                poly(angleSvg, moving, "#fb718518", { stroke: "#fda4af", "stroke-dasharray": "6 5", "stroke-width": 2 });
+            }
+            const flap = moving.map(p => partialFold(p, crease.a, crease.b, ratio));
+            // 半透明：折过来的那层压在下面那层上，两层都要看得见，折痕才看得清
+            poly(angleSvg, flap, ratio > 0.5 ? "#fb7185" : "#f9a8b4",
+                { stroke: "#fff", "stroke-width": 2.5, "fill-opacity": .62 });
+        }
+        if (crease) line(angleSvg, crease.a, crease.b, { stroke: "#334155", "stroke-width": 4 });
+
+        // 角度标注：折到位（或这一步只是"看结果"）才标
+        const showMark = step.mark && (ratio > 0.85 || step.hold);
+        if (showMark && step.mark === "cross") {
             svgEl("rect", { x: cxm, y: cym - 30, width: 30, height: 30, fill: "none", stroke: "#d97706", "stroke-width": 4 }, angleSvg);
             label(angleSvg, [cxm + 62, cym - 42], "90°", { fill: "#b45309", "font-size": 22 });
         }
-        if (step.mark && step.mark.at === "half") {
+        if (showMark && step.mark === "half") {
             svgEl("path", { d: `M ${cxm + 56} ${cym} A 56 56 0 0 1 ${cxm + 56 * Math.cos(rad(45))} ${cym + 56 * Math.sin(rad(45))}`,
                 fill: "none", stroke: "#0891b2", "stroke-width": 4 }, angleSvg);
             label(angleSvg, [cxm + 96, cym + 26], "45°", { fill: "#0e7490", "font-size": 22 });
         }
-        if (step.mark && step.mark.at === "quarter") {
+        if (showMark && step.mark === "quarter") {
             svgEl("path", { d: `M ${cxm + 56} ${cym} A 56 56 0 0 1 ${cxm + 56 * Math.cos(rad(22.5))} ${cym + 56 * Math.sin(rad(22.5))}`,
                 fill: "none", stroke: "#059669", "stroke-width": 4 }, angleSvg);
             label(angleSvg, [cxm + 104, cym + 16], "22.5°", { fill: "#047857", "font-size": 21 });
         }
+        if (showMark && (step.mark === "a60" || step.mark === "a30")) {
+            // 顶点是底边中点 P：折痕 P→Q 和竖中线之间就是 60°
+            const P = [x + w / 2, y + h];
+            const Q = angleCrease("t60").b;
+            const up = [P[0], P[1] - 150];              // 中线朝上
+            arcAt(angleSvg, P, up, Q, 54, "#d97706", "60°");
+            if (step.mark === "a30") {
+                // 再对折一次：60° 被平分成两个 30°
+                const bis = angleCrease("t30").b;
+                arcAt(angleSvg, P, up, bis, 88, "#059669", "30°");
+                arcAt(angleSvg, P, bis, Q, 118, "#059669", "30°");
+            }
+        }
 
-        setResult(angleResult, "info", `第 ${angleStep + 1} / ${recipe.steps.length} 步`);
+        setResult(angleResult, "info",
+            step.fold && ratio < 0.85 ? `第 ${angleStep + 1} 步 · 折了 ${Math.round(ratio * 100)}%`
+                                      : `第 ${angleStep + 1} / ${recipe.steps.length} 步`);
         angleFormula.textContent = step.text;
-        // 步骤条
+
         wipe(angleStepsBar);
         recipe.steps.forEach((_, i) => {
             const b = document.createElement("button");
-            b.className = `step${i === angleStep ? " active" : ""}`;
+            b.className = `step${i === angleStep ? " active" : ""}${i < angleStep ? " done" : ""}`;
             b.textContent = `${i + 1}`;
-            b.addEventListener("click", () => { angleStep = i; drawAngle(); });
+            b.addEventListener("click", () => { angleStep = i; setAngleRatio(1); });
             angleStepsBar.appendChild(b);
         });
         const note = document.createElement("span");
@@ -1084,24 +1600,57 @@
         note.textContent = recipe.note;
         angleStepsBar.appendChild(note);
     }
+    // 点在多边形内（angle 用，避免和 free 的同名函数抢名字）
+    function pointInPolyA(p, points) {
+        if (!points || points.length < 3) return false;
+        let inside = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+            const xi = points[i][0], yi = points[i][1], xj = points[j][0], yj = points[j][1];
+            if ((yi > p[1]) !== (yj > p[1]) && p[0] < (xj - xi) * (p[1] - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        return inside;
+    }
+    function setAngleRatio(r) {
+        angleFoldRatio = r;
+        angleFoldSlider.value = Math.round(r * 100);
+        drawAngle();
+    }
+    function animateAngleFold(to) {
+        if (angleAnimating) return;
+        angleAnimating = true;
+        const from = angleFoldRatio, start = performance.now();
+        const tick = now => {
+            const t = Math.min(1, (now - start) / 640);
+            const e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            setAngleRatio(from + (to - from) * e);
+            if (t < 1) requestAnimationFrame(tick);
+            else { angleAnimating = false; }
+        };
+        requestAnimationFrame(tick);
+    }
     $("#angleTargets").addEventListener("click", event => {
         const chip = event.target.closest(".chip");
         if (!chip) return;
         $$("#angleTargets .chip").forEach(c => c.classList.toggle("active", c === chip));
         angleTarget = chip.dataset.target;
         angleStep = 0;
-        drawAngle();
+        setAngleRatio(1);
     });
     $("#angleNext").addEventListener("click", () => {
         const n = angleRecipes[angleTarget].steps.length;
         angleStep = (angleStep + 1) % n;
-        drawAngle();
+        // 新的一步：从摊开开始，自动折过去，能看清是怎么折的
+        setAngleRatio(0);
+        animateAngleFold(1);
     });
     $("#anglePrev").addEventListener("click", () => {
         const n = angleRecipes[angleTarget].steps.length;
         angleStep = (angleStep - 1 + n) % n;
-        drawAngle();
+        setAngleRatio(1);
     });
+    angleFoldSlider.addEventListener("input", () => setAngleRatio(Number(angleFoldSlider.value) / 100));
+    $("#angleFoldRun").addEventListener("click", () => animateAngleFold(angleFoldRatio > 0.5 ? 0 : 1));
+    $("#angleFoldOpen").addEventListener("click", () => animateAngleFold(0));
     renderers.angle = drawAngle;
 
     /* ============ 5 折角求度数 ============ */
@@ -1274,146 +1823,7 @@
     });
     renderers.corner = drawCorner;
 
-    /* ============ 6 折成盒子 ============ */
-    const netSvg = $("#netSvg"), boxSvg = $("#boxSvg"), boxResult = $("#boxResult"),
-          boxFormula = $("#boxFormula"), boxSlider = $("#boxSlider");
-    // 展开图：格子坐标 [col, row]，外加每格折起来后落在正方体的哪个面
-    // 面编号：0上 1下 2前 3后 4左 5右
-    // 面名由折叠模拟推出，六个面互不重复、对面关系自洽
-    const boxNets = {
-        n141a: { name: "1-4-1 型", ok: true,
-            cells: [[1,0,"上"],[0,1,"右"],[1,1,"后"],[2,1,"左"],[3,1,"前"],[1,2,"下"]] },
-        n141b: { name: "1-4-1 变式", ok: true,
-            cells: [[0,0,"上"],[0,1,"后"],[1,1,"左"],[2,1,"前"],[3,1,"右"],[3,2,"下"]] },
-        n231:  { name: "2-3-1 型", ok: true,
-            cells: [[0,0,"上"],[1,0,"左"],[1,1,"后"],[2,1,"下"],[3,1,"前"],[3,2,"右"]] },
-        n222:  { name: "2-2-2 型", ok: true,
-            cells: [[0,0,"上"],[1,0,"左"],[1,1,"后"],[2,1,"下"],[2,2,"右"],[3,2,"前"]] },
-        n33:   { name: "3-3 型", ok: true,
-            cells: [[0,0,"上"],[1,0,"左"],[2,0,"下"],[2,1,"后"],[3,1,"右"],[4,1,"前"]] },
-        bad:   { name: "折不成", ok: false,
-            cells: [[0,0,"?"],[1,0,"?"],[2,0,"?"],[0,1,"?"],[1,1,"?"],[2,1,"?"]] }
-    };
-    const OPPOSITE = { "上":"下", "下":"上", "前":"后", "后":"前", "左":"右", "右":"左" };
-    let boxNet = "n141a";
-    let boxPicked = null;
-    let boxSpinAngle = 28;
-
-    function drawNet() {
-        wipe(netSvg);
-        const net = boxNets[boxNet];
-        const S = 76;
-        const cols = Math.max(...net.cells.map(c => c[0])) + 1;
-        const rows = Math.max(...net.cells.map(c => c[1])) + 1;
-        const startX = (440 - cols * S) / 2, startY = (400 - rows * S) / 2;
-        net.cells.forEach(([col, row, face], i) => {
-            const x = startX + col * S, y = startY + row * S;
-            const isPicked = boxPicked === face && face !== "?";
-            const isOpp = boxPicked && OPPOSITE[boxPicked] === face;
-            const fill = !net.ok ? "#e2e8f0" : isPicked ? "#4f46e5" : isOpp ? "#fb7185" : "#c7d2fe";
-            poly(netSvg, [[x,y],[x+S,y],[x+S,y+S],[x,y+S]], fill,
-                { stroke: "#6366f1", "stroke-width": 2.5, style: "cursor:pointer", "data-face": face });
-            label(netSvg, [x + S/2, y + S/2], face,
-                { fill: isPicked || isOpp ? "#fff" : "#3730a3", "font-size": 22, style: "pointer-events:none" });
-        });
-        if (!net.ok) {
-            label(netSvg, [220, startY - 26], "2×3 的长方形折不成正方体", { fill: "#b91c1c", "font-size": 19 });
-        } else {
-            label(netSvg, [220, startY - 26], boxPicked ? `点了「${boxPicked}」，红色是它的对面` : "点一个面看它的对面",
-                { fill: "#475467", "font-size": 18 });
-        }
-    }
-
-    function drawBox() {
-        wipe(boxSvg);
-        const net = boxNets[boxNet];
-        const ratio = boxSlider.value / 100;
-        if (!net.ok) {
-            label(boxSvg, [220, 190], "折不起来", { fill: "#b91c1c", "font-size": 26 });
-            label(boxSvg, [220, 226], "有两个面会重叠", { fill: "#94a3b8", "font-size": 18 });
-            setResult(boxResult, "bad", "✗ 不能折成正方体");
-            boxFormula.textContent = "六个面里有两个撞在一起了";
-            return;
-        }
-        // 简易等轴测投影：立方体三个可见面，按 ratio 从"摊平"过渡到"立起来"
-        const cx = 220, cy = 200, S = 84;
-        const angle = rad(boxSpinAngle);
-        const lift = ratio;             // 0 摊平 1 立起来
-        // 三个方向的基向量
-        const ex = [Math.cos(angle) * S, Math.sin(angle) * S * 0.5];
-        const ey = [-Math.sin(angle) * S, Math.cos(angle) * S * 0.5];
-        const ez = [0, -S * (0.35 + 0.65 * lift)];
-        const P = (a, b, c) => [cx + a * ex[0] + b * ey[0] + c * ez[0], cy + a * ex[1] + b * ey[1] + c * ez[1]];
-        const o = -0.5;
-        // 顶面 / 左前面 / 右前面
-        const top    = [P(o,o,0.5), P(o+1,o,0.5), P(o+1,o+1,0.5), P(o,o+1,0.5)];
-        const front  = [P(o,o+1,0.5), P(o+1,o+1,0.5), P(o+1,o+1,-0.5), P(o,o+1,-0.5)];
-        const right  = [P(o+1,o,0.5), P(o+1,o+1,0.5), P(o+1,o+1,-0.5), P(o+1,o,-0.5)];
-        poly(boxSvg, right, "#818cf8", { stroke: "#fff", "stroke-width": 2.5 });
-        poly(boxSvg, front, "#a5b4fc", { stroke: "#fff", "stroke-width": 2.5 });
-        poly(boxSvg, top,   "#c7d2fe", { stroke: "#fff", "stroke-width": 2.5 });
-        const mid = quad => [quad.reduce((t,p)=>t+p[0],0)/4, quad.reduce((t,p)=>t+p[1],0)/4];
-        if (ratio > 0.35) {
-            [["上", top], ["前", front], ["右", right]].forEach(([name, quad]) => {
-                const highlight = boxPicked === name;
-                const oppHi = boxPicked && OPPOSITE[boxPicked] === name;
-                label(boxSvg, mid(quad), name, {
-                    fill: highlight ? "#312e81" : oppHi ? "#be123c" : "#3730a3",
-                    "font-size": highlight || oppHi ? 26 : 21,
-                    opacity: Math.min(1, (ratio - 0.35) / 0.3)
-                });
-            });
-            // 背面三个面用小字提示在看不见的一侧
-            label(boxSvg, [220, 356], "看不见的三个面：下、后、左", { fill: "#94a3b8", "font-size": 16,
-                opacity: Math.min(1, (ratio - 0.35) / 0.3) });
-        }
-        if (ratio > 0.9) {
-            setResult(boxResult, "", boxPicked ? `${boxPicked} 的对面是 ${OPPOSITE[boxPicked]}` : "✓ 折成正方体了");
-        } else {
-            setResult(boxResult, "info", ratio < 0.05 ? "拖滑块折起来" : `折起来 ${Math.round(ratio * 100)}%`);
-        }
-        boxFormula.textContent = boxPicked
-            ? `${boxPicked} ↔ ${OPPOSITE[boxPicked]}：展开图上中间隔着一个面`
-            : "相对的面：中间隔一个";
-    }
-    const drawBoxAll = () => { drawNet(); drawBox(); };
-    boxSlider.addEventListener("input", drawBox);
-    $("#boxSpin").addEventListener("click", () => {
-        boxSpinAngle = (boxSpinAngle + 30) % 90 + 10;
-        drawBox();
-    });
-    $("#boxNets").addEventListener("click", event => {
-        const chip = event.target.closest(".chip");
-        if (!chip) return;
-        $$("#boxNets .chip").forEach(c => c.classList.toggle("active", c === chip));
-        boxNet = chip.dataset.net;
-        boxPicked = null;
-        boxSlider.value = 0;
-        drawBoxAll();
-    });
-    netSvg.addEventListener("pointerdown", event => {
-        const target = event.target.closest("[data-face]");
-        if (!target) return;
-        const face = target.dataset.face;
-        if (face === "?") return;
-        boxPicked = boxPicked === face ? null : face;
-        drawBoxAll();
-        if (Number(boxSlider.value) < 90) animateSliderPlain(boxSlider, 100, drawBox);
-    });
-    function animateSliderPlain(slider, to, onFrame) {
-        const from = Number(slider.value), start = performance.now(), span = 620;
-        const tick = now => {
-            const t = Math.min(1, (now - start) / span);
-            const e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
-            slider.value = from + (to - from) * e;
-            onFrame();
-            if (t < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-    }
-    renderers.box = drawBoxAll;
-
-    /* ============ 7 自由折纸 ============ */
+    /* ============ 6 自由折纸 ============ */
     const freeSvg = $("#freeSvg"), freeResult = $("#freeResult"), freeStatus = $("#freeStatus");
     const freeShapesDef = {
         square: [[300,80],[620,80],[620,400],[300,400]],
@@ -1424,19 +1834,43 @@
     };
     let freeShape = "square";
     let freeColor = "#60a5fa";
-    // layers：每一层是一个多边形 + 它在"原始纸"上的变换链（用来摊开时还原打的洞）
-    let freeState = { layers: [], creaseLine: [[460, 40], [460, 440]], holes: [], history: [], keepPositive: false };
+    let freeZoom = 1;            // 纸张整体缩放
+    let freeHoleSize = 17;       // 洞的半径（未缩放时）
+    let freeHoleDrag = null;     // 正在拖第几个洞
+    const FREE_CENTER = [460, 235];
+
+    // 缩放：所有东西都以画布中心为基准，洞的位置和大小一起跟着变
+    const zoomPt = ([px, py]) => [
+        FREE_CENTER[0] + (px - FREE_CENTER[0]) * freeZoom,
+        FREE_CENTER[1] + (py - FREE_CENTER[1]) * freeZoom
+    ];
+    const unzoomPt = ([px, py]) => [
+        FREE_CENTER[0] + (px - FREE_CENTER[0]) / freeZoom,
+        FREE_CENTER[1] + (py - FREE_CENTER[1]) / freeZoom
+    ];
+    // 纸的基本形状（未缩放）
+    function freeBaseRaw() { return freeShapesDef[freeShape].map(p => [...p]); }
+    function freeBasePoly() { return freeBaseRaw().map(zoomPt); }
+
+    // 全部坐标都存"未缩放"的纸面坐标，画的时候才乘 freeZoom。
+    // 这样改纸张大小时，纸、折痕、洞、洞的大小会一起变，不会脱节。
+    // layers：{ poly, maps } —— maps 是从当前位置回到摊开位置的镜像链
+    // creases：折过的所有折痕，摊开后仍然留着，画成浅色虚线
+    // holes：{ c:[x,y] } —— 洞心，半径统一用 freeHoleSize
+    let freeState = { layers: [], creaseLine: [[460, 40], [460, 440]], holes: [], creases: [], history: [], keepPositive: true };
 
     function freeReset() {
-        const base = freeShapesDef[freeShape].map(p => [...p]);
+        const base = freeBaseRaw();
         freeState = {
-            layers: [{ poly: base, maps: [] }],   // maps: 从当前坐标回到原始纸的镜像链
+            layers: [{ poly: base, maps: [] }],
             creaseLine: defaultCrease(base),
             holes: [],
+            creases: [],
             history: [],
             keepPositive: true
         };
         drawFree();
+        freeStatus.textContent = "拖折痕两端的点定好位置，点「沿线折」；在纸上点一下就是打洞";
     }
     function defaultCrease(points) {
         const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
@@ -1444,7 +1878,10 @@
         return [[cx, Math.min(...ys) - 40], [cx, Math.max(...ys) + 40]];
     }
     function pushHistory() {
-        freeState.history.push(JSON.stringify({ layers: freeState.layers, holes: freeState.holes }));
+        freeState.history.push(JSON.stringify({
+            layers: freeState.layers, holes: freeState.holes,
+            creases: freeState.creases, creaseLine: freeState.creaseLine
+        }));
         if (freeState.history.length > 30) freeState.history.shift();
     }
 
@@ -1461,27 +1898,24 @@
                 moved++;
                 next.push({
                     poly: flip.map(p => mirror(p, a, b)),
-                    maps: [...layer.maps, [a.slice(), b.slice()]]   // 记下这次镜像，摊开时反向用
+                    maps: [...layer.maps, [a.slice(), b.slice()]]
                 });
             }
         });
         if (!moved) { freeStatus.textContent = "折痕没有穿过纸，拖动它试试"; return; }
         pushHistory();
         freeState.layers = next;
+        // 折痕记下来，摊开之后还看得见
+        freeState.creases.push([a.slice(), b.slice()]);
         drawFree();
         freeStatus.textContent = `折了一次，现在最多 ${maxLayers()} 层`;
     }
     function maxLayers() {
-        // 用采样点估计重叠层数
         let best = 1;
-        const sample = [];
         freeState.layers.forEach(l => {
             const cx = l.poly.reduce((t,p)=>t+p[0],0)/l.poly.length;
             const cy = l.poly.reduce((t,p)=>t+p[1],0)/l.poly.length;
-            sample.push([cx, cy]);
-        });
-        sample.forEach(p => {
-            const n = freeState.layers.filter(l => pointInPoly(p, l.poly)).length;
+            const n = freeState.layers.filter(o => pointInPoly([cx, cy], o.poly)).length;
             if (n > best) best = n;
         });
         return best;
@@ -1495,27 +1929,76 @@
         return inside;
     }
 
+    // 一个洞打在折好的纸上，会穿透它盖住的每一层。
+    // 把洞沿每一层的镜像链反推回"摊开时"的位置，就是摊开后洞的位置。
+    function holesUnfolded() {
+        const out = [];
+        freeState.layers.forEach(layer => {
+            freeState.holes.forEach(hole => {
+                if (!pointInPoly(hole.c, layer.poly)) return;
+                let c = [...hole.c];
+                [...layer.maps].reverse().forEach(([a, b]) => { c = mirror(c, a, b); });
+                out.push({ c });
+            });
+        });
+        // 位置重合的算同一个
+        const kept = [];
+        out.forEach(h => {
+            if (kept.some(k => Math.hypot(k.c[0] - h.c[0], k.c[1] - h.c[1]) < 1.5)) return;
+            kept.push(h);
+        });
+        return kept;
+    }
+
     function drawFree() {
         wipe(freeSvg);
-        const [a, b] = freeState.creaseLine;
-        // 纸：层数越多颜色越深
+        const defs = svgEl("defs", {}, freeSvg);
+        const [a, b] = freeState.creaseLine.map(zoomPt);
+        const r = freeHoleSize * freeZoom;
+
+        // 纸：半透明，层数越多叠得越深，这样折起来也能看见下面每一层的洞
         freeState.layers.forEach(layer => {
-            poly(freeSvg, layer.poly, freeColor, {
-                "fill-opacity": 0.34, stroke: "#ffffff", "stroke-width": 1.6
+            poly(freeSvg, layer.poly.map(zoomPt), freeColor, {
+                "fill-opacity": 0.3, stroke: "#ffffff", "stroke-width": 1.6
             });
         });
-        // 洞：每个洞按它所在层的镜像链摊开
-        const defs = svgEl("defs", {}, freeSvg);
+
+        // 折过的折痕：摊开之后也留着，只画在纸上（不伸出纸外）
+        if (freeState.creases.length) {
+            const cid = "freeCreaseClip";
+            const cp = svgEl("clipPath", { id: cid }, defs);
+            freeState.layers.forEach(layer => svgEl("polygon", { points: pts(layer.poly.map(zoomPt)) }, cp));
+            const cg = svgEl("g", { "clip-path": `url(#${cid})` }, freeSvg);
+            freeState.creases.forEach(([ca, cb]) => {
+                line(cg, zoomPt(ca), zoomPt(cb),
+                    { stroke: "#1e293b", "stroke-width": 2, "stroke-dasharray": "7 6", opacity: .5 });
+            });
+        }
+
+        // 洞：每一层各自裁剪，折着的时候每层的洞都看得见
         freeState.layers.forEach((layer, i) => {
             const cp = svgEl("clipPath", { id: `freeClip${i}` }, defs);
-            svgEl("polygon", { points: pts(layer.poly) }, cp);
+            svgEl("polygon", { points: pts(layer.poly.map(zoomPt)) }, cp);
             const g = svgEl("g", { "clip-path": `url(#freeClip${i})` }, freeSvg);
             freeState.holes.forEach(hole => {
-                // hole 存在"折好时的坐标"，对每一层沿它的镜像链正向映射
-                let shape = hole.map(p => [...p]);
-                poly(g, shape, "#fbfdff", { stroke: "#fb7185", "stroke-width": 2.2 });
+                svgEl("circle", {
+                    cx: zoomPt(hole.c)[0], cy: zoomPt(hole.c)[1], r,
+                    fill: "#fbfdff", stroke: "#fb7185", "stroke-width": 2.2
+                }, g);
             });
         });
+
+        // 洞的把手：随时都能拖，不用切模式；点中间的小叉可以删掉
+        freeState.holes.forEach((hole, i) => {
+            const c = zoomPt(hole.c);
+            svgEl("circle", {
+                cx: c[0], cy: c[1], r: Math.max(r, 13), fill: "transparent",
+                class: "drag-dot", "data-hole-i": i, style: "cursor:grab"
+            }, freeSvg);
+            svgEl("circle", { cx: c[0], cy: c[1], r: 3.5, fill: "#fb7185",
+                "pointer-events": "none" }, freeSvg);
+        });
+
         // 折痕（可拖动）
         line(freeSvg, a, b, { stroke: "#334155", "stroke-width": 3.5, "stroke-dasharray": "9 7" });
         // 哪一侧会被折过去，用箭头示意
@@ -1524,7 +2007,7 @@
         const nx = (freeState.keepPositive ? -dy : dy) / L, ny = (freeState.keepPositive ? dx : -dx) / L;
         svgEl("path", {
             d: `M ${mx + nx * 54} ${my + ny * 54} L ${mx + nx * 14} ${my + ny * 14}`,
-            stroke: "#dc2626", "stroke-width": 4, "marker-end": "none", "stroke-linecap": "round"
+            stroke: "#dc2626", "stroke-width": 4, "stroke-linecap": "round"
         }, freeSvg);
         poly(freeSvg, [
             [mx + nx * 14, my + ny * 14],
@@ -1534,25 +2017,75 @@
         dot(freeSvg, a, "#4f46e5", 12, { class: "drag-dot", "data-free": "0" });
         dot(freeSvg, b, "#4f46e5", 12, { class: "drag-dot", "data-free": "1" });
 
-        setResult(freeResult, "info", `${maxLayers()} 层 · ${freeState.holes.length ? freeState.holes.length + " 个洞" : "没打洞"}`);
+        const layers = maxLayers();
+        const nHoles = freeState.holes.length;
+        const through = nHoles ? holesUnfolded().length : 0;
+        setResult(freeResult, "info",
+            nHoles ? `${layers} 层 · 打了 ${nHoles} 个 → 摊开 ${through} 个` : `${layers} 层 · 没打洞`);
     }
 
     let freeDrag = null;
+    let freePointerMoved = false;
+    let freeDownAt = null;
     freeSvg.addEventListener("pointerdown", event => {
+        freePointerMoved = false;
+        const p = svgPoint(freeSvg, event);
+        freeDownAt = [p.x, p.y];
+        // 拖洞
+        const holeTarget = event.target.closest("[data-hole-i]");
+        if (holeTarget) {
+            freeHoleDrag = Number(holeTarget.dataset.holeI);
+            freeSvg.setPointerCapture(event.pointerId);
+            return;
+        }
+        // 拖折痕端点
         const target = event.target.closest("[data-free]");
-        if (!target) return;
-        freeDrag = Number(target.dataset.free);
+        if (target) {
+            freeDrag = Number(target.dataset.free);
+            freeSvg.setPointerCapture(event.pointerId);
+            return;
+        }
         freeSvg.setPointerCapture(event.pointerId);
     });
     freeSvg.addEventListener("pointermove", event => {
-        if (freeDrag === null) return;
         const p = svgPoint(freeSvg, event);
-        freeState.creaseLine[freeDrag] = [p.x, p.y];
+        if (freeDownAt && Math.hypot(p.x - freeDownAt[0], p.y - freeDownAt[1]) > 4) freePointerMoved = true;
+        if (freeHoleDrag !== null) {
+            freeState.holes[freeHoleDrag].c = unzoomPt([p.x, p.y]);
+            drawFree();
+            return;
+        }
+        if (freeDrag === null) return;
+        freeState.creaseLine[freeDrag] = unzoomPt([p.x, p.y]);
         drawFree();
     });
-    const endFree = () => { freeDrag = null; };
-    freeSvg.addEventListener("pointerup", endFree);
-    freeSvg.addEventListener("pointercancel", endFree);
+    freeSvg.addEventListener("pointerup", () => {
+        // 轻点一下（没拖动）：点在洞上＝去掉这个洞，点在空白纸上＝在那里打一个洞
+        if (!freePointerMoved) {
+            if (freeHoleDrag !== null) {
+                const i = freeHoleDrag;
+                pushHistory();
+                freeState.holes.splice(i, 1);
+                freeDrag = null; freeHoleDrag = null; freeDownAt = null;
+                drawFree();
+                freeStatus.textContent = freeState.holes.length
+                    ? `去掉一个洞，还剩 ${freeState.holes.length} 个`
+                    : "洞都去掉了 · 在纸上点一下就能再打";
+                return;
+            }
+            if (freeDrag === null && freeDownAt) {
+                const q = unzoomPt(freeDownAt);
+                if (freeState.layers.some(l => pointInPoly(q, l.poly))) {
+                    pushHistory();
+                    freeState.holes.push({ c: q });
+                    drawFree();
+                    freeStatus.textContent = `打了一个洞（一共 ${freeState.holes.length} 个）· 拖着挪，再点一下去掉`;
+                }
+            }
+        }
+        freeDrag = null; freeHoleDrag = null; freeDownAt = null;
+    });
+    freeSvg.addEventListener("pointercancel", () => { freeDrag = null; freeHoleDrag = null; freeDownAt = null; });
 
     $("#freeFold").addEventListener("click", doFold);
     $("#freeFlip").addEventListener("click", () => {
@@ -1561,7 +2094,6 @@
         freeStatus.textContent = "换成折另一边";
     });
     $("#freeHV").addEventListener("click", () => {
-        // 在横中线和竖中线之间切换
         const all = freeState.layers.flatMap(l => l.poly);
         const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
         const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
@@ -1580,47 +2112,28 @@
         drawFree();
     });
     $("#freePunch").addEventListener("click", () => {
-        pushHistory();
         // 在最上面一层的中心打一个洞
         const top = freeState.layers[freeState.layers.length - 1];
         if (!top) return;
+        pushHistory();
         const cx = top.poly.reduce((t,p)=>t+p[0],0)/top.poly.length;
         const cy = top.poly.reduce((t,p)=>t+p[1],0)/top.poly.length;
-        freeState.holes.push(regular(16, cx, cy, 17, 0));
+        freeState.holes.push({ c: [cx, cy] });
         drawFree();
-        freeStatus.textContent = "打了一个洞，点「全部摊开」看看有几个";
+        freeStatus.textContent = "打了一个洞 · 直接拖它就能挪，双击去掉";
     });
     $("#freeOpen").addEventListener("click", () => {
-        // 把所有层沿它们各自的镜像链反向还原，洞也跟着还原
+        // 摊开：纸回到整张，洞按镜像链还原并保留，折痕也留着
         pushHistory();
-        const openHoles = [];
-        freeState.layers.forEach(layer => {
-            freeState.holes.forEach(hole => {
-                // 洞只属于覆盖它的层
-                const hc = [hole.reduce((t,p)=>t+p[0],0)/hole.length, hole.reduce((t,p)=>t+p[1],0)/hole.length];
-                if (!pointInPoly(hc, layer.poly)) return;
-                let shape = hole.map(p => [...p]);
-                [...layer.maps].reverse().forEach(([a, b]) => { shape = shape.map(p => mirror(p, a, b)); });
-                openHoles.push(shape);
-            });
-        });
-        // 去重
-        const seen = new Set(), kept = [];
-        openHoles.forEach(h => {
-            const cx = Math.round(h.reduce((t,p)=>t+p[0],0)/h.length);
-            const cy = Math.round(h.reduce((t,p)=>t+p[1],0)/h.length);
-            const key = `${cx},${cy}`;
-            if (seen.has(key)) return;
-            seen.add(key);
-            kept.push(h);
-        });
-        freeState.layers = [{ poly: freeShapesDef[freeShape].map(p => [...p]), maps: [] }];
+        const kept = holesUnfolded();
+        const keepCrease = freeState.creaseLine.map(p => [...p]);   // 折痕线不要归位
+        freeState.layers = [{ poly: freeBaseRaw(), maps: [] }];
         freeState.holes = kept;
-        freeState.creaseLine = defaultCrease(freeState.layers[0].poly);
+        freeState.creaseLine = keepCrease;
         drawFree();
         freeStatus.textContent = kept.length
-            ? `摊开了：一共 ${kept.length} 个洞`
-            : "摊开了";
+            ? `摊开了：一共 ${kept.length} 个洞，折痕还留着`
+            : "摊开了，折痕还留着";
         setResult(freeResult, "", kept.length ? `摊开 → ${kept.length} 个洞` : "1 层");
     });
     $("#freeUndo").addEventListener("click", () => {
@@ -1629,6 +2142,8 @@
         const data = JSON.parse(prev);
         freeState.layers = data.layers;
         freeState.holes = data.holes;
+        freeState.creases = data.creases || [];
+        if (data.creaseLine) freeState.creaseLine = data.creaseLine;
         drawFree();
     });
     $("#freeClear").addEventListener("click", freeReset);
@@ -1659,6 +2174,26 @@
         freeColor = button.dataset.color;
         drawFree();
     });
+    // 洞的大小：所有洞统一一个大小，改了马上全变
+    $("#freeHoleSize").addEventListener("input", event => {
+        freeHoleSize = Number(event.target.value);
+        $("#freeHoleSizeVal").textContent = freeHoleSize;
+        drawFree();
+    });
+    // 纸的整体大小。所有坐标都存的是"没缩放的"纸面坐标，
+    // 这里只要改倍数，纸、折痕、洞的位置和大小就一起跟着变。
+    $("#freeZoom").addEventListener("input", event => {
+        freeZoom = Number(event.target.value) / 100;
+        $("#freeZoomVal").textContent = `${event.target.value}%`;
+        drawFree();
+    });
+    $("#freeHoleClear").addEventListener("click", () => {
+        if (!freeState.holes.length) { freeStatus.textContent = "本来就没有洞"; return; }
+        pushHistory();
+        freeState.holes = [];
+        drawFree();
+        freeStatus.textContent = "洞都去掉了";
+    });
     renderers.free = () => { if (!freeState.layers.length) freeReset(); else drawFree(); };
 
     /* ============ 启动 ============ */
@@ -1668,7 +2203,6 @@
     drawCut();
     drawAngle();
     drawCorner();
-    drawBoxAll();
     freeReset();
 })();
 </script>

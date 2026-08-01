@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="商不变计算分类练习题库，含91道文档原题，严格区分整数题与小数题。">
-    <title>商不变计算·整数与小数分类练习 | Math101</title>
+    <meta name="description" content="商不变计算精细分类练习题库，91道原题按知识点、整数或小数、题型三维筛选。">
+    <title>商不变计算·精细分类练习 | Math101</title>
     <style>
         :root {
             --ink: #172033;
@@ -31,7 +31,7 @@
                 var(--bg);
             font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
         }
-        button, input { font: inherit; }
+        button, input, select { font: inherit; }
         button { cursor: pointer; }
         [hidden] { display: none !important; }
         .page { width: min(1180px, calc(100% - 30px)); margin: 0 auto; padding: 22px 0 40px; }
@@ -80,11 +80,13 @@
         .category-btn:hover { background: #f1f6f3; }
         .category-btn.active { color: #fff; background: var(--green); box-shadow: 0 7px 16px rgba(49,87,213,.24); }
 
-        .toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) auto auto auto; gap: 10px; align-items: center; margin: 14px 0; }
+        .toolbar { display: grid; grid-template-columns: minmax(210px, 1fr) auto auto auto auto auto; gap: 10px; align-items: center; margin: 14px 0; }
         .search-wrap { position: relative; }
         .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8490a5; pointer-events: none; }
         .search { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 13px; padding: 9px 14px 9px 42px; color: var(--ink); background: #fff; outline: none; box-shadow: 0 4px 14px rgba(36,51,86,.05); }
         .search:focus { border-color: #80c8af; box-shadow: 0 0 0 4px rgba(19,122,91,.10); }
+        .filter-select { min-height: 46px; border: 1px solid var(--line); border-radius: 13px; padding: 0 34px 0 13px; color: #40506a; background: #fff; font-weight: 850; outline: none; box-shadow: 0 4px 14px rgba(36,51,86,.05); }
+        .filter-select:focus { border-color: #80a8dd; box-shadow: 0 0 0 4px rgba(49,87,213,.10); }
         .tool-btn { min-height: 46px; border: 1px solid var(--line); border-radius: 13px; padding: 0 16px; color: #40506a; background: #fff; font-weight: 900; box-shadow: 0 4px 14px rgba(36,51,86,.05); }
         .tool-btn:hover { border-color: #9fcdbd; color: var(--green); }
         .tool-btn.primary { color: #fff; border-color: var(--green); background: var(--green); }
@@ -180,6 +182,7 @@
             .eyebrow { margin-top: 22px; }
             .toolbar { grid-template-columns: 1fr 1fr; }
             .search-wrap { grid-column: 1 / -1; }
+            .filter-select { width: 100%; }
             .tool-btn { padding: 0 9px; }
             #printBtn { grid-column: 1 / -1; }
             .single-nav { grid-template-columns: 1fr 1fr; }
@@ -224,21 +227,23 @@
     <header class="hero">
         <a class="home" href="/" aria-label="返回工具主页">← 返回工具主页</a>
         <div class="eyebrow">四—五年级 · 数与代数</div>
-        <h1>商不变计算·分类练习</h1>
-        <p class="hero-copy">91道文档原题按数值类型重新分类：整数题与小数题分开练。每次只显示一道题，可逐题切换、浏览全部问题，并按需查看答案与解析。</p>
-        <div class="hero-stats" aria-label="题库概览"><div class="hero-stat"><strong>91</strong><span>文档原题</span></div><div class="hero-stat"><strong>2</strong><span>整数 / 小数</span></div><div class="hero-stat"><strong>按需</strong><span>查看解析</span></div></div>
+        <h1>商不变计算·精细分类练习</h1>
+        <p class="hero-copy">91道文档原题按主要知识点细分，并可叠加“整数 / 小数”和“选择 / 填空 / 计算”筛选。每次显示一道题，可逐题切换、浏览全部问题，并按需查看答案与解析。</p>
+        <div class="hero-stats" aria-label="题库概览"><div class="hero-stat"><strong>91</strong><span>文档原题</span></div><div class="hero-stat"><strong>10</strong><span>知识点板块</span></div><div class="hero-stat"><strong>3维</strong><span>组合筛选</span></div></div>
     </header>
 
-    <nav class="category-nav" id="categoryNav" aria-label="整数与小数分类"></nav>
+    <nav class="category-nav" id="categoryNav" aria-label="知识点分类"></nav>
 
     <div class="toolbar">
         <label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span><input class="search" id="searchInput" type="search" placeholder="搜索题目，如：余数、小数点、简便计算……" aria-label="搜索题目"></label>
+        <select class="filter-select" id="domainFilter" aria-label="按数域筛选"><option value="all">全部数域</option><option value="integer">整数题</option><option value="decimal">小数题</option></select>
+        <select class="filter-select" id="typeFilter" aria-label="按题型筛选"><option value="all">全部题型</option><option value="选择题">选择题</option><option value="填空题">填空题</option><option value="计算题">计算题</option></select>
         <button class="tool-btn primary" id="randomBtn" type="button">随机抽一题</button>
         <button class="tool-btn" id="browseBtn" type="button">浏览全部问题</button>
         <button class="tool-btn" id="printBtn" type="button">打印当前题目</button>
     </div>
 
-    <div class="notice"><span aria-hidden="true">✦</span><div><strong>分类规则：</strong>含小数、小数点移动或小数除法的题目归入“小数题”，其余归入“整数题”；混合出现整数与小数时归入“小数题”。答案默认收起。</div></div>
+    <div class="notice"><span aria-hidden="true">✦</span><div><strong>三维分类：</strong>上方按主要知识点切换；“数域”严格区分整数题与小数题；“题型”区分选择题、填空题和计算题。三个条件可以组合使用，答案默认收起。</div></div>
     <div class="result-line" id="resultLine" aria-live="polite"></div>
     <div class="empty-state" id="emptyState">没有找到匹配的题目，请换个关键词试试。</div>
 
@@ -251,7 +256,7 @@
     <main>
         <section class="question-section" id="questionSection">
             <div class="section-head">
-                <div class="section-title"><span class="section-icon" id="sectionIcon">÷</span><div><h2 id="sectionTitle"></h2><p id="sectionDescription">按数值类型分类</p></div></div>
+                <div class="section-title"><span class="section-icon" id="sectionIcon">÷</span><div><h2 id="sectionTitle"></h2><p id="sectionDescription">按主要考查知识点分类</p></div></div>
                 <span class="source-number" id="sourceNumber"></span>
             </div>
             <article class="question-card" id="questionCard" tabindex="-1">
@@ -270,23 +275,27 @@
         </section>
     </main>
 
-    <footer>题目与答案整理自《商不变计算》文档 · 按整数题与小数题分类<br>©孙维刚教育研究院 小宇老师 版权所有</footer>
+    <footer>题目与答案整理自《商不变计算》文档 · 按知识点、数域和题型精细分类<br>©孙维刚教育研究院 小宇老师 版权所有</footer>
 </div>
 
 <dialog class="overview-modal" id="overviewDialog" aria-labelledby="overviewTitle">
-    <div class="overview-head"><div><h2 id="overviewTitle">浏览全部问题</h2><p>按整数题、小数题浏览91道文档原题，点击任意题目进入单题模式。</p></div><button class="close-overview" id="closeOverview" type="button" aria-label="关闭全部问题">×</button></div>
+    <div class="overview-head"><div><h2 id="overviewTitle">浏览全部问题</h2><p>按主要知识点浏览91道文档原题，点击任意题目进入单题模式。</p></div><button class="close-overview" id="closeOverview" type="button" aria-label="关闭全部问题">×</button></div>
     <div class="overview-body" id="overviewBody"></div>
 </dialog>
 
 <script>
     (() => {
         const categories = window.QUOTIENT_INVARIANCE_CATEGORIES || [];
+        const domains = window.QUOTIENT_INVARIANCE_DOMAINS || [];
         const questions = window.QUOTIENT_INVARIANCE_QUESTIONS || [];
         const explanations = window.QUOTIENT_INVARIANCE_EXPLANATIONS || {};
         const categoryMap = new Map(categories.map(category => [category.id, category]));
-        const sectionColors = { integer: "#3157d5", decimal: "#7c3aed" };
+        const domainMap = new Map(domains.map(domain => [domain.id, domain]));
+        const sectionColors = { invariance: "#3157d5", "dividend-change": "#0f8b8d", "divisor-change": "#d97706", "combined-change": "#7c3aed", remainder: "#d9466f", "decimal-shift": "#2563eb", simplify: "#137a5b", "operation-change": "#b45309", patterns: "#475569", calculation: "#0e7490" };
         const categoryNav = document.getElementById("categoryNav");
         const searchInput = document.getElementById("searchInput");
+        const domainFilter = document.getElementById("domainFilter");
+        const typeFilter = document.getElementById("typeFilter");
         const resultLine = document.getElementById("resultLine");
         const emptyState = document.getElementById("emptyState");
         const singleNav = document.getElementById("singleNav");
@@ -327,7 +336,7 @@
         }
 
         function renderCategoryNav() {
-            const all = [{ id: "all", short: "全部题目", count: questions.length }, ...categories.map(category => ({ ...category, count: questions.filter(question => question.category === category.id).length }))];
+            const all = [{ id: "all", short: "全部知识点", count: questions.length }, ...categories.map(category => ({ ...category, count: questions.filter(question => question.category === category.id).length }))];
             all.forEach(category => {
                 const button = document.createElement("button");
                 button.type = "button";
@@ -438,6 +447,7 @@
             currentIndex = Math.max(0, Math.min(currentIndex, filteredQuestions.length - 1));
             const question = filteredQuestions[currentIndex];
             const category = categoryMap.get(question.category);
+            const domain = domainMap.get(question.domain);
             const color = sectionColors[question.category] || "#137a5b";
             questionSection.hidden = false;
             questionSection.style.setProperty("--section-color", color);
@@ -445,8 +455,8 @@
             singleNav.hidden = false;
             sectionIcon.textContent = category.icon;
             sectionTitle.textContent = category.name;
-            sectionDescription.textContent = `${category.description} · ${question.type}`;
-            sourceNumber.textContent = `${question.type} · 文档原题第${question.id}题`;
+            sectionDescription.textContent = `${category.description} · ${domain.name} · ${question.type}`;
+            sourceNumber.textContent = `${domain.name} · ${question.type} · 原题第${question.id}题`;
             questionNumber.textContent = String(question.id).padStart(2, "0");
             questionPrompt.innerHTML = question.prompt;
             renderMedia(question);
@@ -463,7 +473,7 @@
             nextBtn.disabled = currentIndex === filteredQuestions.length - 1;
             progressText.textContent = `${currentIndex + 1} / ${filteredQuestions.length}`;
             progressHint.textContent = filteredQuestions.length === 1 ? "当前筛选结果仅有这一题" : "一次只显示一道题";
-            resultLine.textContent = `当前：${category.name} · ${question.type} · 原题第${question.id}题`;
+            resultLine.textContent = `当前：${category.name} · ${domain.name} · ${question.type} · 原题第${question.id}题`;
             if (shouldFocus) {
                 questionCard.classList.add("random-focus");
                 questionCard.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -475,8 +485,10 @@
             const term = normalize(searchInput.value);
             filteredQuestions = questions.filter(question => {
                 const categoryMatch = activeCategory === "all" || question.category === activeCategory;
+                const domainMatch = domainFilter.value === "all" || question.domain === domainFilter.value;
+                const typeMatch = typeFilter.value === "all" || question.type === typeFilter.value;
                 const searchable = `${stripHtml(question.prompt)} ${(question.choices || []).map(choice => typeof choice === "string" ? choice : choice.label).join(" ")}`;
-                return categoryMatch && (!term || normalize(searchable).includes(term));
+                return categoryMatch && domainMatch && typeMatch && (!term || normalize(searchable).includes(term));
             });
             currentIndex = 0;
             renderCurrent();
@@ -490,6 +502,8 @@
         function selectQuestion(question) {
             activeCategory = "all";
             searchInput.value = "";
+            domainFilter.value = "all";
+            typeFilter.value = "all";
             [...categoryNav.children].forEach(button => button.classList.toggle("active", button.dataset.category === "all"));
             filteredQuestions = questions;
             currentIndex = questions.findIndex(item => item.id === question.id);
@@ -533,6 +547,8 @@
         }
 
         searchInput.addEventListener("input", applyFilters);
+        domainFilter.addEventListener("change", applyFilters);
+        typeFilter.addEventListener("change", applyFilters);
         prevBtn.addEventListener("click", () => { if (currentIndex > 0) { currentIndex -= 1; renderCurrent(true); } });
         nextBtn.addEventListener("click", () => { if (currentIndex < filteredQuestions.length - 1) { currentIndex += 1; renderCurrent(true); } });
         document.getElementById("randomBtn").addEventListener("click", () => { if (filteredQuestions.length) { currentIndex = Math.floor(Math.random() * filteredQuestions.length); renderCurrent(true); } });

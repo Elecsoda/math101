@@ -486,6 +486,27 @@
           ]
         },
         {
+          "id": "geometry-basics",
+          "name": "几何基础概念·线与角",
+          "grade": "4",
+          "status": "ready",
+          "route": "/geometry-basics",
+          "knowledgeNodeIds": [
+            "angle-intro",
+            "shape-plane"
+          ],
+          "tabs": [
+            "线",
+            "认识角",
+            "量角器",
+            "比一比",
+            "拼角",
+            "平行与垂直",
+            "图形里的角",
+            "判一判"
+          ]
+        },
+        {
           "id": "angle-measure-protractor",
           "name": "量角器与角度测量",
           "grade": "4",

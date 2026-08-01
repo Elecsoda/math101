@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>基础图形角度探索 | Math101</title>
+    <script src="../vendor/react.production.min.js"></script>
+    <script src="../vendor/react-dom.production.min.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <link rel="stylesheet" href="../ipad-touch-adapter.css">
+    <script src="../ipad-touch-adapter.js" defer></script>
+    <style>
+        :root {
+            --ink: #172033;
+            --muted: #667085;
+            --line: #dbe3ef;
+            --paper: #ffffff;
+            --blue: #4f46e5;
+            --sky: #0284c7;
+            --green: #059669;
+            --amber: #d97706;
+            --rose: #e11d48;
+            --violet: #7c3aed;
+            --shadow: 0 18px 44px rgba(30, 41, 59, .11);
+        }
+        * { box-sizing: border-box; }
+        html { -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+            background:
+                radial-gradient(circle at 8% 0, #dbeafe 0, transparent 28rem),
+                radial-gradient(circle at 96% 8%, #f3e8ff 0, transparent 25rem),
+                #f5f7fb;
+        }
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        .page { width: min(1160px, 100%); margin: 0 auto; padding: 22px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+        .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+        .brand-icon {
+            width: 50px; height: 50px; flex: 0 0 auto; border-radius: 16px;
+            display: grid; place-items: center; color: #fff; font-size: 25px; font-weight: 950;
+            background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+            box-shadow: 0 12px 26px rgba(79,70,229,.26);
+        }
+        h1 { margin: 0; font-size: clamp(22px, 3.5vw, 31px); letter-spacing: -.02em; }
+        .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; font-weight: 700; }
+        .home, .btn {
+            min-height: 42px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px;
+            color: #344054; background: #fff; font-weight: 850; text-decoration: none;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            box-shadow: 0 3px 9px rgba(15,23,42,.05);
+        }
+        .home:hover, .btn:hover { border-color: #818cf8; color: #4338ca; }
+        button:disabled { cursor: not-allowed; opacity: .45; }
+        .btn.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
+        .btn.green { color: #fff; background: var(--green); border-color: var(--green); }
+        .btn.danger { color: #be123c; background: #fff1f2; border-color: #fecdd3; }
+        .btn.small { min-height: 37px; padding: 6px 11px; font-size: 13px; }
+        .tabs {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 6px; margin-bottom: 15px;
+            border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.92);
+        }
+        .tab { min-height: 50px; border: 0; border-radius: 12px; color: var(--muted); background: transparent; font-weight: 900; }
+        .tab small { display: block; margin-top: 2px; font-size: 11px; font-weight: 750; opacity: .84; }
+        .tab.active { color: #fff; background: var(--blue); box-shadow: 0 8px 18px rgba(79,70,229,.25); }
+        .panel {
+            padding: 20px; background: rgba(255,255,255,.96); border: 1px solid #e2e8f0;
+            border-radius: 20px; box-shadow: var(--shadow);
+        }
+        .view { animation: fade .22s ease; }
+        @keyframes fade { from { opacity: 0; transform: translateY(5px); } }
+        .view-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 13px; }
+        h2 { margin: 0; font-size: clamp(19px, 2.8vw, 24px); }
+        h3 { margin: 0; }
+        .lead { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+        .tip { color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; padding: 7px 11px; border-radius: 999px; font-size: 12px; font-weight: 850; white-space: nowrap; }
+        .shape-picker { display: flex; align-items: center; gap: 7px; padding-bottom: 11px; overflow-x: auto; scrollbar-width: thin; }
+        .shape-chip {
+            min-width: 104px; min-height: 68px; flex: 0 0 auto; border: 2px solid transparent; border-radius: 13px;
+            padding: 6px 9px; background: #f8fafc; color: #475467; font-size: 12px; font-weight: 900;
+            display: grid; grid-template-columns: 38px 1fr; align-items: center; text-align: left; gap: 5px;
+        }
+        .shape-chip svg { width: 38px; height: 38px; overflow: visible; }
+        .shape-chip.active { border-color: var(--blue); background: #eef2ff; color: #3730a3; }
+        .workspace { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(260px, .7fr); gap: 14px; align-items: stretch; }
+        .stage {
+            min-width: 0; position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 17px;
+            background-color: #fbfdff;
+            background-image: linear-gradient(#edf1f7 1px, transparent 1px), linear-gradient(90deg,#edf1f7 1px,transparent 1px);
+            background-size: 24px 24px;
+        }
+        .stage svg { width: 100%; height: auto; min-height: 360px; display: block; touch-action: none; user-select: none; }
+        .stage-note {
+            position: absolute; left: 11px; top: 11px; max-width: calc(100% - 22px); padding: 7px 10px;
+            border-radius: 10px; color: #475569; background: rgba(255,255,255,.9); border: 1px solid #e2e8f0;
+            backdrop-filter: blur(5px); font-size: 12px; font-weight: 800; pointer-events: none;
+        }
+        .side-card { border: 1px solid var(--line); border-radius: 17px; padding: 15px; background: #fff; }
+        .side-title { color: #344054; font-size: 14px; font-weight: 950; margin-bottom: 10px; }
+        .angle-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+        .angle-pill { min-height: 48px; border-radius: 11px; padding: 6px 8px; display: flex; flex-direction: column; justify-content: center; text-align: center; font-weight: 900; }
+        .angle-pill small { font-size: 10px; margin-top: 1px; font-weight: 750; opacity: .8; }
+        .angle-pill.acute { color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; }
+        .angle-pill.right { color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; }
+        .angle-pill.obtuse { color: #b45309; background: #fffbeb; border: 1px solid #fde68a; }
+        .angle-pill.straight, .angle-pill.reflex { color: #7e22ce; background: #faf5ff; border: 1px solid #e9d5ff; }
+        .formula-card { margin-top: 10px; border-radius: 13px; padding: 11px 12px; text-align: center; color: #3730a3; background: #eef2ff; border: 1px solid #c7d2fe; font-weight: 900; line-height: 1.55; }
+        .formula-card strong { color: var(--blue); font-size: 19px; }
+        .relation-list { display: grid; gap: 7px; margin-top: 10px; }
+        .relation { padding: 8px 10px; border-radius: 10px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 800; line-height: 1.45; }
+        .relation.yes { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
+        .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 11px; }
+        .toolbar .spacer { flex: 1; }
+        .catalog { margin-top: 17px; border-top: 1px solid var(--line); padding-top: 15px; }
+        .catalog-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .catalog-head h3 { font-size: 16px; }
+        .filters { display: flex; gap: 5px; flex-wrap: wrap; }
+        .filter { border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; background: #fff; color: var(--muted); font-weight: 850; font-size: 11px; }
+        .filter.active { color: #fff; background: #475569; border-color: #475569; }
+        .degree-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+        .degree-card { min-width: 0; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; }
+        .degree-card strong { display: block; color: #4338ca; font-size: 19px; }
+        .degree-card span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; }
+        .catalog-note { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+        .catalog-note b { color: #4338ca; }
+
+        .cut-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; }
+        .cut-stage svg { min-height: 430px; }
+        .cut-controls { display: grid; gap: 10px; align-content: start; }
+        .step-card { border: 1px solid var(--line); background: #fff; border-radius: 15px; padding: 13px; }
+        .step-label { display: flex; justify-content: space-between; gap: 10px; color: #475569; font-size: 12px; font-weight: 850; margin-bottom: 8px; }
+        .step-label b { color: #4338ca; }
+        .cut-progress { display: flex; gap: 5px; }
+        .cut-progress i { height: 7px; flex: 1; border-radius: 999px; background: #e2e8f0; }
+        .cut-progress i.on { background: var(--blue); }
+        .equation-stack { display: grid; gap: 7px; margin-top: 8px; }
+        .equation { border-radius: 10px; padding: 8px 10px; color: #3730a3; background: #eef2ff; border: 1px solid #c7d2fe; font-size: 12px; font-weight: 900; text-align: center; }
+        .equation.minus { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+        .piece-status { color: var(--muted); font-size: 12px; line-height: 1.55; }
+        .piece-status b { color: #4338ca; }
+        .piece { cursor: grab; }
+        .piece:active { cursor: grabbing; }
+
+        .compose-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 13px; }
+        .angle-tray { border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: #f8fafc; }
+        .tray-title { margin: 0 0 9px; color: #475569; font-size: 12px; font-weight: 900; }
+        .angle-source-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+        .angle-source { min-height: 64px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #344054; font-weight: 900; }
+        .angle-source strong { display: block; color: #4338ca; font-size: 17px; }
+        .angle-source small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; line-height: 1.25; }
+        .angle-source:hover { border-color: #818cf8; background: #eef2ff; }
+        .mode-box { margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--line); }
+        .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+        .seg button { border: 0; padding: 8px; background: #fff; color: var(--muted); font-size: 12px; font-weight: 900; }
+        .seg button.active { color: #fff; background: var(--blue); }
+        .target-row { display: flex; gap: 5px; margin-top: 8px; }
+        .target-row button { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 6px 2px; background: #fff; color: #475569; font-size: 11px; font-weight: 900; }
+        .target-row button.active { color: #fff; background: var(--amber); border-color: var(--amber); }
+        .compose-main { min-width: 0; }
+        .compose-stage svg { min-height: 430px; }
+        .result-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 10px; }
+        .big-result { min-width: 0; border-radius: 13px; padding: 10px 14px; color: #3730a3; background: #eef2ff; border: 1px solid #c7d2fe; font-weight: 900; line-height: 1.45; }
+        .big-result strong { color: var(--blue); font-size: 20px; }
+        .big-result.warn { color: #9a3412; background: #fff7ed; border-color: #fed7aa; }
+        .selection-tools { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+        .empty { color: #94a3b8; font-size: 12px; text-align: center; padding: 12px 0; }
+        .footer-note { margin: 16px 0 0; text-align: center; color: #94a3b8; font-size: 12px; line-height: 1.6; }
+        .copyright { padding: 24px 16px 4px; text-align: center; color: #94a3b8; font-size: 12px; }
+        @media (max-width: 900px) {
+            .workspace, .cut-layout { grid-template-columns: 1fr; }
+            .cut-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .degree-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 680px) {
+            .page { padding: 12px; }
+            .panel { padding: 13px; }
+            .brand-icon { width: 43px; height: 43px; border-radius: 13px; }
+            .subtitle { font-size: 11px; }
+            .home { padding: 7px 10px; font-size: 12px; }
+            .tab { font-size: 13px; }
+            .tab small { font-size: 9px; }
+            .tip { display: none; }
+            .stage svg, .cut-stage svg, .compose-stage svg { min-height: 340px; }
+            .cut-controls { grid-template-columns: 1fr; }
+            .compose-layout { grid-template-columns: 1fr; }
+            .angle-tray { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; }
+            .tray-title { margin: 0; }
+            .angle-source-grid { grid-template-columns: repeat(8, minmax(78px, 1fr)); overflow-x: auto; grid-column: 1 / -1; }
+            .mode-box { margin: 0; padding: 0; border: 0; }
+            .degree-grid { grid-template-columns: repeat(2, 1fr); }
+            .result-bar { grid-template-columns: 1fr; }
+            .selection-tools { justify-content: flex-start; }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useMemo, useRef, useEffect, useCallback } = React;
+
+        const W = 720, H = 430;
+        const rad = d => d * Math.PI / 180;
+        const norm = d => ((d % 360) + 360) % 360;
+        const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+        const near = (a, b, gap = 1.2) => Math.abs(a - b) <= gap;
+        const fmt = n => Math.abs(n - Math.round(n)) < .08 ? String(Math.round(n)) : (Math.round(n * 10) / 10).toFixed(1);
+        const pointText = pts => pts.map(p => p.join(',')).join(' ');
+        const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+        const signedArea = pts => pts.reduce((s, p, i) => {
+            const q = pts[(i + 1) % pts.length];
+            return s + p[0] * q[1] - q[0] * p[1];
+        }, 0) / 2;
+        const cross = (a,b,c) => (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+        const segmentsCross = (a,b,c,d) => {
+            const ab1=cross(a,b,c), ab2=cross(a,b,d), cd1=cross(c,d,a), cd2=cross(c,d,b);
+            return ab1*ab2 < 0 && cd1*cd2 < 0;
+        };
+        const isSimplePolygon = pts => {
+            const n=pts.length;
+            for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) {
+                if(j===i || j===(i+1)%n || i===(j+1)%n) continue;
+                if(segmentsCross(pts[i],pts[(i+1)%n],pts[j],pts[(j+1)%n])) return false;
+            }
+            return Math.abs(signedArea(pts))>100;
+        };
+        const regularPoints = (n, cx = 360, cy = 222, r = 150, rotation = -90) =>
+            Array.from({ length: n }, (_, i) => {
+                const a = rad(rotation + i * 360 / n);
+                return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+            });
+        const centroid = pts => [pts.reduce((s,p) => s + p[0], 0) / pts.length, pts.reduce((s,p) => s + p[1], 0) / pts.length];
+
+        const angleType = deg => {
+            if (near(deg, 90, .7)) return { key: 'right', name: '直角', color: '#2563eb' };
+            if (near(deg, 180, .7)) return { key: 'straight', name: '平角', color: '#7c3aed' };
+            if (deg < 90) return { key: 'acute', name: '锐角', color: '#059669' };
+            if (deg < 180) return { key: 'obtuse', name: '钝角', color: '#d97706' };
+            return { key: 'reflex', name: '优角', color: '#7c3aed' };
+        };
+
+        const polygonAngles = pts => {
+            const area = signedArea(pts);
+            const direction = area >= 0 ? -1 : 1;
+            return pts.map((p, i) => {
+                const prev = pts[(i - 1 + pts.length) % pts.length];
+                const next = pts[(i + 1) % pts.length];
+                const start = norm(Math.atan2(prev[1] - p[1], prev[0] - p[0]) * 180 / Math.PI);
+                const end = norm(Math.atan2(next[1] - p[1], next[0] - p[0]) * 180 / Math.PI);
+                const deg = direction > 0 ? norm(end - start) : norm(start - end);
+                return { deg, start, direction, type: angleType(deg) };
+            });
+        };
+
+        const wedgePath = (p, info, radius = 42) => {
+            const steps = Math.max(5, Math.ceil(info.deg / 10));
+            const arc = Array.from({ length: steps + 1 }, (_, j) => {
+                const a = rad(info.start + info.direction * info.deg * j / steps);
+                return [p[0] + radius * Math.cos(a), p[1] + radius * Math.sin(a)];
+            });
+            return `M ${p[0]} ${p[1]} L ${arc.map(q => q.join(' ')).join(' L ')} Z`;
+        };
+
+        const angleLabelPoint = (p, info, radius = 59) => {
+            const a = rad(info.start + info.direction * info.deg / 2);
+            return [p[0] + radius * Math.cos(a), p[1] + radius * Math.sin(a)];
+        };
+
+        const SHAPE_ORDER = [
+            'square','rectangle','parallelogram','rhombus','trapezoid','right-trapezoid',
+            'equilateral','acute-triangle','right-triangle','thirty-triangle','isosceles','obtuse-triangle',
+            'pentagon','hexagon','octagon'
+        ];
+
+        const makeShape = key => {
+            const data = {
+                square: { name:'正方形', family:'四边形', rule:'四个角都是直角', pts:[[230,92],[490,92],[490,352],[230,352]] },
+                rectangle: { name:'长方形', family:'四边形', rule:'四个角都是直角', pts:[[170,120],[550,120],[550,325],[170,325]] },
+                parallelogram: { name:'平行四边形', family:'四边形', rule:'对角相等，邻角互补', pts:[[230,105],[540,105],[465,340],[155,340]] },
+                rhombus: { name:'菱形', family:'四边形', rule:'对角相等，邻角互补', pts:[[360,72],[555,222],[360,372],[165,222]] },
+                trapezoid: { name:'等腰梯形', family:'四边形', rule:'同一底边上的两个角相等', pts:[[255,105],[465,105],[555,340],[165,340]] },
+                'right-trapezoid': { name:'直角梯形', family:'四边形', rule:'有两个直角', pts:[[195,105],[455,105],[555,340],[195,340]] },
+                equilateral: { name:'等边三角形', family:'三角形', rule:'三个角都是 60°', pts:regularPoints(3,360,220,170,-90) },
+                'acute-triangle': { name:'锐角三角形', family:'三角形', rule:'三个角都是锐角', pts:[[145,345],[330,70],[575,345]] },
+                'right-triangle': { name:'直角三角形', family:'三角形', rule:'含一个 90°，另两角和为 90°', pts:[[190,95],[190,350],[555,350]] },
+                'thirty-triangle': { name:'30-60-90 三角形', family:'特殊三角形', rule:'三个角固定为 30°、60°、90°', pts:[[190,100],[190,350],[623,350]] },
+                isosceles: { name:'等腰三角形', family:'三角形', rule:'两个底角相等', pts:[[360,70],[565,350],[155,350]] },
+                'obtuse-triangle': { name:'钝角三角形', family:'三角形', rule:'一个钝角，另两个是锐角', pts:[[115,125],[565,350],[260,350]] },
+                pentagon: { name:'正五边形', family:'正多边形', rule:'每个内角都是 108°', pts:regularPoints(5,360,220,158,-90) },
+                hexagon: { name:'正六边形', family:'正多边形', rule:'每个内角都是 120°', pts:regularPoints(6,360,220,165,-90) },
+                octagon: { name:'正八边形', family:'正多边形', rule:'每个内角都是 135°', pts:regularPoints(8,360,220,165,-112.5) },
+            };
+            const item = data[key] || data.square;
+            return { key, ...item, points: item.pts.map(p => [...p]) };
+        };
+
+        const getRelations = angles => {
+            const ds = angles.map(a => a.deg), n = ds.length;
+            const out = [];
+            if (ds.every(d => near(d, ds[0], 1.2))) out.push('所有内角相等');
+            if (n === 4 && near(ds[0], ds[2]) && near(ds[1], ds[3])) out.push('两组对角分别相等');
+            if (n === 4 && ds.every((d,i) => near(d + ds[(i+1)%4], 180, 1.8))) out.push('每组邻角相加都是 180°（互补）');
+            if (n === 3 && (near(ds[0],ds[1]) || near(ds[1],ds[2]) || near(ds[0],ds[2]))) out.push('至少有两个角相等');
+            const rights = ds.filter(d => near(d, 90, .8)).length;
+            if (rights) out.push(`找到 ${rights} 个直角`);
+            return out;
+        };
+
+        const ShapeMini = ({ points }) => {
+            const xs = points.map(p=>p[0]), ys = points.map(p=>p[1]);
+            const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+            const scale = Math.min(31 / Math.max(1,maxX-minX), 31 / Math.max(1,maxY-minY));
+            const ps = points.map(p => [3.5 + (p[0]-minX)*scale, 3.5 + (p[1]-minY)*scale]);
+            return <svg viewBox="0 0 38 38" aria-hidden="true"><polygon points={pointText(ps)} fill="#c7d2fe" stroke="#4f46e5" strokeWidth="2" strokeLinejoin="round" /></svg>;
+        };
+
+        const ShapePicker = ({ value, onChange, allowed = SHAPE_ORDER }) => (
+            <div className="shape-picker" aria-label="选择图形">
+                {allowed.map(key => {
+                    const s = makeShape(key);
+                    return <button key={key} className={'shape-chip ' + (value === key ? 'active' : '')} onClick={() => onChange(key)}>
+                        <ShapeMini points={s.points} /><span>{s.name}</span>
+                    </button>;
+                })}
+            </div>
+        );
+
+        const useSvgPoint = (ref, width, height) => useCallback(e => {
+            const r = ref.current.getBoundingClientRect();
+            return [(e.clientX-r.left)/r.width*width, (e.clientY-r.top)/r.height*height];
+        }, [ref, width, height]);
+
+        const AngleMarks = ({ points, angles, radius = 42, labels = true, prefix = '' }) => (
+            <g>
+                {angles.map((a,i) => {
+                    const lp = angleLabelPoint(points[i], a, radius + 17);
+                    return <g key={i}>
+                        <path d={wedgePath(points[i],a,radius)} fill={a.type.color} opacity=".22" stroke={a.type.color} strokeWidth="1.4" />
+                        {labels && <text x={lp[0]} y={lp[1]} textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="900" fill={a.type.color}>{prefix}{fmt(a.deg)}°</text>}
+                    </g>;
+                })}
+            </g>
+        );
+
+        const DEGREE_CATALOG = [
+            {deg:30, source:'30-60-90 三角形'}, {deg:45, source:'等腰直角三角形'},
+            {deg:60, source:'等边三角形'}, {deg:72, source:'正五边形的中心角'},
+            {deg:90, source:'正方形、长方形'}, {deg:108, source:'正五边形内角'},
+            {deg:120, source:'正六边形内角'}, {deg:135, source:'正八边形内角'},
+            {deg:150, source:'30° 与 180° 相减'}, {deg:180, source:'平角、三角形内角和'},
+            {deg:270, source:'360° 减去直角'}, {deg:360, source:'围绕一点的周角'}
+        ];
+
+        function ShapeExplore() {
+            const [key,setKey] = useState('parallelogram');
+            const [points,setPoints] = useState(() => makeShape('parallelogram').points);
+            const [filter,setFilter] = useState('all');
+            const svgRef = useRef(null), drag = useRef(null);
+            const toPoint = useSvgPoint(svgRef,W,H);
+            const shape = makeShape(key);
+            useEffect(() => setPoints(makeShape(key).points), [key]);
+            const angles = useMemo(() => polygonAngles(points), [points]);
+            const total = angles.reduce((s,a) => s+a.deg,0);
+            const relations = getRelations(angles);
+            const onDown = (e,i) => {
+                e.preventDefault(); drag.current = { i, id:e.pointerId };
+                if (svgRef.current.setPointerCapture) svgRef.current.setPointerCapture(e.pointerId);
+            };
+            const onMove = e => {
+                if (!drag.current) return;
+                const active = drag.current;
+                const p = toPoint(e);
+                setPoints(old => {
+                    const next=old.map((q,i) => i === active.i ? [clamp(p[0],42,W-42),clamp(p[1],62,H-38)] : q);
+                    return isSimplePolygon(next) ? next : old;
+                });
+            };
+            const stop = () => { drag.current = null; };
+            const filtered = DEGREE_CATALOG.filter(x => filter === 'all' || angleType(x.deg).key === filter);
+            return <section className="view">
+                <div className="view-head">
+                    <div><h2>图形里藏着哪些角？</h2><p className="lead">选图形，再拖动任意顶点。角度、分类和关系会同时更新。</p></div>
+                    <span className="tip">先猜，再拖动验证</span>
+                </div>
+                <ShapePicker value={key} onChange={setKey} />
+                <div className="workspace">
+                    <div>
+                        <div className="stage">
+                            <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} onPointerMove={onMove} onPointerUp={stop} onPointerCancel={stop}>
+                                <polygon points={pointText(points)} fill="#e0e7ff" fillOpacity=".8" stroke="#4f46e5" strokeWidth="4" strokeLinejoin="round" />
+                                <AngleMarks points={points} angles={angles} />
+                                {points.map((p,i) => <g key={i} onPointerDown={e=>onDown(e,i)} style={{cursor:'grab'}}>
+                                    <circle cx={p[0]} cy={p[1]} r="19" fill="transparent" />
+                                    <circle cx={p[0]} cy={p[1]} r="9" fill="#fff" stroke="#4f46e5" strokeWidth="4" />
+                                    <text x={p[0]} y={p[1]-17} textAnchor="middle" fontSize="12" fontWeight="900" fill="#3730a3">{String.fromCharCode(65+i)}</text>
+                                </g>)}
+                            </svg>
+                            <div className="stage-note">拖动白色顶点；图形可变成不规则图形</div>
+                        </div>
+                        <div className="toolbar">
+                            <button className="btn small" onClick={() => setPoints(makeShape(key).points)}>↺ 恢复标准图形</button>
+                            <span className="spacer"></span>
+                            <span className="lead">{shape.family} · {shape.rule}</span>
+                        </div>
+                    </div>
+                    <aside className="side-card">
+                        <div className="side-title">{shape.name}的角度档案</div>
+                        <div className="angle-list">
+                            {angles.map((a,i) => <div key={i} className={'angle-pill '+a.type.key}>
+                                ∠{String.fromCharCode(65+i)} = {fmt(a.deg)}°<small>{a.type.name}</small>
+                            </div>)}
+                        </div>
+                        <div className="formula-card">内角和<br/><strong>{fmt(total)}°</strong><br/>=（{points.length}－2）× 180°</div>
+                        <div className="relation-list">
+                            {relations.length ? relations.map((r,i)=><div className="relation yes" key={i}>✓ {r}</div>) : <div className="relation">拖动后暂未发现相等或互补关系</div>}
+                        </div>
+                    </aside>
+                </div>
+                <div className="catalog">
+                    <div className="catalog-head"><h3>常见度数从哪里来？</h3><div className="filters">
+                        {[['all','全部'],['acute','锐角'],['right','直角'],['obtuse','钝角'],['straight','平角'],['reflex','优角']].map(([k,n])=><button key={k} className={'filter '+(filter===k?'active':'')} onClick={()=>setFilter(k)}>{n}</button>)}
+                    </div></div>
+                    <div className="degree-grid">{filtered.map(x=><div className="degree-card" key={x.deg}><strong>{x.deg}°</strong><span>{x.source}</span></div>)}</div>
+                    <p className="catalog-note"><b>重要发现：</b>只有“正”图形或带特殊条件的图形，角度才通常是固定的。普通三角形、梯形或平行四边形可以连续变化，关键看它们必须保持的角度关系。</p>
+                </div>
+            </section>;
+        }
+
+        const CUT_SHAPES = ['square','rectangle','parallelogram','rhombus','trapezoid','pentagon','hexagon','octagon'];
+        const buildTriangles = points => Array.from({length:points.length-2},(_,i)=>[0,i+1,i+2]);
+        const makePieces = points => buildTriangles(points).map((ids,i) => {
+            const abs = ids.map(id=>points[id]), c = centroid(abs);
+            return { id:i, origins:ids, local:abs.map(p=>[p[0]-c[0],p[1]-c[1]]), home:[...c], x:c[0],y:c[1],rot:0,color:['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6'][i%6] };
+        });
+
+        function CutExplore() {
+            const [key,setKey] = useState('square');
+            const shape = makeShape(key), points = shape.points, maxCuts = points.length-3;
+            const [cuts,setCuts] = useState(0);
+            const [pieces,setPieces] = useState(() => makePieces(points));
+            const [selected,setSelected] = useState(0);
+            const svgRef = useRef(null), drag=useRef(null), toPoint=useSvgPoint(svgRef,720,470);
+            useEffect(()=>{ setCuts(0); setPieces(makePieces(makeShape(key).points)); setSelected(0); },[key]);
+            const complete = cuts === maxCuts;
+            const originalAngles = useMemo(()=>polygonAngles(points),[key]);
+            const homePieces = useMemo(()=>makePieces(points),[key]);
+            const splitRelations = useMemo(()=> {
+                const groups = points.map(()=>[]);
+                homePieces.forEach(pc => {
+                    const abs = pc.local.map(p=>[p[0]+pc.home[0],p[1]+pc.home[1]]);
+                    polygonAngles(abs).forEach((a,j)=>groups[pc.origins[j]].push(a.deg));
+                });
+                return groups.map((parts,i)=>({letter:String.fromCharCode(65+i), whole:originalAngles[i].deg, parts})).filter(x=>x.parts.length>1);
+            },[key]);
+            const addCut = () => setCuts(c=>Math.min(maxCuts,c+1));
+            const undoCut = () => { setCuts(c=>Math.max(0,c-1)); assemble(); };
+            const assemble = () => setPieces(old=>old.map((p,i)=>({...p,x:homePieces[i].home[0],y:homePieces[i].home[1],rot:0})));
+            const separate = () => {
+                const center=[360,220];
+                setPieces(old=>old.map((p,i)=>{
+                    const h=homePieces[i].home, vx=h[0]-center[0],vy=h[1]-center[1];
+                    const len=Math.hypot(vx,vy)||1, boost=58+(i%2)*18;
+                    return {...p,x:h[0]+vx/len*boost,y:h[1]+vy/len*boost,rot:(i-(old.length-1)/2)*7};
+                }));
+            };
+            const onPieceDown=(e,id)=>{
+                if(!complete)return; e.preventDefault(); e.stopPropagation(); setSelected(id);
+                const p=toPoint(e), pc=pieces.find(x=>x.id===id);
+                drag.current={id,dx:p[0]-pc.x,dy:p[1]-pc.y};
+                if(svgRef.current.setPointerCapture)svgRef.current.setPointerCapture(e.pointerId);
+            };
+            const onMove=e=>{ if(!drag.current)return; const active=drag.current, p=toPoint(e); setPieces(old=>old.map(x=>x.id===active.id?{...x,x:p[0]-active.dx,y:p[1]-active.dy}:x)); };
+            const stop=()=>{drag.current=null;};
+            const rotate=d=>setPieces(old=>old.map(x=>x.id===selected?{...x,rot:x.rot+d}:x));
+            const sel=pieces.find(x=>x.id===selected);
+            const selAngles=sel?polygonAngles(sel.local):[];
+            return <section className="view">
+                <div className="view-head"><div><h2>一刀一刀，角度不会丢</h2><p className="lead">沿对角线切开多边形，再把三角形拖开、旋转、拼回去。</p></div><span className="tip">切分 → 拆开 → 拼回</span></div>
+                <ShapePicker value={key} onChange={setKey} allowed={CUT_SHAPES}/>
+                <div className="cut-layout">
+                    <div className="stage cut-stage">
+                        <svg ref={svgRef} viewBox="0 0 720 470" onPointerMove={onMove} onPointerUp={stop} onPointerCancel={stop}>
+                            {!complete && <g>
+                                <polygon points={pointText(points)} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="4" strokeLinejoin="round" />
+                                <AngleMarks points={points} angles={originalAngles} radius={38}/>
+                                {Array.from({length:cuts},(_,i)=>{
+                                    const end=points[i+2]; return <line key={i} x1={points[0][0]} y1={points[0][1]} x2={end[0]} y2={end[1]} stroke="#e11d48" strokeWidth="3" strokeDasharray="8 6"/>;
+                                })}
+                            </g>}
+                            {complete && pieces.map(pc=>{
+                                const angs=polygonAngles(pc.local);
+                                return <g key={pc.id} className="piece" transform={`translate(${pc.x} ${pc.y}) rotate(${pc.rot})`} onPointerDown={e=>onPieceDown(e,pc.id)}>
+                                    <polygon points={pointText(pc.local)} fill={pc.color} fillOpacity={selected === pc.id ? .35 : .24} stroke={pc.color} strokeWidth={selected === pc.id ? 4 : 2.5} strokeLinejoin="round" />
+                                    {angs.map((a,i)=>{
+                                        const lp=angleLabelPoint(pc.local[i],a,32);
+                                        return <g key={i}><path d={wedgePath(pc.local[i],a,23)} fill="#fff" opacity=".48"/><text x={lp[0]} y={lp[1]} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="900" fill="#172033" transform={`rotate(${-pc.rot} ${lp[0]} ${lp[1]})`}>{fmt(a.deg)}°</text></g>;
+                                    })}
+                                </g>;
+                            })}
+                            {points.map((p,i)=><text key={i} x={p[0]} y={p[1]-17} textAnchor="middle" fontSize="12" fontWeight="900" fill="#3730a3">{String.fromCharCode(65+i)}</text>)}
+                        </svg>
+                        <div className="stage-note">{complete?'点选并拖动任意三角形；角的大小不会随移动或旋转改变':'点击“沿对角线切一刀”观察分块'}</div>
+                    </div>
+                    <aside className="cut-controls">
+                        <div className="step-card">
+                            <div className="step-label"><span>已切对角线</span><b>{cuts} / {maxCuts}</b></div>
+                            <div className="cut-progress">{Array.from({length:Math.max(1,maxCuts)},(_,i)=><i key={i} className={i<cuts?'on':''}></i>)}</div>
+                            <div className="toolbar"><button className="btn small primary" onClick={addCut} disabled={complete}>＋ 沿对角线切一刀</button><button className="btn small" onClick={undoCut} disabled={!cuts}>撤回</button></div>
+                        </div>
+                        <div className="step-card">
+                            <div className="side-title">切分结论</div>
+                            <div className="formula-card" style={{marginTop:0}}>{points.length} 边形 → <strong>{points.length-2}</strong> 个三角形<br/>内角和 = {points.length-2} × 180° = <strong>{(points.length-2)*180}°</strong></div>
+                            {!complete && <p className="piece-status">还需切 <b>{maxCuts-cuts}</b> 刀，才能全部分成三角形。</p>}
+                            {complete && <div className="toolbar"><button className="btn small green" onClick={separate}>拆开看看</button><button className="btn small" onClick={assemble}>拼回原图</button></div>}
+                        </div>
+                        {complete && <div className="step-card">
+                            <div className="side-title">原角 = 小角之和</div>
+                            <div className="equation-stack">{splitRelations.slice(0,3).map((x,i)=>{
+                                const used=x.parts[0], rest=x.whole-used;
+                                return <React.Fragment key={i}><div className="equation">∠{x.letter}：{x.parts.map(fmt).join('° + ')}° = {fmt(x.whole)}°</div><div className="equation minus">{fmt(x.whole)}° − {fmt(used)}° = {fmt(rest)}°</div></React.Fragment>;
+                            })}</div>
+                        </div>}
+                        {complete && sel && <div className="step-card"><div className="side-title">选中的三角形</div><p className="piece-status">三个角：<b>{selAngles.map(a=>fmt(a.deg)+'°').join('、')}</b><br/>无论怎样移动、旋转，相加总是 <b>180°</b>。</p><div className="toolbar"><button className="btn small" onClick={()=>rotate(-15)}>↶ 15°</button><button className="btn small" onClick={()=>rotate(15)}>↷ 15°</button></div></div>}
+                    </aside>
+                </div>
+            </section>;
+        }
+
+        const PALETTE = [
+            {deg:30,source:'三角板'}, {deg:45,source:'等腰直角'}, {deg:60,source:'等边三角形'}, {deg:72,source:'五边形中心'},
+            {deg:90,source:'正方形'}, {deg:108,source:'正五边形'}, {deg:120,source:'正六边形'}, {deg:135,source:'菱形/拼角'}
+        ];
+        const PIECE_COLORS=['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ec4899','#8b5cf6','#ef4444','#14b8a6'];
+        const composeWedge = (deg,r=86) => {
+            const steps=Math.max(6,Math.ceil(deg/8));
+            const arc=Array.from({length:steps+1},(_,i)=>{const a=rad(deg*i/steps);return [r*Math.cos(a),r*Math.sin(a)];});
+            return `M 0 0 L ${arc.map(p=>p.join(' ')).join(' L ')} Z`;
+        };
+        const targetWedge = (deg,r=112,start=-90) => {
+            const steps=Math.max(10,Math.ceil(deg/8));
+            const arc=Array.from({length:steps+1},(_,i)=>{const a=rad(start+deg*i/steps);return [410+r*Math.cos(a),215+r*Math.sin(a)];});
+            return `M 410 215 L ${arc.map(p=>p.join(' ')).join(' L ')} Z`;
+        };
+
+        function ComposeLab(){
+            const TARGET=[410,215];
+            const [pieces,setPieces]=useState([
+                {id:1,deg:45,source:'等腰直角',x:150,y:135,rot:-25,color:PIECE_COLORS[0]},
+                {id:2,deg:45,source:'等腰直角',x:170,y:315,rot:25,color:PIECE_COLORS[1]}
+            ]);
+            const [selected,setSelected]=useState(1),[mode,setMode]=useState('add'),[target,setTarget]=useState(180);
+            const idRef=useRef(3), svgRef=useRef(null), drag=useRef(null), toPoint=useSvgPoint(svgRef,820,430);
+            const placed=pieces.filter(p=>dist([p.x,p.y],TARGET)<3);
+            const used=placed.reduce((s,p)=>s+p.deg,0);
+            const result=mode==='add'?used:target-used;
+            const addPiece=item=>{
+                const id=idRef.current++, slot=pieces.length%5;
+                setPieces(old=>[...old,{id,deg:item.deg,source:item.source,x:110+slot*115,y:350-(slot%2)*70,rot:-70+slot*22,color:PIECE_COLORS[(id-1)%PIECE_COLORS.length]}]); setSelected(id);
+            };
+            const onDown=(e,p,kind='move')=>{
+                e.preventDefault();e.stopPropagation();setSelected(p.id);const q=toPoint(e);
+                drag.current=kind==='move'?{kind,id:p.id,dx:q[0]-p.x,dy:q[1]-p.y}:{kind,id:p.id,offset:Math.atan2(q[1]-p.y,q[0]-p.x)*180/Math.PI-p.rot-p.deg/2};
+                if(svgRef.current.setPointerCapture)svgRef.current.setPointerCapture(e.pointerId);
+            };
+            const onMove=e=>{
+                if(!drag.current)return;const active=drag.current,q=toPoint(e);
+                setPieces(old=>old.map(p=>{
+                    if(p.id!==active.id)return p;
+                    if(active.kind==='move')return {...p,x:clamp(q[0]-active.dx,20,800),y:clamp(q[1]-active.dy,20,410)};
+                    return {...p,rot:Math.atan2(q[1]-p.y,q[0]-p.x)*180/Math.PI-p.deg/2-active.offset};
+                }));
+            };
+            const stop=()=>{
+                const active=drag.current;
+                if(active?.kind==='move')setPieces(old=>old.map(p=>p.id===active.id&&dist([p.x,p.y],TARGET)<42?{...p,x:TARGET[0],y:TARGET[1]}:p));
+                drag.current=null;
+            };
+            const arrange=()=>{let acc=-90;setPieces(old=>old.map(p=>{const q={...p,x:TARGET[0],y:TARGET[1],rot:acc};acc+=p.deg;return q;}));};
+            const scatter=()=>setPieces(old=>old.map((p,i)=>({...p,x:105+(i%5)*145,y:i%2?335:105,rot:-65+(i*31)%140})));
+            const updateSelected=fn=>setPieces(old=>old.map(p=>p.id===selected?fn(p):p));
+            const duplicate=()=>{const p=pieces.find(x=>x.id===selected);if(p)addPiece({deg:p.deg,source:p.source});};
+            const remove=()=>{setPieces(old=>old.filter(p=>p.id!==selected));setSelected(null);};
+            const relation=()=>{
+                if(!placed.length)return '把角片的顶点拖到靶心，才会加入算式。';
+                if(mode==='subtract')return result<0?'减去的角已经超过目标角。':result===0?'刚好减完，没有剩余角。':`剩下 ${fmt(result)}°，是${angleType(result).name}。`;
+                if(near(result,90))return '拼成直角：这些角互余，和为 90°。';
+                if(near(result,180))return '拼成平角：这些角互补，和为 180°。';
+                if(near(result,360))return '正好围绕一点一周，和为 360°。';
+                if(result>360)return '已经超过一周，可以移走或相减一些角片。';
+                return `现在拼成 ${fmt(result)}°，是${angleType(result).name}。`;
+            };
+            const formula=mode==='add'?(placed.length?placed.map(p=>fmt(p.deg)).join('° + ')+'° = '+fmt(result)+'°':'等待角片'):
+                `${target}°${placed.map(p=>' − '+fmt(p.deg)+'°').join('')} = ${fmt(result)}°`;
+            return <section className="view">
+                <div className="view-head"><div><h2>把角拖到一起，亲手算一算</h2><p className="lead">从左边取角片，拖动顶点，拉圆形把手旋转；靶心会自动吸附。</p></div><span className="tip">支持加法与减法</span></div>
+                <div className="compose-layout">
+                    <aside className="angle-tray">
+                        <p className="tray-title">点一下，取一块角片</p>
+                        <div className="angle-source-grid">{PALETTE.map(item=><button className="angle-source" key={item.deg} onClick={()=>addPiece(item)}><strong>{item.deg}°</strong><small>{item.source}</small></button>)}</div>
+                        <div className="mode-box"><p className="tray-title">算式方式</p><div className="seg"><button className={mode==='add'?'active':''} onClick={()=>setMode('add')}>组合（＋）</button><button className={mode==='subtract'?'active':''} onClick={()=>setMode('subtract')}>相减（－）</button></div>
+                            {mode==='subtract'&&<div className="target-row">{[90,180,360].map(d=><button key={d} className={target===d?'active':''} onClick={()=>setTarget(d)}>{d}°</button>)}</div>}
+                        </div>
+                    </aside>
+                    <div className="compose-main">
+                        <div className="stage compose-stage">
+                            <svg ref={svgRef} viewBox="0 0 820 430" onPointerMove={onMove} onPointerUp={stop} onPointerCancel={stop} onPointerDown={()=>setSelected(null)}>
+                                {mode==='subtract'&&<path d={targetWedge(target)} fill="#fef3c7" fillOpacity=".45" stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="7 6"/>}
+                                <circle cx={TARGET[0]} cy={TARGET[1]} r="15" fill="#fff" stroke="#64748b" strokeWidth="2" strokeDasharray="4 3"/>
+                                <circle cx={TARGET[0]} cy={TARGET[1]} r="4" fill="#334155"/>
+                                <text x={TARGET[0]} y={TARGET[1]+135} textAnchor="middle" fontSize="12" fontWeight="900" fill="#64748b">公共顶点（拖近会吸附）</text>
+                                {pieces.map(p=>{
+                                    const mid=rad(p.deg/2), hx=103*Math.cos(mid),hy=103*Math.sin(mid), isSel=p.id===selected;
+                                    return <g key={p.id} transform={`translate(${p.x} ${p.y}) rotate(${p.rot})`} onPointerDown={e=>onDown(e,p,'move')} style={{cursor:'grab'}}>
+                                        <path d={composeWedge(p.deg)} fill={p.color} fillOpacity=".34" stroke={p.color} strokeWidth={isSel?4:2.5}/>
+                                        <circle cx="0" cy="0" r="8" fill="#fff" stroke={p.color} strokeWidth="3"/>
+                                        <text x={52*Math.cos(mid)} y={52*Math.sin(mid)} textAnchor="middle" dominantBaseline="central" fontSize="14" fontWeight="950" fill={p.color} transform={`rotate(${-p.rot} ${52*Math.cos(mid)} ${52*Math.sin(mid)})`}>{p.deg}°</text>
+                                        {isSel&&<g onPointerDown={e=>onDown(e,p,'rotate')} style={{cursor:'crosshair'}}><line x1={86*Math.cos(mid)} y1={86*Math.sin(mid)} x2={hx} y2={hy} stroke={p.color} strokeWidth="2" strokeDasharray="3 3"/><circle cx={hx} cy={hy} r="10" fill="#fff" stroke={p.color} strokeWidth="3"/></g>}
+                                    </g>;
+                                })}
+                            </svg>
+                            <div className="stage-note">已吸附 {placed.length} 块 · 画布上共 {pieces.length} 块</div>
+                        </div>
+                        <div className="toolbar"><button className="btn small primary" onClick={arrange}>自动围到靶心</button><button className="btn small" onClick={scatter}>散开</button><button className="btn small danger" onClick={()=>{setPieces([]);setSelected(null);}}>清空</button></div>
+                        <div className="result-bar">
+                            <div className={'big-result '+(result<0||result>360?'warn':'')}><strong>{formula}</strong><br/>{relation()}</div>
+                            {selected&&<div className="selection-tools"><button className="btn small" onClick={()=>updateSelected(p=>({...p,rot:p.rot-5}))}>↶ 5°</button><button className="btn small" onClick={()=>updateSelected(p=>({...p,rot:p.rot+5}))}>↷ 5°</button><button className="btn small" onClick={duplicate}>复制</button><button className="btn small danger" onClick={remove}>删除</button></div>}
+                        </div>
+                    </div>
+                </div>
+            </section>;
+        }
+
+        function App(){
+            const [tab,setTab]=useState('shape');
+            const tabs=[['shape','图形角度','拖顶点 · 找关系'],['cut','切分拼接','分三角形 · 看加减'],['compose','角片工作台','自由组合 · 做运算']];
+            return <div className="page">
+                <header className="topbar"><div className="brand"><div className="brand-icon" aria-hidden="true">∠</div><div><h1>基础图形角度探索</h1><p className="subtitle">从图形里找角，把角拆开，再拼出新的角</p></div></div><a className="home" href="/">⌂ 首页</a></header>
+                <nav className="tabs" aria-label="探索模式">{tabs.map(([k,n,s])=><button key={k} className={'tab '+(tab===k?'active':'')} onClick={()=>setTab(k)}>{n}<small>{s}</small></button>)}</nav>
+                <main className="panel">{tab==='shape'&&<ShapeExplore/>}{tab==='cut'&&<CutExplore/>}{tab==='compose'&&<ComposeLab/>}</main>
+                <p className="footer-note">建议顺序：先观察标准图形，再改变图形，最后用切分和角片解释“为什么”。</p>
+                <div className="copyright">©孙维刚教育研究院 小宇老师 版权所有</div>
+            </div>;
+        }
+        ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+    </script>
+</body>
+</html>

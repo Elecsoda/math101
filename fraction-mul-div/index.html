@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分数的乘法与除法 | Math101</title>
+    <script src="../vendor/react.production.min.js"></script>
+    <script src="../vendor/react-dom.production.min.js"></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #f6f7fb; color: #1f2937; }
+        button, select, input { font: inherit; }
+        .fade-in { animation: fadeIn .35s ease both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+        .smooth { transition: all .2s ease; }
+        .piece-in { animation: pieceIn .3s ease backwards; }
+        @keyframes pieceIn { 0% { transform: scale(.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        /* SVG 元素默认以整个 SVG 的原点为缩放中心，必须改成以自身为中心，否则动画时图形会偏出 */
+        svg .piece-in { transform-box: fill-box; transform-origin: center; }
+        .new-cut { stroke-dasharray: 300; stroke-dashoffset: 300; animation: drawCut .6s ease forwards; }
+        @keyframes drawCut { to { stroke-dashoffset: 0; } }
+        .fraction-line { min-width: 1.15em; }
+        /* 拖动滑块在 iPad 上更好按 */
+        input[type=range] { height: 28px; }
+    </style>
+    <link rel="stylesheet" href="../ipad-touch-adapter.css">
+    <script src="../ipad-touch-adapter.js" defer></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useEffect, useMemo, useState, useRef } = React;
+
+        // ==========================================================================
+        // 分数的乘法与除法
+        //
+        // 教学序列参考美国 CCSS 5.NF / 6.NS、新加坡 CPA + bar model、日本数直线图：
+        //   分数乘法不是一个意思，而是四层意思，逐层推进：
+        //     ① 分数 × 整数  —— 连加（重复量），最容易接受，作为入口
+        //     ② 整数 × 分数  —— "取一个数的几分之几"（算子意义），单位量图
+        //     ③ 分数 × 分数  —— 面积模型（双向折叠），"份的份"，推出分子乘分子
+        //     ④ 为什么越乘越小 —— 乘数与 1 比较，破除"乘法让数变大"的误概念
+        //   分数除法的三层意思：
+        //     ⑤ 分数 ÷ 整数  —— 平均分（把已有的份再分）
+        //     ⑥ 包含除（关键）—— "里面有几个"，是理解倒数最直观的入口
+        //     ⑦ 为什么"颠倒相乘" —— 从包含除 + 商不变性质两条路推导，不背口诀
+        //   ⑧ 计算车间 —— 从直观过渡到笔算：约分、带分数、连乘连除
+        //   ⑨ 闯关练习 —— 看图列式、估一估、解决问题
+        //
+        // 设计原则：每个模型都能"动手"——拖滑块改数、点击折叠、亲手切分，
+        //   并且图形与算式始终同屏对应，让学生看见算式里每个数在图上是什么。
+        // ==========================================================================
+
+        const C = {
+            a: '#f59e0b', aSoft: '#fef3c7', aLine: '#d97706',   // 第一个量（横向）琥珀
+            b: '#8b5cf6', bSoft: '#ede9fe', bLine: '#7c3aed',   // 第二个量（纵向）紫
+            both: '#059669', bothSoft: '#d1fae5',               // 重叠部分（积）绿
+            empty: '#ffffff', line: '#cbd5e1', strong: '#334155', hot: '#ef4444'
+        };
+
+        const gcd = (a, b) => b ? gcd(b, Math.abs(a) % Math.abs(b)) : Math.abs(a);
+        const reduce = (n, d) => { const g = gcd(n, d) || 1; return [n / g, d / g]; };
+
+        // 分数竖排显示。n/d 可以传字符串（例如 "2×3"）以展示未化简的算式
+        const Fr = ({ n, d, color = 'text-slate-700', size = 'text-3xl', className = '' }) => (
+            <span className={`inline-flex flex-col items-center leading-none align-middle mx-1 font-bold ${color} ${size} ${className}`}>
+                <span>{n}</span>
+                <span className="w-full border-t-2 border-current my-0.5 fraction-line"></span>
+                <span>{d}</span>
+            </span>
+        );
+
+        // 带分数 / 整数 / 真分数的统一显示：把 n/d 自动写成最简形式
+        const Num = ({ n, d, color = 'text-slate-700', size = 'text-3xl', mixed = true }) => {
+            const [rn, rd] = reduce(n, d);
+            if (rd === 1) return <b className={`${color} ${size} mx-1`}>{rn}</b>;
+            if (mixed && rn > rd) {
+                const whole = Math.floor(rn / rd);
+                return <span className="inline-flex items-center align-middle">
+                    <b className={`${color} ${size}`}>{whole}</b>
+                    <Fr n={rn - whole * rd} d={rd} color={color} size={size} />
+                </span>;
+            }
+            return <Fr n={rn} d={rd} color={color} size={size} />;
+        };
+
+        const StepDots = ({ labels, step }) => (
+            <div className="flex flex-wrap justify-center gap-2 mb-5" aria-label="演示步骤">
+                {labels.map((label, i) => (
+                    <div key={label} className={`px-3 py-1.5 rounded-full text-sm font-semibold smooth ${i === step ? 'bg-slate-800 text-white shadow' : i < step ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-400 border border-slate-200'}`}>
+                        {i < step ? '✓ ' : ''}{label}
+                    </div>
+                ))}
+            </div>
+        );
+
+        const StepButtons = ({ step, setStep, max }) => (
+            <div className="flex justify-center gap-3 mt-5">
+                {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
+                {step < max && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
+                {step === max && <button onClick={() => setStep(0)} className="px-6 py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow smooth">再演示一次 ↻</button>}
+            </div>
+        );
+
+        const Slider = ({ label, value, min, max, onChange, accent = 'accent-amber-500', valueColor = 'text-amber-600' }) => (
+            <label className="flex items-center gap-3">
+                <span className="w-24 shrink-0 text-sm text-slate-500">{label}</span>
+                <input className={`flex-1 ${accent}`} type="range" min={min} max={max} value={value} onChange={e => onChange(+e.target.value)} />
+                <b className={`w-8 text-xl text-right ${valueColor}`}>{value}</b>
+            </label>
+        );
+
+        const Card = ({ children, className = '' }) => (
+            <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-5 ${className}`}>{children}</div>
+        );
+
+        const Note = ({ tone = 'emerald', className = '', children }) => {
+            const tones = {
+                emerald: 'bg-emerald-50 border-emerald-100 text-emerald-900',
+                amber: 'bg-amber-50 border-amber-100 text-amber-900',
+                rose: 'bg-rose-50 border-rose-100 text-rose-900',
+                sky: 'bg-sky-50 border-sky-100 text-sky-900',
+                violet: 'bg-violet-50 border-violet-100 text-violet-900',
+                slate: 'bg-slate-50 border-slate-200 text-slate-700'
+            };
+            return <div className={`rounded-xl border p-4 ${tones[tone]} ${className}`}>{children}</div>;
+        };
+
+        // 长条模型：平均分成 den 份，前 filled 份上色。可叠加"分组"虚线，用于连加。
+        const Bar = ({ den, filled, width = 320, height = 46, color = C.a, groupEvery = 0, animKey = '', faded = false }) => {
+            const seg = width / den;
+            return (
+                <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="max-w-full overflow-visible">
+                    {Array.from({ length: den }).map((_, i) => (
+                        <rect key={animKey + i} className="piece-in" style={{ animationDelay: `${i * .03}s` }}
+                            x={i * seg} y={2} width={seg} height={height - 4}
+                            fill={i < filled ? color : C.empty} opacity={faded && i < filled ? .35 : 1}
+                            stroke={C.line} strokeWidth="1.5" />
+                    ))}
+                    {groupEvery > 0 && Array.from({ length: Math.ceil(den / groupEvery) - 1 }).map((_, i) => (
+                        <line key={'g' + i} x1={(i + 1) * groupEvery * seg} y1={0} x2={(i + 1) * groupEvery * seg} y2={height}
+                            stroke={C.hot} strokeWidth="2.5" strokeDasharray="5 4" />
+                    ))}
+                    <rect x={1} y={1} width={width - 2} height={height - 2} fill="none" stroke={C.strong} strokeWidth="2.5" />
+                </svg>
+            );
+        };
+
+        // ======================================================================
+        // ① 分数 × 整数 —— 连加
+        //   3 个 2/7 就是 2/7+2/7+2/7 = 6/7。份的大小(分母)不变，份数(分子)翻倍。
+        //   这是分数乘法唯一能直接由整数乘法意义迁移过来的情形，作为入口。
+        // ======================================================================
+        const FracTimesInt = () => {
+            const [n, setN] = useState(2), [d, setD] = useState(7), [k, setK] = useState(3);
+            const [step, setStep] = useState(0);
+            const total = n * k;
+            const wholes = Math.floor(total / d);
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0 leading-relaxed">
+                            <b className="text-amber-700">分数 × 整数</b>，意思和整数乘法完全一样：<b>求几个相同加数的和</b>。
+                            <Fr n={n} d={d} size="text-xl" color="text-amber-600" /> × {k}，就是 <b>{k} 个</b> <Fr n={n} d={d} size="text-xl" color="text-amber-600" /> 相加。
+                        </p>
+                    </Card>
+
+                    <Card>
+                        <StepDots step={step} labels={['一个是多少', `${k} 个连起来`, '数一共几份', '写成算式']} />
+
+                        {/* 步骤 0：先看清一份 */}
+                        {step === 0 && <div className="text-center">
+                            <p className="text-slate-500 mb-2">一杯果汁 <Fr n={n} d={d} size="text-lg" color="text-amber-600" /> 升 —— 整体平均分成 {d} 份，取 {n} 份</p>
+                            <div className="flex justify-center"><Bar den={d} filled={n} color={C.a} animKey={'s0'} /></div>
+                        </div>}
+
+                        {/* 步骤 1：k 条并排，强调"相同加数" */}
+                        {step === 1 && <div className="space-y-2">
+                            <p className="text-center text-slate-500 mb-3">{k} 杯，每杯都是 <Fr n={n} d={d} size="text-lg" color="text-amber-600" /> 升</p>
+                            {Array.from({ length: k }).map((_, i) => (
+                                <div key={i} className="flex items-center justify-center gap-3 fade-in" style={{ animationDelay: `${i * .12}s` }}>
+                                    <span className="w-16 text-right text-sm text-slate-400">第 {i + 1} 杯</span>
+                                    <Bar den={d} filled={n} color={C.a} width={260} height={34} animKey={'s1' + i} />
+                                </div>
+                            ))}
+                            <p className="text-center text-slate-600 pt-2 m-0">
+                                合起来就是 {Array.from({ length: k }).map((_, i) =>
+                                    <span key={i}><Fr n={n} d={d} size="text-base" color="text-amber-600" />{i < k - 1 ? ' + ' : ''}</span>)}
+                            </p>
+                        </div>}
+
+                        {/* 步骤 2：拼成一条长长条，数总份数 */}
+                        {step >= 2 && <div className="text-center">
+                            <p className="text-slate-500 mb-3">把 {k} 杯倒进同一个杯子：每一份还是原来那么大（<Fr n={1} d={d} size="text-base" color="text-slate-500" />），只是<b className="text-amber-700">份数变多了</b></p>
+                            <div className="flex justify-center flex-wrap gap-1">
+                                {Array.from({ length: k }).map((_, i) => (
+                                    <Bar key={i} den={d} filled={n} color={C.a} width={Math.min(300, 900 / k)} height={40} animKey={'s2' + i} />
+                                ))}
+                            </div>
+                            <p className="mt-3 text-slate-700">
+                                一共 <b className="text-amber-700 text-xl">{n} × {k} = {total}</b> 份，每份是 <Fr n={1} d={d} size="text-base" color="text-slate-500" />，
+                                所以是 <Fr n={total} d={d} size="text-xl" color="text-amber-600" />
+                                {wholes >= 1 && <> ＝ <Num n={total} d={d} color="text-emerald-700" size="text-xl" />（可以装满 {wholes} 杯）</>}
+                            </p>
+                        </div>}
+
+                        {/* 步骤 3：抽象出算法 */}
+                        {step >= 3 && <Note tone="emerald" className="mt-4">
+                            <div className="text-center fade-in">
+                                <div className="text-2xl flex items-center justify-center flex-wrap">
+                                    <Fr n={n} d={d} color="text-amber-600" /> × {k} =
+                                    <Fr n={`${n}×${k}`} d={d} color="text-emerald-700" /> =
+                                    <Fr n={total} d={d} color="text-emerald-700" />
+                                    {reduce(total, d)[1] !== d && <>= <Num n={total} d={d} color="text-emerald-700" /></>}
+                                </div>
+                                <p className="mt-3 mb-0 font-semibold">分数乘整数：<b>用分子乘整数，分母不变</b>，能约分的要约分。</p>
+                                <p className="mt-1 mb-0 text-sm text-emerald-800/80">道理：整数告诉我们「取几次」，所以只有份数（分子）变多，每份的大小（分母）没变。</p>
+                            </div>
+                        </Note>}
+
+                        <StepButtons step={step} setStep={setStep} max={3} />
+                    </Card>
+
+                    <Card className="mt-5">
+                        <p className="text-sm text-slate-500 mb-3 mt-0">🎚 自己调一调，看图和算式一起变：</p>
+                        <div className="space-y-3">
+                            <Slider label="分子 n" value={n} min={1} max={d} onChange={setN} />
+                            <Slider label="分母 d" value={d} min={2} max={12} onChange={v => { setD(v); setN(Math.min(n, v)); }} accent="accent-sky-500" valueColor="text-sky-600" />
+                            <Slider label="乘几倍 k" value={k} min={1} max={6} onChange={setK} accent="accent-violet-500" valueColor="text-violet-600" />
+                        </div>
+                    </Card>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ② 整数 × 分数 —— "求一个数的几分之几"（算子意义）
+        //   12 的 3/4：先把 12 平均分成 4 份（÷4），再取 3 份（×3）。
+        //   这是从"连加"跨到"算子"的关键一步：日本教材用数直线图 (双数轴)，
+        //   新加坡用 bar model 分段，这里两者结合。
+        // ======================================================================
+        const IntTimesFrac = () => {
+            const [whole, setWhole] = useState(12), [n, setN] = useState(3), [d, setD] = useState(4);
+            const [step, setStep] = useState(0);
+            const per = whole / d;           // 每份多少（可能不是整数）
+            const result = per * n;
+            const fmt = x => Number.isInteger(x) ? x : (Math.round(x * 100) / 100);
+
+            const BOX = 30, GAP = 4;
+            const perRow = Math.min(whole, 12);
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0 leading-relaxed">
+                            <b className="text-violet-700">求一个数的几分之几</b>，用<b>乘法</b>。
+                            「{whole} 的 <Fr n={n} d={d} size="text-xl" color="text-violet-600" />」写成 {whole} × <Fr n={n} d={d} size="text-xl" color="text-violet-600" />。
+                            <br /><span className="text-slate-500 text-base">这里的分数不再是「加几次」，而是一个<b>算子</b>：先平均分，再取几份。</span>
+                        </p>
+                    </Card>
+
+                    <Card>
+                        <StepDots step={step} labels={[`看整体 ${whole}`, `平均分成 ${d} 份`, `取其中 ${n} 份`, '写成算式']} />
+
+                        {/* 离散量：小圆点，最贴近"12个苹果"的现实情境 */}
+                        <div className="flex justify-center mb-4">
+                            <svg width={perRow * (BOX + GAP)} height={Math.ceil(whole / perRow) * (BOX + GAP) + 26} className="max-w-full overflow-visible">
+                                {Array.from({ length: whole }).map((_, i) => {
+                                    const groupIdx = Math.floor(i / per);           // 属于第几份
+                                    const picked = step >= 2 && groupIdx < n;
+                                    const grouped = step >= 1;
+                                    return <circle key={i} className="piece-in smooth" style={{ animationDelay: `${i * .02}s` }}
+                                        cx={(i % perRow) * (BOX + GAP) + BOX / 2} cy={Math.floor(i / perRow) * (BOX + GAP) + BOX / 2} r={BOX / 2 - 2}
+                                        fill={picked ? C.b : grouped ? (groupIdx % 2 ? '#e2e8f0' : '#f1f5f9') : C.aSoft}
+                                        stroke={picked ? C.bLine : C.line} strokeWidth="2" />;
+                                })}
+                                {/* 分组的分隔线 */}
+                                {step >= 1 && Number.isInteger(per) && Array.from({ length: d - 1 }).map((_, i) => {
+                                    const at = (i + 1) * per;
+                                    if (at % perRow !== 0) return <line key={'d' + i} x1={(at % perRow) * (BOX + GAP) - GAP / 2} y1={Math.floor(at / perRow) * (BOX + GAP)}
+                                        x2={(at % perRow) * (BOX + GAP) - GAP / 2} y2={Math.floor(at / perRow) * (BOX + GAP) + BOX} stroke={C.hot} strokeWidth="2.5" />;
+                                    return null;
+                                })}
+                            </svg>
+                        </div>
+
+                        {/* 数直线图（日本式）：上轴是量，下轴是分数 */}
+                        <div className="flex justify-center mb-4">
+                            <svg width="480" height="92" viewBox="0 0 480 92" className="max-w-full">
+                                <line x1="20" y1="34" x2="460" y2="34" stroke={C.strong} strokeWidth="2.5" />
+                                {Array.from({ length: d + 1 }).map((_, i) => {
+                                    const x = 20 + (440 / d) * i;
+                                    const on = step >= 2 && i === n;
+                                    return <g key={i}>
+                                        <line x1={x} y1={28} x2={x} y2={40} stroke={on ? C.hot : C.strong} strokeWidth={on ? 3 : 2} />
+                                        {step >= 1 && <text x={x} y={20} textAnchor="middle" fontSize="13" fill={on ? C.hot : '#64748b'} fontWeight={on ? 700 : 400}>{fmt(per * i)}</text>}
+                                        {step >= 1 && <text x={x} y={58} textAnchor="middle" fontSize="12" fill={on ? C.b : '#94a3b8'}>{i === 0 ? '0' : i === d ? '1' : `${i}/${d}`}</text>}
+                                    </g>;
+                                })}
+                                {step === 0 && <text x="240" y="20" textAnchor="middle" fontSize="14" fill={C.aLine} fontWeight="700">{whole}（整体 = 1）</text>}
+                                {step >= 2 && <rect x="20" y="30" width={(440 / d) * n} height="8" fill={C.b} opacity=".35" className="fade-in" />}
+                                <text x="20" y="86" fontSize="12" fill="#94a3b8">数量</text>
+                                <text x="440" y="86" fontSize="12" fill="#94a3b8" textAnchor="end">分数（把 {whole} 看作 1）</text>
+                            </svg>
+                        </div>
+
+                        {step === 1 && <Note tone="amber"><p className="m-0 text-center">平均分成 {d} 份 → 每份是 <b>{whole} ÷ {d} = {fmt(per)}</b>。这一步就是<b>分母在起作用</b>。</p></Note>}
+                        {step >= 2 && <Note tone="violet" className="fade-in">
+                            <div className="text-center">
+                                <p className="m-0">取这样的 {n} 份 → <b>{fmt(per)} × {n} = {fmt(result)}</b>。这一步是<b>分子在起作用</b>。</p>
+                            </div>
+                        </Note>}
+
+                        {step >= 3 && <Note tone="emerald" className="mt-4">
+                            <div className="text-center fade-in">
+                                <div className="text-2xl flex items-center justify-center flex-wrap">
+                                    {whole} × <Fr n={n} d={d} color="text-violet-600" /> =
+                                    <Fr n={`${whole}×${n}`} d={d} color="text-emerald-700" /> =
+                                    <Fr n={whole * n} d={d} color="text-emerald-700" /> =
+                                    <Num n={whole * n} d={d} color="text-emerald-700" />
+                                </div>
+                                <p className="mt-3 mb-0 font-semibold">先 ÷ 分母（平均分），再 × 分子（取几份）—— 两步合起来就是乘以这个分数。</p>
+                            </div>
+                        </Note>}
+
+                        <StepButtons step={step} setStep={setStep} max={3} />
+                    </Card>
+
+                    <Card className="mt-5">
+                        <p className="text-sm text-slate-500 mb-3 mt-0">🎚 换个数试试（挑 {d} 能整除的整体，分得最整齐）：</p>
+                        <div className="space-y-3">
+                            <Slider label="整体是多少" value={whole} min={1} max={24} onChange={setWhole} />
+                            <Slider label="分母 · 分几份" value={d} min={2} max={8} onChange={v => { setD(v); setN(Math.min(n, v)); }} accent="accent-sky-500" valueColor="text-sky-600" />
+                            <Slider label="分子 · 取几份" value={n} min={1} max={d} onChange={setN} accent="accent-violet-500" valueColor="text-violet-600" />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-3 mb-0">💡 试试 {whole} 不能被 {d} 整除的情况（比如 10 的 3/4）：每份不是整数，但算式一样成立。</p>
+                    </Card>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ③ 分数 × 分数 —— 面积模型（折纸）
+        //   一张纸横着折出 c/d（沿高度），竖着折出 a/b（沿宽度），两次都涂到的地方就是积。
+        //   小格总数 = b×d（分母相乘的来源），重叠格数 = a×c（分子相乘的来源）。
+        //   这是全世界教材公认解释"分子乘分子、分母乘分母"最有力的模型。
+        // ======================================================================
+        const FracTimesFrac = () => {
+            const [a, setA] = useState(2), [b, setB] = useState(3);   // 第一个分数 a/b（横向）
+            const [c, setC] = useState(3), [d, setD] = useState(4);   // 第二个分数 c/d（纵向）
+            const [step, setStep] = useState(0);
+            const S = 300;
+            const cellW = S / b, cellH = S / d;
+            const [rn, rd] = reduce(a * c, b * d);
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0 leading-relaxed">
+                            <b className="text-emerald-700">分数 × 分数</b> 就是「求一个分数的几分之几」。
+                            <Fr n={c} d={d} size="text-xl" color="text-violet-600" /> × <Fr n={a} d={b} size="text-xl" color="text-amber-600" />
+                            ，意思是：先取整张纸的 <Fr n={c} d={d} size="text-lg" color="text-violet-600" />，再取它的 <Fr n={a} d={b} size="text-lg" color="text-amber-600" />。
+                        </p>
+                    </Card>
+
+                    <div className="grid lg:grid-cols-2 gap-5">
+                        <Card>
+                            {/* c/d 画成横条（沿高度方向取），a/b 画成竖条（沿宽度方向取），标签必须与图形一致 */}
+                            <StepDots step={step} labels={['整张纸', `横折取 ${c}/${d}`, `竖折取 ${a}/${b}`, '数重叠格']} />
+                            <div className="flex justify-center">
+                                <svg width={S + 46} height={S + 46} viewBox={`0 0 ${S + 46} ${S + 46}`} className="max-w-full overflow-visible">
+                                    <g transform="translate(40, 6)">
+                                        {/* 底色 */}
+                                        <rect x="0" y="0" width={S} height={S} fill={C.empty} stroke={C.strong} strokeWidth="3" />
+
+                                        {/* 第一次折：纵向取 c/d（横条），紫色 */}
+                                        {step >= 1 && <rect className="fade-in" x="0" y="0" width={S} height={cellH * c} fill={C.b} opacity=".33" />}
+
+                                        {/* 第二次折：横向取 a/b（竖条），琥珀色 */}
+                                        {step >= 2 && <rect className="fade-in" x="0" y="0" width={cellW * a} height={S} fill={C.a} opacity=".38" />}
+
+                                        {/* 重叠区 = 积 */}
+                                        {step >= 3 && <rect className="fade-in" x="0" y="0" width={cellW * a} height={cellH * c} fill={C.both} opacity=".62" />}
+
+                                        {/* 网格线：第 3 步把两个方向的线都画全，露出 b×d 个小格 */}
+                                        {step >= 2 && Array.from({ length: b - 1 }).map((_, i) =>
+                                            <line key={'v' + i} className="new-cut" x1={(i + 1) * cellW} y1="0" x2={(i + 1) * cellW} y2={S} stroke={C.aLine} strokeWidth="1.6" opacity=".55" />)}
+                                        {step >= 1 && Array.from({ length: d - 1 }).map((_, i) =>
+                                            <line key={'h' + i} className="new-cut" x1="0" y1={(i + 1) * cellH} x2={S} y2={(i + 1) * cellH} stroke={C.bLine} strokeWidth="1.6" opacity=".55" />)}
+
+                                        {/* 重叠格描边，方便一格一格数 */}
+                                        {step >= 3 && Array.from({ length: a * c }).map((_, i) => {
+                                            const col = i % a, row = Math.floor(i / a);
+                                            return <rect key={'o' + i} className="piece-in" style={{ animationDelay: `${i * .05}s` }}
+                                                x={col * cellW} y={row * cellH} width={cellW} height={cellH}
+                                                fill="none" stroke="#065f46" strokeWidth="2.5" />;
+                                        })}
+                                        <rect x="0" y="0" width={S} height={S} fill="none" stroke={C.strong} strokeWidth="3" />
+
+                                        {/* 边上的刻度标注 */}
+                                        {step >= 2 && <text x={cellW * a / 2} y={S + 20} textAnchor="middle" fontSize="15" fill={C.aLine} fontWeight="700">{a}/{b} 宽</text>}
+                                    </g>
+                                    {step >= 1 && <text x="30" y={6 + cellH * c / 2} textAnchor="end" fontSize="15" fill={C.bLine} fontWeight="700">
+                                        <tspan x="34" dy="-6">{c}/{d}</tspan><tspan x="34" dy="16">高</tspan>
+                                    </text>}
+                                </svg>
+                            </div>
+                        </Card>
+
+                        <div className="space-y-4">
+                            {step === 0 && <Note tone="slate"><p className="m-0">这是<b>一整张纸</b>，我们把它看作 <b>1</b>。下面要折两次。</p></Note>}
+                            {step === 1 && <Note tone="violet"><p className="m-0">横着折 —— 把整张纸平均分成 <b>{d}</b> 条，取其中 <b>{c}</b> 条，紫色部分就是 <Fr n={c} d={d} size="text-base" color="text-violet-700" />。</p></Note>}
+                            {step === 2 && <Note tone="amber"><p className="m-0">再竖着折 —— 把整张纸平均分成 <b>{b}</b> 条，取其中 <b>{a}</b> 条，琥珀色部分是 <Fr n={a} d={b} size="text-base" color="text-amber-700" />。<br />现在整张纸被切成了 <b>{b} × {d} = {b * d}</b> 个小格，每格是 <Fr n={1} d={b * d} size="text-base" color="text-amber-700" />。</p></Note>}
+                            {step >= 3 && <>
+                                <Note tone="emerald">
+                                    <p className="m-0"><b>两种颜色都涂到</b>的深绿部分，就是「<Fr n={c} d={d} size="text-base" color="text-violet-700" /> 的 <Fr n={a} d={b} size="text-base" color="text-amber-700" />」。</p>
+                                    <p className="mt-2 mb-0">数一数：深绿有 <b>{a} × {c} = {a * c}</b> 格，整张纸一共 <b>{b} × {d} = {b * d}</b> 格。</p>
+                                </Note>
+                                <Note tone="emerald">
+                                    <div className="text-center">
+                                        <div className="text-2xl flex items-center justify-center flex-wrap">
+                                            <Fr n={a} d={b} color="text-amber-600" /> × <Fr n={c} d={d} color="text-violet-600" /> =
+                                            <Fr n={`${a}×${c}`} d={`${b}×${d}`} color="text-emerald-700" /> =
+                                            <Fr n={a * c} d={b * d} color="text-emerald-700" />
+                                            {(rd !== b * d) && <>= <Fr n={rn} d={rd} color="text-emerald-700" /></>}
+                                        </div>
+                                        <p className="mt-3 mb-0 font-semibold">分子乘分子，分母乘分母。</p>
+                                    </div>
+                                </Note>
+                                <Note tone="sky">
+                                    <p className="m-0 text-sm"><b>为什么分母要相乘？</b> 因为横竖各切一刀后，每一小格是「{d} 份中的一份，再分成 {b} 小份」，所以整张纸有 {b}×{d} 个小格 —— 分母相乘正是在数<b>小格总数</b>。</p>
+                                </Note>
+                            </>}
+                            <Card>
+                                <p className="text-sm text-slate-500 mb-3 mt-0">🎚 改一改两个分数：</p>
+                                <div className="space-y-2.5">
+                                    <Slider label="① 分子 a" value={a} min={1} max={b} onChange={setA} />
+                                    <Slider label="① 分母 b" value={b} min={2} max={8} onChange={v => { setB(v); setA(Math.min(a, v)); }} accent="accent-orange-500" valueColor="text-orange-600" />
+                                    <Slider label="② 分子 c" value={c} min={1} max={d} onChange={setC} accent="accent-violet-500" valueColor="text-violet-600" />
+                                    <Slider label="② 分母 d" value={d} min={2} max={8} onChange={v => { setD(v); setC(Math.min(c, v)); }} accent="accent-purple-500" valueColor="text-purple-600" />
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                    <div className="mt-5"><StepButtons step={step} setStep={setStep} max={3} /></div>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ④ 越乘越小？—— 把乘数和 1 比
+        //   破除"乘法一定让数变大"的顽固误概念（CCSS 5.NF.B.5 明确要求）。
+        //   同一根长条，只改乘数，看积落在原数的哪一侧。
+        // ======================================================================
+        const CompareToOne = () => {
+            const [n, setN] = useState(3), [d, setD] = useState(4);
+            const base = 12;                    // 被乘数固定为 12，便于口算比较
+            const result = base * n / d;
+            const cmp = n < d ? 'less' : n === d ? 'equal' : 'more';
+            const W = 420;
+            const maxVal = Math.max(base, result) * 1.15;
+
+            const CASES = [
+                { n: 1, d: 4, label: '1/4（小于1）' },
+                { n: 3, d: 4, label: '3/4（小于1）' },
+                { n: 4, d: 4, label: '4/4 = 1' },
+                { n: 5, d: 4, label: '5/4（大于1）' },
+                { n: 8, d: 4, label: '8/4 = 2' }
+            ];
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0">很多同学以为「乘法一定让数变大」。分数乘法里<b className="text-rose-600">不是这样</b>。
+                        到底变大还是变小，只要看<b>乘数和 1 比谁大</b>。</p>
+                    </Card>
+
+                    <Card>
+                        <div className="flex justify-center mb-5">
+                            <svg width={W + 20} height="150" viewBox={`0 0 ${W + 20} 150`} className="max-w-full">
+                                {/* 原数长条 */}
+                                <text x="0" y="16" fontSize="13" fill="#64748b">原来的数 {base}</text>
+                                <rect x="0" y="24" width={W * base / maxVal} height="34" fill={C.a} opacity=".5" stroke={C.aLine} strokeWidth="2" />
+                                {/* 积长条 */}
+                                <text x="0" y="86" fontSize="13" fill="#64748b">乘 {n}/{d} 以后</text>
+                                <rect className="smooth" x="0" y="94" width={W * result / maxVal} height="34"
+                                    fill={cmp === 'less' ? C.b : cmp === 'equal' ? '#94a3b8' : C.both} opacity=".55"
+                                    stroke={cmp === 'less' ? C.bLine : cmp === 'equal' ? '#64748b' : '#047857'} strokeWidth="2" />
+                                {/* 原数位置的参照虚线 */}
+                                <line x1={W * base / maxVal} y1="18" x2={W * base / maxVal} y2="136" stroke={C.hot} strokeWidth="2" strokeDasharray="5 4" />
+                                <text x={W * base / maxVal + 6} y="146" fontSize="12" fill={C.hot}>原数位置</text>
+                                <text x={W * result / maxVal - 6} y="117" textAnchor="end" fontSize="16" fontWeight="700" fill="#fff">{Math.round(result * 100) / 100}</text>
+                            </svg>
+                        </div>
+
+                        <div className="flex flex-wrap justify-center gap-2 mb-4">
+                            {CASES.map(x => <button key={x.label} onClick={() => { setN(x.n); setD(x.d); }}
+                                className={`px-3 py-2 rounded-xl border smooth ${n === x.n && d === x.d ? 'bg-slate-800 text-white border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}>{x.label}</button>)}
+                        </div>
+
+                        <div className="space-y-3 max-w-md mx-auto">
+                            <Slider label="乘数分子" value={n} min={1} max={12} onChange={setN} accent="accent-violet-500" valueColor="text-violet-600" />
+                            <Slider label="乘数分母" value={d} min={1} max={12} onChange={setD} accent="accent-sky-500" valueColor="text-sky-600" />
+                        </div>
+
+                        <div className="mt-5">
+                            {cmp === 'less' && <Note tone="violet"><p className="m-0 text-center text-lg">
+                                <Fr n={n} d={d} size="text-lg" color="text-violet-700" /> <b>小于 1</b> → 只取了原数的一部分 → 积 <b>比原数小</b>：{base} × {n}/{d} = {Math.round(result * 100) / 100} &lt; {base}
+                            </p></Note>}
+                            {cmp === 'equal' && <Note tone="slate"><p className="m-0 text-center text-lg">
+                                <Fr n={n} d={d} size="text-lg" /> <b>等于 1</b> → 原封不动 → 积 <b>等于原数</b>：{base} × 1 = {base}
+                            </p></Note>}
+                            {cmp === 'more' && <Note tone="emerald"><p className="m-0 text-center text-lg">
+                                <Fr n={n} d={d} size="text-lg" color="text-emerald-700" /> <b>大于 1</b> → 比一整份还多 → 积 <b>比原数大</b>：{base} × {n}/{d} = {Math.round(result * 100) / 100} &gt; {base}
+                            </p></Note>}
+                        </div>
+
+                        <Note tone="amber" className="mt-4">
+                            <p className="m-0 font-semibold">📌 一句话记住（不用算就能判断）：</p>
+                            <ul className="mt-2 mb-0 text-sm space-y-1">
+                                <li>乘数 <b>&lt; 1</b> → 积 &lt; 被乘数（缩小）</li>
+                                <li>乘数 <b>= 1</b> → 积 = 被乘数（不变）</li>
+                                <li>乘数 <b>&gt; 1</b> → 积 &gt; 被乘数（放大）</li>
+                            </ul>
+                            <p className="mt-2 mb-0 text-sm">除法正好反过来：除以小于 1 的数，商反而<b>变大</b>。下一节用「里面有几个」就能看明白。</p>
+                        </Note>
+                    </Card>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ⑤ 分数 ÷ 整数 —— 平均分（等分除）
+        //   3/4 张饼平均分给 2 人：把已有的 3 份再各自平分，份变小(分母变大)。
+        //   两种看法都要给：(a÷k)/b 当 a 能整除 k；否则把每份再切 k 小份 → a/(b×k)。
+        //   最后指出 ÷k 与 ×1/k 结果相同 —— 为倒数埋线索。
+        // ======================================================================
+        const FracDivInt = () => {
+            const [n, setN] = useState(3), [d, setD] = useState(4), [k, setK] = useState(2);
+            const [step, setStep] = useState(0);
+            const divisible = n % k === 0;
+            const [rn, rd] = reduce(n, d * k);
+            const W = 400, H = 90;
+            const segW = W / d;
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0 leading-relaxed">
+                            <b className="text-sky-700">分数 ÷ 整数</b>：把已经有的这些份，<b>再平均分给几个人</b>，求每人得多少。
+                            <br /><span className="text-slate-500 text-base">情境：有 <Fr n={n} d={d} size="text-lg" color="text-amber-600" /> 张饼，平均分给 {k} 个人，每人分到几分之几张？</span>
+                        </p>
+                    </Card>
+
+                    <Card>
+                        <StepDots step={step} labels={['原来有多少', divisible ? `${n} 份分成 ${k} 堆` : `每份再切 ${k} 小份`, '每人得多少', '发现规律']} />
+
+                        <div className="flex justify-center mb-4">
+                            <svg width={W + 8} height={H} viewBox={`0 0 ${W + 8} ${H}`} className="max-w-full overflow-visible">
+                                <g transform="translate(4,10)">
+                                    {/* 原始的 d 等分长条 */}
+                                    {Array.from({ length: d }).map((_, i) => (
+                                        <rect key={i} x={i * segW} y="0" width={segW} height="56"
+                                            fill={i < n ? C.a : C.empty} opacity={i < n ? .55 : 1} stroke={C.line} strokeWidth="1.5" />
+                                    ))}
+
+                                    {/* 第 1 步：细分线 —— 每一大份再切 k 小份（不整除时的通用做法） */}
+                                    {step >= 1 && !divisible && Array.from({ length: d * k }).map((_, i) =>
+                                        (i % k !== 0) && <line key={'f' + i} className="new-cut" x1={i * segW / k} y1="0" x2={i * segW / k} y2="56" stroke={C.bLine} strokeWidth="1.4" opacity=".65" />)}
+
+                                    {/* 第 2 步：给"第一个人"分到的部分上色 */}
+                                    {step >= 2 && (divisible
+                                        ? <rect className="fade-in" x="0" y="0" width={segW * (n / k)} height="56" fill={C.both} opacity=".6" />
+                                        : <rect className="fade-in" x="0" y="0" width={(segW / k) * n} height="56" fill={C.both} opacity=".6" />)}
+
+                                    {/* 分堆的红色分隔线：把 n 份平均分成 k 堆 */}
+                                    {step >= 1 && Array.from({ length: k - 1 }).map((_, i) => {
+                                        const x = (segW * n / k) * (i + 1);
+                                        return <line key={'k' + i} x1={x} y1="-6" x2={x} y2="62" stroke={C.hot} strokeWidth="2.5" strokeDasharray="5 4" />;
+                                    })}
+
+                                    <rect x="0" y="0" width={W} height="56" fill="none" stroke={C.strong} strokeWidth="2.5" />
+                                    {step >= 2 && <text x={(divisible ? segW * (n / k) : (segW / k) * n) / 2} y="76" textAnchor="middle" fontSize="14" fill="#047857" fontWeight="700">第 1 个人</text>}
+                                </g>
+                            </svg>
+                        </div>
+
+                        {step === 0 && <Note tone="amber"><p className="m-0 text-center">整张饼平均分成 {d} 份，现在有涂色的 {n} 份，也就是 <Fr n={n} d={d} size="text-base" color="text-amber-700" /> 张。</p></Note>}
+
+                        {step === 1 && (divisible
+                            ? <Note tone="sky"><p className="m-0 text-center">{n} 份正好能平均分成 {k} 堆，每堆 <b>{n} ÷ {k} = {n / k}</b> 份。份的大小没变，还是 <Fr n={1} d={d} size="text-base" color="text-sky-700" />。</p></Note>
+                            : <Note tone="sky"><p className="m-0 text-center">{n} 份不能直接平均分成 {k} 堆，那就<b>把每一份再切成 {k} 小份</b>。现在整张饼有 <b>{d} × {k} = {d * k}</b> 小份，原来的 {n} 份变成了 <b>{n * k}</b> 小份，正好能分成 {k} 堆。</p></Note>)}
+
+                        {step >= 2 && <Note tone="emerald" className="fade-in">
+                            <p className="m-0 text-center text-lg">每人分到 <Fr n={rn} d={rd} color="text-emerald-700" size="text-xl" /> 张饼。</p>
+                        </Note>}
+
+                        {step >= 3 && <Note tone="emerald" className="mt-4">
+                            <div className="text-center fade-in">
+                                <div className="text-xl flex items-center justify-center flex-wrap mb-3">
+                                    <Fr n={n} d={d} color="text-amber-600" /> ÷ {k} =
+                                    <Fr n={n} d={`${d}×${k}`} color="text-emerald-700" /> =
+                                    <Fr n={n} d={d * k} color="text-emerald-700" />
+                                    {rd !== d * k && <>= <Fr n={rn} d={rd} color="text-emerald-700" /></>}
+                                </div>
+                                <p className="mb-2 font-semibold">分数除以整数（0 除外）：<b>分母乘这个整数，分子不变</b>。</p>
+                                <div className="rounded-xl bg-white/70 border border-emerald-200 p-3 inline-block">
+                                    <p className="m-0 text-sm">👀 请注意这个巧合：
+                                        <span className="inline-flex items-center"><Fr n={n} d={d} size="text-base" color="text-amber-600" /> ÷ {k}</span> 和
+                                        <span className="inline-flex items-center"><Fr n={n} d={d} size="text-base" color="text-amber-600" /> × <Fr n={1} d={k} size="text-base" color="text-violet-600" /></span>
+                                        <b> 结果一模一样</b>。</p>
+                                    <p className="mt-1 mb-0 text-sm">「÷ {k}」= 「× <Fr n={1} d={k} size="text-sm" color="text-violet-600" />」—— 这就是<b>倒数</b>的第一次露面。</p>
+                                </div>
+                            </div>
+                        </Note>}
+
+                        <StepButtons step={step} setStep={setStep} max={3} />
+                    </Card>
+
+                    <Card className="mt-5">
+                        <div className="space-y-3">
+                            <Slider label="分子 n" value={n} min={1} max={d} onChange={setN} />
+                            <Slider label="分母 d" value={d} min={2} max={10} onChange={v => { setD(v); setN(Math.min(n, v)); }} accent="accent-sky-500" valueColor="text-sky-600" />
+                            <Slider label="分给几人 k" value={k} min={2} max={6} onChange={setK} accent="accent-violet-500" valueColor="text-violet-600" />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-3 mb-0">💡 对比试试：3/4÷2（分子能整除）和 3/4÷5（分子不能整除）—— 后者必须先把每份再切细。</p>
+                    </Card>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ⑥ 包含除 —— "里面有几个"（关键模型）
+        //   3/4 ÷ 1/8：3/4 里面能装下几个 1/8？在长条上一段一段量过去。
+        //   这是唯一能让学生"看见"商为什么会变大的模型，也是推出倒数的入口。
+        // ======================================================================
+        const MeasurementDiv = () => {
+            const [an, setAn] = useState(3), [ad, setAd] = useState(4);   // 被除数 an/ad
+            const [bn, setBn] = useState(1), [bd, setBd] = useState(8);   // 除数 bn/bd
+            const [shown, setShown] = useState(0);                        // 已经"量"了几段（学生点击加）
+
+            const A = an / ad, B = bn / bd;
+            const exact = A / B;
+            const full = Math.floor(exact + 1e-9);
+            const rest = exact - full;
+            const W = 480, H = 54;
+
+            // 通分到公分母，让两个量都能用同一种小格表示（这正是通分法的图形依据）
+            const common = ad * bd / gcd(ad, bd);
+            const aCells = an * (common / ad), bCells = bn * (common / bd);
+
+            useEffect(() => { setShown(0); }, [an, ad, bn, bd]);
+            const maxSteps = Math.ceil(exact - 1e-9);
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0 leading-relaxed">
+                            除法还有一种意思叫<b className="text-rose-600">包含除</b>：<b>一个数里面包含几个另一个数</b>。
+                            <br /><span className="text-slate-500 text-base">情境：有 <Fr n={an} d={ad} size="text-lg" color="text-amber-600" /> 升果汁，每 <Fr n={bn} d={bd} size="text-lg" color="text-violet-600" /> 升装一瓶，能装几瓶？→ <Fr n={an} d={ad} size="text-base" color="text-amber-600" /> ÷ <Fr n={bn} d={bd} size="text-base" color="text-violet-600" /></span>
+                        </p>
+                    </Card>
+
+                    <Card>
+                        <p className="text-center text-slate-500 text-sm mb-3">👇 点「再装一瓶」，一瓶一瓶地量过去，数一数能装几瓶</p>
+                        <div className="flex justify-center mb-4">
+                            <svg width={W + 10} height={H + 46} viewBox={`0 0 ${W + 10} ${H + 46}`} className="max-w-full overflow-visible">
+                                <g transform="translate(5,8)">
+                                    {/* 被除数长条：按公分母切成小格 */}
+                                    {Array.from({ length: common }).map((_, i) => (
+                                        <rect key={i} x={i * W / common} y="0" width={W / common} height={H}
+                                            fill={i < aCells ? C.a : C.empty} opacity={i < aCells ? .3 : 1}
+                                            stroke={C.line} strokeWidth="1" />
+                                    ))}
+                                    {/* 已量出的每一瓶 */}
+                                    {Array.from({ length: Math.min(shown, maxSteps) }).map((_, i) => {
+                                        const startCell = i * bCells;
+                                        const w = Math.min(bCells, aCells - startCell) * W / common;
+                                        const partial = (startCell + bCells) > aCells;
+                                        return <g key={'b' + i}>
+                                            <rect className="piece-in" x={startCell * W / common} y="0" width={w} height={H}
+                                                fill={partial ? '#fca5a5' : C.b} opacity=".62" stroke={partial ? C.hot : C.bLine} strokeWidth="2.5" />
+                                            <text x={startCell * W / common + w / 2} y={H / 2 + 6} textAnchor="middle" fontSize="14" fill="#fff" fontWeight="700">{partial ? '?' : i + 1}</text>
+                                        </g>;
+                                    })}
+                                    {/* 被除数的边界 */}
+                                    <rect x="0" y="0" width={aCells * W / common} height={H} fill="none" stroke={C.aLine} strokeWidth="3" />
+                                    <text x={aCells * W / common / 2} y={H + 22} textAnchor="middle" fontSize="14" fill={C.aLine} fontWeight="700">一共 {an}/{ad} 升</text>
+                                    {/* 整体 1 的参考线 */}
+                                    <line x1={W} y1="-4" x2={W} y2={H + 4} stroke={C.strong} strokeWidth="2" strokeDasharray="4 3" />
+                                    <text x={W} y={H + 40} textAnchor="end" fontSize="12" fill="#94a3b8">1 升</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <div className="flex justify-center gap-3 mb-4">
+                            <button onClick={() => setShown(Math.max(0, shown - 1))} disabled={shown === 0}
+                                className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50 smooth">← 退回</button>
+                            <button onClick={() => setShown(Math.min(maxSteps, shown + 1))} disabled={shown >= maxSteps}
+                                className="px-6 py-2.5 rounded-xl bg-violet-600 text-white disabled:opacity-40 hover:bg-violet-700 shadow smooth">再装一瓶 →</button>
+                            <button onClick={() => setShown(0)} className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">↻</button>
+                        </div>
+
+                        {shown > 0 && shown < maxSteps && <Note tone="violet"><p className="m-0 text-center">已经装了 <b>{shown}</b> 瓶，还有剩的，继续装。</p></Note>}
+
+                        {shown >= maxSteps && maxSteps > 0 && <Note tone="emerald" className="fade-in">
+                            <div className="text-center">
+                                {Number.isInteger(exact)
+                                    ? <p className="m-0 text-lg">正好装满 <b className="text-2xl">{exact}</b> 瓶 —— <Fr n={an} d={ad} size="text-lg" color="text-amber-600" /> 里面正好有 <b>{exact}</b> 个 <Fr n={bn} d={bd} size="text-lg" color="text-violet-600" />。</p>
+                                    : <p className="m-0 text-lg">装满 <b>{full}</b> 瓶，剩下的不够一瓶 —— 只有一瓶的
+                                        <Fr n={reduce(an * bd - full * ad * bn, ad * bn)[0]} d={reduce(an * bd - full * ad * bn, ad * bn)[1]} size="text-base" color="text-rose-600" />
+                                        ，合起来是 <Num n={an * bd} d={ad * bn} color="text-emerald-700" size="text-xl" /> 瓶。</p>}
+                                <div className="text-2xl mt-3 flex items-center justify-center flex-wrap">
+                                    <Fr n={an} d={ad} color="text-amber-600" /> ÷ <Fr n={bn} d={bd} color="text-violet-600" /> =
+                                    <Num n={an * bd} d={ad * bn} color="text-emerald-700" />
+                                </div>
+                            </div>
+                        </Note>}
+
+                        <Note tone="sky" className="mt-4">
+                            <p className="m-0 text-sm"><b>看见了吗？</b>除数 <Fr n={bn} d={bd} size="text-sm" color="text-violet-700" /> {B < 1 ? <>比 1 <b>小</b>，每瓶装得少，所以<b>瓶数比原来的升数还多</b> —— 商变大了。这一点在整数除法里从没见过。</> : <>比 1 大，每瓶装得多，所以瓶数比升数少。</>}</p>
+                        </Note>
+
+                        <div className="grid md:grid-cols-2 gap-x-8 gap-y-3 mt-5">
+                            <Slider label="被除数分子" value={an} min={1} max={12} onChange={setAn} />
+                            <Slider label="除数分子" value={bn} min={1} max={bd} onChange={setBn} accent="accent-violet-500" valueColor="text-violet-600" />
+                            <Slider label="被除数分母" value={ad} min={1} max={12} onChange={setAd} accent="accent-orange-500" valueColor="text-orange-600" />
+                            <Slider label="除数分母" value={bd} min={1} max={12} onChange={v => { setBd(v); setBn(Math.min(bn, v)); }} accent="accent-purple-500" valueColor="text-purple-600" />
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                            <span className="text-sm text-slate-400 self-center">经典例子：</span>
+                            {[[3, 4, 1, 8], [1, 1, 1, 4], [3, 4, 1, 4], [2, 3, 1, 6], [5, 6, 1, 2]].map((x, i) =>
+                                <button key={i} onClick={() => { setAn(x[0]); setAd(x[1]); setBn(x[2]); setBd(x[3]); }}
+                                    className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-violet-300 smooth text-sm">
+                                    {x[0]}/{x[1]} ÷ {x[2]}/{x[3]}
+                                </button>)}
+                        </div>
+                    </Card>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ⑦ 为什么"颠倒相乘" —— 三条推理路径，任选其一都能说服自己
+        //   路径 A（倒数的意义）：先看 ÷(1/n) = ×n，用包含除数格子。
+        //   路径 B（商不变性质）：分子分母同乘除数的倒数，分母变成 1。
+        //   路径 C（乘除互逆）：验算——商 × 除数 应该还原成被除数。
+        //   坚决不让学生只背"除以一个数等于乘它的倒数"。
+        // ======================================================================
+        const WhyInvert = () => {
+            const [path, setPath] = useState('A');
+            const [an, setAn] = useState(3), [ad, setAd] = useState(4);
+            const [bn, setBn] = useState(2), [bd, setBd] = useState(3);
+            const [step, setStep] = useState(0);
+            useEffect(() => { setStep(0); }, [path, an, ad, bn, bd]);
+
+            const [qn, qd] = reduce(an * bd, ad * bn);
+            const W = 420;
+
+            // 路径 A 用的专门例子：÷(1/n) —— 一个整体里有几个 1/n
+            const [nA, setNA] = useState(4);
+
+            const PATHS = [
+                { id: 'A', label: 'A · 倒数是怎么来的', hint: '÷ 1/n 就是 × n', color: 'bg-violet-600' },
+                { id: 'B', label: 'B · 用商不变性质推', hint: '把除数变成 1', color: 'bg-sky-600' },
+                { id: 'C', label: 'C · 用乘除互逆验证', hint: '商 × 除数 = 被除数', color: 'bg-emerald-600' }
+            ];
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0">「除以一个分数，等于乘这个分数的倒数」——
+                        这句话<b className="text-rose-600">不能只当口诀背</b>。下面三条路，每条都能让你看明白它是怎么来的。</p>
+                    </Card>
+
+                    <nav className="grid md:grid-cols-3 gap-2 mb-5">
+                        {PATHS.map(p => <button key={p.id} onClick={() => setPath(p.id)}
+                            className={`p-3 rounded-xl border-2 text-left smooth ${path === p.id ? `${p.color} text-white border-transparent shadow` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
+                            <b className="block text-sm">{p.label}</b>
+                            <span className={`text-xs ${path === p.id ? 'text-white/80' : 'text-slate-400'}`}>{p.hint}</span>
+                        </button>)}
+                    </nav>
+
+                    {/* ---------- 路径 A：÷(1/n) = ×n ---------- */}
+                    {path === 'A' && <Card>
+                        <h3 className="mt-0 text-slate-800">先解决最简单的：1 ÷ <Fr n={1} d={nA} size="text-lg" color="text-violet-600" /> 等于几？</h3>
+                        <p className="text-slate-600">问题就是：<b>一个整体里，能装下几个 <Fr n={1} d={nA} size="text-base" color="text-violet-600" />？</b></p>
+                        <div className="flex justify-center my-4">
+                            <svg width={W + 10} height="92" viewBox={`0 0 ${W + 10} 92`} className="max-w-full">
+                                <g transform="translate(5,10)">
+                                    {Array.from({ length: nA }).map((_, i) => (
+                                        <g key={i}>
+                                            <rect className="piece-in" style={{ animationDelay: `${i * .07}s` }}
+                                                x={i * W / nA} y="0" width={W / nA} height="50" fill={C.b} opacity=".45" stroke={C.bLine} strokeWidth="2.5" />
+                                            <text x={i * W / nA + W / nA / 2} y="31" textAnchor="middle" fontSize="15" fill="#4c1d95" fontWeight="700">{i + 1}</text>
+                                        </g>
+                                    ))}
+                                    <rect x="0" y="0" width={W} height="50" fill="none" stroke={C.strong} strokeWidth="3" />
+                                    <text x={W / 2} y="72" textAnchor="middle" fontSize="14" fill="#64748b">整体 = 1，里面有 <tspan fontWeight="700" fill={C.bLine}>{nA}</tspan> 个 1/{nA}</text>
+                                </g>
+                            </svg>
+                        </div>
+                        <div className="max-w-sm mx-auto mb-4">
+                            <Slider label="分母 n" value={nA} min={2} max={10} onChange={setNA} accent="accent-violet-500" valueColor="text-violet-600" />
+                        </div>
+                        <Note tone="violet">
+                            <p className="m-0 text-center text-xl">1 ÷ <Fr n={1} d={nA} size="text-xl" color="text-violet-700" /> = <b>{nA}</b>　　也就是　1 × <b>{nA}</b> = {nA}</p>
+                            <p className="mt-2 mb-0 text-center">除以 <Fr n={1} d={nA} size="text-base" color="text-violet-700" /> 和乘 <b>{nA}</b> 结果相同。<b>{nA}</b> 就是 <Fr n={1} d={nA} size="text-base" color="text-violet-700" /> 的<b>倒数</b>。</p>
+                        </Note>
+                        <div className="mt-4">
+                            <Note tone="amber">
+                                <p className="m-0"><b>那 ÷ <Fr n={2} d={3} size="text-base" color="text-amber-700" /> 呢？</b> 分两小步就行：</p>
+                                <p className="mt-2 mb-0">÷ <Fr n={2} d={3} size="text-base" color="text-amber-700" /> ＝ 先 ÷ 2（每份变小一半），再 ÷ <Fr n={1} d={3} size="text-base" color="text-amber-700" />（也就是 × 3）
+                                    ＝ <b>× 3 ÷ 2</b> ＝ × <Fr n={3} d={2} size="text-base" color="text-emerald-700" />。</p>
+                                <p className="mt-2 mb-0 font-semibold">所以除以 <Fr n={2} d={3} size="text-base" /> 就是乘 <Fr n={3} d={2} size="text-base" color="text-emerald-700" /> —— 分子分母交换位置，这就是<b>倒数</b>。</p>
+                            </Note>
+                        </div>
+                        <Note tone="slate" className="mt-4">
+                            <p className="m-0 text-sm">📎 <b>倒数</b>：两个数相乘等于 1，它们互为倒数。<Fr n={2} d={3} size="text-sm" /> × <Fr n={3} d={2} size="text-sm" /> = <Fr n={6} d={6} size="text-sm" /> = 1。
+                            注意 <b>0 没有倒数</b>（没有哪个数乘 0 会等于 1），所以除数不能是 0。</p>
+                        </Note>
+                    </Card>}
+
+                    {/* ---------- 路径 B：商不变性质 ---------- */}
+                    {path === 'B' && <Card>
+                        <StepDots step={step} labels={['写成分数形式', '同乘除数的倒数', '分母变成 1', '得到结论']} />
+                        <p className="text-slate-600">用四年级学过的<b>商不变性质</b>：被除数和除数同时乘同一个数（0 除外），商不变。</p>
+
+                        <div className="my-6 text-center space-y-4">
+                            <div className="text-2xl flex items-center justify-center flex-wrap">
+                                <Fr n={an} d={ad} color="text-amber-600" /> ÷ <Fr n={bn} d={bd} color="text-violet-600" />
+                                <span className="mx-2 text-slate-400">写成</span>
+                                <span className="inline-flex flex-col items-center leading-none mx-2">
+                                    <Fr n={an} d={ad} color="text-amber-600" size="text-xl" />
+                                    <span className="w-24 border-t-4 border-slate-700 my-1.5"></span>
+                                    <Fr n={bn} d={bd} color="text-violet-600" size="text-xl" />
+                                </span>
+                            </div>
+
+                            {step >= 1 && <div className="fade-in">
+                                <p className="text-slate-500 mb-2">上下同时乘 <Fr n={bd} d={bn} size="text-base" color="text-rose-600" />（除数的倒数）——商不变：</p>
+                                <div className="text-xl flex items-center justify-center flex-wrap">
+                                    <span className="inline-flex flex-col items-center leading-none mx-2">
+                                        <span className="flex items-center"><Fr n={an} d={ad} color="text-amber-600" size="text-lg" /><span className="mx-1">×</span><Fr n={bd} d={bn} color="text-rose-600" size="text-lg" /></span>
+                                        <span className="w-40 border-t-4 border-slate-700 my-1.5"></span>
+                                        <span className="flex items-center"><Fr n={bn} d={bd} color="text-violet-600" size="text-lg" /><span className="mx-1">×</span><Fr n={bd} d={bn} color="text-rose-600" size="text-lg" /></span>
+                                    </span>
+                                </div>
+                            </div>}
+
+                            {step >= 2 && <div className="fade-in">
+                                <p className="text-slate-500 mb-2">分母算出来正好是 <b>1</b>（互为倒数的两数相乘得 1）：</p>
+                                <div className="text-xl flex items-center justify-center flex-wrap">
+                                    <span className="inline-flex flex-col items-center leading-none mx-2">
+                                        <span className="flex items-center"><Fr n={an} d={ad} color="text-amber-600" size="text-lg" /><span className="mx-1">×</span><Fr n={bd} d={bn} color="text-rose-600" size="text-lg" /></span>
+                                        <span className="w-40 border-t-4 border-slate-700 my-1.5"></span>
+                                        <b className="text-emerald-700 text-2xl">1</b>
+                                    </span>
+                                    <span className="mx-3 text-slate-400">=</span>
+                                    <span className="flex items-center"><Fr n={an} d={ad} color="text-amber-600" size="text-xl" /><span className="mx-1">×</span><Fr n={bd} d={bn} color="text-rose-600" size="text-xl" /></span>
+                                </div>
+                                <p className="text-sm text-slate-500 mt-2 mb-0">除以 1 就是它本身，分母就这样"消失"了。</p>
+                            </div>}
+                        </div>
+
+                        {step >= 3 && <Note tone="emerald" className="fade-in">
+                            <div className="text-center">
+                                <div className="text-2xl flex items-center justify-center flex-wrap">
+                                    <Fr n={an} d={ad} color="text-amber-600" /> ÷ <Fr n={bn} d={bd} color="text-violet-600" /> =
+                                    <Fr n={an} d={ad} color="text-amber-600" /> × <Fr n={bd} d={bn} color="text-rose-600" /> =
+                                    <Num n={an * bd} d={ad * bn} color="text-emerald-700" />
+                                </div>
+                                <p className="mt-3 mb-0 font-semibold">除以一个不为 0 的数，等于乘这个数的倒数。<br />
+                                    <span className="text-sm font-normal">这不是规定，是<b>商不变性质</b>推出来的结果。</span></p>
+                            </div>
+                        </Note>}
+
+                        <StepButtons step={step} setStep={setStep} max={3} />
+                        <div className="grid md:grid-cols-2 gap-x-8 gap-y-3 mt-5 pt-5 border-t border-slate-100">
+                            <Slider label="被除数分子" value={an} min={1} max={12} onChange={setAn} />
+                            <Slider label="除数分子" value={bn} min={1} max={12} onChange={setBn} accent="accent-violet-500" valueColor="text-violet-600" />
+                            <Slider label="被除数分母" value={ad} min={1} max={12} onChange={setAd} accent="accent-orange-500" valueColor="text-orange-600" />
+                            <Slider label="除数分母" value={bd} min={1} max={12} onChange={setBd} accent="accent-purple-500" valueColor="text-purple-600" />
+                        </div>
+                    </Card>}
+
+                    {/* ---------- 路径 C：乘除互逆验证 ---------- */}
+                    {path === 'C' && <Card>
+                        <p className="text-slate-600">除法是乘法的<b>逆运算</b>。要检验 <Fr n={an} d={ad} size="text-base" color="text-amber-600" /> ÷ <Fr n={bn} d={bd} size="text-base" color="text-violet-600" /> 的商对不对，
+                        只要看 <b>商 × 除数</b> 能不能还原成被除数。</p>
+
+                        <div className="my-5 space-y-4">
+                            <Note tone="slate">
+                                <p className="m-0 text-center">如果按"颠倒相乘"，商应该是
+                                    <Fr n={an} d={ad} size="text-base" color="text-amber-600" /> × <Fr n={bd} d={bn} size="text-base" color="text-rose-600" /> =
+                                    <Fr n={an * bd} d={ad * bn} size="text-base" color="text-emerald-700" />
+                                    {qd !== ad * bn && <>= <Fr n={qn} d={qd} size="text-base" color="text-emerald-700" /></>}
+                                </p>
+                            </Note>
+                            <p className="text-center text-slate-500">↓ 拿它去乘除数，验算一下 ↓</p>
+                            <Note tone="emerald">
+                                <div className="text-center text-xl flex items-center justify-center flex-wrap">
+                                    <Fr n={an * bd} d={ad * bn} color="text-emerald-700" /> × <Fr n={bn} d={bd} color="text-violet-600" /> =
+                                    <Fr n={`${an}×${bd}×${bn}`} d={`${ad}×${bn}×${bd}`} color="text-slate-600" size="text-lg" />
+                                </div>
+                                <p className="text-center mt-3 mb-0 text-slate-600">上下都有 <b className="text-rose-600">{bn}</b> 和 <b className="text-rose-600">{bd}</b>，约掉以后剩下
+                                    <Fr n={an} d={ad} size="text-lg" color="text-amber-600" /> —— <b>正好还原成被除数！</b></p>
+                            </Note>
+                            <Note tone="violet">
+                                <p className="m-0 text-center">验算通过，说明"颠倒相乘"求出的商<b>确实是对的</b>。<br />
+                                <span className="text-sm">这也是为什么<b>除数不能为 0</b>：0 乘任何数都得 0，永远还原不出被除数。</span></p>
+                            </Note>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-x-8 gap-y-3 mt-5 pt-5 border-t border-slate-100">
+                            <Slider label="被除数分子" value={an} min={1} max={12} onChange={setAn} />
+                            <Slider label="除数分子" value={bn} min={1} max={12} onChange={setBn} accent="accent-violet-500" valueColor="text-violet-600" />
+                            <Slider label="被除数分母" value={ad} min={1} max={12} onChange={setAd} accent="accent-orange-500" valueColor="text-orange-600" />
+                            <Slider label="除数分母" value={bd} min={1} max={12} onChange={setBd} accent="accent-purple-500" valueColor="text-purple-600" />
+                        </div>
+                    </Card>}
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ⑧ 计算车间 —— 从直观过渡到笔算
+        //   输入任意算式，逐行展开标准笔算步骤：
+        //   带分数化假分数 → 除法转乘法 → 先约分再乘 → 结果化最简/带分数。
+        //   重点强调"先约分再乘"，这是学生最容易漏掉、导致数字爆炸的地方。
+        // ======================================================================
+        const CalcWorkshop = () => {
+            const [op, setOp] = useState('×');
+            // 用带分数形式输入：整数部分 w + n/d
+            const [aw, setAw] = useState(0), [an, setAn] = useState(3), [ad, setAd] = useState(4);
+            const [bw, setBw] = useState(0), [bn, setBn] = useState(2), [bd, setBd] = useState(9);
+            const [step, setStep] = useState(0);
+
+            const A = [aw * ad + an, ad];      // 化成假分数
+            const B = [bw * bd + bn, bd];
+            const mixedA = aw > 0, mixedB = bw > 0;
+
+            // 除法 → 乘倒数
+            const Bm = op === '×' ? B : [B[1], B[0]];
+            const rawN = A[0] * Bm[0], rawD = A[1] * Bm[1];
+
+            // 约分分两类，和教材的书写顺序一致：
+            //   ① 各自约分——本身不是最简的先化简（如 6/10 → 3/5）
+            //   ② 交叉约分——一个分子与另一个分母约
+            // 两步做完，乘出来的积一定已经是最简，不必再约第三次。
+            const [sA0, sA1] = reduce(A[0], A[1]);        // 各自约分后的第一个数
+            const [sB0, sB1] = reduce(Bm[0], Bm[1]);      // 各自约分后的第二个数
+            const selfCancel = (sA1 !== A[1]) || (sB1 !== Bm[1]);
+
+            const g1 = gcd(sA0, sB1) || 1;               // A分子 ↔ B分母
+            const g2 = gcd(sB0, sA1) || 1;               // B分子 ↔ A分母
+            const cA = [sA0 / g1, sA1 / g2], cB = [sB0 / g2, sB1 / g1];
+            const midN = cA[0] * cB[0], midD = cA[1] * cB[1];
+            const [fn, fd] = reduce(rawN, rawD);
+            const crossCancel = g1 > 1 || g2 > 1;
+            const hasCancel = selfCancel || crossCancel;
+            const invalid = B[0] === 0 && op === '÷';
+
+            const FrInput = ({ w, n, d, setW, setN, setD, color, label }) => (
+                <div className="rounded-xl border border-slate-200 p-3 bg-slate-50">
+                    <p className="text-xs text-slate-400 m-0 mb-2">{label}</p>
+                    <div className="flex items-center gap-2">
+                        <input type="number" min="0" max="20" value={w} onChange={e => setW(Math.max(0, Math.min(20, +e.target.value || 0)))}
+                            className={`w-14 h-12 text-center rounded-lg border-2 border-slate-200 ${color} font-bold text-xl`} aria-label="整数部分" />
+                        <div className="flex flex-col gap-1">
+                            <input type="number" min="0" max="99" value={n} onChange={e => setN(Math.max(0, Math.min(99, +e.target.value || 0)))}
+                                className={`w-16 h-9 text-center rounded-lg border-2 border-slate-200 ${color} font-bold`} aria-label="分子" />
+                            <div className="h-0.5 bg-slate-400 rounded"></div>
+                            <input type="number" min="1" max="99" value={d} onChange={e => setD(Math.max(1, Math.min(99, +e.target.value || 1)))}
+                                className={`w-16 h-9 text-center rounded-lg border-2 border-slate-200 ${color} font-bold`} aria-label="分母" />
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const STEPS = [
+                (mixedA || mixedB) ? '带分数化假分数' : '看清算式',
+                op === '÷' ? '除法变乘法' : '准备相乘',
+                hasCancel ? '先约分（关键）' : '直接相乘',
+                '算出结果 · 化最简'
+            ];
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <p className="text-lg m-0">前面用图看懂了道理，这里练<b className="text-slate-800">笔算</b>。
+                        输入任意两个分数，一步一步看规范的书写过程。</p>
+                    </Card>
+
+                    <Card className="mb-5">
+                        <div className="flex flex-wrap items-center justify-center gap-3">
+                            <FrInput w={aw} n={an} d={ad} setW={setAw} setN={setAn} setD={setAd} color="text-amber-600" label="第一个数" />
+                            <div className="flex gap-1">
+                                {['×', '÷'].map(o => <button key={o} onClick={() => { setOp(o); setStep(0); }}
+                                    className={`w-12 h-12 rounded-xl text-2xl font-bold smooth ${op === o ? 'bg-slate-800 text-white shadow' : 'bg-white border-2 border-slate-200 text-slate-500'}`}>{o}</button>)}
+                            </div>
+                            <FrInput w={bw} n={bn} d={bd} setW={setBw} setN={setBn} setD={setBd} color="text-violet-600" label="第二个数" />
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2 mt-4">
+                            <span className="text-sm text-slate-400 self-center">试试：</span>
+                            {[
+                                { l: '3/4 × 2/9（要约分）', v: [0, 3, 4, '×', 0, 2, 9] },
+                                { l: '2⅓ × 1½（带分数）', v: [2, 1, 3, '×', 1, 1, 2] },
+                                { l: '5/6 ÷ 2/3', v: [0, 5, 6, '÷', 0, 2, 3] },
+                                { l: '3/8 ÷ 3（÷整数）', v: [0, 3, 8, '÷', 3, 0, 1] }
+                            ].map(x => <button key={x.l} onClick={() => { setAw(x.v[0]); setAn(x.v[1]); setAd(x.v[2]); setOp(x.v[3]); setBw(x.v[4]); setBn(x.v[5]); setBd(x.v[6]); setStep(0); }}
+                                className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-emerald-300 smooth text-sm">{x.l}</button>)}
+                        </div>
+                    </Card>
+
+                    {invalid ? <Note tone="rose"><p className="m-0 text-center text-lg">⚠️ 除数不能是 <b>0</b>。请把第二个数改一改。</p></Note> : <Card>
+                        <StepDots step={step} labels={STEPS} />
+                        <div className="space-y-3 font-mono">
+                            {/* 原式 */}
+                            <div className="flex items-center justify-center flex-wrap text-2xl py-2">
+                                {mixedA ? <><b className="text-amber-600">{aw}</b><Fr n={an} d={ad} color="text-amber-600" /></> : <Fr n={A[0]} d={A[1]} color="text-amber-600" />}
+                                <span className="mx-2 text-slate-500">{op}</span>
+                                {mixedB ? <><b className="text-violet-600">{bw}</b><Fr n={bn} d={bd} color="text-violet-600" /></> : <Fr n={B[0]} d={B[1]} color="text-violet-600" />}
+                            </div>
+
+                            {/* 第 1 步：带分数 → 假分数 */}
+                            {step >= 1 && (mixedA || mixedB) && <div className="fade-in text-center">
+                                <span className="text-slate-400 text-xl">=</span>
+                                <div className="flex items-center justify-center flex-wrap text-2xl">
+                                    <Fr n={A[0]} d={A[1]} color="text-amber-600" />
+                                    <span className="mx-2 text-slate-500">{op}</span>
+                                    <Fr n={B[0]} d={B[1]} color="text-violet-600" />
+                                </div>
+                                <p className="text-sm text-slate-500 font-sans mt-1 mb-0">带分数先化成假分数（{mixedA && `${aw}×${ad}+${an}=${A[0]}`}{mixedA && mixedB && '，'}{mixedB && `${bw}×${bd}+${bn}=${B[0]}`}）</p>
+                            </div>}
+
+                            {/* 第 2 步：除法 → 乘倒数 */}
+                            {step >= 2 && op === '÷' && <div className="fade-in text-center">
+                                <span className="text-slate-400 text-xl">=</span>
+                                <div className="flex items-center justify-center flex-wrap text-2xl">
+                                    <Fr n={A[0]} d={A[1]} color="text-amber-600" />
+                                    <span className="mx-2 text-slate-500">×</span>
+                                    <Fr n={Bm[0]} d={Bm[1]} color="text-rose-600" />
+                                </div>
+                                <p className="text-sm text-slate-500 font-sans mt-1 mb-0">÷ <Fr n={B[0]} d={B[1]} size="text-xs" /> 改写成 × 它的倒数 <Fr n={Bm[0]} d={Bm[1]} size="text-xs" color="text-rose-600" /></p>
+                            </div>}
+
+                            {/* 第 3 步：约分 */}
+                            {step >= 3 && <div className="fade-in text-center">
+                                <span className="text-slate-400 text-xl">=</span>
+                                {hasCancel ? <>
+                                    <div className="flex items-center justify-center flex-wrap text-2xl">
+                                        <Fr n={cA[0]} d={cA[1]} color="text-emerald-700" />
+                                        <span className="mx-2 text-slate-500">×</span>
+                                        <Fr n={cB[0]} d={cB[1]} color="text-emerald-700" />
+                                    </div>
+                                    <div className="text-sm text-slate-500 font-sans mt-1 mb-0 space-y-0.5">
+                                        {selfCancel && <p className="m-0">
+                                            各自先约分：{sA1 !== A[1] && <><Fr n={A[0]} d={A[1]} size="text-xs" />→<Fr n={sA0} d={sA1} size="text-xs" color="text-emerald-700" /></>}
+                                            {sA1 !== A[1] && sB1 !== Bm[1] && '，'}
+                                            {sB1 !== Bm[1] && <><Fr n={Bm[0]} d={Bm[1]} size="text-xs" />→<Fr n={sB0} d={sB1} size="text-xs" color="text-emerald-700" /></>}
+                                        </p>}
+                                        {crossCancel && <p className="m-0">
+                                            交叉约分：{g1 > 1 && <>前一个分子与后一个分母同时除以 <b className="text-rose-600">{g1}</b></>}{g1 > 1 && g2 > 1 && '；'}{g2 > 1 && <>后一个分子与前一个分母同时除以 <b className="text-rose-600">{g2}</b></>}
+                                        </p>}
+                                    </div>
+                                </> : <p className="text-sm text-slate-500 font-sans m-0">没有可以约的公因数，直接乘。</p>}
+                            </div>}
+
+                            {/* 第 4 步：结果 */}
+                            {step >= 4 && <div className="fade-in text-center pt-2">
+                                <span className="text-slate-400 text-xl">=</span>
+                                <div className="flex items-center justify-center flex-wrap text-2xl">
+                                    <Fr n={`${cA[0]}×${cB[0]}`} d={`${cA[1]}×${cB[1]}`} color="text-slate-600" size="text-xl" />
+                                    <span className="mx-2 text-slate-400">=</span>
+                                    <Fr n={midN} d={midD} color="text-emerald-700" />
+                                    {(midN !== fn || midD !== fd) && <><span className="mx-2 text-slate-400">=</span><Fr n={fn} d={fd} color="text-emerald-700" /></>}
+                                    {fd !== 1 && fn > fd && <><span className="mx-2 text-slate-400">=</span><Num n={fn} d={fd} color="text-emerald-700" /></>}
+                                </div>
+                            </div>}
+                        </div>
+
+                        <StepButtons step={step} setStep={setStep} max={4} />
+
+                        {step >= 4 && <div className="mt-5 space-y-3">
+                            <Note tone="emerald">
+                                <p className="m-0 text-center text-lg">最后结果：<Num n={fn} d={fd} color="text-emerald-700" size="text-2xl" /></p>
+                            </Note>
+                            {hasCancel && <Note tone="amber">
+                                <p className="m-0 text-sm">💡 <b>为什么要先约分？</b> 如果直接乘，会得到 <Fr n={rawN} d={rawD} size="text-sm" />，
+                                数字大、还要再约一次。先约分后，只需要算 {cA[0]}×{cB[0]} 和 {cA[1]}×{cB[1]}，又快又不容易错。</p>
+                            </Note>}
+                            {/* 估算检验：培养对结果合理性的直觉 */}
+                            <Note tone="sky">
+                                <p className="m-0 text-sm">🔍 <b>检验一下合理吗：</b>
+                                    {op === '×'
+                                        ? (Bm[0] / Bm[1] < 1
+                                            ? <>乘数 <Fr n={B[0]} d={B[1]} size="text-sm" /> 小于 1，所以积应该<b>比 {A[0]}/{A[1]} 小</b>。</>
+                                            : Bm[0] / Bm[1] === 1 ? <>乘数等于 1，积应该<b>不变</b>。</>
+                                                : <>乘数 <Fr n={B[0]} d={B[1]} size="text-sm" /> 大于 1，所以积应该<b>比 {A[0]}/{A[1]} 大</b>。</>)
+                                        : (B[0] / B[1] < 1
+                                            ? <>除数 <Fr n={B[0]} d={B[1]} size="text-sm" /> 小于 1，所以商应该<b>比 {A[0]}/{A[1]} 大</b>。</>
+                                            : B[0] / B[1] === 1 ? <>除数等于 1，商应该<b>不变</b>。</>
+                                                : <>除数 <Fr n={B[0]} d={B[1]} size="text-sm" /> 大于 1，所以商应该<b>比 {A[0]}/{A[1]} 小</b>。</>)}
+                                    　结果 {Math.round(fn / fd * 1000) / 1000} {' '}
+                                    {(fn / fd > A[0] / A[1] ? '＞ ' : fn / fd < A[0] / A[1] ? '＜ ' : '＝ ')}
+                                    {Math.round(A[0] / A[1] * 1000) / 1000}，✓ 符合。</p>
+                            </Note>
+                        </div>}
+                    </Card>}
+
+                    <Card className="mt-5">
+                        <h3 className="mt-0 text-slate-800 text-lg">📋 笔算四步口诀</h3>
+                        <ol className="text-slate-600 space-y-1.5 mb-0 pl-5">
+                            <li><b>带化假</b> —— 带分数、整数都先写成假分数（整数 a 写成 a/1）</li>
+                            <li><b>除变乘</b> —— 遇到除号，改成乘除数的倒数（除数不能为 0）</li>
+                            <li><b>先约分</b> —— 任意一个分子与任意一个分母约，能约就约</li>
+                            <li><b>再相乘</b> —— 分子乘分子、分母乘分母，结果化成最简（假分数可写成带分数）</li>
+                        </ol>
+                    </Card>
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // ⑨ 闯关练习
+        //   四类题型，对应四种最常见的失分点：
+        //   看图列式 / 不算就判断大小 / 选算式（乘还是除、谁除以谁）/ 直接计算
+        // ======================================================================
+        const QUESTIONS = [
+            {
+                type: '看图列式', tone: 'amber',
+                q: '一张纸横着取 3/4，再取它的 1/2。图中深色部分占整张纸的几分之几？',
+                render: () => (
+                    <svg width="200" height="200" viewBox="0 0 200 200" className="mx-auto">
+                        <rect x="0" y="0" width="200" height="200" fill="#fff" stroke={C.strong} strokeWidth="3" />
+                        <rect x="0" y="0" width="150" height="200" fill={C.a} opacity=".35" />
+                        <rect x="0" y="0" width="200" height="100" fill={C.b} opacity=".3" />
+                        <rect x="0" y="0" width="150" height="100" fill={C.both} opacity=".6" />
+                        {[50, 100, 150].map(x => <line key={x} x1={x} y1="0" x2={x} y2="200" stroke={C.line} strokeWidth="1.5" />)}
+                        <line x1="0" y1="100" x2="200" y2="100" stroke={C.line} strokeWidth="1.5" />
+                    </svg>
+                ),
+                options: ['3/8', '3/4', '1/2', '5/4'], answer: 0,
+                why: '整张纸被切成 4×2 = 8 个小格，深色有 3×1 = 3 格，所以是 3/8。算式：3/4 × 1/2 = 3/8。'
+            },
+            {
+                type: '不算就判断', tone: 'violet',
+                q: '不用计算，判断 20 × 4/5 的积与 20 相比：',
+                options: ['比 20 小', '比 20 大', '等于 20', '无法判断'], answer: 0,
+                why: '乘数 4/5 小于 1，取的是 20 的一部分，所以积比 20 小。（实际 = 16）'
+            },
+            {
+                type: '不算就判断', tone: 'violet',
+                q: '不用计算，判断 6 ÷ 2/3 的商与 6 相比：',
+                options: ['比 6 大', '比 6 小', '等于 6', '无法判断'], answer: 0,
+                why: '除数 2/3 小于 1，问的是"6 里面有几个 2/3"，每份小，份数就多，所以商比 6 大。（实际 = 9）'
+            },
+            {
+                type: '选算式', tone: 'sky',
+                q: '一根绳子长 3/4 米，平均剪成 5 段，每段长多少米？',
+                options: ['3/4 ÷ 5', '3/4 × 5', '5 ÷ 3/4', '5 × 4/3'], answer: 0,
+                why: '把 3/4 米平均分成 5 份，求每份 —— 这是平均分（等分除），用 3/4 ÷ 5 = 3/20 米。'
+            },
+            {
+                type: '选算式', tone: 'sky',
+                q: '一根绳子长 3/4 米，每 1/5 米剪一段，能剪几段？',
+                options: ['3/4 ÷ 1/5', '3/4 × 1/5', '1/5 ÷ 3/4', '3/4 - 1/5'], answer: 0,
+                why: '问"3/4 里面有几个 1/5" —— 这是包含除，用 3/4 ÷ 1/5 = 15/4 = 3¾ 段。注意和上一题的区别：这里除数是"每段的长度"。'
+            },
+            {
+                type: '选算式', tone: 'sky',
+                q: '水果店有苹果 24 千克，梨的质量是苹果的 5/6。梨有多少千克？',
+                options: ['24 × 5/6', '24 ÷ 5/6', '24 × 6/5', '24 + 5/6'], answer: 0,
+                why: '求"24 的 5/6 是多少"，用乘法：24 × 5/6 = 20 千克。关键词是"是……的几分之几"。'
+            },
+            {
+                type: '选算式', tone: 'rose',
+                q: '梨有 20 千克，梨的质量是苹果的 5/6。苹果有多少千克？',
+                options: ['20 ÷ 5/6', '20 × 5/6', '20 ÷ 6/5', '20 - 5/6'], answer: 0,
+                why: '这次已知的是"5/6 对应的量"，要反过来求单位 1（苹果），用除法：20 ÷ 5/6 = 24 千克。⚠️ 求"谁的几分之几"用乘，已知几分之几求整体用除。'
+            },
+            {
+                type: '算一算', tone: 'emerald',
+                q: '计算：5/8 × 4/15（要求先约分）',
+                options: ['1/6', '20/120', '3/8', '2/3'], answer: 0,
+                why: '5 与 15 约去 5，4 与 8 约去 4 → (1×1)/(2×3) = 1/6。先约分比先乘再约简单得多。'
+            },
+            {
+                type: '算一算', tone: 'emerald',
+                q: '计算：7/9 ÷ 14/27',
+                options: ['3/2', '2/3', '98/243', '1/2'], answer: 0,
+                why: '7/9 ÷ 14/27 = 7/9 × 27/14，7 与 14 约去 7，27 与 9 约去 9 → (1×3)/(1×2) = 3/2 = 1½。'
+            },
+            {
+                type: '算一算', tone: 'emerald',
+                q: '计算：2⅔ × ¾',
+                options: ['2', '2⅓', '6/12', '1½'], answer: 0,
+                why: '先化假分数：2⅔ = 8/3。8/3 × 3/4，3 与 3 约、8 与 4 约 → 2×1/1×1 = 2。'
+            }
+        ];
+
+        // Tailwind CDN 无法识别拼接出来的类名，题型标签的配色写成静态映射
+        const TONE_CHIP = {
+            amber: 'bg-amber-100 text-amber-700',
+            violet: 'bg-violet-100 text-violet-700',
+            sky: 'bg-sky-100 text-sky-700',
+            rose: 'bg-rose-100 text-rose-700',
+            emerald: 'bg-emerald-100 text-emerald-700'
+        };
+
+        // 题库里正确答案都写在第 0 位，显示前打乱，避免学生靠位置猜答案
+        const shuffleOptions = (q) => {
+            const idx = q.options.map((_, i) => i);
+            for (let i = idx.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [idx[i], idx[j]] = [idx[j], idx[i]];
+            }
+            return { options: idx.map(i => q.options[i]), answer: idx.indexOf(q.answer) };
+        };
+
+        const Practice = () => {
+            const [i, setI] = useState(0);
+            const [picked, setPicked] = useState(null);
+            const [score, setScore] = useState(0);
+            const [done, setDone] = useState([]);
+
+            const [round, setRound] = useState(0);   // 重新开始时 +1，触发重新打乱
+
+            const base = QUESTIONS[i];
+            // 每进入一道题（或重新开始）打乱一次，答题过程中保持不变
+            const shuffled = useMemo(() => shuffleOptions(base), [i, round]);
+            const q = { ...base, options: shuffled.options, answer: shuffled.answer };
+            const answered = picked !== null;
+            const correct = picked === q.answer;
+
+            const choose = (idx) => {
+                if (answered) return;
+                setPicked(idx);
+                if (idx === q.answer && !done.includes(i)) { setScore(score + 1); setDone([...done, i]); }
+                else if (!done.includes(i)) setDone([...done, i]);
+            };
+            const next = () => { setPicked(null); setI((i + 1) % QUESTIONS.length); };
+            const restart = () => { setPicked(null); setI(0); setScore(0); setDone([]); setRound(round + 1); };
+
+            return (
+                <section className="fade-in">
+                    <Card className="mb-5">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div>
+                                <span className="text-sm text-slate-400">第 {i + 1} / {QUESTIONS.length} 题</span>
+                                <span className={`ml-3 px-2.5 py-1 rounded-lg text-xs font-semibold ${TONE_CHIP[q.tone]}`}>{q.type}</span>
+                            </div>
+                            <div className="text-sm text-slate-500">已答 <b className="text-slate-700">{done.length}</b> 题 · 答对 <b className="text-emerald-600">{score}</b> 题</div>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
+                            <div className="h-full bg-emerald-400 smooth" style={{ width: `${done.length / QUESTIONS.length * 100}%` }}></div>
+                        </div>
+                    </Card>
+
+                    <Card>
+                        <p className="text-xl text-slate-800 leading-relaxed mt-0">{q.q}</p>
+                        {q.render && <div className="my-4">{q.render()}</div>}
+
+                        <div className="grid sm:grid-cols-2 gap-3 mt-4">
+                            {q.options.map((o, idx) => {
+                                const isAns = idx === q.answer;
+                                let cls = 'bg-white border-slate-200 text-slate-700 hover:border-slate-400';
+                                if (answered && isAns) cls = 'bg-emerald-500 text-white border-transparent shadow';
+                                else if (answered && idx === picked) cls = 'bg-rose-100 border-rose-300 text-rose-700';
+                                else if (answered) cls = 'bg-white border-slate-100 text-slate-400';
+                                return <button key={idx} onClick={() => choose(idx)} disabled={answered}
+                                    className={`p-4 rounded-xl border-2 text-lg font-semibold smooth ${cls}`}>
+                                    {answered && isAns && '✓ '}{answered && idx === picked && !isAns && '✗ '}{o}
+                                </button>;
+                            })}
+                        </div>
+
+                        {answered && <div className="mt-5 fade-in">
+                            <Note tone={correct ? 'emerald' : 'rose'}>
+                                <p className="m-0 font-semibold">{correct ? '✅ 答对了！' : '❌ 再想想这道题的道理：'}</p>
+                                <p className="mt-2 mb-0">{q.why}</p>
+                            </Note>
+                            <div className="flex justify-center gap-3 mt-4">
+                                <button onClick={next} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一题 →</button>
+                                <button onClick={restart} className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">重新开始 ↻</button>
+                            </div>
+                        </div>}
+                    </Card>
+
+                    {done.length === QUESTIONS.length && <Note tone="emerald" className="mt-5">
+                        <p className="m-0 text-center text-lg">🎉 全部答完！答对 <b>{score}</b> / {QUESTIONS.length} 题。
+                        {score < QUESTIONS.length && ' 回到前面的模块，把做错的那类再看一遍图。'}</p>
+                    </Note>}
+                </section>
+            );
+        };
+
+        // ======================================================================
+        // 主程序
+        // ======================================================================
+        const TABS = [
+            { id: 'fxi', title: '① 分数×整数', hint: '连加：几个几分之几', color: 'bg-amber-500', group: '乘法' },
+            { id: 'ixf', title: '② 整数×分数', hint: '求一个数的几分之几', color: 'bg-violet-600', group: '乘法' },
+            { id: 'fxf', title: '③ 分数×分数', hint: '折纸面积模型（重点）', color: 'bg-emerald-600', group: '乘法' },
+            { id: 'cmp', title: '④ 越乘越小？', hint: '和 1 比，判断大小', color: 'bg-rose-500', group: '乘法' },
+            { id: 'fdi', title: '⑤ 分数÷整数', hint: '平均分给几个人', color: 'bg-sky-600', group: '除法' },
+            { id: 'mdv', title: '⑥ 里面有几个', hint: '包含除（关键）', color: 'bg-indigo-600', group: '除法' },
+            { id: 'why', title: '⑦ 为什么颠倒相乘', hint: '三条路推出倒数', color: 'bg-purple-700', group: '除法' },
+            { id: 'cal', title: '⑧ 计算车间', hint: '带分数·约分·笔算', color: 'bg-slate-700', group: '计算' },
+            { id: 'pra', title: '⑨ 闯关练习', hint: '列式·判断·计算', color: 'bg-green-600', group: '计算' }
+        ];
+
+        const App = () => {
+            const [tab, setTab] = useState('fxf');
+            const idx = TABS.findIndex(t => t.id === tab);
+
+            return (
+                <main className="max-w-6xl mx-auto px-4 py-8">
+                    <header className="relative text-center mb-6 px-12">
+                        <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 smooth">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                        </a>
+                        <div className="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold mb-2">五 ~ 六年级 · 分数乘法与除法</div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-slate-800 m-0">分数的乘法与除法</h1>
+                        <p className="text-slate-500 mt-3 mb-0">折一折、量一量、数一数 —— 先<b>看懂道理</b>，再<b>学会计算</b></p>
+                    </header>
+
+                    <nav className="mb-7" aria-label="知识模块">
+                        {['乘法', '除法', '计算'].map(g => (
+                            <div key={g} className="mb-2">
+                                <p className="text-xs text-slate-400 font-semibold mb-1.5 ml-1">{g === '乘法' ? '🟠 分数乘法' : g === '除法' ? '🔵 分数除法' : '🟢 从直观到计算'}</p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {TABS.filter(t => t.group === g).map(t => (
+                                        <button key={t.id} onClick={() => setTab(t.id)}
+                                            className={`p-3 rounded-xl border-2 text-left smooth ${tab === t.id ? `${t.color} text-white border-transparent shadow-md` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
+                                            <b className="block text-sm">{t.title}</b>
+                                            <span className={`text-xs ${tab === t.id ? 'text-white/80' : 'text-slate-400'}`}>{t.hint}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </nav>
+
+                    {tab === 'fxi' && <FracTimesInt />}
+                    {tab === 'ixf' && <IntTimesFrac />}
+                    {tab === 'fxf' && <FracTimesFrac />}
+                    {tab === 'cmp' && <CompareToOne />}
+                    {tab === 'fdi' && <FracDivInt />}
+                    {tab === 'mdv' && <MeasurementDiv />}
+                    {tab === 'why' && <WhyInvert />}
+                    {tab === 'cal' && <CalcWorkshop />}
+                    {tab === 'pra' && <Practice />}
+
+                    {/* 上一节 / 下一节，方便按顺序学下来 */}
+                    <div className="flex justify-between items-center gap-3 mt-8">
+                        {idx > 0
+                            ? <button onClick={() => setTab(TABS[idx - 1].id)} className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth text-sm">← {TABS[idx - 1].title}</button>
+                            : <span></span>}
+                        {idx < TABS.length - 1
+                            ? <button onClick={() => setTab(TABS[idx + 1].id)} className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth text-sm">{TABS[idx + 1].title} →</button>
+                            : <span></span>}
+                    </div>
+
+                    <footer className="text-center text-slate-400 text-sm mt-10">
+                        Math101 · 分数可视化 · 适用人教版六年级上册《分数乘法》《分数除法》
+                    </footer>
+                </main>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+    <div style="box-sizing:border-box;width:100%;padding:24px 16px;text-align:center;color:#94a3b8;font:13px/1.6 system-ui,-apple-system,sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
+</body>
+</html>

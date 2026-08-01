@@ -1,18 +1,79 @@
 window.QUOTIENT_INVARIANCE_CATEGORIES = [
     {
-        "id": "integer",
-        "name": "整数·商不变计算",
-        "short": "整数题",
-        "icon": "÷",
-        "description": "整数除法、余数与简便计算"
+        "id": "invariance",
+        "name": "商不变性质",
+        "short": "商不变性质",
+        "icon": "＝",
+        "description": "被除数和除数同时乘或除以相同的非零数，商不变"
     },
     {
-        "id": "decimal",
-        "name": "小数·商不变计算",
-        "short": "小数题",
+        "id": "dividend-change",
+        "name": "被除数变化",
+        "short": "被除数变化",
+        "icon": "被",
+        "description": "除数不变时，被除数与商同向、同倍变化"
+    },
+    {
+        "id": "divisor-change",
+        "name": "除数变化",
+        "short": "除数变化",
+        "icon": "除",
+        "description": "被除数不变时，除数与商反向变化"
+    },
+    {
+        "id": "combined-change",
+        "name": "商的综合变化",
+        "short": "综合变化",
+        "icon": "⇄",
+        "description": "被除数、除数以不同倍数变化时判断商的变化"
+    },
+    {
+        "id": "remainder",
+        "name": "余数的变化与还原",
+        "short": "余数变化",
+        "icon": "余",
+        "description": "商不变时余数随被除数、除数同步缩放，并还原真实余数"
+    },
+    {
+        "id": "decimal-shift",
+        "name": "小数除法转化",
+        "short": "小数转化",
         "icon": "·",
-        "description": "小数除法、小数点移动与综合变化"
+        "description": "移动小数点，把除数转化为整数并保持商不变"
+    },
+    {
+        "id": "simplify",
+        "name": "简便计算",
+        "short": "简便计算",
+        "icon": "速",
+        "description": "运用商不变性质、拆分除数等方法简化计算"
+    },
+    {
+        "id": "operation-change",
+        "name": "积、和、差的变化",
+        "short": "积和差变化",
+        "icon": "±",
+        "description": "联系积的变化规律以及加减法各部分关系进行辨析"
+    },
+    {
+        "id": "patterns",
+        "name": "规律、纠错与综合判断",
+        "short": "规律与纠错",
+        "icon": "察",
+        "description": "计算器纠错、算式规律、概念判断与综合推理"
+    },
+    {
+        "id": "calculation",
+        "name": "口算、竖式与整除",
+        "short": "计算与整除",
+        "icon": "算",
+        "description": "口算、竖式计算和整除判断的基础训练"
     }
+];
+
+window.QUOTIENT_INVARIANCE_DOMAINS = [
+    { "id": "integer", "name": "整数题" },
+    { "id": "decimal", "name": "小数题" }
 ];
 
 window.QUOTIENT_INVARIANCE_QUESTIONS = [
@@ -958,6 +1019,29 @@ window.QUOTIENT_INVARIANCE_QUESTIONS = [
         "answer": "240÷6；360÷12"
     }
 ];
+
+// 每题保留原有“整数 / 小数”数域，再按主要考查知识点进行细分。
+window.QUOTIENT_INVARIANCE_KNOWLEDGE_MAP = {
+    "invariance": [20, 22, 27, 29, 30, 31, 41, 43, 44, 57, 58, 59, 60, 65, 76],
+    "dividend-change": [5, 35, 38],
+    "divisor-change": [2, 12, 54, 56, 75],
+    "combined-change": [4, 24, 32, 49, 61, 73],
+    "remainder": [7, 19, 21, 23, 42, 51, 52, 79, 85, 86],
+    "decimal-shift": [1, 8, 11, 13, 14, 25, 37, 40, 47, 55, 68, 70, 72, 74, 78],
+    "simplify": [10, 26, 36, 66, 77, 87, 88, 89],
+    "operation-change": [3, 6, 9, 15, 17, 28, 33, 34, 45, 53, 62, 63, 64, 67, 69, 71, 81, 84, 90],
+    "patterns": [16, 18, 39, 46, 48, 50, 80],
+    "calculation": [82, 83, 91]
+};
+
+Object.entries(window.QUOTIENT_INVARIANCE_KNOWLEDGE_MAP).forEach(([knowledge, ids]) => {
+    ids.forEach(id => {
+        const question = window.QUOTIENT_INVARIANCE_QUESTIONS.find(item => item.id === id);
+        if (!question) return;
+        question.domain = question.category;
+        question.category = knowledge;
+    });
+});
 
 window.QUOTIENT_INVARIANCE_EXPLANATIONS = {
     "1": "被除数和除数同时扩大到原来的几倍（或缩小到原来的几分之一），商不变，据此解答即可。",

@@ -1293,20 +1293,44 @@
       "sourceGroupIds": [
         "adv-comb"
       ],
-      "coverage": "planned",
-      "coveredNodeIds": [],
-      "missingNodeIds": [
-        "digit-puzzle",
-        "number-array",
+      "coverage": "partial",
+      "coveredNodeIds": [
         "logic-reasoning",
         "operation-strategy",
         "scheduling",
         "extremal",
+        "clever-puzzle"
+      ],
+      "missingNodeIds": [
+        "digit-puzzle",
+        "number-array",
         "indeterminate-equation",
-        "clever-puzzle",
         "yanghui-triangle"
       ],
       "recommendedTools": [
+        {
+          "id": "math-thinking-practice",
+          "name": "小学数学思维题库",
+          "grade": "2-6",
+          "status": "ready",
+          "route": "/math-thinking-practice",
+          "knowledgeNodeIds": [
+            "logic-reasoning",
+            "operation-strategy",
+            "scheduling",
+            "extremal",
+            "clever-puzzle"
+          ],
+          "tabs": [
+            "经典游戏与知识",
+            "大问题",
+            "中小问题",
+            "STEM",
+            "模型与建模",
+            "课内拓展与新知识"
+          ],
+          "notes": "完整整理 51 页 PDF，共 141 道主题题与变式；保留原页图示，支持分类、搜索、层级筛选、随机抽题和打印。"
+        },
         {
           "id": "digit-number-array",
           "name": "数字谜与数阵图",

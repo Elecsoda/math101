@@ -163,7 +163,239 @@
             );
         };
 
-        /* ============ 2. 面积模型：理解含义与分拆 ============ */
+        /* ============ 2. 分解运算：拆成"整十"和"几个" ============ */
+
+        const DecomposeTab = () => {
+            const [a, setA] = useState(12);   // 每份数
+            const [b, setB] = useState(7);    // 份数
+            const [step, setStep] = useState(0);
+
+            const tens = Math.floor(a / 10);      // 整十里有几组十
+            const ones = a % 10;
+            const tenPart = tens * 10;            // 例：12 → 10
+            const pTen = tenPart * b;             // 10 × 7 = 70
+            const pOne = ones * b;                // 2 × 7 = 14
+            const total = a * b;
+
+            // 0 摆点 / 1 拆开 / 2 算个位那堆 / 3 算整十那堆 / 4 合起来
+            const MAX = 4;
+            const labels = [
+                `先把题目摆出来：${b} 行，每行 ${a} 个，一共多少个？`,
+                `每行 ${a} 个 = ${tenPart} 个 ＋ ${ones} 个，把两堆分开`,
+                `先数右边小堆：每行 ${ones} 个，${b} 行 → ${ones} × ${b} = ${pOne}`,
+                `再数左边大堆：每行 ${tenPart} 个，${b} 行 → ${tenPart} × ${b} = ${pTen}`,
+                `两堆合起来：${pOne} ＋ ${pTen} = ${total}`,
+            ];
+
+            // 点太多时把点画小一些，保证一屏放得下
+            const dotSize = a > 15 || b > 8 ? '7px' : '10px';
+            const dotStyle = { width: dotSize, height: dotSize };
+
+            // step 0 时全是一样的灰蓝点，看不出哪些该分到哪堆；拆开后才染成两色
+            const Dot = ({ tone }) => (
+                <span className={"rounded-full inline-block smooth-transition " +
+                    (step === 0 ? 'bg-slate-400' : tone === 'sky' ? 'bg-sky-500' : 'bg-amber-500')}
+                    style={dotStyle} />
+            );
+
+            const gap = step >= 1 ? 44 : 0;
+
+            const randomize = () => {
+                setA(11 + Math.floor(Math.random() * 8));       // 11~18，先守住"十几"
+                setB(2 + Math.floor(Math.random() * 8));
+                setStep(0);
+            };
+
+            // 整十数（20、30…）本身就是整十口算，拆成"20 和 0"没有意义，
+            // 这里直接引导回上一个标签页，不画空堆。
+            if (ones === 0) {
+                return (
+                    <div className="fade-in space-y-5">
+                        <Card>
+                            <div className="flex flex-wrap gap-5 items-center justify-center">
+                                <NumberInput label="每份数" value={a} min={11} max={29} onChange={v => { setA(v); setStep(0); }} />
+                                <span className="text-2xl font-bold text-slate-400">×</span>
+                                <NumberInput label="份数" value={b} min={2} max={9} onChange={v => { setB(v); setStep(0); }} color="emerald" />
+                                <button onClick={randomize}
+                                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
+                            </div>
+                        </Card>
+                        <Hint tone="sky">
+                            {a} 是<b>整十数</b>，本来就只有"{tens} 个十"这一堆，用不着再拆。
+                            {a} × {b} 直接口算：{tens} × {b} = {tens * b}，所以是 {tens * b} 个十 = <b>{total}</b>。
+                            想看拆分，把每份数改成 12、23 这样<b>末尾不是 0</b> 的数。
+                        </Hint>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="fade-in space-y-5">
+                    <Card>
+                        <div className="flex flex-wrap gap-5 items-center justify-center">
+                            <NumberInput label="每份数" value={a} min={11} max={29} onChange={v => { setA(v); setStep(0); }} />
+                            <span className="text-2xl font-bold text-slate-400">×</span>
+                            <NumberInput label="份数" value={b} min={2} max={9} onChange={v => { setB(v); setStep(0); }} color="emerald" />
+                            <button onClick={randomize}
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
+                        </div>
+                        <p className="text-center text-sm text-slate-500 mt-3">
+                            {b} 行，每行 {a} 个 —— 一行一行地数太慢了，看看能不能拆开来算。
+                        </p>
+                    </Card>
+
+                    <div className="grid lg:grid-cols-2 gap-5">
+                        {/* 点阵：拆的动作发生在这里 */}
+                        <Card>
+                            <h3 className="font-bold text-slate-800 mb-4 text-center">
+                                {step === 0 ? `${b} 行，每行 ${a} 个` : `分成两堆来数`}
+                            </h3>
+
+                            {/* 分堆后的顶部标签 */}
+                            <div className={"flex justify-center mb-2 smooth-transition " + (step >= 1 ? "opacity-100" : "opacity-0")}>
+                                <div className="flex items-start" style={{ gap: '10px' }}>
+                                    <div className="text-center font-bold text-sky-700 text-sm"
+                                        style={{ width: tens * (10 * (parseInt(dotSize) + 2) + 8) }}>
+                                        每行 {tenPart} 个
+                                    </div>
+                                    <div style={{ width: gap }} />
+                                    <div className="text-center font-bold text-amber-700 text-sm"
+                                        style={{ width: ones * (parseInt(dotSize) + 2) + 8 }}>
+                                        每行 {ones} 个
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-center overflow-x-auto pb-2">
+                                <div className="space-y-1.5">
+                                    {Array.from({ length: b }).map((_, r) => (
+                                        <div key={r} className="flex items-center" style={{ gap: step >= 1 ? '10px' : '2px' }}>
+                                            <span className="text-xs text-slate-400 w-10 text-right pr-1 mr-2">第{r + 1}行</span>
+                                            {/* 整十部分 */}
+                                            <div className="flex" style={{ gap: step >= 1 ? '4px' : '2px' }}>
+                                                {Array.from({ length: tens }).map((_, g) => (
+                                                    <div key={g}
+                                                        className={"flex rounded py-0.5 smooth-transition " +
+                                                            (step >= 1 ? "px-1 " : "px-0 ") +
+                                                            (step === 3 ? "bg-sky-100 ring-2 ring-sky-400"
+                                                                : step >= 1 ? "bg-sky-50" : "")}
+                                                        style={{ gap: '2px' }}>
+                                                        {Array.from({ length: 10 }).map((_, i) => <Dot key={i} tone="sky" />)}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {/* 拆开的空隙 */}
+                                            <div className="smooth-transition" style={{ width: gap }} />
+                                            {/* 个位部分 */}
+                                            <div className={"flex rounded py-0.5 smooth-transition " +
+                                                (step >= 1 ? "px-1 " : "px-0 ") +
+                                                (step === 2 ? "bg-amber-100 ring-2 ring-amber-400"
+                                                    : step >= 1 ? "bg-amber-50" : "")}
+                                                style={{ gap: '2px' }}>
+                                                {Array.from({ length: ones }).map((_, i) => <Dot key={i} tone="amber" />)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 每堆下方的小计 */}
+                            <div className={"flex justify-center mt-3 smooth-transition " + (step >= 2 ? "opacity-100" : "opacity-0")}>
+                                <div className="flex items-start" style={{ gap: '10px' }}>
+                                    <div className="text-center" style={{ width: tens * (10 * (parseInt(dotSize) + 2) + 8) }}>
+                                        {step >= 3 && <div className="text-sky-700 font-bold pop">{tenPart} × {b} = {pTen}</div>}
+                                    </div>
+                                    <div style={{ width: gap }} />
+                                    <div className="text-center" style={{ width: ones * (parseInt(dotSize) + 2) + 8 }}>
+                                        {step >= 2 && <div className="text-amber-700 font-bold pop whitespace-nowrap">{ones} × {b} = {pOne}</div>}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* 算式：和点阵一步一步对上 */}
+                        <Card>
+                            <h3 className="font-bold text-slate-800 mb-4 text-center">算式跟着一起拆</h3>
+                            <div className="col-grid text-xl space-y-3">
+                                <div className="text-slate-800 font-bold text-2xl text-center">{a} × {b}</div>
+
+                                <div className={"text-center smooth-transition " + (step >= 1 ? "opacity-100" : "opacity-0")}>
+                                    <div className="text-slate-400 text-sm mb-1">↓ 把 {a} 拆成 {tenPart} 和 {ones}</div>
+                                    <div>
+                                        = (<span className="text-sky-600 font-bold">{tenPart}</span>
+                                        ＋<span className="text-amber-600 font-bold">{ones}</span>) × {b}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 pt-1">
+                                    <div className={"px-3 py-2.5 rounded-lg border smooth-transition " +
+                                        (step === 2 ? "bg-amber-50 border-amber-300 pop" : step > 2 ? "bg-amber-50/60 border-amber-200" : "bg-white border-dashed border-slate-200")}>
+                                        <div className={"text-sm " + (step >= 2 ? "text-slate-500" : "text-slate-300")}>先算小堆（每行剩下的 {ones} 个）</div>
+                                        <div className={"font-bold text-2xl " + (step >= 2 ? "text-amber-700" : "text-slate-300")}>
+                                            {ones} × {b} = {step >= 2 ? pOne : '?'}
+                                        </div>
+                                    </div>
+                                    <div className={"px-3 py-2.5 rounded-lg border smooth-transition " +
+                                        (step === 3 ? "bg-sky-50 border-sky-300 pop" : step > 3 ? "bg-sky-50/60 border-sky-200" : "bg-white border-dashed border-slate-200")}>
+                                        <div className={"text-sm " + (step >= 3 ? "text-slate-500" : "text-slate-300")}>再算大堆（每行的 {tenPart} 个）</div>
+                                        <div className={"font-bold text-2xl " + (step >= 3 ? "text-sky-700" : "text-slate-300")}>
+                                            {tenPart} × {b} = {step >= 3 ? pTen : '?'}
+                                        </div>
+                                        {step >= 3 && (
+                                            <div className="text-xs text-slate-500 mt-1">
+                                                {tens === 1
+                                                    ? <>{tenPart} × {b} 就是 {b} 个十 = {pTen}</>
+                                                    : <>先用口诀 {tens} × {b} = {tens * b}，得到 {tens * b} 个十 = {pTen}</>}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className={"px-3 py-2.5 rounded-lg border smooth-transition " +
+                                        (step >= 4 ? "bg-rose-50 border-rose-300 pop" : "bg-white border-dashed border-slate-200")}>
+                                        <div className={"text-sm " + (step >= 4 ? "text-slate-500" : "text-slate-300")}>两堆合起来</div>
+                                        <div className={"font-bold text-2xl " + (step >= 4 ? "text-rose-600" : "text-slate-300")}>
+                                            {step >= 2 ? pOne : '?'} ＋ {step >= 3 ? pTen : '?'} = {step >= 4 ? total : '?'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {step >= 4 && (
+                                <div className="mt-4 pop">
+                                    <Hint tone="emerald">
+                                        <b>{a} × {b} = {total}</b>。一堆点，拆成两堆分开数，再加起来，个数一个也没多、一个也没少 ——
+                                        所以拆开算的结果和整块数出来的一样。
+                                    </Hint>
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+
+                    {step === 0 ? (
+                        <Hint tone="sky">
+                            {b} × {a} 这样的口诀我们没背过，一个一个数又太慢。
+                            想一想：每行的 {a} 个，能不能<b>先凑出整十</b>，剩下的几个另算？点"下一步"看看。
+                        </Hint>
+                    ) : (
+                        <>
+                            <Hint tone="sky">
+                                <b>为什么要拆？</b>因为 {a} × {b} 我们没背过口诀，但拆开以后的 {ones} × {b} 和 {tenPart} × {b} 都会算：
+                                一个用口诀，一个是整十数口算。<b>把不会的变成两个会的</b>，这就是多位数乘法的全部秘密。
+                            </Hint>
+                            <Hint tone="amber">
+                                <b>只拆一个因数：</b>{b} 是"份数"，一直没动过，始终是 {b} 行。
+                                拆的是"每份数"{a}，两小堆的份数都还是 {b}，所以是 {ones} × {b} 和 {tenPart} × {b}，
+                                不是把 {b} 也拆开。
+                            </Hint>
+                        </>
+                    )}
+
+                    <StepBar step={step} maxStep={MAX} labels={labels}
+                        onReset={() => setStep(0)} onNext={() => setStep(s => Math.min(MAX, s + 1))} />
+                </div>
+            );
+        };
+
+        /* ============ 3. 面积模型：理解含义与分拆 ============ */
 
         const AreaTab = () => {
             const [a, setA] = useState(23);
@@ -281,7 +513,7 @@
             );
         };
 
-        /* ============ 3. 多位数 × 一位数 竖式 ============ */
+        /* ============ 4. 多位数 × 一位数 竖式 ============ */
 
         const buildOneDigitSteps = (a, b) => {
             const digits = String(a).split('').reverse().map(Number); // 个位起
@@ -429,7 +661,7 @@
             );
         };
 
-        /* ============ 4. 两位数 × 两位数 竖式（部分积） ============ */
+        /* ============ 5. 两位数 × 两位数 竖式（部分积） ============ */
 
         const TwoDigitTab = () => {
             const [a, setA] = useState(24);
@@ -549,7 +781,7 @@
             );
         };
 
-        /* ============ 5. 末尾有 0 的简便竖式 ============ */
+        /* ============ 6. 末尾有 0 的简便竖式 ============ */
 
         const ZeroTab = () => {
             const [a, setA] = useState(120);
@@ -639,7 +871,7 @@
             );
         };
 
-        /* ============ 6. 闯关练习 ============ */
+        /* ============ 7. 闯关练习 ============ */
 
         const genQuestion = (level) => {
             const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
@@ -753,11 +985,12 @@
 
         const TABS = [
             { id: 'oral', name: '① 整十整百口算', comp: OralTab },
-            { id: 'area', name: '② 面积模型·理解含义', comp: AreaTab },
-            { id: 'one', name: '③ 多位数×一位数', comp: OneDigitTab },
-            { id: 'two', name: '④ 两位数×两位数', comp: TwoDigitTab },
-            { id: 'zero', name: '⑤ 末尾有0的简算', comp: ZeroTab },
-            { id: 'practice', name: '⑥ 闯关练习', comp: PracticeTab },
+            { id: 'decompose', name: '② 分解运算·拆成两堆', comp: DecomposeTab },
+            { id: 'area', name: '③ 面积模型·理解含义', comp: AreaTab },
+            { id: 'one', name: '④ 多位数×一位数', comp: OneDigitTab },
+            { id: 'two', name: '⑤ 两位数×两位数', comp: TwoDigitTab },
+            { id: 'zero', name: '⑥ 末尾有0的简算', comp: ZeroTab },
+            { id: 'practice', name: '⑦ 闯关练习', comp: PracticeTab },
         ];
 
         const App = () => {
@@ -774,7 +1007,7 @@
                             </svg>
                         </a>
                         <h1 className="text-3xl font-bold text-slate-800">多位数乘法竖式实验室</h1>
-                        <p className="text-slate-500 mt-1">从口算迁移到面积模型，再到竖式每一层部分积，把"为什么这样写"讲清楚</p>
+                        <p className="text-slate-500 mt-1">从口算迁移到拆分与面积模型，再到竖式每一层部分积，把"为什么这样写"讲清楚</p>
                     </header>
 
                     <div className="max-w-5xl mx-auto flex flex-wrap justify-center gap-2 mb-8">

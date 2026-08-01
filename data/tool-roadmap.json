@@ -72,6 +72,24 @@
       ],
       "recommendedTools": [
         {
+          "id": "big-number-practice",
+          "name": "大数的认识·分类练习",
+          "grade": "4",
+          "status": "ready",
+          "route": "/big-number-practice",
+          "knowledgeNodeIds": [
+            "bignum"
+          ],
+          "tabs": [
+            "选择题",
+            "填空题",
+            "排序题",
+            "判断题",
+            "作图题",
+            "解答题"
+          ]
+        },
+        {
           "id": "number-line-place-value",
           "name": "万以内数与大数数位表",
           "grade": "2-4",
@@ -94,13 +112,30 @@
           ],
           "tabs": [
             "整十整百口算",
+            "分解运算·拆成两堆",
             "面积模型·理解含义",
             "多位数×一位数",
             "两位数×两位数",
             "末尾有0的简算",
             "闯关练习"
           ],
-          "notes": "已覆盖多位数乘法（含义、竖式、部分积对位、末尾0简算）；mul-3x2 三位数乘两位数与 div-by-2digit 除法竖式仍待补。"
+          "notes": "已覆盖多位数乘法（点阵分解、含义、竖式、部分积对位、末尾0简算）；分解运算标签页用点阵把 12×7 拆成 10×7 与 2×7，为竖式部分积做铺垫。mul-3x2 三位数乘两位数与 div-by-2digit 除法竖式仍待补。"
+        },
+        {
+          "id": "quotient-invariance-practice",
+          "name": "商不变计算·分类练习",
+          "grade": "4-5",
+          "status": "ready",
+          "route": "/quotient-invariance-practice",
+          "knowledgeNodeIds": [
+            "div-by-2digit",
+            "decimal-div"
+          ],
+          "tabs": [
+            "整数题",
+            "小数题"
+          ],
+          "notes": "91道文档原题按数值类型分类；混合出现整数与小数的题目归入小数题。"
         },
         {
           "id": "mixed-operation-order",
@@ -152,6 +187,25 @@
           "route": "/times-as-many",
           "knowledgeNodeIds": [
             "factor-multiple"
+          ]
+        },
+        {
+          "id": "factor-multiple-practice",
+          "name": "因数与倍数·知识点分类练习",
+          "grade": "5",
+          "status": "ready",
+          "route": "/factor-multiple-practice",
+          "knowledgeNodeIds": [
+            "factor-multiple"
+          ],
+          "tabs": [
+            "因数与倍数",
+            "倍数特征",
+            "奇数与偶数",
+            "质数与合数",
+            "最大公因数",
+            "最小公倍数",
+            "综合应用"
           ]
         },
         {
@@ -333,12 +387,12 @@
         "polygon-area",
         "observe-object",
         "shape-solid",
-        "triangle-classify"
+        "triangle-classify",
+        "measure-units"
       ],
       "missingNodeIds": [
         "shape-plane",
         "pos-basic",
-        "measure-units",
         "cuboid-cube",
         "circle",
         "cylinder-cone",
@@ -411,6 +465,24 @@
           "route": "/measure-units",
           "knowledgeNodeIds": [
             "measure-units"
+          ]
+        },
+        {
+          "id": "unit-dimension-lab",
+          "name": "长度·面积·体积单位换算（维度原理）",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/unit-dimension",
+          "knowledgeNodeIds": [
+            "measure-units",
+            "length-unit",
+            "area"
+          ],
+          "tabs": [
+            "三维对比",
+            "换算阶梯",
+            "数一数",
+            "换算练习"
           ]
         },
         {

@@ -28,7 +28,7 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect, useRef } = React;
 
         // ============ 难度配置 ============
         const LEVELS = {
@@ -562,6 +562,323 @@
             );
         };
 
+        // ============ 入门：一个一个地分（几乎无文字版）============
+        // 面向刚学除法、识字量很少的学生：只看图、看动作、看分组，不读句子。
+        // 屏幕上只允许出现：实物图、分组框、数字、÷ = …… 这些符号，以及图标按钮。
+        // 所有"讲解"都由画面本身承担：
+        //   · 物品从上面的"总数区"一个一个飞到下面的盘子里 → 看见"分"的动作
+        //   · 每个盘子是一个明显的框 → 看见"份"
+        //   · 分不掉的落在红色虚线框里 → 看见"余"
+        //   · 底部算式随着画面同步长出来 → 图和符号一一对应
+
+        const FRUITS = ['🍎', '🍩', '🍓', '🐟', '⭐', '🍋'];
+
+        // 轮流发：第 i 个物品发给第 (i % plates) 个盘子；发不满一整轮的留作余数
+        function dealPlan(total, plates) {
+            const full = Math.floor(total / plates);
+            const rest = total % plates;
+            const seq = [];
+            for (let round = 0; round < full; round++)
+                for (let p = 0; p < plates; p++) seq.push({ kind: 'give', plate: p, round });
+            for (let k = 0; k < rest; k++) seq.push({ kind: 'left', idx: k });
+            return { full, rest, seq };
+        }
+
+        // —— 大号物品 ——
+        const Item = ({ emoji, size = 'text-4xl', anim }) => (
+            <span className={size + ' leading-none ' + (anim || '')}>{emoji}</span>
+        );
+
+        // —— 一个盘子（分组框）：大、边框明显、里面的物品大 ——
+        const BigPlate = ({ items, emoji, active, done }) => (
+            <div className={"smooth-transition rounded-3xl border-4 flex flex-col items-center justify-center gap-1 p-2 " +
+                (active ? 'border-indigo-500 bg-indigo-50 scale-110 shadow-xl'
+                        : done ? 'border-emerald-400 bg-emerald-50'
+                               : 'border-gray-300 bg-white')}
+                 style={{ minWidth: '5.5rem', minHeight: '5.5rem' }}>
+                <div className="flex flex-wrap gap-1 justify-center items-center" style={{ maxWidth: '7rem' }}>
+                    {Array.from({ length: items }).map((_, k) => <Item key={k} emoji={emoji} anim="pop" />)}
+                </div>
+            </div>
+        );
+
+        // —— 余数框：红色虚线，和盘子明显不同 ——
+        const LeftBox = ({ items, emoji, glow }) => (
+            <div className={"smooth-transition rounded-3xl border-4 border-dashed flex items-center justify-center gap-1 p-2 " +
+                (items > 0 ? 'border-rose-500 bg-rose-50 ' + (glow ? 'shadow-xl scale-110' : '') : 'border-gray-200 bg-gray-50')}
+                 style={{ minWidth: '5.5rem', minHeight: '5.5rem' }}>
+                {Array.from({ length: items }).map((_, k) => <Item key={k} emoji={emoji} anim="pop" />)}
+            </div>
+        );
+
+        // —— 圆形图标按钮 ——
+        const IconBtn = ({ onClick, disabled, children, tone = 'amber', big }) => {
+            const tones = {
+                amber: 'bg-amber-400 hover:bg-amber-500 text-white',
+                gray:  'bg-white hover:bg-gray-100 text-gray-500 border-2 border-gray-200',
+            };
+            return (
+                <button onClick={onClick} disabled={disabled}
+                    className={"smooth-transition rounded-full flex items-center justify-center font-bold disabled:opacity-30 " +
+                        tones[tone] + ' ' + (big ? 'w-20 h-20 text-4xl shadow-lg' : 'w-14 h-14 text-2xl shadow')}>
+                    {children}
+                </button>
+            );
+        };
+
+        // —— 盘子小图标（画出来的，比 emoji 在小尺寸下清楚）——
+        const PlateIcon = () => (
+            <span className="inline-block w-7 h-7 rounded-full border-4 border-emerald-400 bg-emerald-50" />
+        );
+
+        // —— 数字微调器：只有 − 数字 + ——
+        const NumStepper = ({ value, onChange, color, min, max, icon }) => (
+            <div className="flex items-center gap-2">
+                <span className="text-3xl flex items-center">{icon}</span>
+                <button onClick={() => onChange(Math.max(min, value - 1))}
+                    className="w-11 h-11 rounded-full bg-white border-2 border-gray-200 text-2xl font-bold text-gray-400 hover:bg-gray-100 smooth-transition">−</button>
+                <span className={"ld text-4xl font-bold w-12 text-center " + color}>{value}</span>
+                <button onClick={() => onChange(Math.min(max, value + 1))}
+                    className="w-11 h-11 rounded-full bg-white border-2 border-gray-200 text-2xl font-bold text-gray-400 hover:bg-gray-100 smooth-transition">+</button>
+            </div>
+        );
+
+        // ================= 小节 ①② 共用：分一分 =================
+        // withRemainder=false 时用能整除的数（正好分完）；true 时用除不尽的数（出现余数）
+        const DealScene = ({ withRemainder }) => {
+            const [emojiIdx, setEmojiIdx] = useState(0);
+            const [plates, setPlates] = useState(3);
+            const [total, setTotal] = useState(withRemainder ? 7 : 6);
+            const [given, setGiven] = useState(0);
+            const [auto, setAuto] = useState(false);
+            const emoji = FRUITS[emojiIdx];
+
+            const { full, rest, seq } = dealPlan(total, plates);
+            const done = given >= total;
+            const next = given < total ? seq[given] : null;
+
+            const inPlate = Array.from({ length: plates }, (_, p) =>
+                seq.slice(0, given).filter(s => s.kind === 'give' && s.plate === p).length);
+            const leftNow = seq.slice(0, given).filter(s => s.kind === 'left').length;
+
+            useEffect(() => {
+                if (!auto) return;
+                if (given >= total) { setAuto(false); return; }
+                const t = setTimeout(() => setGiven(g => g + 1), 480);
+                return () => clearTimeout(t);
+            }, [auto, given, total]);
+
+            const reset = () => { setGiven(0); setAuto(false); };
+            const chTotal  = (v) => { setTotal(v); reset(); };
+            const chPlates = (v) => { setPlates(v); reset(); };
+
+            return (
+                <div className="flex flex-col items-center gap-4 w-full">
+                    {/* —— 上：还没分的一堆（分完后收起，不留空白）—— */}
+                    {!done && (
+                        <div className="w-full rounded-3xl border-4 border-dashed border-indigo-200 bg-indigo-50/40 p-4 flex flex-wrap gap-2 justify-center items-center" style={{ minHeight: '5.5rem' }}>
+                            {Array.from({ length: total - given }).map((_, k) => <Item key={k} emoji={emoji} />)}
+                        </div>
+                    )}
+
+                    {/* —— 箭头：正在往下发 —— */}
+                    {!done && <div className="text-5xl leading-none text-indigo-400 animate-bounce">↓</div>}
+
+                    {/* —— 下：盘子 + 余数框 —— */}
+                    <div className="flex flex-wrap gap-3 justify-center items-center">
+                        {Array.from({ length: plates }).map((_, p) => (
+                            <BigPlate key={p} items={inPlate[p]} emoji={emoji}
+                                active={next && next.kind === 'give' && next.plate === p}
+                                done={done} />
+                        ))}
+                        {rest > 0 && (
+                            <>
+                                <span className="text-4xl text-gray-200 font-thin">|</span>
+                                <LeftBox items={leftNow} emoji={emoji} glow={next && next.kind === 'left'} />
+                            </>
+                        )}
+                    </div>
+
+                    {/* —— 算式：跟着画面一格一格长出来 —— */}
+                    <div className="ld text-5xl flex items-center gap-3 flex-wrap justify-center min-h-[3.5rem]">
+                        <span className="text-indigo-500">{total}</span>
+                        <span className="text-gray-300">÷</span>
+                        <span className="text-emerald-500">{plates}</span>
+                        <span className="text-gray-300">=</span>
+                        {done
+                            ? <span className="text-blue-500 font-bold pop">{full}</span>
+                            : <span className="text-gray-200">?</span>}
+                        {rest > 0 && (done
+                            ? <><span className="text-gray-300">…</span><span className="text-rose-500 font-bold pop">{rest}</span></>
+                            : <><span className="text-gray-200">…</span><span className="text-gray-200">?</span></>)}
+                    </div>
+
+                    {/* —— 控制：图标按钮 —— */}
+                    <div className="flex gap-4 items-center">
+                        <IconBtn onClick={reset} disabled={given === 0} tone="gray">↺</IconBtn>
+                        <IconBtn onClick={() => setGiven(g => Math.min(total, g + 1))} disabled={done} tone="amber" big>👇</IconBtn>
+                        <IconBtn onClick={() => setAuto(a => !a)} disabled={done} tone="gray">{auto ? '⏸' : '▶'}</IconBtn>
+                    </div>
+
+                    {/* —— 设置：物品数、份数、换图案 —— */}
+                    <div className="flex flex-wrap gap-6 justify-center items-center bg-white rounded-2xl border-2 border-gray-100 px-5 py-3">
+                        <NumStepper icon={emoji} value={total} onChange={chTotal} min={1} max={16} color="text-indigo-500" />
+                        <NumStepper icon={<PlateIcon />} value={plates} onChange={chPlates} min={2} max={5} color="text-emerald-500" />
+                        <div className="flex gap-1">
+                            {FRUITS.map((f, i) => (
+                                <button key={i} onClick={() => { setEmojiIdx(i); reset(); }}
+                                    className={"w-11 h-11 rounded-xl text-2xl smooth-transition " +
+                                        (emojiIdx === i ? 'bg-amber-100 ring-4 ring-amber-300' : 'bg-gray-50 hover:bg-gray-100')}>
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ================= 小节 ③：余数为什么比除数小 =================
+        // 纯图：被除数一个一个变多，每行把物品按 divisor 圈成整组，余下的放红框。
+        // 学生看到的是"红框里的个数 0,1,2,0,1,2… 循环，永远到不了 3"。
+        const WhyScene = () => {
+            const [plates, setPlates] = useState(3);
+            const [n, setN] = useState(0);
+            const [emojiIdx, setEmojiIdx] = useState(0);
+            const emoji = FRUITS[emojiIdx];
+            const maxN = plates * 3;
+
+            return (
+                <div className="flex flex-col items-center gap-4 w-full">
+                    {/* 顶部：份数设置 */}
+                    <div className="flex flex-wrap gap-6 justify-center items-center bg-white rounded-2xl border-2 border-gray-100 px-5 py-3">
+                        <NumStepper icon={<PlateIcon />} value={plates} onChange={(v) => { setPlates(v); setN(0); }} min={2} max={5} color="text-emerald-500" />
+                        <div className="flex gap-1">
+                            {FRUITS.slice(0, 4).map((f, i) => (
+                                <button key={i} onClick={() => setEmojiIdx(i)}
+                                    className={"w-11 h-11 rounded-xl text-2xl smooth-transition " +
+                                        (emojiIdx === i ? 'bg-amber-100 ring-4 ring-amber-300' : 'bg-gray-50 hover:bg-gray-100')}>
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 每一行：整组（绿框）+ 余下（红框）+ 算式 */}
+                    <div className="w-full flex flex-col gap-2">
+                        {Array.from({ length: n }, (_, i) => i + 1).map(v => {
+                            const q = Math.floor(v / plates), r = v % plates;
+                            return (
+                                <div key={v} className={"flex items-center gap-3 flex-wrap px-3 py-2 rounded-2xl smooth-transition " +
+                                    (r === 0 ? 'bg-emerald-50 border-2 border-emerald-200' : 'bg-white border-2 border-gray-100') +
+                                    (v === n ? ' fade-in' : '')}>
+                                    {/* 图：整组 */}
+                                    <span className="flex gap-1.5 items-center flex-wrap flex-1" style={{ minWidth: '11rem' }}>
+                                        {Array.from({ length: q }).map((_, gi) => (
+                                            <span key={gi} className="inline-flex gap-0.5 px-1.5 py-1 rounded-xl border-3 border-emerald-400 bg-emerald-50"
+                                                  style={{ borderWidth: 3 }}>
+                                                {Array.from({ length: plates }).map((__, k) => <span key={k} className="text-xl leading-none">{emoji}</span>)}
+                                            </span>
+                                        ))}
+                                        {/* 图：余下 */}
+                                        {r > 0 && (
+                                            <span className="inline-flex gap-0.5 px-1.5 py-1 rounded-xl border-dashed border-rose-400 bg-rose-50" style={{ borderWidth: 3 }}>
+                                                {Array.from({ length: r }).map((_, k) => <span key={k} className="text-xl leading-none">{emoji}</span>)}
+                                            </span>
+                                        )}
+                                    </span>
+                                    {/* 算式 */}
+                                    <span className="ld text-2xl whitespace-nowrap">
+                                        <span className="text-indigo-500">{v}</span>
+                                        <span className="text-gray-300"> ÷ </span>
+                                        <span className="text-emerald-500">{plates}</span>
+                                        <span className="text-gray-300"> = </span>
+                                        <span className="text-blue-500 font-bold">{q}</span>
+                                        {r > 0
+                                            ? <><span className="text-gray-300">…</span><span className="text-rose-500 font-bold">{r}</span></>
+                                            : <span className="text-emerald-500 text-2xl ml-1">✓</span>}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                        {n === 0 && (
+                            <div className="text-center py-10 text-6xl opacity-20">👇</div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-4 items-center">
+                        <IconBtn onClick={() => setN(0)} disabled={n === 0} tone="gray">↺</IconBtn>
+                        <IconBtn onClick={() => setN(v => Math.min(maxN, v + 1))} disabled={n >= maxN} tone="amber" big>👇</IconBtn>
+                    </div>
+
+                    {/* 结论：纯符号——余数只可能是 0..plates-1，用色块排出来 */}
+                    {n >= plates + 1 && (
+                        <div className="fade-in w-full rounded-3xl border-4 border-amber-300 bg-amber-50 p-5 flex flex-col items-center gap-3">
+                            <div className="flex gap-2 flex-wrap justify-center items-center">
+                                {Array.from({ length: plates }).map((_, i) => (
+                                    <span key={i} className="ld w-14 h-14 rounded-2xl bg-white border-4 border-rose-300 text-rose-500 text-3xl font-bold flex items-center justify-center">{i}</span>
+                                ))}
+                                <span className="ld w-14 h-14 rounded-2xl bg-gray-100 border-4 border-gray-300 text-gray-300 text-3xl font-bold flex items-center justify-center relative">
+                                    {plates}
+                                    <span className="absolute inset-0 flex items-center justify-center text-5xl text-rose-400">🚫</span>
+                                </span>
+                            </div>
+                            <div className="ld text-4xl font-bold flex items-center gap-3">
+                                <span className="text-rose-500">?</span>
+                                <span className="text-gray-400">&lt;</span>
+                                <span className="text-emerald-500">{plates}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // ================= 入门主页：三个小节用图标切换 =================
+        const BeginnerTab = () => {
+            const [sub, setSub] = useState(0);
+            // 小节图标本身就说明内容：①全绿=正好分完 ②绿+红=有剩下 ③循环
+            const SubIcon = ({ i, on }) => {
+                const dot = (cls) => <span className={"w-2.5 h-2.5 rounded-full " + cls} />;
+                if (i === 2) return <span className={"text-2xl leading-none " + (on ? '' : 'grayscale opacity-60')}>🔁</span>;
+                return (
+                    <span className="flex items-center gap-1">
+                        <span className="flex gap-0.5 px-1 py-0.5 rounded-md border-2 border-emerald-400 bg-emerald-50">
+                            {dot('bg-emerald-500')}{dot('bg-emerald-500')}
+                        </span>
+                        {i === 1 && (
+                            <span className="flex px-1 py-0.5 rounded-md border-2 border-dashed border-rose-400 bg-rose-50">
+                                {dot('bg-rose-500')}
+                            </span>
+                        )}
+                    </span>
+                );
+            };
+            return (
+                <div className="fade-in flex flex-col items-center gap-5 w-full">
+                    {/* 小节切换：图标直接画出该小节的画面特征 */}
+                    <div className="flex gap-3 justify-center">
+                        {[0, 1, 2].map(i => (
+                            <button key={i} onClick={() => setSub(i)}
+                                className={"smooth-transition rounded-2xl w-24 h-16 flex flex-col items-center justify-center gap-1 border-4 " +
+                                    (sub === i ? 'border-amber-400 bg-amber-100 shadow-lg scale-105' : 'border-gray-200 bg-white hover:bg-gray-50')}>
+                                <SubIcon i={i} on={sub === i} />
+                                <span className={"ld text-sm font-bold " + (sub === i ? 'text-amber-600' : 'text-gray-400')}>
+                                    {i + 1}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-white rounded-3xl shadow-lg p-5 w-full max-w-2xl">
+                        {sub === 0 && <DealScene key="even" withRemainder={false} />}
+                        {sub === 1 && <DealScene key="rest" withRemainder={true} />}
+                        {sub === 2 && <WhyScene />}
+                    </div>
+                </div>
+            );
+        };
+
         // ============ 通用组件 ============
         const PageHeader = ({ title, subtitle }) => (
             <header className="relative max-w-4xl mx-auto text-center mb-6 px-12">
@@ -846,9 +1163,10 @@
 
         // ============ 主应用 ============
         const App = () => {
-            const [tab, setTab] = useState('demo');
+            const [tab, setTab] = useState('begin');
             const tabs = [
-                { k: 'demo', label: '演示', color: 'bg-indigo-500' },
+                { k: 'begin', label: '入门·分一分', color: 'bg-amber-500' },
+                { k: 'demo', label: '演示·竖式', color: 'bg-indigo-500' },
                 { k: 'inverse', label: '逆过程·验算', color: 'bg-rose-500' },
                 { k: 'practice', label: '练习', color: 'bg-emerald-500' },
             ];
@@ -865,6 +1183,7 @@
                         ))}
                     </div>
                     <div className="max-w-4xl mx-auto">
+                        {tab === 'begin' && <BeginnerTab />}
                         {tab === 'demo' && <DemoTab />}
                         {tab === 'inverse' && <InverseTab />}
                         {tab === 'practice' && <PracticeTab />}

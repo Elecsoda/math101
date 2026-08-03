@@ -559,12 +559,20 @@
         },
         {
           "id": "solid-volume-lab",
-          "name": "长方体正方体体积与表面积",
-          "grade": "5",
-          "status": "planned",
+          "name": "体积与表面积（拖拽旋转·数方块·展开）",
+          "grade": "5-6",
+          "status": "ready",
           "route": "/solid-volume",
           "knowledgeNodeIds": [
-            "cuboid-cube"
+            "cuboid-cube",
+            "cylinder-cone"
+          ],
+          "tabs": [
+            "看一看",
+            "数方块",
+            "表面积",
+            "公式对比",
+            "练一练"
           ]
         },
         {

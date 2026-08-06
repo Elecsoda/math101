@@ -1,0 +1,15 @@
+# 纯静态站点，无需构建
+[build]
+  publish = "."
+  command = ""
+
+# 目录式 URL：/calc -> /calc/index.html 由 Netlify 自动处理
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小学数学探索工具｜孙维刚教育研究院</title>
-    <style>
+    <title>小学数学 · 计算｜孙维刚教育研究院</title>
+<style>
         :root {
             --primary-color: #4a90e2;
             --accent-color: #673ab7;
@@ -343,53 +343,57 @@
             color: #999;
             font-size: 0.85rem;
         }
+    
+        /* ===== 跨站导航 ===== */
+        .cross-nav {
+            width: 100%;
+            background: #1e293b;
+        }
+        .cross-nav-inner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            width: 94%;
+            max-width: 1480px;
+            margin: 0 auto;
+            padding: 9px 20px;
+            box-sizing: border-box;
+        }
+        .cross-nav-label {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            margin-right: 4px;
+        }
+        .cross-nav-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: #cbd5e1;
+            transition: background 0.15s, color 0.15s;
+        }
+        .cross-nav-item:hover { background: rgba(255,255,255,0.10); color: #fff; }
+        .cross-nav-item.current { background: #4a90e2; color: #fff; }
     </style>
     <link rel="stylesheet" href="./ipad-touch-adapter.css">
     <script src="./ipad-touch-adapter.js" defer></script>
 </head>
 <body>
 
+<nav class="cross-nav"><div class="cross-nav-inner"><span class="cross-nav-label">数学工具站</span><span class="cross-nav-item current">计算</span><a class="cross-nav-item" href="https://math102.yumath.com">几何</a><a class="cross-nav-item" href="https://math103.yumath.com">应用题</a><a class="cross-nav-item" href="https://math104.yumath.com">奥数思维</a></div></nav>
+
     <header>
-        <h1>小学数学探索工具</h1>
-        <p class="subtitle">孙维刚教育研究院</p>
+        <h1>小学数学 · 计算</h1>
+        <p class="subtitle">整数 · 小数 · 分数 · 比与比例 · 方程与计算训练</p>
     </header>
 
-    <!-- ============ 顶部知识板块导航 ============ -->
-    <nav class="board-nav">
-        <div class="board-nav-inner">
-            <a href="#board-number">数与代数</a>
-            <a href="#board-geometry">图形与几何</a>
-            <a href="#board-stats">统计与概率</a>
-            <a href="#board-word">应用题</a>
-            <a href="#board-comb">组合·数论·逻辑</a>
-        </div>
-    </nav>
-
-    <!-- ============ 板块一：数与代数 ============ -->
-    <div class="board-title board-anchor" id="board-number">
-        <h2>数与代数</h2>
-        <p>按整数、小数、分数、比与比例、方程五大板块依次展开，整数部分含认识、计算与所有基本运算的理解和练习。</p>
-    </div>
-
-    <div class="section-title">
-        <h3>教材知识 · 数与代数</h3>
-        <p>按整数、小数、分数、比与比例、方程的顺序分块。</p>
-    </div>
-
-    <!-- ===== 一、整数部分 ===== -->
-    <div class="section-title sub-title">
-        <h3>整数 · 认识与数感</h3>
-        <p>数位、位值、大小、数轴与倍数因数。</p>
-    </div>
-    <div class="container" data-interface-categories="school-number" data-interface-tool-ids="__none__">
-        <a href="/place-value" class="tool-card math-op">
-            <div class="url-tag">/place-value</div>
-            <span class="category-label">数的认识</span>
-            <h2>数位与数感·读大数 <span class="update-tag">NEW</span></h2>
-            <p>用数位表规范读大数，练数感与生活数量规模。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
+    <div class="container">
         <a href="/big-number-practice" class="tool-card math-op">
             <div class="url-tag">/big-number-practice</div>
             <span class="category-label">大数分类练习</span>
@@ -406,6 +410,14 @@
             <span class="status-badge">进入工具</span>
         </a>
 
+        <a href="/place-value" class="tool-card math-op">
+            <div class="url-tag">/place-value</div>
+            <span class="category-label">数的认识</span>
+            <h2>数位与数感·读大数 <span class="update-tag">NEW</span></h2>
+            <p>用数位表规范读大数，练数感与生活数量规模。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
         <a href="/number-line" class="tool-card math-op">
             <div class="url-tag">/number-line</div>
             <span class="category-label">数轴·正负数</span>
@@ -414,28 +426,6 @@
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/times-as-many" class="tool-card math-op">
-            <div class="url-tag">/times-as-many</div>
-            <span class="category-label">倍与因数</span>
-            <h2>倍数与整除 <span class="update-tag">NEW</span></h2>
-            <p>从几倍到倍数、因数、整除、质数与公倍数。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/factor-multiple-practice" class="tool-card math-op">
-            <div class="url-tag">/factor-multiple-practice</div>
-            <span class="category-label">因数倍数练习</span>
-            <h2>因数与倍数练习题库 <span class="update-tag">NEW</span></h2>
-            <p>100道原卷题按7个知识点分类，逐题练习并可按需查看答案。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-    </div>
-
-    <div class="section-title sub-title">
-        <h3>整数 · 运算与乘除模型</h3>
-        <p>加减法、表内乘除、有余数除法和多位数运算。</p>
-    </div>
-    <div class="container" data-interface-categories="school-number calc-track advanced-calc-number-theory" data-interface-tool-ids="multi-digit-calc-lab integer-skill-drill">
         <a href="/make-ten" class="tool-card math-op">
             <div class="url-tag">/make-ten</div>
             <span class="category-label">20以内加减法</span>
@@ -452,6 +442,14 @@
             <span class="status-badge">进入工具</span>
         </a>
 
+        <a href="/fast-calc" class="tool-card math-law">
+            <div class="url-tag">/fast-calc</div>
+            <span class="category-label">速算与巧算</span>
+            <h2>速算原理演示 <span class="update-tag">NEW</span></h2>
+            <p>演示凑整、拆分、基准数和等差求和。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
         <a href="/times-table" class="tool-card math-op">
             <div class="url-tag">/times-table</div>
             <span class="category-label">表内乘法</span>
@@ -460,11 +458,11 @@
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/multi-digit-calc" class="tool-card math-op">
-            <div class="url-tag">/multi-digit-calc</div>
-            <span class="category-label">多位数乘法</span>
-            <h2>多位数乘法竖式实验室 <span class="update-tag">NEW</span></h2>
-            <p>点阵分解 12×7，面积模型讲含义，逐层拆解竖式部分积。</p>
+        <a href="/multiply-model" class="tool-card applied">
+            <div class="url-tag">/multiply-model</div>
+            <span class="category-label">基础演示工具</span>
+            <h2>每份数×份数=总数 <span class="update-tag">NEW</span></h2>
+            <p>把应用题画成每份数、份数、总数。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -481,6 +479,14 @@
             <span class="category-label">表内除法</span>
             <h2>乘除互逆·一图四式 <span class="update-tag">NEW</span></h2>
             <p>一张点阵生成两乘两除，理解互逆。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/multi-digit-calc" class="tool-card math-op">
+            <div class="url-tag">/multi-digit-calc</div>
+            <span class="category-label">多位数乘法</span>
+            <h2>多位数乘法竖式实验室 <span class="update-tag">NEW</span></h2>
+            <p>点阵分解 12×7，面积模型讲含义，逐层拆解竖式部分积。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -508,22 +514,6 @@
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/calc" class="tool-card math-law">
-            <div class="url-tag">/calc</div>
-            <span class="category-label">计算训练</span>
-            <h2>计算练习与测试 <span class="update-tag">NEW</span></h2>
-            <p>20个进阶训练选项卡，随机出题并统计正确率。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/fast-calc" class="tool-card math-law">
-            <div class="url-tag">/fast-calc</div>
-            <span class="category-label">速算与巧算</span>
-            <h2>速算原理演示 <span class="update-tag">NEW</span></h2>
-            <p>演示凑整、拆分、基准数和等差求和。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
         <a href="/law_of_operation" class="tool-card math-law">
             <div class="url-tag">/law_of_operation</div>
             <span class="category-label">运算定律</span>
@@ -531,14 +521,23 @@
             <p>用面积模型展示乘法分配律等运算律。</p>
             <span class="status-badge">进入工具</span>
         </a>
-    </div>
 
-    <!-- ===== 二、小数部分 ===== -->
-    <div class="section-title sub-title">
-        <h3>小数 · 认识与运算</h3>
-        <p>小数意义、数位、小数点移位与小数运算。</p>
-    </div>
-    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="decimal-addsub-align decimal-muldiv-shift fraction-decimal-mix">
+        <a href="/times-as-many" class="tool-card math-op">
+            <div class="url-tag">/times-as-many</div>
+            <span class="category-label">倍与因数</span>
+            <h2>倍数与整除 <span class="update-tag">NEW</span></h2>
+            <p>从几倍到倍数、因数、整除、质数与公倍数。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
+        <a href="/factor-multiple-practice" class="tool-card math-op">
+            <div class="url-tag">/factor-multiple-practice</div>
+            <span class="category-label">因数倍数练习</span>
+            <h2>因数与倍数练习题库 <span class="update-tag">NEW</span></h2>
+            <p>100道原卷题按7个知识点分类，逐题练习并可按需查看答案。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
         <a href="/decimal-1" class="tool-card math-op">
             <div class="url-tag">/decimal-1</div>
             <span class="category-label">小数意义</span>
@@ -571,34 +570,11 @@
             <span class="status-badge">进入工具</span>
         </a>
 
-        <a href="/measure-units" class="tool-card math-op">
-            <div class="url-tag">/measure-units</div>
-            <span class="category-label">综合单位换算</span>
-            <h2>单位换算与大小比较 <span class="update-tag">NEW</span></h2>
-            <p>长度、面积、体积、时间、质量和金钱换算，配套大小比较练习。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-    </div>
-
-    <!-- ===== 三、分数部分 ===== -->
-    <div class="section-title sub-title">
-        <h3>分数 · 认识、性质与运算</h3>
-        <p>分数意义、约分通分与分数加减乘除。</p>
-    </div>
-    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="fraction-meaning-properties fraction-mul-div">
         <a href="/fraction" class="tool-card math-op">
             <div class="url-tag">/fraction</div>
             <span class="category-label">分数初步认识</span>
             <h2>分数的初步认识 <span class="update-tag">NEW</span></h2>
             <p>用整体平均分理解分子和分母。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/fraction-properties" class="tool-card math-op">
-            <div class="url-tag">/fraction-properties</div>
-            <span class="category-label">分数的意义和性质</span>
-            <h2>约分与通分演示器 <span class="update-tag">NEW</span></h2>
-            <p>用饼图演示等值分数、自动约分，以及两至三个异分母分数的自动通分。</p>
             <span class="status-badge">进入工具</span>
         </a>
 
@@ -618,6 +594,14 @@
             <span class="status-badge">进入工具</span>
         </a>
 
+        <a href="/fraction-properties" class="tool-card math-op">
+            <div class="url-tag">/fraction-properties</div>
+            <span class="category-label">分数的意义和性质</span>
+            <h2>约分与通分演示器 <span class="update-tag">NEW</span></h2>
+            <p>用饼图演示等值分数、自动约分，以及两至三个异分母分数的自动通分。</p>
+            <span class="status-badge">进入工具</span>
+        </a>
+
         <a href="/percent" class="tool-card math-op">
             <div class="url-tag">/percent</div>
             <span class="category-label">百分数的认识</span>
@@ -625,14 +609,7 @@
             <p>用百方图、饼状图、进度条建立百分数直观，含与小数分数的转化、简单计算和生活中的例子。</p>
             <span class="status-badge">进入工具</span>
         </a>
-    </div>
 
-    <!-- ===== 四、比与比例 ===== -->
-    <div class="section-title sub-title">
-        <h3>比与比例</h3>
-        <p>比的意义、正反比例与比例应用。（百分数并入分数板块）</p>
-    </div>
-    <div class="container" data-interface-categories="school-number advanced-calc-number-theory" data-interface-tool-ids="ratio-proportion">
         <a href="/ratio-proportion" class="tool-card math-op">
             <div class="url-tag">/ratio-proportion</div>
             <span class="category-label">比与比例</span>
@@ -640,14 +617,7 @@
             <p>用方块、配方和动态关系理解比、比值、比例及常见应用，配套即时练习。</p>
             <span class="status-badge">进入工具</span>
         </a>
-    </div>
 
-    <!-- ===== 五、方程 ===== -->
-    <div class="section-title sub-title">
-        <h3>方程与代数初步</h3>
-        <p>用天平模型和数量关系进入方程思想。</p>
-    </div>
-    <div class="container">
         <a href="/simple-equation" class="tool-card math-op">
             <div class="url-tag">/simple-equation</div>
             <span class="category-label">方程与等式性质</span>
@@ -655,503 +625,19 @@
             <p>从天平到等式性质，再到解方程讲解与练习。</p>
             <span class="status-badge">进入工具</span>
         </a>
-    </div>
 
-    <!-- ============ 板块二：图形与几何 ============ -->
-    <div class="board-title board-anchor" id="board-geometry">
-        <h2>图形与几何</h2>
-        <p>教材知识与进阶几何体系：量感、角、平移旋转对称、周长面积、辅助线与勾股定理。</p>
-    </div>
-
-    <div class="section-title">
-        <h3>教材知识 · 图形与几何</h3>
-        <p>量感、角、平移、旋转与对称。</p>
-    </div>
-    <div class="container" data-interface-categories="school-geometry">
-        <a href="/length" class="tool-card geometry">
-            <div class="url-tag">/length</div>
-            <span class="category-label">长度单位</span>
-            <h2>长度单位认识与换算工具 <span class="update-tag">NEW</span></h2>
-            <p>用标尺和单位楼梯理解长度换算。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/geometry-basics" class="tool-card geometry">
-            <div class="url-tag">/geometry-basics</div>
-            <span class="category-label">几何基础概念</span>
-            <h2>线·角·平行与垂直 <span class="update-tag">NEW</span></h2>
-            <p>拖一拖看懂直线射线线段的区别，叠角比大小、拼角、找图形里的角，摆出平行与垂直。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/shape-angle-lab" class="tool-card geometry">
-            <div class="url-tag">/shape-angle-lab</div>
-            <span class="category-label">图形角度关系</span>
-            <h2>基础图形角度探索 <span class="update-tag">NEW</span></h2>
-            <p>拖动图形找角度关系，把多边形切成三角形，再用角片自由拼出相加、相减、互余与互补。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/angle" class="tool-card geometry">
-            <div class="url-tag">/angle</div>
-            <span class="category-label">角与基本图形</span>
-            <h2>角的初步认识 <span class="update-tag">NEW</span></h2>
-            <p>拖动角度，辨认锐角、直角、钝角。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/angle-measure" class="tool-card geometry">
-            <div class="url-tag">/angle-measure</div>
-            <span class="category-label">量角器与测量</span>
-            <h2>量角器与角度测量 <span class="update-tag">NEW</span></h2>
-            <p>自己移动、旋转量角器，量出任意方向角的度数。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/transform" class="tool-card geometry">
-            <div class="url-tag">/transform</div>
-            <span class="category-label">位置与运动</span>
-            <h2>平移·旋转·对称 <span class="update-tag">NEW</span></h2>
-            <p>在网格中操作平移、旋转和对称。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/tessellation" class="tool-card geometry">
-            <div class="url-tag">/tessellation</div>
-            <span class="category-label">图形密铺</span>
-            <h2>图形密铺·拖动拼摆 <span class="update-tag">NEW</span></h2>
-            <p>围一点、转半圈，再到自由密铺画板。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/paper-folding" class="tool-card geometry">
-            <div class="url-tag">/paper-folding</div>
-            <span class="category-label">折纸与对称</span>
-            <h2>折纸实验室 <span class="update-tag">NEW</span></h2>
-            <p>折一折找对称轴，剪窗花一步步折了再摊开，折出 60°，算折角度数，还能自由折纸打洞。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/perimeter-area" class="tool-card geometry">
-            <div class="url-tag">/perimeter-area</div>
-            <span class="category-label">周长与面积</span>
-            <h2>周长面积·六图形练习 <span class="update-tag">NEW</span></h2>
-            <p>看公式推导，练六种图形的正向计算与反求边、底、高。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/perimeter-area-practice" class="tool-card geometry">
-            <div class="url-tag">/perimeter-area-practice</div>
-            <span class="category-label">周长面积题库</span>
-            <h2>周长与面积·分类练习 <span class="update-tag">NEW</span></h2>
-            <p>两份作业共201题，按知识点和题型筛选，圆相关题目独立成专题。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/triangle" class="tool-card geometry">
-            <div class="url-tag">/triangle</div>
-            <span class="category-label">三角形</span>
-            <h2>三角形系统学习 <span class="update-tag">NEW</span></h2>
-            <p>认识三角形与稳定性、三边关系、按角与按边分类、内角和、画三条高，拼摆推导面积并分类练习。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/parallelogram" class="tool-card geometry">
-            <div class="url-tag">/parallelogram</div>
-            <span class="category-label">平行四边形</span>
-            <h2>平行四边形系统学习 <span class="update-tag">NEW</span></h2>
-            <p>认识特征、画高、不稳定性、图形关系，割补推导面积并分类练习。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/object-viewer" class="tool-card geometry">
-            <div class="url-tag">/object-viewer</div>
-            <span class="category-label">空间与计数</span>
-            <h2>堆叠小方块 <span class="update-tag">NEW</span></h2>
-            <p>自由搭建和移动方块，分层数数量，并从明确的方向观察三视图。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/solid-shapes" class="tool-card geometry">
-            <div class="url-tag">/solid-shapes</div>
-            <span class="category-label">立体图形</span>
-            <h2>基础立体图形 <span class="update-tag">NEW</span></h2>
-            <p>长方体、圆柱、圆锥、球、正四面体，拖动旋转看三视图。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/solid-unfold" class="tool-card geometry">
-            <div class="url-tag">/solid-unfold</div>
-            <span class="category-label">展开图与截面</span>
-            <h2>展开图与截面 <span class="update-tag">NEW</span></h2>
-            <p>看立体图形怎么摊平，6 色编号追踪每块面判断 11 种正方体展开图，在展开图上算表面积，还能任意位置、任意角度切开看截面。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/solid-volume" class="tool-card geometry">
-            <div class="url-tag">/solid-volume</div>
-            <span class="category-label">体积与表面积</span>
-            <h2>体积与表面积 <span class="update-tag">NEW</span></h2>
-            <p>拖动旋转正方体、长方体、圆柱、圆锥、球，滑块一调体积和表面积立刻跟着变；用小方块一层一层数出「长×宽×高」，把表面摊开看清每个面，还能倒水验证圆锥是圆柱的 1/3。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/unit-dimension" class="tool-card geometry">
-            <div class="url-tag">/unit-dimension</div>
-            <span class="category-label">长度·面积·体积单位</span>
-            <h2>单位换算的维度原理 <span class="update-tag">NEW</span></h2>
-            <p>并排对比线段、方格与方块，看懂进率 10、100、1000 的来历，配换算阶梯与练习。</p>
+        <a href="/calc" class="tool-card math-law">
+            <div class="url-tag">/calc</div>
+            <span class="category-label">计算训练</span>
+            <h2>计算练习与测试 <span class="update-tag">NEW</span></h2>
+            <p>20个进阶训练选项卡，随机出题并统计正确率。</p>
             <span class="status-badge">进入工具</span>
         </a>
     </div>
 
-    <div class="section-title">
-        <h3>进阶知识 · 几何体系</h3>
-        <p>直线型与曲线型几何、立体展开截面、几何变换与勾股定理。</p>
-    </div>
-    <div class="container" data-interface-categories="advanced-geometry">
-    </div>
+    <footer>
+        <p>孙维刚教育研究院 · 共 30 个工具</p>
+    </footer>
 
-    <!-- ============ 板块三：统计与概率 ============ -->
-    <div class="board-title board-anchor" id="board-stats">
-        <h2>统计与概率</h2>
-        <p>数据整理、图表表达、平均数与可能性。</p>
-    </div>
-
-    <div class="section-title">
-        <h3>教材知识 · 统计与概率</h3>
-        <p>数据整理、图表表达和平均数。</p>
-    </div>
-    <div class="container" data-interface-categories="school-stats">
-        <a href="/statistics" class="tool-card data">
-            <div class="url-tag">/statistics</div>
-            <span class="category-label">平均数与数据代表</span>
-            <h2>数据分析·平均数 <span class="update-tag">NEW</span></h2>
-            <p>用移多补少理解平均数和数据代表。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/charts" class="tool-card data">
-            <div class="url-tag">/charts</div>
-            <span class="category-label">统计表与统计图</span>
-            <h2>统计表与统计图 <span class="update-tag">NEW</span></h2>
-            <p>用同一组数据对比表、条形图和折线图。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/possibility" class="tool-card data">
-            <div class="url-tag">/possibility</div>
-            <span class="category-label">可能性与概率</span>
-            <h2>可能性实验室 <span class="update-tag">NEW</span></h2>
-            <p>抛硬币、扔骰子、可自定义百分比的抽奖转盘与盲盒，自动记录数据，对比实验频率与理论概率。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-    </div>
-
-    <!-- ============ 板块四：应用题 ============ -->
-    <div class="board-title board-anchor" id="board-word">
-        <h2>应用题</h2>
-        <p>教材综合与实践、应用题模型，到进阶应用题体系与行程问题。</p>
-    </div>
-
-    <div class="section-title">
-        <h3>教材知识 · 综合与实践</h3>
-        <p>时间、货币与购物场景。</p>
-    </div>
-    <div class="container" data-interface-categories="school-practice">
-        <a href="/clock" class="tool-card applied">
-            <div class="url-tag">/clock</div>
-            <span class="category-label">时间与经过时间</span>
-            <h2>认识时间·钟表 <span class="update-tag">NEW</span></h2>
-            <p>拖动时针分针读取时间和经过时间。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/money" class="tool-card applied">
-            <div class="url-tag">/money</div>
-            <span class="category-label">人民币认识</span>
-            <h2>认识人民币·购物 <span class="update-tag">NEW</span></h2>
-            <p>用纸币硬币练习付款和找零。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/shopping" class="tool-card applied">
-            <div class="url-tag">/shopping</div>
-            <span class="category-label">整数购物计算</span>
-            <h2>购物计算·整数版 <span class="update-tag">NEW</span></h2>
-            <p>用整元商品练习单价、数量、总价。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/shopping-decimal" class="tool-card applied">
-            <div class="url-tag">/shopping-decimal</div>
-            <span class="category-label">小数购物计算</span>
-            <h2>购物计算·小数版 <span class="update-tag">NEW</span></h2>
-            <p>用角分价格练习小数购物计算。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-    </div>
-
-    <!-- ============ 进阶知识：应用题体系 ============ -->
-    <div class="section-title">
-        <h3>进阶知识 · 应用题体系</h3>
-        <p>先用基础演示学会读题，再按应用题类型专项突破。</p>
-    </div>
-    <div class="container" data-interface-categories="advanced-word">
-        <a href="/bar-model" class="tool-card applied">
-            <div class="url-tag">/bar-model</div>
-            <span class="category-label">最基础 · 读题演示</span>
-            <h2>读题·画图·列式 <span class="update-tag">NEW</span></h2>
-            <p>练习基础数量关系与简单和差倍的画图列式。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/multiply-model" class="tool-card applied">
-            <div class="url-tag">/multiply-model</div>
-            <span class="category-label">基础演示工具</span>
-            <h2>每份数×份数=总数 <span class="update-tag">NEW</span></h2>
-            <p>把应用题画成每份数、份数、总数。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/sum-difference-multiple" class="tool-card applied">
-            <div class="url-tag">/sum-difference-multiple</div>
-            <span class="category-label">按题型分类</span>
-            <h2>和差倍与年龄问题 <span class="update-tag">NEW</span></h2>
-            <p>归为4类；线段图与方程在同一页逐步揭示，方便前后对照。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/bar-model" class="tool-card applied">
-            <div class="url-tag">/bar-model · 移多补少</div>
-            <span class="category-label">按题型分类</span>
-            <h2>移多补少问题 <span class="update-tag">NEW</span></h2>
-            <p>用对齐线段同页演示“移一次、差缩小两份”。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/unit-normalization" class="tool-card applied">
-            <div class="url-tag">/unit-normalization</div>
-            <span class="category-label">归一 · 归总</span>
-            <h2>归一归总问题 <span class="update-tag">NEW</span></h2>
-            <p>用归一归总表逐步整理已知量、单位量和目标量。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/planting-interval" class="tool-card applied">
-            <div class="url-tag">/planting-interval</div>
-            <span class="category-label">植树 · 间隔</span>
-            <h2>植树间隔方阵问题 <span class="update-tag">NEW</span></h2>
-            <p>按端点、环形、点段和方阵外圈关系分类练习。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/cycle-problem" class="tool-card applied">
-            <div class="url-tag">/cycle-problem</div><span class="category-label">按题型分类</span>
-            <h2>周期问题</h2><p>用周期格逐步圈周期、算余数、定位置。</p><span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/clock" class="tool-card applied">
-            <div class="url-tag">/clock</div><span class="category-label">按题型分类</span>
-            <h2>时钟问题</h2><p>读钟面、算经过时间，理解时针与分针的运动关系。</p><span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/chicken-rabbit" class="tool-card applied">
-            <div class="url-tag">/chicken-rabbit</div>
-            <span class="category-label">鸡兔同笼</span>
-            <h2>鸡兔同笼应用题 <span class="update-tag">NEW</span></h2>
-            <p>假设替换、方程法，并新增复杂题型（大小盒、三种昆虫、倍数关系）。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/page-number" class="tool-card applied">
-            <div class="url-tag">/page-number</div><span class="category-label">按题型分类</span>
-            <h2>页码问题</h2><p>用页码分段带和数位表逐步统计。</p><span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/profit-loss-reverse" class="tool-card applied">
-            <div class="url-tag">/profit-loss-reverse</div>
-            <span class="category-label">盈亏 · 倒推</span>
-            <h2>盈亏与倒推问题 <span class="update-tag">NEW</span></h2>
-            <p>盈亏用方案对照表，倒推用逆向流程图逐步还原。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/sports-logic" class="tool-card applied">
-            <div class="url-tag">/sports-logic</div>
-            <span class="category-label">体育比赛 · 逻辑推理</span>
-            <h2>体育比赛与逻辑推理问题 <span class="update-tag">NEW</span></h2>
-            <p>循环赛场数、胜负积分与条件推理。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/equivalent-substitution" class="tool-card applied">
-            <div class="url-tag">/equivalent-substitution</div><span class="category-label">按题型分类</span>
-            <h2>等量代换问题</h2><p>用相等关系把一种量替换成另一种量，再逐步求解。</p><span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/promotion" class="tool-card applied">
-            <div class="url-tag">/promotion</div>
-            <span class="category-label">促销 · 经济类</span>
-            <h2>促销打折问题 <span class="update-tag">NEW</span></h2>
-            <p>满减、折上折、满组赠送，一步步算清再比价。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/engineering-cow" class="tool-card applied">
-            <div class="url-tag">/engineering-cow</div>
-            <span class="category-label">按题型分类</span>
-            <h2>牛吃草问题 <span class="update-tag">NEW</span></h2>
-            <p>分清原有量、每天新增量与每天消耗量。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-
-        <a href="/engineering-cow" class="tool-card applied"><div class="url-tag">/engineering-cow · 工程</div><span class="category-label">按题型分类</span><h2>基本工程问题</h2><p>把工作总量看作单位“1”，用效率和求合作时间。</p><span class="status-badge">进入工具</span></a>
-        <a href="/basic-travel" class="tool-card applied"><div class="url-tag">/basic-travel</div><span class="category-label">按题型分类</span><h2>基本行程问题</h2><p>统一路程、速度、时间以及相遇追及的基本模型，并可进入画图演示。</p><span class="status-badge">进入工具</span></a>
-        <a href="/concentration" class="tool-card applied"><div class="url-tag">/concentration</div><span class="category-label">按题型分类</span><h2>浓度问题</h2><p>用溶质、溶液与浓度关系分析配制和混合。</p><span class="status-badge">进入工具</span></a>
-        <a href="/interest-tax" class="tool-card applied"><div class="url-tag">/interest-tax</div><span class="category-label">按题型分类</span><h2>利息与税务问题</h2><p>辨认本金、利率、期限、应纳税额和税率。</p><span class="status-badge">进入工具</span></a>
-        <a href="/proportion-applications" class="tool-card applied"><div class="url-tag">/proportion-applications</div><span class="category-label">按题型分类</span><h2>比例问题</h2><p>先找对应量，再用相同倍数或比例关系求解。</p><span class="status-badge">进入工具</span></a>
-        <a href="/average-problem" class="tool-card applied"><div class="url-tag">/average-problem</div><span class="category-label">按题型分类</span><h2>平均数问题 <span class="update-tag">NEW</span></h2><p>判断平均水平，运用总量、份数和数据变化解决平均数应用题。</p><span class="status-badge">进入工具</span></a>
-    </div>
-
-    <!-- ============ 板块五：组合·数论·逻辑 ============ -->
-    <div class="board-title board-anchor" id="board-comb">
-        <h2>组合 · 数论 · 逻辑</h2>
-        <p>进阶计数、排列组合、容斥与抽屉、逻辑推理与策略，以及进阶数论（同余等）。</p>
-    </div>
-
-    <div class="section-title">
-        <h3>进阶知识 · 计数体系</h3>
-        <p>枚举、加法乘法原理、排列组合、容斥、抽屉原理与递推概率。</p>
-    </div>
-    <div class="container" data-interface-categories="advanced-count">
-        <a href="/overlap-inclusion" class="tool-card math-law">
-            <div class="url-tag">/overlap-inclusion</div>
-            <span class="category-label">重叠与容斥</span>
-            <h2>重叠问题与容斥原理 <span class="update-tag">NEW</span></h2>
-            <p>用木板长度图和动态韦恩图，看清重复计算为什么要减一次。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-    </div>
-
-    <div class="section-title">
-        <h3>进阶知识 · 逻辑</h3>
-        <p>数字谜数阵、逻辑推理、策略统筹、最值与不定方程。</p>
-    </div>
-    <div class="container" data-interface-categories="advanced-combinatorics">
-        <a href="/math-thinking-practice" class="tool-card math-law">
-            <div class="url-tag">/math-thinking-practice</div>
-            <span class="category-label">思维游戏 · 统筹策略</span>
-            <h2>小学数学思维题库 <span class="update-tag">NEW</span></h2>
-            <p>完整整理 51 页 PDF 中的 141 道题目与变式，支持六大板块筛选、搜索、随机抽题和原页图示查看。</p>
-            <span class="status-badge">进入工具</span>
-        </a>
-    </div>
-
-    <div class="section-title">
-        <h3>进阶知识 · 数论（认识与同余）</h3>
-        <p>整除、质数、最大公因数、余数、奇偶、平方数、进制位值，以及同余与周期问题。</p>
-    </div>
-    <div class="container" data-interface-categories="advanced-calc-number-theory" data-interface-tool-ids="divisibility-sieve remainder-parity-lab base-placevalue-lab">
-        <div class="tool-card todo interface">
-            <div class="interface-top">
-                <span class="category-label">4-6</span>
-                <span class="status-badge">预留接口</span>
-            </div>
-            <h2>同余与周期问题</h2>
-            <p>知识点：congruence / period · /congruence</p>
-        </div>
-    </div>
-
-    <script>
-        const interfaceStatusText = {
-            planned: "预留接口",
-            partial: "部分覆盖",
-            ready: "已上线"
-        };
-
-        function escapeHtml(value) {
-            return String(value || "").replace(/[&<>"']/g, char => ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#39;"
-            }[char]));
-        }
-
-        function plannedTools(category) {
-            return (category.recommendedTools || []).filter(tool => tool.status === "planned");
-        }
-
-        function renderInterfaceCard(tool) {
-            const nodes = (tool.knowledgeNodeIds || []).join(" / ");
-            return `
-                <div class="tool-card todo interface">
-                    <div class="interface-top">
-                        <span class="category-label">${escapeHtml(tool.grade)}</span>
-                        <span class="status-badge">${escapeHtml(interfaceStatusText[tool.status] || tool.status)}</span>
-                    </div>
-                    <h2>${escapeHtml(tool.name)}</h2>
-                    <p>${nodes ? `知识点：${escapeHtml(nodes)}` : "后续补充互动工具。"}${tool.route ? ` · ${escapeHtml(tool.route)}` : ""}</p>
-                </div>
-            `;
-        }
-
-        function appendExistingModuleInterfaces(categories) {
-            document.querySelectorAll("[data-interface-categories]").forEach(container => {
-                const ids = container.dataset.interfaceCategories.split(/\s+/).filter(Boolean);
-                const allowedToolIds = (container.dataset.interfaceToolIds || "").split(/\s+/).filter(Boolean);
-                const cards = ids.flatMap(id => {
-                    const category = categories.find(item => item.id === id);
-                    if (!category) return [];
-                    const tools = allowedToolIds.length
-                        ? plannedTools(category).filter(tool => allowedToolIds.includes(tool.id))
-                        : plannedTools(category);
-                    return tools.map(renderInterfaceCard);
-                });
-                if (cards.length) container.insertAdjacentHTML("beforeend", cards.join(""));
-            });
-        }
-
-        fetch("/data/tool-roadmap.json")
-            .then(response => {
-                if (!response.ok) throw new Error("tool data not found");
-                return response.json();
-            })
-            .then(data => {
-                const categories = data.categories || [];
-                // 所有板块（含进阶几何/行程/计数/组合）均通过 data-interface-categories 就地渲染占位卡片。
-                appendExistingModuleInterfaces(categories);
-            })
-            .catch(() => {
-                // 本地直接打开 HTML 时可能无法 fetch JSON；主工具入口保持可用。
-            });
-
-        // 顶部导航：平滑滚动 + 滚动高亮当前板块
-        (function setupBoardNav() {
-            const links = Array.from(document.querySelectorAll(".board-nav a"));
-            if (!links.length) return;
-            const sections = links
-                .map(link => document.querySelector(link.getAttribute("href")))
-                .filter(Boolean);
-
-            function setActive(id) {
-                links.forEach(link => {
-                    link.classList.toggle("active", link.getAttribute("href") === `#${id}`);
-                });
-            }
-
-            const observer = new IntersectionObserver(entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) setActive(entry.target.id);
-                });
-            }, { rootMargin: "-64px 0px -70% 0px", threshold: 0 });
-
-            sections.forEach(section => observer.observe(section));
-        })();
-    </script>
-
-    <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 </body>
 </html>

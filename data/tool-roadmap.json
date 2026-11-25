@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-08-01",
+  "updatedAt": "2026-11-25",
   "sources": {
     "knowledgeGraph": "../private-school-management/data/skilltree.json",
     "textbook": "人教版小学数学教材主线",
@@ -23,7 +23,7 @@
       "knowledgeNodeIds",
       "recommendedTools"
     ],
-    "notes": "新增工具时优先复用 knowledgeNodeIds；route 为空或 status=planned 时，主页展示为占位接口。"
+    "notes": "规划保留 knowledgeNodeIds 与待开发条目。面向学生的 math101 首页只列可打开的本站工具。"
   },
   "categories": [
     {
@@ -50,9 +50,7 @@
         "equation",
         "negative",
         "mul-multi-by-1",
-        "mul-2x2"
-      ],
-      "missingNodeIds": [
+        "mul-2x2",
         "num-10k",
         "addsub-10k",
         "bignum",
@@ -70,6 +68,7 @@
         "percent",
         "proportion"
       ],
+      "missingNodeIds": [],
       "recommendedTools": [
         {
           "id": "big-number-practice",
@@ -91,13 +90,20 @@
         },
         {
           "id": "number-line-place-value",
-          "name": "万以内数与大数数位表",
-          "grade": "2-4",
+          "name": "数一数，认识数位",
+          "grade": "1-4",
           "status": "ready",
           "route": "/number-line-place-value",
           "knowledgeNodeIds": [
+            "num-20",
             "num-10k",
             "bignum"
+          ],
+          "tabs": [
+            "数到二十",
+            "数位表",
+            "算珠表示",
+            "十进制换位"
           ]
         },
         {
@@ -119,7 +125,7 @@
             "末尾有0的简算",
             "闯关练习"
           ],
-          "notes": "已覆盖多位数乘法（点阵分解、含义、竖式、部分积对位、末尾0简算）；分解运算标签页用点阵把 12×7 拆成 10×7 与 2×7，为竖式部分积做铺垫。mul-3x2 三位数乘两位数与 div-by-2digit 除法竖式仍待补。"
+          "notes": "本工具用点阵、面积模型和竖式说明部分积。三位数乘两位数已有 /calc 专项练习，后续可补部分积逐位对齐演示。多位数除法竖式见 /remainder。"
         },
         {
           "id": "quotient-invariance-practice",
@@ -223,7 +229,7 @@
           "id": "fraction-mul-div",
           "name": "分数乘除模型",
           "grade": "6",
-          "status": "planned",
+          "status": "ready",
           "route": "/fraction-mul-div",
           "knowledgeNodeIds": [
             "frac-mul",
@@ -276,8 +282,28 @@
             "解方程讲解",
             "解方程练习"
           ]
+        },
+        {
+          "id": "fraction-add",
+          "name": "同分母与异分母分数加减",
+          "grade": "3-6",
+          "status": "ready",
+          "route": "/fraction-add",
+          "knowledgeNodeIds": [
+            "frac-intro",
+            "frac-addsub"
+          ],
+          "tabs": [
+            "同分母加法",
+            "同分母减法",
+            "1 减几分之几",
+            "为什么分母不变",
+            "同分母练习",
+            "异分母加减"
+          ]
         }
-      ]
+      ],
+      "notes": "覆盖指本站已有对应教学或练习入口；练习覆盖的知识点仍可补算理演示。三位数乘两位数、试商调商和估算策略是后续完善重点。"
     },
     {
       "id": "calc-track",
@@ -315,7 +341,7 @@
         {
           "id": "calc-practice-test",
           "name": "计算练习与测试工具",
-          "grade": "3-4",
+          "grade": "1-6",
           "status": "ready",
           "route": "/calc",
           "knowledgeNodeIds": [

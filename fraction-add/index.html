@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分数的加减·初步认识 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>分数加减：同分母与异分母 | Math101</title>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.45s ease-in; }
@@ -454,7 +454,7 @@
                                     <Fraction num={2} den={4} size="text-lg" /> ＋ <Fraction num={1} den={4} size="text-lg" color="text-rose-500" /> ＝ <Fraction num={3} den={4} size="text-lg" /></p>
                                 <Bar n={4} segColors={[FILL_A, FILL_A, FILL_B, null]} animKey="why-sum" />
                                 <p className="text-sm text-gray-600 bg-rose-50 rounded-lg p-3 border border-rose-100 text-center">
-                                    💡 所以同分母才能直接加减。分母不同时，要先把份<b>切成一样大</b>（通分）——这是以后会专门学的内容。
+                                    💡 所以同分母才能直接加减。分母不同时，要先把份<b>切成一样大</b>（通分）。可以打开“异分母加减”，试着把两条纸条分成同样多份。
                                 </p>
                             </div>
                         )}
@@ -488,7 +488,10 @@
 
             const numOk = Number(num) === q.ans;
             const denOk = Number(den) === q.n;
-            const allOk = checked && numOk && denOk;
+            const equivalent = /^\d+$/.test(num) && /^\d+$/.test(den) &&
+                Number.isSafeInteger(Number(num) * q.n) && Number.isSafeInteger(Number(den) * q.ans) &&
+                Number(den) > 0 && Number(num) * q.n === Number(den) * q.ans;
+            const allOk = checked && equivalent;
             const next = () => { setQ(makeQ()); setNum(''); setDen(''); setChecked(false); };
 
             // 图示：加法 → 前 a 橙、再 b 玫红；减法 → 原 a 橙、后 b 划掉
@@ -510,10 +513,10 @@
                             <Fraction num={q.b} den={q.n} color="text-rose-500" />
                             <span className="mx-2">＝</span>
                             <span className="inline-flex flex-col items-center">
-                                <input type="number" value={num} onChange={e => { setNum(e.target.value); setChecked(false); }}
+                                <input type="number" aria-label="答案分子" min="0" value={num} onChange={e => { setNum(e.target.value); setChecked(false); }}
                                     className="w-16 text-center text-2xl border-2 border-amber-300 rounded p-1" placeholder="?" />
                                 <span className="w-16 border-t-2 border-gray-600 my-1"></span>
-                                <input type="number" value={den} onChange={e => { setDen(e.target.value); setChecked(false); }}
+                                <input type="number" aria-label="答案分母" min="1" value={den} onChange={e => { setDen(e.target.value); setChecked(false); }}
                                     className="w-16 text-center text-2xl border-2 border-sky-300 rounded p-1" placeholder="?" />
                             </span>
                         </p>
@@ -531,7 +534,7 @@
                         <div className={"mt-5 rounded-xl p-5 border fade-in " + (allOk ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200')}>
                             {allOk ? (
                                 <p className="text-green-700 text-lg font-bold flex items-center gap-2 flex-wrap">✓ 正确！
-                                    <Fraction num={q.a} den={q.n} size="text-xl" color="text-green-600" />{q.op === '+' ? '＋' : '－'}<Fraction num={q.b} den={q.n} size="text-xl" color="text-green-600" />＝<Fraction num={q.ans} den={q.n} size="text-xl" color="text-green-600" /></p>
+                                    <Fraction num={q.a} den={q.n} size="text-xl" color="text-green-600" />{q.op === '+' ? '＋' : '－'}<Fraction num={q.b} den={q.n} size="text-xl" color="text-green-600" />＝<Fraction num={q.ans} den={q.n} size="text-xl" color="text-green-600" />{!denOk && <>＝<Fraction num={num} den={den} size="text-xl" color="text-green-600" /></>}</p>
                             ) : (
                                 <div className="text-amber-700 space-y-1">
                                     {!denOk && <p>分母<b>不变</b>，还是 <b>{q.n}</b>（每份大小没变）。</p>}
@@ -547,16 +550,85 @@
         // ============================================================
         // 顶层
         // ============================================================
+        function gcd(a, b) {
+            while (b) [a, b] = [b, a % b];
+            return a;
+        }
+
+        const UNLIKE_CASES = [
+            { a: 1, b: 2, c: 1, d: 3, op: '+' },
+            { a: 3, b: 4, c: 1, d: 6, op: '−' },
+            { a: 3, b: 4, c: 5, d: 6, op: '+' },
+            { a: 5, b: 6, c: 1, d: 3, op: '−' },
+        ];
+
+        const UnlikeDemo = () => {
+            const [index, setIndex] = useState(0);
+            const [step, setStep] = useState(0);
+            const { a, b, c, d, op } = UNLIKE_CASES[index];
+            const unit = b * d / gcd(b, d);
+            const left = a * (unit / b), right = c * (unit / d);
+            const plus = op === '+';
+            const result = plus ? left + right : left - right;
+            const factor = gcd(result, unit);
+            const colors = (count, filled, color) => Array.from({ length: count }, (_, i) => i < filled ? color : EMPTY);
+            const frac = (num, den) => <Fraction num={num} den={den} size="text-xl" />;
+            return (
+                <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4" aria-label="异分母分数加减">
+                    <label className="block font-bold">选择算式
+                        <select className="ml-2 border rounded p-2" value={index} onChange={e => { setIndex(Number(e.target.value)); setStep(0); }}>
+                            {UNLIKE_CASES.map((q, i) => <option key={i} value={i}>{q.a}/{q.b} {q.op} {q.c}/{q.d}</option>)}
+                        </select>
+                    </label>
+                    <p>每条同样长的纸条都代表 1。先看两种颜色的每一小份有多长，再想怎样把它们合起来或去掉一部分。</p>
+                    {[[a, b, left, FILL_A], [c, d, right, FILL_B]].map(([num, den, converted, color]) => (
+                        <div key={den}>
+                            <p className="mb-1">{frac(num, den)} {step > 0 && <>＝ {frac(converted, unit)}　每一份再平均分成 {unit / den} 小份。</>}</p>
+                            <Bar n={step ? unit : den} segColors={step ? colors(unit, converted, color) : colors(den, num, color)} animKey={index + ':' + step + ':' + den} />
+                        </div>
+                    ))}
+                    {step > 0 && <p>把每条纸条都平均分成 {unit} 份。现在每一小份都是整条的 1/{unit}，可以按同一个单位计数。</p>}
+                    {step === 2 && <div className="space-y-2 bg-amber-50 rounded-lg p-3" aria-live="polite">
+                        <p>{plus ? '把两段接起来' : '从第一段中划去第二段的长度'}，{left} {op} {right} ＝ {result}（份）。</p>
+                        {Array.from({ length: Math.max(1, Math.ceil(result / unit)) }, (_, row) => {
+                            const fills = [], removed = [];
+                            for (let i = 0; i < unit; i++) {
+                                const pos = row * unit + i;
+                                const cut = !plus && pos >= result && pos < left;
+                                fills.push(cut ? REMOVED : pos < Math.min(result, left) ? FILL_A : pos < result ? FILL_B : EMPTY);
+                                removed.push(cut);
+                            }
+                            return <Bar key={row} n={unit} segColors={fills} removedMark={removed} animKey={'result' + index + row} />;
+                        })}
+                        <p>{frac(a, b)} {op} {frac(c, d)} ＝ {frac(result, unit)} {factor > 1 && <>＝ {frac(result / factor, unit / factor)}</>}</p>
+                        {result > unit && <p>第一条已经填满，结果大于 1。</p>}
+                    </div>}
+                    <div className="flex flex-wrap gap-3">
+                        {step > 0 && <button onClick={() => setStep(step - 1)} className="px-4 py-2 rounded-lg bg-gray-100">上一步</button>}
+                        {step < 2 && <button onClick={() => setStep(step + 1)} className="px-4 py-2 rounded-lg bg-amber-500 font-bold">{step === 0 ? '把每份分得一样大' : '算出结果'}</button>}
+                        {step === 2 && <a className="px-4 py-2 underline text-indigo-700" href="/calc/#frac-addsub">练习分数加减</a>}
+                    </div>
+                </section>
+            );
+        };
+
         const TABS = [
             { id: 'add', title: '① 同分母加法', hint: '分母不变 · 分子相加', color: 'bg-amber-500' },
             { id: 'sub', title: '② 同分母减法', hint: '分母不变 · 分子相减', color: 'bg-sky-500' },
             { id: 'one', title: '③ 1 减几分之几', hint: '先把 1 看成 n/n', color: 'bg-purple-500' },
             { id: 'why', title: '④ 为什么分母不变', hint: '份一样大才能相加', color: 'bg-rose-500' },
-            { id: 'practice', title: '✏️ 我来试试', hint: '看图填加减 · 判分', color: 'bg-green-500' },
+            { id: 'practice', title: '同分母练习', hint: '看图填出结果', color: 'bg-green-500' },
+            { id: 'unlike', title: '异分母加减', hint: '先通分，再计算', color: 'bg-indigo-600' },
         ];
 
         const App = () => {
-            const [tab, setTab] = useState('add');
+            const linkedTab = () => location.hash === '#unlike' ? 'unlike' : 'add';
+            const [tab, setTab] = useState(linkedTab);
+            useEffect(() => {
+                const followLink = () => setTab(linkedTab());
+                window.addEventListener('hashchange', followLink);
+                return () => window.removeEventListener('hashchange', followLink);
+            }, []);
             return (
                 <div className="max-w-4xl mx-auto px-4 py-8">
                     <header className="relative text-center mb-5 px-12">
@@ -566,16 +638,8 @@
                                 <polyline points="9 22 9 12 15 12 15 22" />
                             </svg>
                         </a>
-                        <h1 className="text-3xl font-bold text-gray-800">分数的加减 · 初步认识</h1>
-                        <p className="text-gray-500 mt-2">同分母分数相加减：<b>每份大小不变</b>，只把<b>取的份数</b>加起来或减下去</p>
-                        <div className="inline-flex items-center gap-2 mt-4 text-base font-bold flex-wrap justify-center">
-                            <Fraction num={'a'} den={'n'} size="text-2xl" color="text-amber-600" />
-                            <span className="text-gray-400">±</span>
-                            <Fraction num={'b'} den={'n'} size="text-2xl" color="text-rose-500" />
-                            <span className="text-gray-400">=</span>
-                            <Fraction num={'a±b'} den={'n'} size="text-2xl" color="text-gray-700" />
-                            <span className="text-gray-400 text-sm ml-2">分母不变，分子加减</span>
-                        </div>
+                        <h1 className="text-3xl font-bold text-gray-800">分数加减：同分母与异分母</h1>
+                        <p className="text-gray-500 mt-2">每份一样大，才能直接数份数。分母不同时，先把分数化成同分母分数。</p>
                     </header>
 
                     <div className="flex flex-wrap justify-center gap-2 mb-6">
@@ -595,10 +659,11 @@
                         {tab === 'one' && <OneMinusDemo />}
                         {tab === 'why' && <WhyDemo />}
                         {tab === 'practice' && <PracticeMode />}
+                        {tab === 'unlike' && <UnlikeDemo />}
                     </div>
 
                     <footer className="text-center text-gray-400 text-sm mt-10">
-                        Math101 · 分数加减可视化 · 适用人教版三年级上册《分数的简单计算》
+                        Math101 · 分数加减可视化
                     </footer>
                 </div>
             );

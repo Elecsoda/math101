@@ -309,8 +309,10 @@ const HOMEWORK_SETS = {
         ["640 + 70", 710, 60], ["200 + 70", 270, 60], ["860 + 80", 940, 60], ["770 + 90", 860, 60]
     ],
     estimate: [
-        ["393 × 42（估算）", 16000, 42], ["78 × 294（估算）", 24000, 42],
-        ["82 × 68（估算）", 5600, 42], ["403 × 52（估算）", 20000, 42]
+        ["393 × 42（估算）", 16000, 42, { meta: "把 393 取到百位，42 取到十位。", solution: "393 ≈ 400，42 ≈ 40，所以 393 × 42 ≈ 400 × 40 = 16000。" }],
+        ["78 × 294（估算）", 24000, 42, { meta: "把 78 取到十位，294 取到百位。", solution: "78 ≈ 80，294 ≈ 300，所以 78 × 294 ≈ 80 × 300 = 24000。" }],
+        ["82 × 68（估算）", 5600, 42, { meta: "把两个因数都取到十位。", solution: "82 ≈ 80，68 ≈ 70，所以 82 × 68 ≈ 80 × 70 = 5600。" }],
+        ["403 × 52（估算）", 20000, 42, { meta: "把 403 取到百位，52 取到十位。", solution: "403 ≈ 400，52 ≈ 50，所以 403 × 52 ≈ 400 × 50 = 20000。" }]
     ],
     column: [
         ["506 × 5", 2530, 44], ["613 - 258", 355, 44], ["197 × 3", 591, 44], ["526 + 475", 1001, 44],
@@ -335,7 +337,7 @@ const makeHomeworkTab = (id, name, set, color, hint) => ({
 
 const TABS = [
     makeHomeworkTab("hw-oral", "专项·口算", HOMEWORK_SETS.oral, "#0369a1", "口算时先观察数的特点，能凑整或利用乘法口诀的先口算。"),
-    makeHomeworkTab("hw-estimate", "专项·估算", HOMEWORK_SETS.estimate, "#0e7490", "把因数看作接近的整十或整百数，再相乘。"),
+    makeHomeworkTab("hw-estimate", "专项·估算", HOMEWORK_SETS.estimate, "#0e7490", "按题目指定位数用四舍五入法取近似数，再相乘。"),
     makeHomeworkTab("hw-column", "专项·竖式", HOMEWORK_SETS.column, "#4338ca", "相同数位对齐；乘除从高位或个位按对应法则逐步计算。"),
     makeHomeworkTab("hw-mixed", "专项·脱式列式", HOMEWORK_SETS.mixed, "#7e22ce", "有括号先算括号，同级运算从左到右，乘除优先于加减。"),
     {
@@ -509,7 +511,9 @@ const TABS = [
             const op = pick(["+", "-"]);
             if (op === "-" && a.n * b.d < b.n * a.d) [a, b] = [b, a];
             const ans = op === "+" ? addF(a, b) : subF(a, b);
-            return q({ text: `${fmtF(a)} ${op} ${fmtF(b)}`, answer: ans, format: "fraction", meta: "答案格式：分数写 a/b，可写等值分数", hint: same ? "同分母分数，分母不变，只算分子。" : "先通分，再加减。", solution: `${fmtF(a)} ${op} ${fmtF(b)} = ${fmtF(ans)}。` });
+            const common = a.d * b.d / gcd(a.d, b.d);
+            const converted = a.d === b.d ? "" : ` = ${a.n * (common / a.d)}/${common} ${op} ${b.n * (common / b.d)}/${common}`;
+            return q({ text: `${fmtF(a)} ${op} ${fmtF(b)}`, answer: ans, format: "fraction", meta: "答案格式：分数写 a/b，可写等值分数", hint: a.d === b.d ? "同分母分数，分母不变，只算分子。" : "先通分，再加减。", solution: `${fmtF(a)} ${op} ${fmtF(b)}${converted} = ${fmtF(ans)}。` });
         }
     },
     {
@@ -636,7 +640,13 @@ $("checkBtn").addEventListener("click", checkAnswer);
 $("resetBtn").addEventListener("click", resetStats);
 $("hintBtn").addEventListener("click", () => { state.showHint = !state.showHint; render(); });
 $("answerInput").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
-render();
+function openLinkedPractice() {
+    const id = location.hash.slice(1);
+    if (TABS.some(tab => tab.id === id)) switchTab(id);
+    else render();
+}
+window.addEventListener("hashchange", openLinkedPractice);
+openLinkedPractice();
 </script>
     <div class="site-copyright" style="box-sizing: border-box; width: 100%; padding: 24px 16px; text-align: center; color: #94a3b8; font: 13px/1.6 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 </body>

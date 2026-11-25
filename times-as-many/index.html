@@ -312,7 +312,7 @@
                 `<div class="arr-box">${dotArray(x, y)}<div class="cap">${x} × ${y} = ${n}</div></div>`).join("");
             return `
                 <h2>倍数与因数 · 同一个乘法算式里的两个身份</h2>
-                <p class="lead">在 <b>a × b = c</b> 里：<strong style="color:#2563eb">a、b 是 c 的因数</strong>，
+                <p class="lead">这里讨论正整数。在 <b>a × b = c</b> 里：<strong style="color:#2563eb">a、b 是 c 的因数</strong>，
                 <strong style="color:#7c3aed">c 是 a、b 的倍数</strong>。把 ${n} 个圆点排成整齐的长方形，
                 <b>每一种排法就对应一对因数</b>。</p>
 
@@ -372,7 +372,7 @@
             return `
                 <h2>2、3、5 倍数的特征 · 在百数表里看规律</h2>
                 <p class="lead">在 1~100 表里把某个数的倍数涂上颜色，规律一眼就能看见：
-                <b>2 的倍数</b>整整齐齐成两列、<b>5 的倍数</b>排成两竖列、<b>3 的倍数</b>斜着走。</p>
+                <b>2 的倍数</b>排在第 2、4、6、8、10 列、<b>5 的倍数</b>排成两竖列、<b>3 的倍数</b>斜着走。</p>
 
                 <div class="swatches">
                     ${sw(2, "2 的倍数", "#60a5fa")}
@@ -474,7 +474,7 @@
                 <div class="rects">${rects}</div>
                 <p class="hint" style="margin-top:12px">${demo} 只能摆 ${demoPairs.length} 种，所以它是
                 <b style="color:${demoPrime ? "#16a34a" : "#dc2626"}">${demoPrime ? "质数" : "合数"}</b>。
-                只能摆 1 种（1×它本身）的就是质数。</p>
+                大于 1 的整数，如果只能摆出 1 × 它本身这一种，就是质数（旋转后算同一种）。</p>
 
                 <h3 style="margin:20px 0 8px">1~50 的质数（绿）与合数（红）</h3>
                 <div class="legend">

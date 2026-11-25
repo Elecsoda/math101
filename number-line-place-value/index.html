@@ -197,6 +197,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <main class="page">
@@ -205,17 +209,16 @@
                 <div class="brand-icon">位</div>
                 <div>
                     <h1>数一数，认识数位</h1>
-                    <p class="sub">用十格框数到二十，再用算珠和数位表认识更大的数。</p>
                 </div>
             </div>
             <a class="btn" href="../">返回首页</a>
         </header>
 
         <div class="tabs">
-            <button class="tab" data-view="count">数到二十<small>数一数，比一比</small></button>
-            <button class="tab active" data-view="table">数位表<small>四位一级读大数</small></button>
-            <button class="tab" data-view="abacus">算珠表示<small>每位几颗珠</small></button>
-            <button class="tab" data-view="exchange">十进制换位<small>10 个换 1 个</small></button>
+            <button class="tab" data-view="count">数到二十</button>
+            <button class="tab active" data-view="table">数位表</button>
+            <button class="tab" data-view="abacus">算珠表示</button>
+            <button class="tab" data-view="exchange">十进制换位</button>
         </div>
 
         <section class="card panel">
@@ -227,7 +230,7 @@
 
             <div class="view" id="view-count">
                 <h2>数一数，两盘各有几颗？</h2>
-                <p class="lead">一格放一颗，一行有五格。一个框放满就是一个十。试试从九颗再放一颗。</p>
+                <p class="lead">一格放一颗，一行有五格。满一框是十颗。</p>
                 <div class="count-board">
                     <div class="count-set" id="set-a">
                         <h3>甲盘</h3>
@@ -244,7 +247,7 @@
                         <button class="btn" data-change="1" aria-label="乙盘放入一颗">放入 1 颗</button>
                     </div>
                 </div>
-                <h3>在甲盘和乙盘的数量之间填什么符号？</h3>
+                <h3>甲盘和乙盘之间填哪个符号？</h3>
                 <div id="compare-choices" class="preset-row">
                     <button class="btn" data-sign="&gt;">&gt; 大于</button>
                     <button class="btn" data-sign="=">= 等于</button>
@@ -255,8 +258,8 @@
             </div>
 
             <div class="view active" id="view-table">
-                <h2>数位表：每一位都有自己的价值</h2>
-                <p class="lead">同样是数字 8，放在个位表示 8，放在万位表示 8 万。先看数位，再读数。</p>
+                <h2>同一个 8 在不同数位上表示多少？</h2>
+                <p class="lead">输入 8，再试试 80 或 800。</p>
                 <div style="overflow-x:auto">
                     <table class="place-table" id="placeTable"></table>
                 </div>
@@ -264,27 +267,25 @@
                     <div class="num" id="readDigits"></div>
                     <div class="chinese" id="readChinese"></div>
                 </div>
+                <details><summary>查看数位与读数规则</summary>
                 <div class="explain-grid">
                     <div class="explain">从<b>个位</b>起，每<b>四位</b>分一级：个级、万级、亿级。</div>
-                    <div class="explain">一个数字的大小由<b>数字本身</b>和<b>所在数位</b>共同决定。</div>
+                    <div class="explain">一个数字表示的数值与它<b>所在的数位</b>有关。</div>
                     <div class="explain">每级末尾的 0 不读，中间连续几个 0 通常只读<b>一个零</b>。</div>
                 </div>
+                </details>
             </div>
 
             <div class="view" id="view-abacus">
-                <h2>算珠表示：一列就是一个数位</h2>
-                <p class="lead">进位模式：点某一位的 + / -。加到 10 颗会自动向左进 1；不够减时，会向左边高一位借 1，换成这一位的 10 颗再减。</p>
+                <h2>一列算珠表示哪个数位？</h2>
+                <p class="lead">点某一列的 + 或 −，观察相邻数位。</p>
                 <div class="abacus-wrap"><div class="abacus" id="abacus"></div></div>
                 <div class="result-line" id="abacusLine"></div>
             </div>
 
             <div class="view" id="view-exchange">
-                <h2>十进制换位：每向左一位，单位扩大 10 倍</h2>
-                <p class="lead">上面的随机大数会在这里拆开：看它有几个 1、几个 10、几个 100、几个 1000……再看十、百、千这些单位是怎样由 10 一层一层乘出来的。</p>
-                <div class="place-power-grid" id="placePowerGrid"></div>
-                <div class="breakdown-head" id="breakdownHead"></div>
-                <div class="breakdown-grid" id="placeBreakdownGrid"></div>
-                <div class="result-line" id="breakdownLine"></div>
+                <h2>多少个一能换成一个十？</h2>
+                <p class="lead">拖动滑块，每满十个低一级单位就换成一个高一级单位。</p>
                 <div class="slider-row">
                     <label for="unitSelect"><b>低一级单位</b></label>
                     <select id="unitSelect" class="btn">
@@ -309,6 +310,12 @@
                     </div>
                 </div>
                 <div class="result-line" id="exchangeLine"></div>
+                <details><summary>查看各数位的组成</summary>
+                <div class="place-power-grid" id="placePowerGrid"></div>
+                <div class="breakdown-head" id="breakdownHead"></div>
+                <div class="breakdown-grid" id="placeBreakdownGrid"></div>
+                <div class="result-line" id="breakdownLine"></div>
+                </details>
             </div>
         </section>
     </main>
@@ -609,7 +616,7 @@
                 return `${digit} 个${formatValue(10 ** pos)}`;
             }).filter(Boolean);
             $("placeBreakdownGrid").innerHTML = cards;
-            $("breakdownLine").textContent = `${groupNumber(s)} = ${terms.join(" + ") || "0 个一"}。例如：1 个百 = 10 个十 = 10×10；1 个千 = 10 个百 = 10×10×10。`;
+            $("breakdownLine").textContent = `${groupNumber(s)} = ${terms.join(" + ") || "0 个一"}。`;
         }
 
         function renderExchange() {

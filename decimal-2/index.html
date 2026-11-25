@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小数点移位工具 | Math101</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>小数点移动 | Math101</title>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         /* 隐藏输入框的上下箭头 */
         input[type=number]::-webkit-inner-spin-button, 
@@ -19,6 +18,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body class="min-h-screen bg-slate-50 p-6 font-sans text-slate-800">
     <div class="max-w-4xl mx-auto space-y-6">
@@ -29,33 +32,33 @@
                     <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
             </a>
-            <h1 class="text-3xl font-bold text-slate-800">小数点移位工具</h1>
+            <h1 class="text-3xl font-bold text-slate-800">小数点移动</h1>
             <div class="mt-4 flex space-x-2 bg-slate-200 p-1 rounded-lg">
                 <button onclick="switchMainTab('demo')" id="tab-demo" class="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white shadow-sm text-blue-600">
-                    <i data-lucide="calculator" class="w-4 h-4 mr-2"></i>
-                    计算器演示
+
+                    动手移动
                 </button>
                 <button onclick="switchMainTab('test')" id="tab-test" class="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors text-slate-600 hover:text-slate-900">
-                    <i data-lucide="arrow-right-left" class="w-4 h-4 mr-2"></i>
-                    练习测试
+
+                    辨认与练习
                 </button>
             </div>
         </header>
 
         <main id="main-content">
-            <!-- 模块一：计算器演示 -->
+            <!-- 模块一：动手移动 -->
             <div id="view-demo" class="space-y-6 animate-in fade-in duration-300 block">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <h2 class="text-xl font-bold mb-6 flex items-center">
-                        <i data-lucide="move-horizontal" class="w-6 h-6 mr-2 text-blue-600"></i>
-                        理解小数点移位
+
+                        改变倍数，观察数位
                     </h2>
 
                     <!-- 控制区 -->
                     <div class="flex flex-col md:flex-row gap-6 mb-8 items-center justify-center p-6 bg-slate-50 rounded-xl border border-slate-100">
                         <div class="flex flex-col w-full md:w-auto">
-                            <label class="text-sm font-medium text-slate-500 mb-2">输入数字</label>
-                            <input type="number" id="demo-input" value="1.23" oninput="updateDemo()" class="text-2xl font-mono text-center p-2 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none w-48" />
+                            <label for="demo-input" class="text-sm font-medium text-slate-500 mb-2">要移动小数点的数</label>
+                            <input type="text" inputmode="decimal" maxlength="10" id="demo-input" value="1.23" oninput="updateDemo()" class="text-2xl font-mono text-center p-2 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none w-48" />
                         </div>
 
                         <div class="flex flex-col w-full md:w-auto">
@@ -104,7 +107,7 @@
                 </div>
             </div>
 
-            <!-- 模块二：练习测试 -->
+            <!-- 模块二：辨认与练习 -->
             <div id="view-test" class="space-y-6 animate-in fade-in duration-300 hidden">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div class="flex space-x-4 mb-8 border-b border-slate-100 pb-4">
@@ -120,8 +123,8 @@
                     <div id="test1-container" class="block">
                         <div class="flex flex-col items-center max-w-2xl mx-auto space-y-8">
                             <div class="text-center space-y-2">
-                                <h3 class="text-2xl font-bold text-slate-800">计算结果并点上小数点</h3>
-                                <p class="text-slate-500">通过下方的左右按钮，将红色的小数点移动到正确的位置。</p>
+                                <h3 class="text-2xl font-bold text-slate-800">给结果点上小数点</h3>
+                                <p class="text-slate-500">点箭头移动小数点。</p>
                             </div>
 
                             <div class="text-3xl font-mono bg-slate-100 px-8 py-4 rounded-xl border-2 border-slate-200" id="test1-formula">
@@ -135,12 +138,12 @@
 
                                 <div class="flex space-x-6 mt-12">
                                     <button onclick="test1Move(-1)" id="test1-btn-left" class="flex items-center px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold transition-colors">
-                                        <i data-lucide="chevron-left" class="w-6 h-6 mr-1"></i>
+
                                         向左移
                                     </button>
                                     <button onclick="test1Move(1)" id="test1-btn-right" class="flex items-center px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white rounded-lg font-bold transition-colors">
                                         向右移
-                                        <i data-lucide="chevron-right" class="w-6 h-6 ml-1"></i>
+
                                     </button>
                                 </div>
                             </div>
@@ -155,7 +158,7 @@
                     <div id="test2-container" class="hidden">
                         <div class="flex flex-col items-center max-w-2xl mx-auto space-y-8">
                             <div class="text-center space-y-2">
-                                <h3 class="text-2xl font-bold text-slate-800">观察小数点，选择了什么运算？</h3>
+                                <h3 class="text-2xl font-bold text-slate-800">选出对应的运算</h3>
                                 <p class="text-slate-500">对比原始数字和结果，选择正确的运算符和倍数。</p>
                             </div>
 
@@ -196,7 +199,7 @@
     <script>
         // --- 核心逻辑辅助函数 ---
         function prepareDotPlacer(baseNum) {
-            const str = parseFloat(baseNum || "0").toString();
+            const str = String(baseNum).replace(/^0+(?=\d)/, "").replace(/^\./, "0.");
             const parts = str.split('.');
             const intPart = parts[0];
             const decPart = parts[1] || "";
@@ -295,7 +298,7 @@
             }
         }
 
-        // --- 模块一：计算器演示逻辑 ---
+        // --- 模块一：动手移动逻辑 ---
         function setDemoOp(op) {
             state.demo.operation = op;
             updateDemo();
@@ -352,10 +355,15 @@
             });
             document.getElementById('demo-factors').innerHTML = factorsHtml;
 
+            if (!/^(?:\d{1,5}(?:\.\d{0,4})?|\.\d{1,4})$/.test(inputValue)) {
+                document.getElementById('demo-formula').textContent = '请输入非负数，整数部分最多五位，小数部分最多四位。';
+                for (const id of ['demo-orig-digits','demo-new-digits','demo-conclusion']) document.getElementById(id).textContent = '';
+                return;
+            }
             // 计算逻辑
             const { combined, originalDotPos, prefixZerosLength, rawDigitsLength } = prepareDotPlacer(inputValue);
             const newDotPos = op === 'multiply' ? originalDotPos + factorPow : originalDotPos - factorPow;
-            const targetValue = getDerivedValue(combined, newDotPos);
+            const targetValue = Number(getDerivedValue(combined, newDotPos).toFixed(9)).toLocaleString('en-US', {useGrouping:false, maximumFractionDigits:9});
             const factorValue = Math.pow(10, factorPow);
 
             const origRange = getHighlightRange(prefixZerosLength, rawDigitsLength, originalDotPos);
@@ -368,7 +376,7 @@
 
             const dirText = op === 'multiply' ? '右' : '左';
             const dirColor = op === 'multiply' ? 'text-blue-400' : 'text-orange-400';
-            document.getElementById('demo-conclusion').innerHTML = `结论：小数点向 <span class="${dirColor}">${dirText}</span> 移动了 <span class="text-green-400">${factorPow}</span> 位`;
+            document.getElementById('demo-conclusion').innerHTML = `小数点向 <span class="${dirColor}">${dirText}</span> 移动了 <span class="text-green-400">${factorPow}</span> 位`;
         }
 
 
@@ -461,11 +469,11 @@
                 actionHtml = `
                     <div class="flex flex-col items-center space-y-4 w-full">
                         <div class="flex items-center text-green-600 font-bold text-xl bg-green-50 px-6 py-3 rounded-lg w-full justify-center border border-green-200">
-                            <i data-lucide="check-circle-2" class="w-6 h-6 mr-2"></i>
+
                             回答正确！结果是 ${val}
                         </div>
                         <button onclick="initTest1()" class="flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-lg shadow-sm">
-                            下一题 <i data-lucide="arrow-right-left" class="w-5 h-5 ml-2"></i>
+                            下一题
                         </button>
                     </div>
                 `;
@@ -474,17 +482,17 @@
                 actionHtml = `
                     <div class="flex flex-col items-center space-y-4 w-full">
                         <div class="flex items-center text-red-600 font-bold text-xl bg-red-50 px-6 py-3 rounded-lg w-full justify-center border border-red-200">
-                            <i data-lucide="x-circle" class="w-6 h-6 mr-2"></i>
+
                             当前结果：${val}，再试一次！
                         </div>
                         <button onclick="resetTest1State()" class="flex items-center px-8 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-lg shadow-sm">
-                            <i data-lucide="rotate-ccw" class="w-5 h-5 mr-2"></i> 继续修改
+                             继续修改
                         </button>
                     </div>
                 `;
             }
             document.getElementById('test1-action-area').innerHTML = actionHtml;
-            lucide.createIcons();
+
         }
 
         // --- 模块二：测试 2 逻辑 ---
@@ -561,11 +569,11 @@
                 actionHtml = `
                     <div class="flex flex-col items-center space-y-4 w-full">
                         <div class="flex items-center text-green-600 font-bold text-xl bg-green-50 px-6 py-3 rounded-lg w-full justify-center border border-green-200">
-                            <i data-lucide="check-circle-2" class="w-6 h-6 mr-2"></i>
+
                             回答正确！小数点向${dir}移动了${len}位。
                         </div>
                         <button onclick="initTest2()" class="flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-lg shadow-sm">
-                            下一题 <i data-lucide="arrow-right-left" class="w-5 h-5 ml-2"></i>
+                            下一题
                         </button>
                     </div>
                 `;
@@ -573,22 +581,22 @@
                 actionHtml = `
                     <div class="flex flex-col items-center space-y-4 w-full">
                         <div class="flex items-center text-red-600 font-bold text-xl bg-red-50 px-6 py-3 rounded-lg w-full justify-center border border-red-200">
-                            <i data-lucide="x-circle" class="w-6 h-6 mr-2"></i>
+
                             回答错误，请仔细观察移动的方向和位数！
                         </div>
                         <button onclick="state.test2.status='idle'; updateTest2();" class="mt-2 flex items-center px-8 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-lg shadow-sm">
-                            <i data-lucide="rotate-ccw" class="w-5 h-5 mr-2"></i> 重新选择
+                             重新选择
                         </button>
                     </div>
                 `;
             }
             document.getElementById('test2-action-area').innerHTML = actionHtml;
-            lucide.createIcons();
+
         }
 
         // --- 初始化 ---
         window.onload = () => {
-            lucide.createIcons();
+
             updateDemo();
         };
 

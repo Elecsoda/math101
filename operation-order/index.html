@@ -220,6 +220,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 <div class="page">
@@ -228,98 +232,47 @@
             <div class="brand-icon" aria-hidden="true">{ }</div>
             <div>
                 <h1>四则混合运算顺序</h1>
-                <p class="subtitle">看懂顺序 · 一步一步算 · 巧用括号速算</p>
+
             </div>
         </div>
         <a class="home-link" href="/" aria-label="返回工具主页">⌂ <span>返回主页</span></a>
     </header>
 
     <nav class="tabs" aria-label="学习模块">
-        <button class="tab active" data-tab="rules">① 学规则<small>先建立顺序</small></button>
-        <button class="tab" data-tab="demo">② 看演示<small>逐步算例题</small></button>
-        <button class="tab" data-tab="practice">③ 闯关判断<small>复杂题找第一步</small></button>
-        <button class="tab" data-tab="quick">④ 括号速算<small>添括号与巧分组</small></button>
+        <button class="tab" data-tab="rules">规则</button>
+        <button class="tab active" data-tab="demo">分步计算</button>
+        <button class="tab" data-tab="practice">判断顺序</button>
+        <button class="tab" data-tab="quick">添括号</button>
     </nav>
 
     <main>
-        <section class="view active" id="view-rules">
+        <section class="view" id="view-rules">
             <div class="rule-hero">
-                <h2>只记一句：括号 → 乘除 → 加减</h2>
-                <p>括号从最里层向外；乘和除是同一级，加和减也是同一级。同一级相遇时，不挑“喜欢的”先算，要从左往右。</p>
-                <div class="formula-strip">
-                    <span class="formula-chip">① 最里层括号</span>
-                    <span class="formula-chip">② 乘、除从左到右</span>
-                    <span class="formula-chip">③ 加、减从左到右</span>
-                </div>
+                <h2>怎样确定先算哪一步？</h2>
+                <p>有括号，从最里层算起。每一层中先乘除、后加减，同级运算从左往右。</p>
             </div>
-
-            <div class="rules-grid">
-                <article class="rule-card">
-                    <div class="rule-no">1</div>
-                    <h3>有括号：从里向外</h3>
-                    <p>先找最里面的一层。规范嵌套时通常是 <strong>小括号（ ）→ 中括号［ ］→ 大括号｛ ｝</strong>。</p>
-                </article>
-                <article class="rule-card">
-                    <div class="rule-no">2</div>
-                    <h3>无括号：先乘除</h3>
-                    <p>乘法和除法级别相同，一段连续乘除要<strong>从左往右</strong>。被加减号隔开的多个乘除块，可分别先算。</p>
-                </article>
-                <article class="rule-card">
-                    <div class="rule-no">3</div>
-                    <h3>最后：加减从左往右</h3>
-                    <p>加法和减法也是同一级。前面的乘除都完成后，再按<strong>从左往右</strong>完成加减。</p>
-                </article>
-            </div>
-
-            <div class="bracket-board">
-                <article class="card bracket-box">
-                    <h3 class="bracket-title">括号像套娃：先打开最里面</h3>
-                    <div class="nesting" aria-label="大括号、中括号、小括号嵌套示意">
-                        <div class="brace">{ 96 − <span class="square">[ 28 + <span class="round">(14 − 8)</span> × 3 ]</span> }</div>
-                    </div>
-                    <p class="nest-caption">先算 <b>(14 − 8)</b>，再完成中括号，最后完成大括号。<br>真正的原则是“最里层优先”，不是看谁长得更圆。</p>
-                </article>
-                <article class="card mistake-box">
-                    <h3 class="bracket-title">两个最容易踩的坑</h3>
-                    <div class="mistake-row">
-                        <span class="math">18 − 6 + 2</span><span class="arrow">→</span>
-                        <span><span class="wrong">10</span>　<span class="right">14 ✓</span></span>
-                    </div>
-                    <div class="mistake-row">
-                        <span class="math">24 ÷ 6 × 2</span><span class="arrow">→</span>
-                        <span><span class="wrong">2</span>　<span class="right">8 ✓</span></span>
-                    </div>
-                    <div class="mini-note">加减同级、乘除同级，都从左向右。<b>“先乘后除、先加后减”是错误口诀。</b></div>
-                </article>
-            </div>
-
-            <div class="method-line" aria-label="四步计算法">
-                <div class="method-step"><span>1</span>看：找最里层</div>
-                <div class="method-step"><span>2</span>圈：标出先算处</div>
-                <div class="method-step"><span>3</span>算：处理优先区域</div>
-                <div class="method-step"><span>4</span>抄：其余原样落下</div>
+            <div class="card panel">
+                <div class="nesting" aria-label="嵌套括号算式"><span class="brace">96 − <span class="square">[28 + <span class="round">(14 − 8)</span> × 3]</span></span></div>
+                <details><summary>看看计算顺序</summary><p>14 − 8 ＝ 6，6 × 3 ＝ 18，28 ＋ 18 ＝ 46，96 − 46 ＝ 50。</p></details>
             </div>
         </section>
 
-        <section class="view" id="view-demo">
+        <section class="view active" id="view-demo">
             <div class="card panel">
                 <div class="section-head">
-                    <p class="eyebrow">STEP BY STEP</p>
-                    <h2>例题逐步演示</h2>
-                    <p class="lead">黄色框表示“这一轮优先处理这里”。如果有多个互不相连的乘除块，可以分别算出，再进行加减。</p>
+                    <h2>先算哪一部分？</h2>
+                    <p class="lead">观察标色的部分，点“下一步”核对。</p>
                 </div>
-                <div class="demo-picker" id="demo-picker"></div>
+                <details><summary>换一道例题</summary><div class="demo-picker" id="demo-picker"></div></details>
                 <div id="demo-content"></div>
-                <div class="source-note"><b>例型编排参考：</b>义务教育教科书数学四年级上册“整数四则混合运算”先安排多个乘法结果相加，再练习乘除位于减号两侧、乘除出现在算式右侧等变化；人教版二年级下册“两级混合运算”教案也特别指出，“乘在后面”是学生容易出错的情形。本工具据此增加对比与反直觉演示，数字作了适龄调整。</div>
             </div>
         </section>
 
         <section class="view" id="view-practice">
             <div class="card panel">
                 <div class="section-head">
-                    <p class="eyebrow">ORDER CHALLENGE</p>
-                    <h2>复杂题顺序闯关</h2>
-                    <p class="lead">先练“第一步算哪里”，再挑战完整结果。答错也没关系，解析会把计算路线完整亮出来。</p>
+                    <h2>判断运算顺序</h2>
+                    <p class="lead">选择先算的部分，或计算结果。</p>
                 </div>
                 <div id="practice-content"></div>
             </div>
@@ -327,15 +280,14 @@
 
         <section class="view" id="view-quick">
             <div class="section-head">
-                <p class="eyebrow">BRACKET MAGIC</p>
-                <h2>括号不只是“先算”——它还能让计算变聪明</h2>
+                <h2>括号怎样改变计算顺序？</h2>
                 <p class="lead">一类题用括号改变顺序、得到新结果；另一类题用括号记录合理分组，把难算变成凑整。</p>
             </div>
             <div class="quick-grid">
                 <article class="card quick-quiz" id="quick-quiz"></article>
                 <article class="card tricks">
                     <h3 class="bracket-title">点开看：括号怎样帮助速算</h3>
-                    <p class="lead">先在心里找“好朋友”：能凑整的数，常常值得用括号分成一组。</p>
+                    <p class="lead">先找能凑整的数，再判断能否重新分组。</p>
                     <div class="trick-list" id="trick-list"></div>
                     <div class="quick-law"><b>注意：</b>重新添、去或移动括号时，必须有运算律或运算性质作依据，保证算式的值不变；不能为了好算随意搬括号。</div>
                 </article>
@@ -517,7 +469,7 @@
                     <button class="btn" id="demo-prev" ${appState.demoStep === 0 ? 'disabled' : ''}>← 上一步</button>
                     <button class="btn primary" id="demo-next" ${appState.demoStep === last ? 'disabled' : ''}>下一步 →</button>
                 </div>
-                <div class="demo-rule"><b>这一题的路线：</b>${demo.rule}</div>
+                <details class="demo-rule"><summary>为什么这样算？</summary>${demo.rule}</details>
             </div>`;
         document.getElementById('demo-reset').addEventListener('click', () => { appState.demoStep = 0; renderDemo(); });
         document.getElementById('demo-prev').addEventListener('click', () => { appState.demoStep = Math.max(0, appState.demoStep - 1); renderDemo(); });

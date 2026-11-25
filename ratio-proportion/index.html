@@ -343,9 +343,16 @@
             .bottom-nav { flex-direction: column-reverse; }
             .bottom-nav button { width: 100%; }
         }
+            .hero-top { margin-bottom: 0; }
+        .hero-top h1 { margin: 0; font-size: clamp(25px,4vw,38px); }
+        .module details summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -368,21 +375,14 @@
             return x || 1;
         };
         const neat = value => Number.isInteger(value) ? String(value) : Number(value.toFixed(4)).toString();
-        const decimalText = (a, b) => {
-            const value = a / b;
-            return Number.isInteger(value) ? String(value) : value.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+        const ratioValue = (a, b) => {
+            const divisor = gcd(a, b);
+            return b === divisor ? String(a / divisor) : (a / divisor) + '/' + (b / divisor);
         };
         const Fraction = ({ n, d }) => <span className="fraction" aria-label={`${d}分之${n}`}><span>{n}</span><span>{d}</span></span>;
 
-        function ModuleHead({ index, title, desc, goal }) {
-            return <div className="module-head">
-                <div>
-                    <p className="module-kicker">第 {index} 站 · 探索任务</p>
-                    <h2>{title}</h2>
-                    <p className="module-desc">{desc}</p>
-                </div>
-                <span className="goal-chip">本节目标 · {goal}</span>
-            </div>;
+        function ModuleHead({ title }) {
+            return <div className="module-head"><h2>{title}</h2></div>;
         }
 
         const ObjectDots = ({ count, tone = '' }) => (
@@ -401,11 +401,11 @@
             const secondLabel = mode === 'part' ? '蓝色方块' : '全部方块';
             const secondDivisor = gcd(a, second);
             return <section className="module">
-                <ModuleHead index="1" title="先用眼睛看懂“比”" desc="比不是在问“相差多少”，而是在问两个数量之间有怎样的倍数关系。拖动数量，观察表达怎样一起变化。" goal="会读、会写、会说含义" />
+                <ModuleHead title="红色方块的个数是谁的几倍？" />
                 <div className="grid-2">
                     <div className="card card-pad">
                         <div className="card-title-row">
-                            <div><span className="tiny-label">可操作模型</span><h3 className="card-title">两队方块比一比</h3></div>
+                            <div><h3 className="card-title">两队方块比一比</h3></div>
                             <div className="segmented" aria-label="比较方式">
                                 <button className={mode === 'part' ? 'active' : ''} onClick={() => setMode('part')}>部分 : 部分</button>
                                 <button className={mode === 'whole' ? 'active' : ''} onClick={() => setMode('whole')}>部分 : 整体</button>
@@ -414,7 +414,7 @@
                         <div className="object-stage">
                             <div className="object-row"><div className="object-label">红色方块<br />{a} 个</div><ObjectDots count={a} /></div>
                             <div className="object-row"><div className="object-label">蓝色方块<br />{b} 个</div><ObjectDots count={b} tone="blue" /></div>
-                            <p className="stage-caption">每个方块一样大，才能直接比较个数。</p>
+
                         </div>
                         <div className="slider-list" style={{ marginTop: 16 }}>
                             <div className="slider-row"><label><i className="dot"></i>红色数量</label><input aria-label="红色数量" type="range" min="1" max="12" value={a} onChange={e => setA(+e.target.value)} /><span className="slider-value">{a}</span></div>
@@ -426,22 +426,25 @@
                             <div className="card-title-row"><h3 className="card-title">把看到的关系写下来</h3><span className="pill coral">读作 {a} 比 {second}</span></div>
                             <div className="big-ratio"><span className="ratio-num">{a}</span><span className="colon">:</span><span className="ratio-num blue">{second}</span></div>
                             <div className="term-labels"><span>前项</span><span>比号</span><span>后项</span></div>
-                            <div className="meaning-cards">
+                            <details><summary>比值与最简整数比</summary><div className="meaning-cards">
                                 <div className="meaning-card"><strong>它在比较什么？</strong><p>红色方块数量与{secondLabel}数量的比是 <b>{a}:{second}</b>。</p></div>
-                                <div className="meaning-card"><strong>它表示几倍？</strong><p>红色数量是{secondLabel}的 <b>{a} ÷ {second} = {decimalText(a, second)}</b> 倍。</p></div>
+                                <div className="meaning-card"><strong>它表示几倍？</strong><p>红色方块个数是{secondLabel}个数的 <b>{ratioValue(a, second)}</b> 倍。</p></div>
                                 <div className="meaning-card"><strong>最简整数比</strong><p>{a}:{second} = <b>{a / secondDivisor}:{second / secondDivisor}</b>{secondDivisor > 1 ? `（同时除以 ${secondDivisor}）` : '（已经最简）'}</p></div>
                             </div>
+                        </details>
                         </div>
                         <div className="callout">
-                            <b>辨一辨：</b>“红比蓝多 {Math.abs(a - b)} 个”是在比较<b>差</b>；“红与蓝的比是 {a}:{b}”是在比较<b>倍数关系</b>。问题不同，表达也不同。
+                            {a === b ? '红、蓝一样多' : a > b ? '红比蓝多 ' + (a - b) + ' 个' : '红比蓝少 ' + (b - a) + ' 个'}，红与蓝的个数比为 {a}∶{b}。
                         </div>
                     </div>
                 </div>
-                <div className="grid-3" style={{ marginTop: 18 }}>
+                <details><summary>交换前后项与不同单位的比</summary>
+                <div className="grid-3" style={{ marginTop: 12 }}>
                     <div className="meaning-card"><strong>顺序不能随便换</strong><p>红与蓝是 {a}:{b}，蓝与红是 {b}:{a}。前后交换，含义就变了。</p></div>
                     <div className="meaning-card"><strong>既能比同类量</strong><p>4 个红球与 6 个蓝球，单位相同，可以比较并化简。</p></div>
                     <div className="meaning-card"><strong>也能比不同类量</strong><p>路程与时间的比会得到速度；这时比值通常带单位。</p></div>
                 </div>
+                </details>
             </section>;
         }
 
@@ -449,10 +452,10 @@
             const [a, setA] = useState(3);
             const [b, setB] = useState(5);
             return <section className="module">
-                <ModuleHead index="2" title="同一个数，四种熟悉的样子" desc="比、除法、分数在数值上可以互相改写；它们长得不同、各自表达的重点也不同。" goal="会互化，能说清区别" />
+                <ModuleHead title="把比改写成除法和分数" />
                 <div className="card card-pad">
                     <div className="card-title-row">
-                        <div><span className="tiny-label">等效关系</span><h3 className="card-title">改变前项、后项，三种写法同步变化</h3></div>
+                        <div><h3 className="card-title">改变前项、后项，三种写法同步变化</h3></div>
                         <span className="pill blue">后项不能为 0</span>
                     </div>
                     <div className="slider-list">
@@ -467,8 +470,8 @@
                         <div className="expression-card fraction"><span className="expression-name">分数</span><span className="expression"><Fraction n={a} d={b} /></span><small>一个数</small></div>
                     </div>
                     <div className="value-banner">
-                        <div><b>它们的值都叫这个比的“比值”</b><p>比值可以写成分数、小数或整数。</p></div>
-                        <span className="value-number">{decimalText(a, b)}</span>
+                        <div><b>前项除以后项得到比值</b><p>比值可以写成分数、小数或整数。</p></div>
+                        <span className="value-number">{ratioValue(a, b)}</span>
                     </div>
                 </div>
                 <div className="grid-even" style={{ marginTop: 18 }}>
@@ -504,10 +507,10 @@
             const [example, setExample] = useState(0);
             const c = SIMPLIFY_CASES[example];
             return <section className="module">
-                <ModuleHead index="3" title="比的基本性质与化简" desc="前项和后项同时乘或除以同一个不为 0 的数，比值不变。它是化简比、判断等值比的核心。" goal="会化成最简整数比" />
+                <ModuleHead title="怎样化成最简整数比？" />
                 <div className="grid-even">
                     <div className="card card-pad">
-                        <div className="card-title-row"><div><span className="tiny-label">基本性质</span><h3 className="card-title">同一杯配方，放大几倍都一样浓</h3></div><span className="pill blue">基准 2 : 3</span></div>
+                        <div className="card-title-row"><div><h3 className="card-title">同一杯配方，放大几倍都一样浓</h3></div><span className="pill blue">基准 2 : 3</span></div>
                         <div className="factor-control">
                             <span style={{ color: '#667085', fontSize: 13, fontWeight: 800 }}>同时乘</span>
                             <div className="factor-buttons">{[1,2,3,4].map(x => <button key={x} onClick={() => setFactor(x)} className={`factor-button ${factor === x ? 'active' : ''}`}>×{x}</button>)}</div>
@@ -522,7 +525,7 @@
                         <div className="callout green" style={{ marginTop: 15 }}>数量都变成原来的 {factor} 倍，但红蓝配方的<b>浓淡没有变</b>，所以比值不变。</div>
                     </div>
                     <div className="card card-pad">
-                        <div className="card-title-row"><div><span className="tiny-label">化简工具箱</span><h3 className="card-title">四类常见题</h3></div><span className="pill">最简整数比</span></div>
+                        <div className="card-title-row"><div><h3 className="card-title">四类常见题</h3></div><span className="pill">最简整数比</span></div>
                         <div className="example-tabs">{SIMPLIFY_CASES.map((x,i)=><button key={x.label} className={`example-tab ${example===i?'active':''}`} onClick={()=>setExample(i)}>{x.label}</button>)}</div>
                         <div className="big-ratio" style={{ background: '#f7f9fb', borderRadius: 17, fontSize: 24, fontWeight: 900 }}>{c.source}</div>
                         <div className="solution-steps" style={{ marginTop: 16 }}>{c.steps.map(step=><div className="solution-step" key={step}>{step}</div>)}</div>
@@ -541,10 +544,10 @@
             const [a,b,c,d] = values;
             const left = a*d, right = b*c, valid = left === right;
             return <section className="module">
-                <ModuleHead index="4" title="两个相等的比，组成比例" desc="比例是一条等式。判断四个数能否组成比例，既可以比较比值，也可以用“两个外项的积等于两个内项的积”。" goal="会判断比例、会解比例" />
+                <ModuleHead title="这两个比能组成比例吗？" />
                 <div className="grid-2">
                     <div className="card card-pad">
-                        <div className="card-title-row"><div><span className="tiny-label">比例探测器</span><h3 className="card-title">改动四个数，等式还成立吗？</h3></div><span className={`pill ${valid?'green':'coral'}`}>{valid?'比例成立':'比例不成立'}</span></div>
+                        <div className="card-title-row"><div><h3 className="card-title">改动四个数，等式还成立吗？</h3></div><span className={`pill ${valid?'green':'coral'}`}>{valid?'比例成立':'比例不成立'}</span></div>
                         <div className="proportion-form">
                             <input className="number-input" aria-label="第一个数" type="number" value={a} onChange={e=>setValue(0,e.target.value)} />
                             <span className="symbol">:</span>
@@ -567,7 +570,7 @@
                     </div>
                     <div className="stack">
                         <div className="card card-pad">
-                            <div className="card-title-row"><div><span className="tiny-label">解比例</span><h3 className="card-title">3 : 5 = x : 20</h3></div><button className="primary-button" onClick={()=>setShowX(!showX)}>{showX?'收起步骤':'演示步骤'}</button></div>
+                            <div className="card-title-row"><div><h3 className="card-title">3 : 5 = x : 20</h3></div><button className="primary-button" onClick={()=>setShowX(!showX)}>{showX?'收起步骤':'演示步骤'}</button></div>
                             <div className="x-demo">
                                 <div className="x-equation">3 : 5 = x : 20</div>
                                 {showX ? <div className="solution-steps">
@@ -600,13 +603,13 @@
             const [scale, setScale] = useState(100000);
             const c = RELATION_CASES[relation];
             const maxY = Math.max(...c.y);
-            const firstShare = total * r1 / (r1+r2), secondShare = total * r2 / (r1+r2);
+
             const actualKm = mapCm * scale / 100000;
             return <section className="module">
-                <ModuleHead index="5" title="教材常见考点，一次串起来" desc="在基础概念之后，还要会辨认正反比例，并能解决按比分配、比例尺等常见生活问题。" goal="会辨关系、能解决基础应用" />
+                <ModuleHead title="比较数量关系" />
                 <div className="grid-even">
                     <div className="card card-pad">
-                        <div className="card-title-row"><div><span className="tiny-label">关系辨析</span><h3 className="card-title">正比例、反比例，还是不成比例？</h3></div><span className={`type-badge ${c.id}`}>{c.tag}</span></div>
+                        <div className="card-title-row"><div><h3 className="card-title">正比例、反比例，还是不成比例？</h3></div><span className={`type-badge ${c.id}`}>{c.tag}</span></div>
                         <div className="application-tabs">{RELATION_CASES.map((x,i)=><button className={`application-tab ${relation===i?'active':''}`} key={x.id} onClick={()=>setRelation(i)}><span>情境 {i+1}</span><b>{x.title}</b></button>)}</div>
                         <div className="relationship-stage">
                             <div className="relationship-head"><b>{c.desc}</b></div>
@@ -615,26 +618,26 @@
                         </div>
                     </div>
                     <div className="card card-pad">
-                        <div className="card-title-row"><div><span className="tiny-label">应用小工具</span><h3 className="card-title">把比例用进生活</h3></div><span className="pill green">即时计算</span></div>
+                        <div className="card-title-row"><div><h3 className="card-title">把比例用进生活</h3></div><span className="pill green">即时计算</span></div>
                         <div className="segmented" style={{ marginBottom: 18 }}><button className={tool==='distribution'?'active':''} onClick={()=>setTool('distribution')}>按比分配</button><button className={tool==='scale'?'active':''} onClick={()=>setTool('scale')}>比例尺</button></div>
                         {tool === 'distribution' ? <div className="application-calculator">
                             <div className="field-grid">
-                                <div className="field"><label>总量</label><input type="number" min="1" value={total} onChange={e=>setTotal(Math.max(1,+e.target.value||1))} /></div>
-                                <div className="field"><label>第一份比</label><input type="number" min="1" value={r1} onChange={e=>setR1(Math.max(1,+e.target.value||1))} /></div>
-                                <div className="field"><label>第二份比</label><input type="number" min="1" value={r2} onChange={e=>setR2(Math.max(1,+e.target.value||1))} /></div>
+                                <div className="field"><label>总量</label><input type="number" min="1" max="100000" step="1" value={total} onChange={e=>setTotal(Math.min(100000, Math.max(1, Math.trunc(+e.target.value) || 1)))} /></div>
+                                <div className="field"><label>第一部分的份数</label><input type="number" min="1" max="1000" step="1" value={r1} onChange={e=>setR1(Math.min(1000, Math.max(1, Math.trunc(+e.target.value) || 1)))} /></div>
+                                <div className="field"><label>第二部分的份数</label><input type="number" min="1" max="1000" step="1" value={r2} onChange={e=>setR2(Math.min(1000, Math.max(1, Math.trunc(+e.target.value) || 1)))} /></div>
                             </div>
                             <div className="distribution-bar"><div className="distribution-part" style={{width:`${r1/(r1+r2)*100}%`}}>{r1} 份</div><div className="distribution-part" style={{width:`${r2/(r1+r2)*100}%`}}>{r2} 份</div></div>
                             <div className="solution-steps">
                                 <div className="solution-step">总份数：{r1} + {r2} = {r1+r2} 份。</div>
-                                <div className="solution-step">每份：{total} ÷ {r1+r2} = {neat(total/(r1+r2))}。</div>
+                                <div className="solution-step">每份：{total} ÷ {r1+r2} = {ratioValue(total, r1 + r2)}。</div>
                             </div>
-                            <div className="application-answer">第一部分：{neat(firstShare)}；第二部分：{neat(secondShare)}。两部分相加仍是 {total}。</div>
+                            <div className="application-answer">第一部分：{ratioValue(total * r1, r1 + r2)}；第二部分：{ratioValue(total * r2, r1 + r2)}。两部分相加仍是 {total}。</div>
                         </div> : <div className="application-calculator">
                             <div className="field-grid" style={{gridTemplateColumns:'1fr 1fr'}}>
                                 <div className="field"><label>图上距离（厘米）</label><input type="number" min=".1" step=".1" value={mapCm} onChange={e=>setMapCm(Math.max(.1,+e.target.value||.1))} /></div>
                                 <div className="field"><label>比例尺 1 : n</label><select value={scale} onChange={e=>setScale(+e.target.value)}><option value="10000">1 : 10 000</option><option value="100000">1 : 100 000</option><option value="500000">1 : 500 000</option><option value="1000000">1 : 1 000 000</option></select></div>
                             </div>
-                            <div className="callout blue"><b>比例尺 = 图上距离 : 实际距离</b><br />单位必须统一，它是一个比，通常不带单位。</div>
+                            <div className="callout blue"><b>比例尺为图上距离与实际距离的比</b><br />单位必须统一，它是一个比，通常不带单位。</div>
                             <div className="solution-steps"><div className="solution-step">实际距离 = {mapCm} × {scale} = {neat(mapCm*scale)} 厘米。</div><div className="solution-step">厘米换算成千米，要除以 100 000。</div></div>
                             <div className="application-answer">实际距离是 <b>{neat(actualKm)} 千米</b>。</div>
                         </div>}
@@ -689,7 +692,7 @@
             const restart = () => { setIndex(0); setAnswers(Array(QUESTIONS.length).fill(null)); setDraft(''); setChecked(false); setFinished(false); };
             const progress = finished ? 100 : (index / QUESTIONS.length * 100);
             return <section className="module">
-                <ModuleHead index="6" title="简单练习：把知识变成自己的" desc="共 10 道基础题，覆盖读写、化简、比例、应用。每答一题马上看到解释。" goal="正确率达到 80%" />
+                <ModuleHead title="比与比例练习" />
                 <div className="practice-layout">
                     <aside className="card practice-side">
                         <div className="score-ring" style={{'--progress':`${progress}%`}}><div className="score-ring-inner"><strong>{correctCount}</strong><small>答对</small></div></div>
@@ -730,16 +733,8 @@
             return <div className="app-shell">
                 <header className="hero">
                     <div className="hero-top">
-                        <div className="brand"><span className="brand-mark">∶</span><span>Math101 · 小学数学探索工具</span></div>
+                        <h1>比与比例</h1>
                         <a href="../" className="home-link" aria-label="返回工具首页">← 返回首页</a>
-                    </div>
-                    <div className="hero-main">
-                        <div>
-                            <p className="eyebrow">RATIO & PROPORTION LAB</p>
-                            <h1>比与比例探索实验室</h1>
-                            <p className="hero-copy">从几颗方块开始，看见两个数量的关系；再把比、除法、分数、比例连成一张清楚的知识地图。</p>
-                        </div>
-                        <div className="hero-badge"><div className="ratio-glyph"><i></i><i></i><i></i><i></i><i></i></div><div><strong>2 : 3</strong><span>看见关系 · 理解本质</span></div></div>
                     </div>
                 </header>
                 <div className="lesson-nav-wrap">

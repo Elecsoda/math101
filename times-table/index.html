@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>乘法口诀练习 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.4s ease-in; }
@@ -19,6 +19,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -31,8 +35,10 @@
             // 习惯：小数在前。如 3×4 读作 "三四十二"
             const [x, y] = a <= b ? [a, b] : [b, a];
             const p = x * y;
-            const pStr = p < 10 ? cnNum[p] : (p % 10 === 0 ? cnNum[Math.floor(p/10)] + '十' : cnNum[Math.floor(p/10)] + '十' + cnNum[p%10]);
-            return `${cnNum[x]}${cnNum[y]}${pStr}`;
+            if (p < 10) return `${cnNum[x]}${cnNum[y]}得${cnNum[p]}`;
+            const tens = Math.floor(p / 10);
+            const tensWord = p > 10 && p < 20 ? '十' : cnNum[tens] + '十';
+            return cnNum[x] + cnNum[y] + tensWord + (p % 10 ? cnNum[p % 10] : '');
         };
 
         // 点阵图
@@ -74,9 +80,9 @@
         const Explore = () => {
             const [a, setA] = useState(3);
             const [b, setB] = useState(4);
-            const [jump, setJump] = useState(b); // 数轴跳到第几格
+            const [jump, setJump] = useState(0); // 已跳的次数
 
-            useEffect(() => { setJump(b); }, [a, b]);
+            useEffect(() => { setJump(0); }, [a, b]);
 
             return (
                 <div className="fade-in flex flex-col items-center">
@@ -101,12 +107,12 @@
 
                     <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-4 flex flex-col items-center">
                         <DotArray rows={b} cols={a} litUpTo={jump * a} />
-                        <div className="text-4xl font-bold text-indigo-600 mt-5">{a} × {b} = {a * b}</div>
-                        <div className="text-xl text-emerald-600 font-bold mt-2">口诀：{chantText(a, b)}</div>
+                        <div className="text-4xl font-bold text-indigo-600 mt-5">{a} × {jump} = {a * jump}</div>
+                        <div className="text-xl text-emerald-600 font-bold mt-2">{jump ? chantText(a, jump) : '从 0 出发'}</div>
                     </div>
 
                     <div className="w-full max-w-2xl bg-white rounded-xl shadow p-4 mb-3">
-                        <div className="text-sm text-gray-500 mb-1">在数轴上每次跳 {a}，跳 {b} 次：</div>
+                        <div className="text-sm text-gray-500 mb-1">每步跳 {a} 格，已跳 {jump} 次，共要跳 {b} 次。</div>
                         <NumberLine step={a} count={b} active={jump} />
                         <div className="flex justify-center gap-3 mt-2">
                             <button onClick={() => setJump(j => Math.max(0, j - 1))} disabled={jump === 0}
@@ -184,7 +190,7 @@
                                 ? <DotArray rows={q.b} cols={q.a} />
                                 : <button onClick={() => setRevealDots(true)}
                                     className="px-4 py-2 text-sm bg-white border border-dashed border-gray-300 rounded-lg text-gray-400 hover:text-gray-600 smooth-transition">
-                                    想不起来？点这里看点阵图提示</button>}
+                                    看点阵提示</button>}
                         </div>
 
                         <div className={"text-5xl font-bold text-gray-800 mb-4 " + (feedback === 'wrong' ? "shake" : "")}>
@@ -203,7 +209,7 @@
 
                         <div className="h-8 mt-3 text-lg font-bold">
                             {feedback === 'right' && <span className="text-emerald-600">✓ 答对了！口诀：{chantText(q.a, q.b)}</span>}
-                            {feedback === 'wrong' && <span className="text-rose-600">再想想～ 看看点阵图，每行 {q.a} 个，共 {q.b} 行</span>}
+                            {feedback === 'wrong' && <span className="text-rose-600">再数一数：每行 {q.a} 个，共 {q.b} 行</span>}
                         </div>
                         {feedback === 'wrong' && (
                             <button onClick={() => newQuestion()} className="mt-2 text-sm text-indigo-500 hover:underline">跳过这题 →</button>
@@ -244,7 +250,7 @@
                             </svg>
                         </a>
                         <h1 className="text-3xl font-bold text-slate-800">乘法口诀练习</h1>
-                        <p className="text-slate-500 mt-1">点阵看意义、数轴学跳数、遮挡练记忆、错题反复练</p>
+                        <p className="text-slate-500 mt-1">选每行个数，再跳一步。</p>
                     </header>
 
                     <div className="flex justify-center gap-3 mb-8">

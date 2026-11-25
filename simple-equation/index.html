@@ -142,7 +142,7 @@
         .weight:hover { filter: brightness(1.08); transform: translateY(-2px); }
         .weight.removing { animation: flyoff .4s ease forwards; }
         @keyframes flyoff { to { transform: translateY(-60px) scale(.4); opacity: 0; } }
-        /* 苹果（未知重量 x） */
+        /* 苹果（未知质量 x） */
         .apple {
             position: relative; width: 46px; height: 46px; user-select: none;
             background: radial-gradient(circle at 32% 30%, #ff7a7a, #d62828 70%);
@@ -288,6 +288,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <main class="page">
@@ -296,24 +300,23 @@
                 <div class="brand-icon">x</div>
                 <div>
                     <h1>简易方程·天平模型</h1>
-                    <p class="sub">从天平到等式性质，再到解方程与练习（人教五上 · 含奥数初步）</p>
                 </div>
             </div>
             <a class="btn" href="../">返回首页</a>
         </header>
 
         <div class="tabs">
-            <button class="tab active" data-view="balance">天平认识方程<small>拿走砝码求未知</small></button>
-            <button class="tab" data-view="property">等式性质<small>点按钮加减乘除</small></button>
-            <button class="tab" data-view="solver">解方程讲解<small>两边同步运算</small></button>
-            <button class="tab" data-view="quiz">解方程练习<small>简单/进阶</small></button>
+            <button class="tab active" data-view="balance">天平认识方程</button>
+            <button class="tab" data-view="property">等式性质</button>
+            <button class="tab" data-view="solver">解方程讲解</button>
+            <button class="tab" data-view="quiz">解方程练习</button>
         </div>
 
         <!-- ============ Tab1 天平 ============ -->
         <section class="card view active" id="view-balance">
             <div class="panel">
-                <h2>1 · 用天平理解方程</h2>
-                <p class="lead">左盘有 <b>苹果</b>（重量未知，记作 <b>x</b> 克）和几块砝码，右盘是一堆砝码，天平正好<b>平衡</b>——这就是一个方程。想求出一个苹果有多重？<b>两边同时拿走一样多的砝码</b>，保持平衡，直到左盘只剩苹果。点砝码可<b>拿走</b>，点天平下方的 <b style="color:#10b981">＋ 加砝码</b> 可<b>添加</b>砝码。</p>
+                <h2>怎样求一个苹果的质量？</h2>
+                <p class="lead">每个苹果的质量是 x 克，每块砝码是 1 克。点砝码，试着从两盘各拿走相同的质量。</p>
 
                 <div class="scale-area" id="scaleArea">
                     <div class="beam" id="beam"></div>
@@ -348,8 +351,8 @@
         <!-- ============ Tab2 等式性质 ============ -->
         <section class="card view" id="view-property">
             <div class="panel">
-                <h2>2 · 等式两边的秘密</h2>
-                <p class="lead">天平平衡时，<b>两边同时做同样的事</b>——同时加、同时减、同时乘、同时除以同一个数（除数不为 0）——天平依然平衡。先选一个起始等式，再点下面的按钮，看看两边<b>同时变化</b>的过程。</p>
+                <h2>等式的性质</h2>
+                <p class="lead">在等式两边同加、同减、同乘一个数，或同除以一个非零数，等式仍然成立。</p>
 
                 <div class="prop-base-row" id="propBaseRow"></div>
 
@@ -395,8 +398,8 @@
         <!-- ============ Tab3 解方程讲解 ============ -->
         <section class="card view" id="view-solver">
             <div class="panel">
-                <h2>3 · 解方程，看清两边同时运算</h2>
-                <p class="lead">选一个方程，或自己输入（未知数写 <code>x</code>，例如 <b>3x+5=20</b> 或 <b>2(x-1)=10</b>）。每一步都先写出<b>两边同时加 / 减 / 乘 / 除</b>，再合并计算，最后<b>检验</b>。</p>
+                <h2>解方程</h2>
+                <p class="lead">输入含 x 的一次方程，观察每一步如何保持左右两边相等。</p>
 
                 <div class="solver-controls">
                     <input type="text" class="eqn-input" id="solverInput" value="3x + 5 = 20" autocomplete="off">
@@ -411,7 +414,7 @@
         <!-- ============ Tab4 练习 ============ -->
         <section class="card view" id="view-quiz">
             <div class="panel">
-                <h2>4 · 解方程练习</h2>
+                <h2>求未知数</h2>
                 <p class="lead">求出 x 的值。算完直接填数（可以是分数，如 <code>3/2</code>）。做错可以看分步讲解。</p>
 
                 <div class="level-row">
@@ -457,7 +460,8 @@
        ============================================================ */
     function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
     function frac(n, d = 1) {
-        if (d === 0) return [NaN, 1];
+        if (d === 0) throw new Error("除数不能为 0");
+        if (!Number.isSafeInteger(n) || !Number.isSafeInteger(d)) throw new Error("数值超出可精确计算的范围");
         if (d < 0) { n = -n; d = -d; }
         const g = gcd(n, d);
         return [n / g, d / g];
@@ -471,20 +475,16 @@
     function fStr(a) { return a[1] === 1 ? String(a[0]) : a[0] + "/" + a[1]; }
     function fAbsStr(a) { return fStr(frac(Math.abs(a[0]), a[1])); }
     function parseFracInput(s) {
-        s = (s || "").trim().replace(/\s+/g, "");
-        if (s === "") return null;
-        if (s.includes("/")) {
-            const [n, d] = s.split("/");
-            const ni = parseInt(n, 10), di = parseInt(d, 10);
-            if (Number.isNaN(ni) || Number.isNaN(di) || di === 0) return null;
-            return frac(ni, di);
+        const text = String(s ?? "").trim().replace(/−/g, "-");
+        const pair = text.match(/^([+-]?\d+)\s*[/／]\s*([+-]?\d+)$/);
+        if (pair) {
+            const n = Number(pair[1]), d = Number(pair[2]);
+            return Number.isSafeInteger(n) && Number.isSafeInteger(d) && d !== 0 ? frac(n, d) : null;
         }
-        const v = Number(s);
-        if (Number.isNaN(v)) return null;
-        if (Number.isInteger(v)) return frac(v, 1);
-        const decimals = (s.split(".")[1] || "").length;
-        const den = Math.pow(10, decimals);
-        return frac(Math.round(v * den), den);
+        if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+        const digits = (text.split(".")[1] || "").length;
+        const n = Number(text.replace(".", "")), d = 10 ** digits;
+        return Number.isSafeInteger(n) && Number.isSafeInteger(d) ? frac(n, d) : null;
     }
 
     /* ============================================================
@@ -532,7 +532,7 @@
         const a = document.createElement("div");
         a.className = "apple";
         a.innerHTML = "<b>x</b>";
-        a.title = "未知重量的苹果";
+        a.title = "未知质量的苹果";
         return a;
     }
 
@@ -574,14 +574,14 @@
         $("panLeft").style.transform = `translateY(${off}px)`;
         $("panRight").style.transform = `translateY(${-off}px)`;
 
-        $("scaleEqn").textContent = leftExpr() + " = " + rv;
+        $("scaleEqn").textContent = leftExpr() + (diff > 0 ? " > " : diff < 0 ? " < " : " = ") + rv;
         const st = $("scaleState"), dl = $("dishLeft"), dr = $("dishRight");
         dl.classList.toggle("balanced", diff === 0);
         dr.classList.toggle("balanced", diff === 0);
 
         const solved = scale.apples === 1 && scale.leftW === 0 && diff === 0;
         if (solved) {
-            st.textContent = "🎉 左盘只剩 1 个苹果，平衡！所以 x = " + rv + " 克";
+            st.textContent = "天平平衡，苹果的质量是 " + rv + " 克。";
             st.className = "scale-state bal";
             $("scaleHint").innerHTML = "你用<b>两边同时拿走砝码</b>解出了方程。换一道题再试试。";
         } else if (diff === 0) {
@@ -594,9 +594,9 @@
                     : "继续。");
         } else {
             const heavy = diff > 0 ? "左" : "右";
-            st.textContent = "✗ 不平衡了：" + heavy + "边更重。要保持平衡，必须两边变化一样多。";
+            st.textContent = "" + heavy + "盘较重。";
             st.className = "scale-state unbal";
-            $("scaleHint").innerHTML = "提示：<b>两边同时拿走（或同时添加）一样多的砝码</b>才能保持平衡。点「重摆本题」可复原。";
+            $("scaleHint").innerHTML = "试着使两盘质量相等。";
         }
     }
 
@@ -789,13 +789,14 @@
             return mulLinByScalar(parseAtom(), sign);
         }
         function parseAtom() {
-            if (peek() === "(") { i++; const inner = parseExpr(); if (peek() === ")") i++; return inner; }
+            if (peek() === "(") { i++; const inner = parseExpr(); if (peek() !== ")") throw new Error("缺少右括号"); i++; return inner; }
             if (peek() === "x") { i++; return { a: frac(1), b: frac(0) }; }
             let num = "";
             while (!eof() && /[0-9.]/.test(peek())) num += expr[i++];
-            const val = num === "" ? frac(1) : parseFracInput(num);
+            const val = parseFracInput(num);
+            if (!val) throw new Error("这里需要一个数、x 或带括号的式子");
             if (!eof() && peek() === "x") { i++; return { a: val, b: frac(0) }; }
-            if (!eof() && peek() === "(") { i++; const inner = parseExpr(); if (peek() === ")") i++; return mulLinByScalar(inner, val); }
+            if (!eof() && peek() === "(") { i++; const inner = parseExpr(); if (peek() !== ")") throw new Error("缺少右括号"); i++; return mulLinByScalar(inner, val); }
             return { a: frac(0), b: val };
         }
         const result = parseExpr();

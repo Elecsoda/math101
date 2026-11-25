@@ -192,6 +192,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 <div class="page">
@@ -203,10 +207,10 @@
             </svg>
         </a>
         <h1>计算练习与测试</h1>
-        <p class="subtitle">按口算、估算、竖式和脱式列式分类练习，每项独立统计</p>
+
     </header>
 
-    <nav class="tabs" id="tabs" aria-label="计算训练选项卡"></nav>
+    <details id="chooseTopic"><summary style="cursor:pointer;padding:10px 0">选择计算专题</summary><nav class="tabs" id="tabs" aria-label="计算训练选项卡"></nav></details>
 
     <main class="layout">
         <section class="panel">
@@ -220,10 +224,10 @@
 
             <div class="question-card" id="questionCard">
                 <div class="label" id="questionLabel">随机测试题</div>
-                <div class="formula"><span id="formula"></span><span>&nbsp;=&nbsp;</span><span class="qmark">?</span></div>
+                <div class="formula"><span id="formula"></span><span id="relationSign"> = </span><span class="qmark">?</span></div>
                 <div class="meta" id="questionMeta"></div>
                 <div class="answer-row">
-                    <input id="answerInput" autocomplete="off" placeholder="输入答案">
+                    <input id="answerInput" aria-label="计算结果" autocomplete="off" placeholder="输入答案">
                     <button class="btn primary" id="checkBtn">检查</button>
                 </div>
                 <div class="feedback" id="feedback"></div>
@@ -249,7 +253,7 @@
                 <div class="meta" id="streakText"></div>
             </div>
             <button class="btn" id="resetBtn" style="width:100%; margin-top:14px;">重置本项统计</button>
-            <div class="note">切换选项卡会保留各项统计。分数题可输入等值分数；有余数除法只需写商和余数两个数字。</div>
+
         </aside>
     </main>
 </div>
@@ -276,10 +280,13 @@ const mulF = (a, b) => frac(a.n * b.n, a.d * b.d);
 const divF = (a, b) => frac(a.n * b.d, a.d * b.n);
 const fmtF = f => f.d === 1 ? String(f.n) : `${f.n}/${f.d}`;
 const cnNums = ["零","一","二","三","四","五","六","七","八","九"];
-const cnProduct = n => n < 10 ? cnNums[n] : (n % 10 === 0 ? cnNums[Math.floor(n / 10)] + "十" : cnNums[Math.floor(n / 10)] + "十" + cnNums[n % 10]);
 const chant = (a, b) => {
-    const pair = a <= b ? [a, b] : [b, a];
-    return `${cnNums[pair[0]]}${cnNums[pair[1]]}${cnProduct(a * b)}`;
+    const [small, large] = a <= b ? [a, b] : [b, a];
+    const product = small * large;
+    const factors = cnNums[small] + cnNums[large];
+    if (product < 10) return factors + "得" + cnNums[product];
+    const tens = product > 10 && product < 20 ? "十" : cnNums[Math.floor(product / 10)] + "十";
+    return factors + tens + (product % 10 ? cnNums[product % 10] : "");
 };
 
 function q(data) {
@@ -537,13 +544,13 @@ let state = {
 function activeTab() { return TABS.find(t => t.id === state.active) || TABS[0]; }
 function parseFraction(raw) {
     const text = String(raw).trim().replace(/\s+/g, "");
-    if (/^-?\d+$/.test(text)) return frac(Number(text), 1);
+    if (/^-?\d+$/.test(text)) return Number.isSafeInteger(Number(text)) ? frac(Number(text), 1) : null;
     const m = text.match(/^(-?\d+)\/(-?\d+)$/);
-    return m && Number(m[2]) !== 0 ? frac(Number(m[1]), Number(m[2])) : null;
+    return m && Number.isSafeInteger(Number(m[1])) && Number.isSafeInteger(Number(m[2])) && Number(m[2]) !== 0 ? frac(Number(m[1]), Number(m[2])) : null;
 }
 function parseRemainder(raw) {
-    const nums = String(raw).match(/-?\d+/g);
-    return nums && nums.length >= 2 ? { q: Number(nums[0]), r: Number(nums[1]) } : null;
+    const match = String(raw).trim().match(/^(?:商\s*)?(\d+)(?:\s*(?:余|[，,]|…+|\.{2,})\s*|\s+)(\d+)$/);
+    return match ? { q: Number(match[1]), r: Number(match[2]) } : null;
 }
 function answerText(question) {
     if (question.format === "fraction") return fmtF(question.answer);
@@ -563,9 +570,9 @@ function correct(question, raw) {
     }
     if (question.format === "decimal") {
         const got = Number(text);
-        return Number.isFinite(got) && Math.abs(got - Number(question.answer)) < .005;
+        return /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text) && Number.isFinite(got) && got === Number(question.answer);
     }
-    return Number(text) === question.answer;
+    return /^[+-]?\d+(?:\.0+)?$/.test(text) && Number(text) === question.answer;
 }
 function nextQuestion() {
     state.question = activeTab().make();
@@ -576,6 +583,7 @@ function nextQuestion() {
     setTimeout(() => $("answerInput").focus(), 20);
 }
 function switchTab(id) {
+    $("chooseTopic").open = false;
     state.active = id;
     state.question = activeTab().make();
     state.result = null;
@@ -592,7 +600,10 @@ function checkAnswer() {
     s.wrong += ok ? 0 : 1;
     s.streak = ok ? s.streak + 1 : 0;
     render();
-    if (ok) setTimeout(nextQuestion, 650);
+    if (ok) {
+        const answered = state.question;
+        setTimeout(() => { if (state.question === answered) nextQuestion(); }, 650);
+    }
 }
 function resetStats() {
     state.stats[state.active] = { right: 0, wrong: 0, streak: 0 };
@@ -615,10 +626,11 @@ function render() {
     const rate = total ? Math.round(stat.right / total * 100) : 0;
 
     renderTabs();
-    $("tabMeta").textContent = `${tab.grade} · ${tab.node}`;
+    $("tabMeta").textContent = tab.grade;
     $("tabTitle").textContent = tab.name;
     $("questionLabel").textContent = tab.id.startsWith("hw-") ? "专项随机练习" : "随机测试题";
-    $("formula").textContent = question.text;
+    $("formula").textContent = question.text.replace("（估算）", "");
+    $("relationSign").textContent = tab.id === "hw-estimate" ? " ≈ " : " = ";
     $("questionMeta").textContent = question.meta || "";
     $("questionCard").className = `question-card ${state.result || ""}`;
     $("answerInput").placeholder = question.format === "fraction" ? "如 3/4" : question.format === "remainder" ? "如 7 余 2" : "输入答案";

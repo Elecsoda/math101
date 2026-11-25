@@ -398,6 +398,16 @@
             .start { gap: 6px; }
             .section-title { scroll-margin-top: 66px; }
         }
+        [hidden] { display: none !important; }
+        .stage-start { width: min(94%, 1050px); margin: 0 auto 12px; }
+        .stage-start summary { cursor: pointer; color: #355575; text-align: center; }
+        .start { width: 100%; margin: 8px 0; }
+        .sec-nav { position: static; }
+        .sec-nav-inner { flex-wrap: wrap; justify-content: center; gap: 5px; overflow: visible; }
+        .sec-nav a { padding: 7px 11px; }
+        .section-title, .container { max-width: 1100px; }
+        .tool-card { min-height: 78px; }
+        @media(max-width: 760px) { .sec-nav-inner { padding: 8px 10px; } .container { grid-template-columns: repeat(auto-fit,minmax(min(100%, 175px),1fr)); } }
     </style>
     <link rel="stylesheet" href="./ipad-touch-adapter.css">
     <script src="./ipad-touch-adapter.js" defer></script>
@@ -408,13 +418,14 @@
 
     <header>
         <h1>小学数学 · 计算</h1>
-        <p class="subtitle">按学段选起点，或按知识点找演示和练习。</p>
     </header>
+    <details class="stage-start"><summary>按学段找起点</summary>
     <nav class="start" aria-label="各学段学习起点">
-        <div><strong>一至二年级</strong><a href="/number-line-place-value/#count">数数与比大小</a> → <a href="/make-ten/">凑十与借十</a> → <a href="/multiply-model/">认识乘法</a></div>
+        <div><strong>一至二年级</strong><a href="/number-line-place-value/#count">数数与比大小</a> → <a href="/make-ten/">凑十与破十</a> → <a href="/multiply-model/">认识乘法</a></div>
         <div><strong>三至四年级</strong><a href="/place-value/">读大数</a> → <a href="/multi-digit-calc/">乘法竖式</a> → <a href="/decimal-1/">小数初步</a></div>
         <div><strong>五至六年级</strong><a href="/fraction-properties/">约分与通分</a> → <a href="/fraction-add/#unlike">异分母加减</a> → <a href="/ratio-proportion/">比与比例</a></div>
     </nav>
+    </details>
     <nav class="sec-nav" aria-label="按知识点浏览"><div class="sec-nav-inner">
         <a href="#sec-1">整数与数位</a>
         <a href="#sec-2">整数四则运算</a>
@@ -424,220 +435,197 @@
         <a href="#sec-5">比与比例</a>
         <a href="#sec-6">等式与方程</a>
         <a href="#sec-7">运算顺序、运算律与练习</a>
+        <a href="#all-tools" class="all-tools">全部工具</a>
     </div></nav>
+    <div id="all-tools"></div>
     <div class="section-title" id="sec-1">
         <h2>整数与数位</h2>
-        <p>从数一数开始，把十个一换成一个十，再读写和比较更大的数。</p>
     </div>
     <div class="container">
         <a href="/number-line-place-value/#count" class="tool-card math-op">
-            <span class="category-label">动手操作</span>
             <h3>数一数，认识数位</h3>
-            <p>用十格框比较 0～20 的数，再用算珠和数位表观察满十进一。</p>
+            <p>摆棋子，再用算珠表示数。</p>
         </a>
         <a href="/place-value/" class="tool-card math-op">
-            <span class="category-label">读数与估量</span>
             <h3>读大数，估数量</h3>
-            <p>把大数按四位分级，读准中间的零，再用生活中的数量判断规模。</p>
+            <p>按数级读写，估一估有多少。</p>
         </a>
         <a href="/big-number-practice/" class="tool-card math-law">
-            <span class="category-label">分类练习</span>
             <h3>大数的认识练习</h3>
-            <p>练读写、大小比较、改写与近似数，可选题和打印。</p>
+            <p>读写、比较、改写与取近似数。</p>
         </a>
         <a href="/number-line/" class="tool-card math-op">
-            <span class="category-label">动手操作</span>
             <h3>在数轴上比较数</h3>
-            <p>拖动红点，观察它和零的位置关系。放大刻度看小数，越过零看负数。</p>
+            <p>拖动数轴上的点，比较数的大小。</p>
         </a>
     </div>
     <div class="section-title" id="sec-2">
         <h2>整数四则运算</h2>
-        <p>先用实物模型讲清算式的意思，再把每一步写进竖式。</p>
     </div>
     <div class="container">
         <a href="/make-ten/" class="tool-card math-op">
-            <span class="category-label">加减算理</span>
-            <h3>凑十与借十</h3>
-            <p>移动十格框里的珠子，看 20 以内的加法如何凑十、减法如何从十里减。</p>
+            <h3>凑十与破十</h3>
+            <p>用十格框摆出进位加和退位减。</p>
         </a>
         <a href="/column-method/" class="tool-card math-op">
-            <span class="category-label">竖式演示</span>
             <h3>加减法竖式</h3>
-            <p>在数位上摆小棒，把进位和退位与竖式里的每个数字对应起来。</p>
+            <p>看小棒怎样进位、退位。</p>
         </a>
         <a href="/multiply-model/" class="tool-card math-op">
-            <span class="category-label">认识乘法</span>
             <h3>每份数、份数与总数</h3>
-            <p>改变每份数或份数，观察总数怎样变化，写出对应的乘法算式。</p>
+            <p>改变份数，观察总数。</p>
         </a>
         <a href="/multiply_and_div-1/" class="tool-card math-op">
-            <span class="category-label">认识除法</span>
-            <h3>乘法与两种分法</h3>
-            <p>用点阵表示相同加数的和，再分别按份数和每份数分物。</p>
+            <h3>乘法面积模型与两种分法</h3>
+            <p>拆长方形算乘法，分物体看除法。</p>
         </a>
         <a href="/times-table/" class="tool-card math-law">
-            <span class="category-label">口诀练习</span>
             <h3>乘法口诀</h3>
-            <p>用点阵看懂口诀，再练习表内乘法。</p>
+            <p>用点阵推算乘法口诀。</p>
         </a>
         <a href="/fact-family/" class="tool-card math-op">
-            <span class="category-label">联系乘除</span>
             <h3>一幅图里的乘法和除法</h3>
-            <p>用同一幅点阵写乘法和除法，说一说每个算式各求什么。</p>
+            <p>看同一点阵写出乘除算式。</p>
         </a>
         <a href="/multi-digit-calc/" class="tool-card math-op">
-            <span class="category-label">乘法竖式</span>
             <h3>多位数乘法的部分积</h3>
-            <p>把点阵拆开，观察每一部分对应竖式里的哪一行，以及应当怎样对位。</p>
+            <p>把分块的面积对上竖式各行。</p>
         </a>
         <a href="/remainder/" class="tool-card math-op">
-            <span class="category-label">除法竖式</span>
             <h3>分一分，学除法竖式</h3>
-            <p>从平均分和余数到多位数除法，跟着分物过程逐位写商。</p>
+            <p>边分物边写商，观察余数。</p>
         </a>
         <a href="/quotient-invariance-practice/" class="tool-card math-law">
-            <span class="category-label">专项练习</span>
             <h3>商不变的规律</h3>
-            <p>分类练习被除数和除数的同步变化，用商不变的规律简化计算。</p>
+            <p>改变两个数，判断商的变化。</p>
         </a>
     </div>
     <div class="section-title" id="sec-factors">
         <h2>倍、因数与倍数</h2>
-        <p>先比较两个数量的倍数关系，再研究正整数的因数和倍数。</p>
     </div>
     <div class="container">
         <a href="/times-as-many/" class="tool-card math-op">
-            <span class="category-label">概念探究</span>
             <h3>从“几倍”到因数与倍数</h3>
-            <p>比较一倍量与几倍量，用方块找因数，在百数表里找倍数。</p>
+            <p>比一比几倍，找因数和倍数。</p>
         </a>
         <a href="/factor-multiple-practice/" class="tool-card math-law">
-            <span class="category-label">专项练习</span>
             <h3>因数与倍数练习</h3>
-            <p>按倍数特征、质数与合数、公因数和公倍数等知识点选题。</p>
+            <p>练倍数特征、公因数与公倍数。</p>
         </a>
     </div>
     <div class="section-title" id="sec-3">
         <h2>小数</h2>
-        <p>从一个整体的十分之一开始，理解小数的计数单位，再学习计算。</p>
     </div>
     <div class="container">
         <a href="/decimal-1/" class="tool-card math-op">
-            <span class="category-label">认识小数</span>
             <h3>用面积方格认识小数</h3>
-            <p>把一个正方形当作 1，增减涂色面积，比较十分之一和百分之一。</p>
+            <p>用方格表示十分之一和百分之一。</p>
         </a>
         <a href="/decimal-2/" class="tool-card math-op">
-            <span class="category-label">位值变化</span>
             <h3>小数点移动与数的大小</h3>
-            <p>改变小数点的位置，判断数扩大到原来的几倍或缩小到原来的几分之一。</p>
+            <p>移动小数点，观察数值变化。</p>
         </a>
         <a href="/decimal-addsub/" class="tool-card math-op">
-            <span class="category-label">加减算理</span>
             <h3>小数加减为什么要对齐</h3>
-            <p>在数位表上对齐小数点，用反例检查有没有把不同计数单位加在一起。</p>
+            <p>对齐相同数位再计算。</p>
         </a>
         <a href="/decimal-muldiv/" class="tool-card math-op">
-            <span class="category-label">乘除算理</span>
             <h3>小数乘除怎样确定小数点</h3>
-            <p>乘法看两个因数一共有几位小数，除法看怎样把除数化成整数。</p>
+            <p>分别观察积和商的小数点位置。</p>
         </a>
     </div>
     <div class="section-title" id="sec-4">
         <h2>分数与百分数</h2>
-        <p>先确定整体和分数单位，再比较、通分和计算。</p>
     </div>
     <div class="container">
         <a href="/fraction/" class="tool-card math-op">
-            <span class="category-label">认识分数</span>
             <h3>平均分与几分之几</h3>
-            <p>把一个整体平均分，说明分母和分子各表示什么。</p>
+            <p>平均分一个整体，再取几份。</p>
         </a>
         <a href="/fraction-properties/" class="tool-card math-op">
-            <span class="category-label">概念探究</span>
             <h3>等值分数、约分与通分</h3>
-            <p>改变等分的份数，观察为什么分数的写法变了，大小仍然相等。</p>
+            <p>等分方法变了，涂色量变了吗？</p>
         </a>
         <a href="/fraction-add/" class="tool-card math-op">
-            <span class="category-label">加减算理</span>
             <h3>同分母与异分母分数加减</h3>
-            <p>用等长的分数条统一每份的大小，再合并或去掉相应的份数。</p>
+            <p>把同一整体分成同样大的份。</p>
         </a>
         <a href="/fraction-mul-div/" class="tool-card math-op">
-            <span class="category-label">乘除算理</span>
             <h3>分数乘除的意义</h3>
-            <p>用折纸看一个数的几分之几，用“里面有几个”理解除以分数。</p>
+            <p>用折纸和分数条解释乘除。</p>
         </a>
         <a href="/percent/" class="tool-card math-op">
-            <span class="category-label">数的表示</span>
             <h3>分数、小数与百分数</h3>
-            <p>在百格图上表示占比，比较同一个数量关系的三种写法。</p>
+            <p>同一占比，换三种写法。</p>
         </a>
     </div>
     <div class="section-title" id="sec-5">
         <h2>比与比例</h2>
-        <p>比较两个量，再判断两个量怎样一起变化。</p>
     </div>
     <div class="container">
         <a href="/ratio-proportion/" class="tool-card math-op">
-            <span class="category-label">关系探究</span>
             <h3>比、比例与正反比例</h3>
-            <p>从配方和方块理解比值，用表格观察比值一定或积一定的关系。</p>
+            <p>改变两个量，比较比值与乘积。</p>
         </a>
     </div>
     <div class="section-title" id="sec-6">
         <h2>等式与方程</h2>
-        <p>把未知量放上天平，观察等式两边怎样保持相等。</p>
     </div>
     <div class="container">
         <a href="/simple-equation/" class="tool-card math-op">
-            <span class="category-label">代数衔接</span>
             <h3>用天平理解等式与方程</h3>
-            <p>在两边做相同的运算，求出未知数，再代回原式检验。</p>
+            <p>同时操作天平两边，求未知数。</p>
         </a>
     </div>
     <div class="section-title" id="sec-7">
         <h2>运算顺序、运算律与练习</h2>
-        <p>先判断怎样算，再说明为什么可以这样算。</p>
     </div>
     <div class="container">
         <a href="/operation-order/" class="tool-card math-op">
-            <span class="category-label">混合运算</span>
             <h3>先算哪一步</h3>
-            <p>逐步判断括号和四则运算的顺序，再练习添加括号。</p>
+            <p>指出先算哪一步。</p>
         </a>
         <a href="/law_of_operation/" class="tool-card math-op">
-            <span class="category-label">运算定律</span>
             <h3>用图说明运算律</h3>
-            <p>用图形观察运算顺序或组合方式改变后，结果为什么相同。</p>
+            <p>移动图块，解释算式为何相等。</p>
         </a>
         <a href="/fast-calc/" class="tool-card math-law">
-            <span class="category-label">方法拓展</span>
             <h3>凑整、拆分与巧算</h3>
-            <p>比较不同算法，观察凑整、选基准数和等差求和怎样简化计算。</p>
+            <p>选择凑整或拆分，比较算法。</p>
         </a>
         <a href="/calc/" class="tool-card math-law">
-            <span class="category-label">综合练习</span>
             <h3>按知识点练计算</h3>
-            <p>选择口算、估算、竖式或脱式计算，也可以按具体知识点练习和测试。</p>
+            <p>口算、估算、笔算与混合运算。</p>
         </a>
     </div>
 
     <div class="site-copyright" style="box-sizing:border-box;width:100%;padding:24px 16px;text-align:center;color:#94a3b8;font:13px/1.6 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">©孙维刚教育研究院 小宇老师 版权所有</div>
 
     <script>
-    (function () {
-        const links = Array.from(document.querySelectorAll(".sec-nav a"));
-        const secs = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
-        if (!secs.length) return;
-        const obs = new IntersectionObserver(es => {
-            es.forEach(e => {
-                if (e.isIntersecting) links.forEach(a =>
-                    a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id));
-            });
-        }, { rootMargin: "-64px 0px -70% 0px", threshold: 0 });
-        secs.forEach(s => obs.observe(s));
+    (() => {
+        const links = [...document.querySelectorAll('.sec-nav a')];
+        const groups = [...document.querySelectorAll('.section-title')];
+        function showGroup() {
+            const chosen = links.find(link => link.hash === location.hash) || links[0];
+            for (const group of groups) {
+                const hidden = chosen.hash !== '#all-tools' && chosen.hash !== '#' + group.id;
+                group.hidden = group.nextElementSibling.hidden = hidden;
+            }
+            for (const link of links) {
+                link.classList.toggle('active', link === chosen);
+                if (link === chosen) link.setAttribute('aria-current', 'true');
+                else link.removeAttribute('aria-current');
+            }
+        }
+        for (const link of links) link.addEventListener('click', event => {
+            if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+            event.preventDefault();
+            if (link.hash !== location.hash) history.pushState(null, '', link.hash);
+            showGroup();
+        });
+        window.addEventListener('hashchange', showGroup);
+        window.addEventListener('popstate', showGroup);
+        showGroup();
     })();
     </script>
 

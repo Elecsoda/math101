@@ -21,8 +21,9 @@
             margin: 0 auto;
         }
         .btn-sm {
-            width: 60px;
-            height: 32px;
+            min-width: 60px;
+            padding: 0 6px;
+            min-height: 40px;
             font-size: 0.75rem;
             font-weight: bold;
             border-radius: 6px;
@@ -37,6 +38,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body class="p-2 md:p-4">
     <div class="max-w-4xl mx-auto space-y-4">
@@ -49,16 +54,15 @@
                 </svg>
             </a>
             <h1 class="text-3xl font-bold text-slate-800">用面积方格认识小数</h1>
-            <div class="absolute right-0 text-slate-400 text-xs font-bold uppercase tracking-widest hidden md:block">
-                一个大正方形表示 1
-            </div>
+
         </nav>
 
+        <p class="text-center text-slate-700">一个大正方形表示 1。</p>
         <!-- 控制面板 -->
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <input type="number" id="valInput" value="1.26" step="0.0001" min="0" max="10" 
+                    <input type="number" id="valInput" aria-label="用方格表示的小数，0 到 10" value="1.26" step="0.0001" min="0" max="10"
                            class="text-3xl font-mono font-bold text-blue-600 bg-slate-50 border-b-2 border-blue-400 focus:border-blue-600 outline-none w-40 text-center rounded-t-lg">
                     <div class="flex flex-col text-xs text-slate-400 font-bold">
                         <span id="zoomStatusText">点击下方方块可放大观察</span>
@@ -66,39 +70,38 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <div class="grid grid-cols-5 gap-1">
-                        <!-- 第一行：加数 -->
-                        <button onclick="change(1)" class="btn-sm bg-slate-700 text-white">+1.0</button>
-                        <button onclick="change(0.1)" class="btn-sm bg-orange-500 text-white">+0.1</button>
-                        <button onclick="change(0.01)" class="btn-sm bg-green-600 text-white">+0.01</button>
-                        <button onclick="change(0.001)" class="btn-sm bg-blue-600 text-white">+0.001</button>
-                        <button onclick="change(0.0001)" class="btn-sm bg-indigo-600 text-white">+0.0001</button>
-                        <!-- 第二行：减数 -->
-                        <button onclick="change(-1)" class="btn-sm bg-slate-100 text-slate-400 border border-slate-200">-1.0</button>
-                        <button onclick="change(-0.1)" class="btn-sm bg-orange-50 text-orange-400 border border-orange-100">-0.1</button>
-                        <button onclick="change(-0.01)" class="btn-sm bg-green-50 text-green-400 border border-green-100">-0.01</button>
-                        <button onclick="change(-0.001)" class="btn-sm bg-blue-50 text-blue-400 border border-blue-100">-0.001</button>
-                        <button onclick="change(-0.0001)" class="btn-sm bg-indigo-50 text-indigo-400 border border-indigo-100">-0.0001</button>
-                    </div>
-                    <button onclick="reset()" class="px-3 h-[68px] bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-100">重置</button>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <label for="unit-step" class="text-sm text-slate-700">计数单位</label>
+                    <select id="unit-step" class="p-2 rounded-lg border border-slate-300 bg-white text-sm">
+                        <option value="1">一</option>
+                        <option value="0.1" selected>十分之一</option>
+                        <option value="0.01">百分之一</option>
+                        <option value="0.001">千分之一</option>
+                        <option value="0.0001">万分之一</option>
+                    </select>
+                    <button id="minus-step" class="btn-sm bg-slate-100 text-slate-700 border border-slate-300">−0.1</button>
+                    <button id="plus-step" class="btn-sm bg-blue-600 text-white">+0.1</button>
+                    <button onclick="reset()" class="px-2 py-2 text-sm text-slate-600 underline">重置</button>
                 </div>
             </div>
         </div>
 
         <!-- 图形区域 -->
         <div class="relative w-full flex justify-center">
-            <canvas id="mainCanvas"></canvas>
+            <canvas id="mainCanvas" role="img" aria-label="小数面积方格"></canvas>
         </div>
 
         <!-- 底部图例 -->
-        <div class="flex flex-wrap justify-center gap-4 md:gap-8 text-[10px] md:text-xs font-bold uppercase tracking-wider">
-            <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-200 border border-slate-400"></div><span class="text-slate-500">1（一个整体）</span></div>
-            <div class="flex items-center gap-1"><div class="w-1.5 h-3 bg-orange-200 border border-orange-400"></div><span class="text-orange-500">0.1（十分之一）</span></div>
-            <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 bg-green-200 border border-green-400"></div><span class="text-green-500">0.01（百分之一）</span></div>
-            <div class="flex items-center gap-1"><div class="w-0.5 h-1.5 bg-blue-400"></div><span class="text-blue-500">0.001（千分之一）</span></div>
-            <div class="flex items-center gap-1"><div class="w-1 h-0.5 bg-indigo-600"></div><span class="text-indigo-600">0.0001（万分之一）</span></div>
-        </div>
+        <details class="text-sm text-slate-700">
+            <summary class="cursor-pointer w-fit">查看颜色与计数单位</summary>
+            <div class="flex flex-wrap justify-center gap-4 md:gap-8 text-[10px] md:text-xs font-bold uppercase tracking-wider">
+                <div class="flex items-center gap-1"><div class="w-3 h-3 bg-slate-200 border border-slate-400"></div><span class="text-slate-500">1（一个整体）</span></div>
+                <div class="flex items-center gap-1"><div class="w-1.5 h-3 bg-orange-200 border border-orange-400"></div><span class="text-orange-500">0.1（十分之一）</span></div>
+                <div class="flex items-center gap-1"><div class="w-1.5 h-1.5 bg-green-200 border border-green-400"></div><span class="text-green-500">0.01（百分之一）</span></div>
+                <div class="flex items-center gap-1"><div class="w-0.5 h-1.5 bg-blue-400"></div><span class="text-blue-500">0.001（千分之一）</span></div>
+                <div class="flex items-center gap-1"><div class="w-1 h-0.5 bg-indigo-600"></div><span class="text-indigo-600">0.0001（万分之一）</span></div>
+            </div>
+        </details>
     </div>
 
     <script>
@@ -222,6 +225,12 @@
         }
 
         function render() {
+            if (!valInput.validity.valid || valInput.value === '') {
+                canvas.hidden = true;
+                return;
+            }
+            canvas.hidden = false;
+            zoomStatusText.textContent = '点击方格可放大';
             const w = canvas.width / dpr;
             const h = canvas.height / dpr;
             ctx.clearRect(0, 0, w, h);
@@ -280,6 +289,19 @@
             }
         });
 
+        const unitStep = document.getElementById('unit-step');
+        const minusStep = document.getElementById('minus-step');
+        const plusStep = document.getElementById('plus-step');
+
+        function updateStepButtons() {
+            minusStep.textContent = '−' + unitStep.value;
+            plusStep.textContent = '+' + unitStep.value;
+        }
+
+        unitStep.addEventListener('change', updateStepButtons);
+        minusStep.addEventListener('click', () => change(-Number(unitStep.value)));
+        plusStep.addEventListener('click', () => change(Number(unitStep.value)));
+
         function change(step) {
             let v = parseFloat(valInput.value) || 0;
             v = Math.round((v + step) * 10000) / 10000;
@@ -289,11 +311,21 @@
 
         function reset() {
             valInput.value = "1.26";
+            unitStep.value = "0.1";
+            updateStepButtons();
             zoomIndex = -1;
             resize();
         }
 
-        valInput.addEventListener('input', render);
+        valInput.addEventListener('input', () => {
+            const valid = valInput.value !== '' && valInput.validity.valid;
+            canvas.hidden = !valid;
+            if (valid) render();
+            else {
+                zoomStatusText.classList.remove('hidden');
+                zoomStatusText.textContent = '请输入 0 至 10 之间、最多四位小数的数。';
+            }
+        });
         window.addEventListener('resize', resize);
         window.addEventListener('load', resize);
     </script>

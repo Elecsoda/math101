@@ -132,6 +132,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <main class="page">
@@ -140,16 +144,13 @@
                 <div class="brand-icon">轴</div>
                 <div>
                     <h1>数轴探索</h1>
-                    <p class="sub">规定了原点、正方向、单位长度的直线，就是数轴</p>
                 </div>
             </div>
             <a class="btn" href="../">返回首页</a>
         </header>
 
         <section class="card panel">
-            <h2>一条数轴，理解正负数、整数与小数，并比较大小</h2>
-            <p class="lead">数轴是<b>规定了原点、正方向、单位长度</b>的直线：原点表示 0，向右的箭头表示正方向，每隔一个单位长度依次表示 1、2、3……向左依次表示 −1、−2、−3……数轴上的<b>每一个点都对应一个数</b>。</p>
-
+            <h2>拖动红点，向右移动时数怎样变？</h2>
             <div class="controls">
                 <label>定位到 <input type="text" id="goInput" inputmode="decimal" placeholder="如 -2.5" value="2.5"></label>
                 <button class="btn primary" id="goBtn">跳到这个数</button>
@@ -165,12 +166,6 @@
                 </div>
                 <svg class="axis" id="axis" preserveAspectRatio="xMinYMin meet"></svg>
             </div>
-            <div class="hint-bar">
-                <span>🖱️ <b>拖动红点</b>或在数轴上<b>点击</b>放置点</span>
-                <span>🔍 <b>滚轮</b>在光标处放大 / 缩小，看清不同量级</span>
-                <span>✋ 在空白处<b>左右拖动</b>可平移数轴</span>
-            </div>
-
             <div class="read-out">
                 <div class="row">
                     <span class="label">这个点对应的数：</span>
@@ -179,11 +174,12 @@
                 <div class="read-detail" id="readDetail"></div>
             </div>
 
-            <div class="explain-grid">
-                <div class="explain"><b class="o">原点</b>：表示 0 的点，是数轴的起点，也是正数和负数的分界。0 既不是正数也不是负数。</div>
-                <div class="explain"><b class="p">正方向</b>：规定向右为正方向（箭头指向）。在数轴上，<b>越往右的数越大</b>，越往左越小。</div>
-                <div class="explain"><b class="u">单位长度</b>：相邻整数间的距离处处相等。把一格平均分成 10 份，每份就是 0.1，可以表示小数。</div>
-            </div>
+            <details><summary>数轴的规定与操作方法</summary>
+                <p>数轴是规定了原点、正方向和单位长度的直线。本图规定向右为正，右边的点表示的数较大。</p>
+                <p>从 0 到 1 的长度是一个单位长度。放大或缩小后，读数时先看每格表示多少。</p>
+                <p id="oppositeNote"></p>
+                <p>点击数轴放点，拖动空白处平移，用 +、− 或滚轮缩放。</p>
+            </details>
         </section>
     </main>
 
@@ -263,7 +259,10 @@
 
             // 小刻度
             const firstMinor = Math.ceil(vMin / minor) * minor;
-            for (let v = firstMinor; v <= vMax; v += minor) {
+            const visibleMinorTicks = Math.ceil((state.width + 40) / (state.pxPerUnit * minor)) + 1;
+            for (let i = 0; i < visibleMinorTicks; i++) {
+                const v = firstMinor + i * minor;
+                if (v > vMax) break;
                 if (Math.abs(v / step - Math.round(v / step)) < 1e-9) continue; // 主刻度另画
                 const x = toPx(v);
                 svg.appendChild(el("line", { x1: x, y1: y - 6, x2: x, y2: y + 6, stroke: "#cbd5e1", "stroke-width": "1.5" }));
@@ -271,7 +270,8 @@
 
             // 主刻度 + 数字
             const firstMajor = Math.ceil(vMin / step) * step;
-            for (let i = 0; ; i++) {
+            const visibleMajorTicks = Math.ceil((state.width + 40) / (state.pxPerUnit * step)) + 1;
+            for (let i = 0; i < visibleMajorTicks; i++) {
                 const v = firstMajor + i * step;
                 if (v > vMax) break;
                 const vv = Math.abs(v) < step / 1e6 ? 0 : v;   // 消除接近 0 的浮点
@@ -348,17 +348,17 @@
 
             let detail;
             if (Math.abs(v) < 1e-9) {
-                detail = `它落在<b>原点</b>上，表示 <b>0</b>。0 既不是正数也不是负数，是正数与负数的分界。`;
+                detail = `原点表示 0，0 既不是正数也不是负数。`;
             } else {
                 const kind = v > 0 ? "正数" : "负数";
                 const dist = fmt(Math.abs(v), 1e-6);
-                const opp = fmt(-v, 1e-6);
                 const sideTxt = v > 0 ? "原点右边" : "原点左边";
                 const isInt = Math.abs(v - Math.round(v)) < 1e-9;
                 const typeTxt = isInt ? "是一个整数" : "是一个小数";
-                detail = `它在<b>${sideTxt}</b>，${typeTxt}，是<b>${kind}</b>，到原点的距离是 ${dist}（即它的绝对值）。它的相反数是 <b class="${v>0?'neg':''}">${opp}</b>，在原点的另一侧。`;
+                detail = `它在<b>${sideTxt}</b>，${typeTxt}，是<b>${kind}</b>，距原点 ${dist} 个单位长度。`;
             }
             $("readDetail").innerHTML = detail;
+            $("oppositeNote").textContent = v === 0 ? "0 的相反数仍是 0。" : fmt(v, 1e-6) + " 的相反数是 " + fmt(-v, 1e-6) + "，它们到原点的距离相等。";
         }
 
         // ---------- 交互：拖点 / 点击放置 / 平移 / 缩放 ----------
@@ -452,10 +452,18 @@
         }
 
         $("goBtn").addEventListener("click", () => {
-            const raw = $("goInput").value.replace(/−/g, "-").replace(/[^0-9.\-]/g, "");
+            const input = $("goInput");
+            const raw = input.value.trim().replace(/−/g, "-");
             const v = Number(raw);
-            if (raw !== "" && raw !== "-" && !Number.isNaN(v)) goTo(v);
+            if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(raw) || !Number.isFinite(v) || Math.abs(v) > Number.MAX_SAFE_INTEGER) {
+                input.setCustomValidity("请输入有效范围内的整数或小数，例如 −2.5。");
+                input.reportValidity();
+                return;
+            }
+            input.setCustomValidity("");
+            goTo(v);
         });
+        $("goInput").addEventListener("input", e => e.target.setCustomValidity(""));
         $("goInput").addEventListener("keydown", e => { if (e.key === "Enter") $("goBtn").click(); });
         $("resetBtn").addEventListener("click", () => {
             state.pxPerUnit = 80;

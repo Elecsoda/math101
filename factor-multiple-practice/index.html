@@ -214,23 +214,29 @@
             .choice { min-height: 32px; padding: 5px 9px; background: #fff; }
             .answer-tools { display: none; }
         }
+        .bank-filters { margin: 12px 0; }
+        .bank-filters summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
+        @media print { .bank-filters { display:none; } }
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
     <script src="questions.js"></script>
     <script src="explanations.js"></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 <div class="page">
     <header class="hero">
         <a class="home" href="/" aria-label="返回工具主页">← 返回工具主页</a>
-        <div class="eyebrow">五年级 · 数与代数</div>
-        <h1>因数与倍数·知识点分类练习</h1>
-        <p class="hero-copy">100道文档原题按主要知识点重新分类。每次只显示一道题，可逐题切换、浏览全部问题，并按需查看当前题目的答案。</p>
-        <div class="hero-stats" aria-label="题库概览"><div class="hero-stat"><strong>100</strong><span>文档题目</span></div><div class="hero-stat"><strong>7</strong><span>知识点大类</span></div><div class="hero-stat"><strong>按需</strong><span>查看答案</span></div></div>
+        <h1>因数与倍数练习</h1>
     </header>
 
+    <details class="bank-filters"><summary>按知识点筛选</summary>
     <nav class="category-nav" id="categoryNav" aria-label="知识点分类"></nav>
+    </details>
 
     <div class="toolbar">
         <label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span><input class="search" id="searchInput" type="search" placeholder="搜索题目，如：质数、最大公因数、3的倍数……" aria-label="搜索题目"></label>
@@ -239,20 +245,19 @@
         <button class="tool-btn" id="printBtn" type="button">打印当前题目</button>
     </div>
 
-    <div class="notice"><span aria-hidden="true">✦</span><div><strong>知识点分类：</strong>题目按主要考查点归类，而不是按选择题、填空题等题型分类。答案默认收起，点击“查看答案”后才显示。</div></div>
     <div class="result-line" id="resultLine" aria-live="polite"></div>
     <div class="empty-state" id="emptyState">没有找到匹配的题目，请换个关键词试试。</div>
 
     <div class="single-nav" id="singleNav" aria-label="单题切换">
         <button class="nav-btn" id="prevBtn" type="button">← 上一题</button>
-        <div class="progress-box"><strong id="progressText">1 / 100</strong><span id="progressHint">一次只显示一道题</span></div>
+        <div class="progress-box"><strong id="progressText">1 / 100</strong><span id="progressHint"></span></div>
         <button class="nav-btn" id="nextBtn" type="button">下一题 →</button>
     </div>
 
     <main>
         <section class="question-section" id="questionSection">
             <div class="section-head">
-                <div class="section-title"><span class="section-icon" id="sectionIcon">因</span><div><h2 id="sectionTitle"></h2><p>按本题的主要考查知识点归类</p></div></div>
+                <div class="section-title"><span class="section-icon" id="sectionIcon">因</span><div><h2 id="sectionTitle"></h2><p></p></div></div>
                 <span class="source-number" id="sourceNumber"></span>
             </div>
             <article class="question-card" id="questionCard" tabindex="-1">
@@ -261,7 +266,7 @@
                 <div class="media-gallery" id="mediaGallery" hidden></div>
                 <div class="choices" id="choices" hidden></div>
                 <div id="specialArea"></div>
-                <div class="answer-tools"><span class="answer-tip">完成后再核对</span><button class="answer-toggle" id="answerToggle" type="button" aria-expanded="false">查看答案</button></div>
+                <div class="answer-tools"><button class="answer-toggle" id="answerToggle" type="button" aria-expanded="false">查看答案</button></div>
                 <div class="answer-panel" id="answerPanel" hidden>
                     <span class="answer-label">参考答案</span>
                     <div class="answer-content" id="answerContent"></div>
@@ -461,8 +466,8 @@
             prevBtn.disabled = currentIndex === 0;
             nextBtn.disabled = currentIndex === filteredQuestions.length - 1;
             progressText.textContent = `${currentIndex + 1} / ${filteredQuestions.length}`;
-            progressHint.textContent = filteredQuestions.length === 1 ? "当前筛选结果仅有这一题" : "一次只显示一道题";
-            resultLine.textContent = `当前：${category.name} · 原题第${question.id}题`;
+            progressHint.textContent = filteredQuestions.length === 1 ? "当前筛选仅 1 题" : "";
+            resultLine.textContent = `筛选结果：${filteredQuestions.length} 题`;
             if (shouldFocus) {
                 questionCard.classList.add("random-focus");
                 questionCard.scrollIntoView({ behavior: "smooth", block: "center" });

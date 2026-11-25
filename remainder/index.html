@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>有余数的除法 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.4s ease-in; }
@@ -24,6 +24,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -715,13 +719,13 @@
 
                     {/* —— 控制：图标按钮 —— */}
                     <div className="flex gap-4 items-center">
-                        <IconBtn onClick={reset} disabled={given === 0} tone="gray">↺</IconBtn>
-                        <IconBtn onClick={() => setGiven(g => Math.min(total, g + 1))} disabled={done} tone="amber" big>👇</IconBtn>
-                        <IconBtn onClick={() => setAuto(a => !a)} disabled={done} tone="gray">{auto ? '⏸' : '▶'}</IconBtn>
+                        <IconBtn onClick={reset} disabled={given === 0} tone="gray"><span className="text-base font-bold">重来</span></IconBtn>
+                        <IconBtn onClick={() => setGiven(g => Math.min(total, g + 1))} disabled={done} tone="amber" big><span className="text-base font-bold">分一个</span></IconBtn>
+                        <IconBtn onClick={() => setAuto(a => !a)} disabled={done} tone="gray"><span className="text-base font-bold">{auto ? '暂停' : '自动'}</span></IconBtn>
                     </div>
 
                     {/* —— 设置：物品数、份数、换图案 —— */}
-                    <div className="flex flex-wrap gap-6 justify-center items-center bg-white rounded-2xl border-2 border-gray-100 px-5 py-3">
+                    <details className="w-full text-center"><summary className="cursor-pointer font-semibold">调整物品与盘子</summary><div className="flex flex-wrap gap-4 justify-center items-center bg-white rounded-2xl border-2 border-gray-100 px-5 py-3">
                         <NumStepper icon={emoji} value={total} onChange={chTotal} min={1} max={16} color="text-indigo-500" />
                         <NumStepper icon={<PlateIcon />} value={plates} onChange={chPlates} min={2} max={5} color="text-emerald-500" />
                         <div className="flex gap-1">
@@ -733,7 +737,7 @@
                                 </button>
                             ))}
                         </div>
-                    </div>
+                    </div></details>
                 </div>
             );
         };
@@ -807,8 +811,8 @@
                     </div>
 
                     <div className="flex gap-4 items-center">
-                        <IconBtn onClick={() => setN(0)} disabled={n === 0} tone="gray">↺</IconBtn>
-                        <IconBtn onClick={() => setN(v => Math.min(maxN, v + 1))} disabled={n >= maxN} tone="amber" big>👇</IconBtn>
+                        <IconBtn onClick={() => setN(0)} disabled={n === 0} tone="gray"><span className="text-base font-bold">重来</span></IconBtn>
+                        <IconBtn onClick={() => setN(v => Math.min(maxN, v + 1))} disabled={n >= maxN} tone="amber" big><span className="text-base font-bold">加一个</span></IconBtn>
                     </div>
 
                     {/* 结论：纯符号——余数只可能是 0..plates-1，用色块排出来 */}
@@ -862,9 +866,9 @@
                             <button key={i} onClick={() => setSub(i)}
                                 className={"smooth-transition rounded-2xl w-24 h-16 flex flex-col items-center justify-center gap-1 border-4 " +
                                     (sub === i ? 'border-amber-400 bg-amber-100 shadow-lg scale-105' : 'border-gray-200 bg-white hover:bg-gray-50')}>
-                                <SubIcon i={i} on={sub === i} />
+                                <span aria-hidden="true"><SubIcon i={i} on={sub === i} /></span>
                                 <span className={"ld text-sm font-bold " + (sub === i ? 'text-amber-600' : 'text-gray-400')}>
-                                    {i + 1}
+                                    {['试分 6 个', '试分 7 个', '余数变化'][i]}
                                 </span>
                             </button>
                         ))}
@@ -1165,15 +1169,15 @@
         const App = () => {
             const [tab, setTab] = useState('begin');
             const tabs = [
-                { k: 'begin', label: '入门·分一分', color: 'bg-amber-500' },
-                { k: 'demo', label: '演示·竖式', color: 'bg-indigo-500' },
-                { k: 'inverse', label: '逆过程·验算', color: 'bg-rose-500' },
+                { k: 'begin', label: '平均分', color: 'bg-amber-500' },
+                { k: 'demo', label: '除法竖式', color: 'bg-indigo-500' },
+                { k: 'inverse', label: '验算', color: 'bg-rose-500' },
                 { k: 'practice', label: '练习', color: 'bg-emerald-500' },
             ];
             return (
                 <div className="min-h-screen py-8 px-4">
-                    <PageHeader title="有余数的除法" subtitle="从最高位分起，一边分小棒、一边写竖式，理解商、余数和乘除互逆" />
-                    <div className="flex justify-center gap-3 mb-8">
+                    <PageHeader title="有余数的除法" subtitle="每个盘子分得同样多，剩下的够再分一轮吗？" />
+                    <div className="flex flex-wrap justify-center gap-2 mb-4">
                         {tabs.map(t => (
                             <button key={t.k} onClick={() => setTab(t.k)}
                                 className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " +

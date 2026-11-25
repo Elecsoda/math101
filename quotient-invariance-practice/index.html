@@ -217,22 +217,28 @@
             .choice { min-height: 32px; padding: 5px 9px; background: #fff; }
             .answer-tools { display: none; }
         }
+        .bank-filters { margin: 12px 0; }
+        .bank-filters summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
+        @media print { .bank-filters { display:none; } }
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
     <script src="questions.js"></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 <div class="page">
     <header class="hero">
         <a class="home" href="/" aria-label="返回工具主页">← 返回工具主页</a>
-        <div class="eyebrow">四—五年级 · 数与代数</div>
-        <h1>商不变计算·精细分类练习</h1>
-        <p class="hero-copy">91道文档原题按主要知识点细分，并可叠加“整数 / 小数”和“选择 / 填空 / 计算”筛选。每次显示一道题，可逐题切换、浏览全部问题，并按需查看答案与解析。</p>
-        <div class="hero-stats" aria-label="题库概览"><div class="hero-stat"><strong>91</strong><span>文档原题</span></div><div class="hero-stat"><strong>10</strong><span>知识点板块</span></div><div class="hero-stat"><strong>3维</strong><span>组合筛选</span></div></div>
+        <h1>商不变的规律练习</h1>
     </header>
 
+    <details class="bank-filters"><summary>按知识点筛选</summary>
     <nav class="category-nav" id="categoryNav" aria-label="知识点分类"></nav>
+    </details>
 
     <div class="toolbar">
         <label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span><input class="search" id="searchInput" type="search" placeholder="搜索题目，如：余数、小数点、简便计算……" aria-label="搜索题目"></label>
@@ -243,13 +249,12 @@
         <button class="tool-btn" id="printBtn" type="button">打印当前题目</button>
     </div>
 
-    <div class="notice"><span aria-hidden="true">✦</span><div><strong>三维分类：</strong>上方按主要知识点切换；“数域”严格区分整数题与小数题；“题型”区分选择题、填空题和计算题。三个条件可以组合使用，答案默认收起。</div></div>
     <div class="result-line" id="resultLine" aria-live="polite"></div>
     <div class="empty-state" id="emptyState">没有找到匹配的题目，请换个关键词试试。</div>
 
     <div class="single-nav" id="singleNav" aria-label="单题切换">
         <button class="nav-btn" id="prevBtn" type="button">← 上一题</button>
-        <div class="progress-box"><strong id="progressText">1 / 91</strong><span id="progressHint">一次只显示一道题</span></div>
+        <div class="progress-box"><strong id="progressText">1 / 91</strong><span id="progressHint"></span></div>
         <button class="nav-btn" id="nextBtn" type="button">下一题 →</button>
     </div>
 
@@ -265,7 +270,7 @@
                 <div class="media-gallery" id="mediaGallery" hidden></div>
                 <div class="choices" id="choices" hidden></div>
                 <div id="specialArea"></div>
-                <div class="answer-tools"><span class="answer-tip">完成后再核对</span><button class="answer-toggle" id="answerToggle" type="button" aria-expanded="false">查看答案</button></div>
+                <div class="answer-tools"><button class="answer-toggle" id="answerToggle" type="button" aria-expanded="false">查看答案</button></div>
                 <div class="answer-panel" id="answerPanel" hidden>
                     <span class="answer-label">参考答案</span>
                     <div class="answer-content" id="answerContent"></div>
@@ -472,8 +477,8 @@
             prevBtn.disabled = currentIndex === 0;
             nextBtn.disabled = currentIndex === filteredQuestions.length - 1;
             progressText.textContent = `${currentIndex + 1} / ${filteredQuestions.length}`;
-            progressHint.textContent = filteredQuestions.length === 1 ? "当前筛选结果仅有这一题" : "一次只显示一道题";
-            resultLine.textContent = `当前：${category.name} · ${domain.name} · ${question.type} · 原题第${question.id}题`;
+            progressHint.textContent = filteredQuestions.length === 1 ? "当前筛选仅 1 题" : "";
+            resultLine.textContent = `筛选结果：${filteredQuestions.length} 题`;
             if (shouldFocus) {
                 questionCard.classList.add("random-focus");
                 questionCard.scrollIntoView({ behavior: "smooth", block: "center" });

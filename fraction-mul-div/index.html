@@ -26,6 +26,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -45,8 +49,8 @@
         //     ⑤ 分数 ÷ 整数  —— 平均分（把已有的份再分）
         //     ⑥ 包含除（关键）—— "里面有几个"，是理解倒数最直观的入口
         //     ⑦ 为什么"颠倒相乘" —— 从包含除 + 商不变性质两条路推导，不背口诀
-        //   ⑧ 计算车间 —— 从直观过渡到笔算：约分、带分数、连乘连除
-        //   ⑨ 闯关练习 —— 看图列式、估一估、解决问题
+        //   ⑧ 计算与约分 —— 从直观过渡到笔算：约分、带分数、连乘连除
+        //   ⑨ 列式与计算练习 —— 看图列式、估一估、解决问题
         //
         // 设计原则：每个模型都能"动手"——拖滑块改数、点击折叠、亲手切分，
         //   并且图形与算式始终同屏对应，让学生看见算式里每个数在图上是什么。
@@ -450,7 +454,7 @@
         };
 
         // ======================================================================
-        // ④ 越乘越小？—— 把乘数和 1 比
+        // ④ 比较积与原数—— 把乘数和 1 比
         //   破除"乘法一定让数变大"的顽固误概念（CCSS 5.NF.B.5 明确要求）。
         //   同一根长条，只改乘数，看积落在原数的哪一侧。
         // ======================================================================
@@ -473,8 +477,7 @@
             return (
                 <section className="fade-in">
                     <Card className="mb-5">
-                        <p className="text-lg m-0">很多同学以为「乘法一定让数变大」。分数乘法里<b className="text-rose-600">不是这样</b>。
-                        到底变大还是变小，只要看<b>乘数和 1 比谁大</b>。</p>
+                        <p className="text-lg m-0">让一个正数分别乘小于 1、等于 1、大于 1 的正数。观察积与原数的大小。</p>
                     </Card>
 
                     <Card>
@@ -524,7 +527,7 @@
                                 <li>乘数 <b>= 1</b> → 积 = 被乘数（不变）</li>
                                 <li>乘数 <b>&gt; 1</b> → 积 &gt; 被乘数（放大）</li>
                             </ul>
-                            <p className="mt-2 mb-0 text-sm">除法正好反过来：除以小于 1 的数，商反而<b>变大</b>。下一节用「里面有几个」就能看明白。</p>
+                            <p className="mt-2 mb-0 text-sm">一个正数除以小于 1 的正数，商比原数大。</p>
                         </Note>
                     </Card>
                 </section>
@@ -607,10 +610,10 @@
                                 </div>
                                 <p className="mb-2 font-semibold">分数除以整数（0 除外）：<b>分母乘这个整数，分子不变</b>。</p>
                                 <div className="rounded-xl bg-white/70 border border-emerald-200 p-3 inline-block">
-                                    <p className="m-0 text-sm">👀 请注意这个巧合：
+                                    <p className="m-0 text-sm">两种算法的结果相等：
                                         <span className="inline-flex items-center"><Fr n={n} d={d} size="text-base" color="text-amber-600" /> ÷ {k}</span> 和
                                         <span className="inline-flex items-center"><Fr n={n} d={d} size="text-base" color="text-amber-600" /> × <Fr n={1} d={k} size="text-base" color="text-violet-600" /></span>
-                                        <b> 结果一模一样</b>。</p>
+                                        <b> 结果相等</b>。</p>
                                     <p className="mt-1 mb-0 text-sm">「÷ {k}」= 「× <Fr n={1} d={k} size="text-sm" color="text-violet-600" />」—— 这就是<b>倒数</b>的第一次露面。</p>
                                 </div>
                             </div>
@@ -625,7 +628,7 @@
                             <Slider label="分母 d" value={d} min={2} max={10} onChange={v => { setD(v); setN(Math.min(n, v)); }} accent="accent-sky-500" valueColor="text-sky-600" />
                             <Slider label="分给几人 k" value={k} min={2} max={6} onChange={setK} accent="accent-violet-500" valueColor="text-violet-600" />
                         </div>
-                        <p className="text-xs text-slate-400 mt-3 mb-0">💡 对比试试：3/4÷2（分子能整除）和 3/4÷5（分子不能整除）—— 后者必须先把每份再切细。</p>
+                        <p className="text-xs text-slate-400 mt-3 mb-0">💡 对比试试：4/5 ÷ 2 和 3/5 ÷ 2。分子能被 2 整除时，可以直接把已有的份数平分。</p>
                     </Card>
                 </section>
             );
@@ -926,7 +929,7 @@
         };
 
         // ======================================================================
-        // ⑧ 计算车间 —— 从直观过渡到笔算
+        // ⑧ 计算与约分 —— 从直观过渡到笔算
         //   输入任意算式，逐行展开标准笔算步骤：
         //   带分数化假分数 → 除法转乘法 → 先约分再乘 → 结果化最简/带分数。
         //   重点强调"先约分再乘"，这是学生最容易漏掉、导致数字爆炸的地方。
@@ -1125,7 +1128,7 @@
         };
 
         // ======================================================================
-        // ⑨ 闯关练习
+        // ⑨ 列式与计算练习
         //   四类题型，对应四种最常见的失分点：
         //   看图列式 / 不算就判断大小 / 选算式（乘还是除、谁除以谁）/ 直接计算
         // ======================================================================
@@ -1302,15 +1305,15 @@
         // 主程序
         // ======================================================================
         const TABS = [
-            { id: 'fxi', title: '① 分数×整数', hint: '连加：几个几分之几', color: 'bg-amber-500', group: '乘法' },
-            { id: 'ixf', title: '② 整数×分数', hint: '求一个数的几分之几', color: 'bg-violet-600', group: '乘法' },
-            { id: 'fxf', title: '③ 分数×分数', hint: '折纸面积模型（重点）', color: 'bg-emerald-600', group: '乘法' },
-            { id: 'cmp', title: '④ 越乘越小？', hint: '和 1 比，判断大小', color: 'bg-rose-500', group: '乘法' },
-            { id: 'fdi', title: '⑤ 分数÷整数', hint: '平均分给几个人', color: 'bg-sky-600', group: '除法' },
-            { id: 'mdv', title: '⑥ 里面有几个', hint: '包含除（关键）', color: 'bg-indigo-600', group: '除法' },
-            { id: 'why', title: '⑦ 为什么颠倒相乘', hint: '三条路推出倒数', color: 'bg-purple-700', group: '除法' },
-            { id: 'cal', title: '⑧ 计算车间', hint: '带分数·约分·笔算', color: 'bg-slate-700', group: '计算' },
-            { id: 'pra', title: '⑨ 闯关练习', hint: '列式·判断·计算', color: 'bg-green-600', group: '计算' }
+            { id: 'fxi', title: '分数×整数', hint: '连加：几个几分之几', color: 'bg-amber-500', group: '乘法' },
+            { id: 'ixf', title: '整数×分数', hint: '求一个数的几分之几', color: 'bg-violet-600', group: '乘法' },
+            { id: 'fxf', title: '分数×分数', hint: '折纸面积模型（重点）', color: 'bg-emerald-600', group: '乘法' },
+            { id: 'cmp', title: '比较积与原数', hint: '和 1 比，判断大小', color: 'bg-rose-500', group: '乘法' },
+            { id: 'fdi', title: '分数÷整数', hint: '平均分给几个人', color: 'bg-sky-600', group: '除法' },
+            { id: 'mdv', title: '里面有几个', hint: '包含除（关键）', color: 'bg-indigo-600', group: '除法' },
+            { id: 'why', title: '为什么乘除数的倒数', hint: '三条路推出倒数', color: 'bg-purple-700', group: '除法' },
+            { id: 'cal', title: '计算与约分', hint: '带分数·约分·笔算', color: 'bg-slate-700', group: '计算' },
+            { id: 'pra', title: '列式与计算练习', hint: '列式·判断·计算', color: 'bg-green-600', group: '计算' }
         ];
 
         const App = () => {
@@ -1323,27 +1326,20 @@
                         <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 smooth">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
                         </a>
-                        <div className="inline-flex px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold mb-2">五 ~ 六年级 · 分数乘法与除法</div>
                         <h1 className="text-3xl md:text-4xl font-bold text-slate-800 m-0">分数的乘法与除法</h1>
-                        <p className="text-slate-500 mt-3 mb-0">折一折、量一量、数一数 —— 先<b>看懂道理</b>，再<b>学会计算</b></p>
+
                     </header>
 
-                    <nav className="mb-7" aria-label="知识模块">
-                        {['乘法', '除法', '计算'].map(g => (
-                            <div key={g} className="mb-2">
-                                <p className="text-xs text-slate-400 font-semibold mb-1.5 ml-1">{g === '乘法' ? '🟠 分数乘法' : g === '除法' ? '🔵 分数除法' : '🟢 从直观到计算'}</p>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    {TABS.filter(t => t.group === g).map(t => (
-                                        <button key={t.id} onClick={() => setTab(t.id)}
-                                            className={`p-3 rounded-xl border-2 text-left smooth ${tab === t.id ? `${t.color} text-white border-transparent shadow-md` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}>
-                                            <b className="block text-sm">{t.title}</b>
-                                            <span className={`text-xs ${tab === t.id ? 'text-white/80' : 'text-slate-400'}`}>{t.hint}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </nav>
+                    <label className="mb-4 flex flex-wrap justify-center items-center gap-3 text-slate-700">
+                        选择探索内容
+                        <select value={tab} onChange={e => setTab(e.target.value)} className="border border-slate-300 rounded-lg bg-white p-2">
+                            {['乘法', '除法', '计算'].map(group => (
+                                <optgroup key={group} label={group}>
+                                    {TABS.filter(t => t.group === group).map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+                                </optgroup>
+                            ))}
+                        </select>
+                    </label>
 
                     {tab === 'fxi' && <FracTimesInt />}
                     {tab === 'ixf' && <IntTimesFrac />}
@@ -1364,10 +1360,6 @@
                             ? <button onClick={() => setTab(TABS[idx + 1].id)} className="px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth text-sm">{TABS[idx + 1].title} →</button>
                             : <span></span>}
                     </div>
-
-                    <footer className="text-center text-slate-400 text-sm mt-10">
-                        Math101 · 分数可视化 · 适用人教版六年级上册《分数乘法》《分数除法》
-                    </footer>
                 </main>
             );
         };

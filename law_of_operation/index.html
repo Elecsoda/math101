@@ -4,28 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>运算律直观演示 | Math101</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; }
-        
+
         .block-item { width: 32px; height: 32px; flex-shrink: 0; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; transition: all 0.4s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .block-sm { width: 24px; height: 24px; flex-shrink: 0; font-size: 10px; }
-        
+
         .bg-c1 { background-color: #ef4444; }
         .bg-c2 { background-color: #3b82f6; }
         .bg-c3 { background-color: #10b981; }
         .bg-c4 { background-color: #f59e0b; }
         .bg-gray { background-color: #94a3b8; }
-        
+
         .crossed { position: relative; opacity: 0.4; }
         .crossed::after { content: "✕"; position: absolute; color: #000; font-size: 24px; font-weight: 300; }
-        
+
         .op-mul { font-family: monospace; font-size: 28px; font-weight: 900; margin: 0 8px; color: #64748b; line-height: 1; }
         .op-add { font-size: 24px; font-weight: bold; margin: 0 8px; color: #94a3b8; line-height: 1; }
-        
+
         .box-group { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 8px; background: #ffffff; }
         .box-solid { border: 2px solid #94a3b8; border-radius: 8px; padding: 8px; background: #f1f5f9; }
-        
+
         .btn-side { width: 100%; text-align: left; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-left: 4px solid transparent; }
         .btn-side.active { background-color: #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-side.active-basic { border-left-color: #3b82f6; color: #2563eb; }
@@ -44,7 +44,7 @@
         .number-input-group { display: flex; align-items: center; gap: 8px; background: white; padding: 4px 8px; border-radius: 6px; border: 1px solid #e2e8f0; }
         .number-input-group input[type="number"] { width: 50px; border: none; outline: none; text-align: center; font-weight: bold; color: #3b82f6; background: transparent; }
         .number-input-group input[type="range"] { flex: 1; accent-color: #3b82f6; height: 4px; }
-        
+
         .editable-num { display: inline-block; position: relative; cursor: pointer; color: #2563eb; border-bottom: 2px dashed #93c5fd; padding: 0 4px; margin: 0 2px; transition: all 0.2s; }
         .editable-num:hover { background-color: #eff6ff; border-radius: 4px; }
         .popover-slider { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); z-index: 50; display: none; width: 200px; margin-top: 8px; }
@@ -54,6 +54,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 
@@ -65,11 +69,11 @@
         'comm_mul': { type: '基本律', name: '乘法交换律', idea: '交换顺序，结果不变', scene: '调整计算顺序，为结合律或凑整做准备' },
         'assoc_add': { type: '基本律', name: '加法结合律', idea: '改变组合，结果不变', scene: '将能凑成整十、整百、整千的数先结合计算' },
         'assoc_mul': { type: '基本律', name: '乘法结合律', idea: '改变组合，结果不变', scene: '将能凑成整十、整百、整千的数先结合计算' },
-        'dist': { type: '基本律', name: '乘法分配律', idea: '分配相乘，和/差不变', scene: '将复杂乘法展开或反向提取公因数进行简算' },
+        'dist': { type: '基本律', name: '乘法分配律', idea: '一个数乘两个数的和，等于它分别乘两个加数所得的积之和', scene: '将复杂乘法展开或反向提取公因数进行简算' },
         'sub_prop': { type: '运算性质', name: '减法性质 (连减)', idea: '连减可化减和或交换顺序', scene: '当减数能凑整或与首位相同的时候简化计算' },
         'div_prop': { type: '运算性质', name: '除法性质 (连除)', idea: '连除可化除积或交换顺序', scene: '当除数能凑整或与首位相同的时候简化计算' },
-        'prod_prop': { type: '特殊规律', name: '积不变规律', idea: '同乘同除，积不变', scene: '将复杂运算转化为简单整数运算' },
-        'quot_prop': { type: '特殊规律', name: '商不变规律', idea: '同乘同除，商不变', scene: '将复杂运算转化为简单整数运算' }
+        'prod_prop': { type: '特殊规律', name: '积不变规律', idea: '一个因数乘一个非零数，另一个因数除以同一个数，积不变', scene: '将复杂运算转化为简单整数运算' },
+        'quot_prop': { type: '特殊规律', name: '商不变规律', idea: '被除数和除数同时乘或同时除以同一个非零数，商不变', scene: '将复杂运算转化为简单整数运算' }
     };
 
     const COLORS = ['bg-c1', 'bg-c2', 'bg-c3', 'bg-c4', 'bg-c5', 'bg-c6', 'bg-c7'];
@@ -87,13 +91,16 @@
     };
 
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.editable-num')) {
+        if (state.activePopover && !e.target.closest('.editable-num')) {
             setState({ activePopover: null });
         }
     });
 
     function setState(newState) {
         state = { ...state, ...newState };
+        if (newState.mode) {
+            state.valA = 4; state.valB = 3; state.valC = 2; state.valT = 24; state.scale = 2;
+        }
         render();
     }
 
@@ -114,21 +121,28 @@
         return html;
     }
 
-    function createEditableNum(value, varName, min = 1, max = 10) {
-        const isShow = state.activePopover === varName;
+    const parameters = new Map();
+    function setParameter(name, raw) {
+        const { min, max, step } = parameters.get(name);
+        const requested = Number(raw);
+        if (!Number.isFinite(requested) || raw === '') { render(); return; }
+        const value = Math.max(min, Math.min(max, min + Math.round((requested - min) / step) * step));
+        const key = name === 'scale' ? 'scale' : name === 'totalGroups' ? 'valC' : 'val' + name;
+        setState({ [key]: name === 'totalGroups' ? value / step : value, step: 0 });
+    }
+
+    function createEditableNum(value, name, min = 1, max = 10, step = 1) {
+        parameters.set(name, { value, min, max, step });
+        const shown = state.activePopover === name;
         return `
-            <div class="editable-num" onclick="event.stopPropagation(); setState({activePopover: '${varName}'})">
+            <div class="editable-num" onclick="event.stopPropagation(); setState({activePopover:'${name}'})">
                 ${value}
-                <div class="popover-slider ${isShow ? 'show' : ''}" onclick="event.stopPropagation()">
-                    <div class="text-xs text-slate-500 mb-2 font-normal">调整数值</div>
-                    <div class="flex items-center gap-2">
-                        <input type="range" min="${min}" max="${max}" value="${value}" 
-                               oninput="setState({val${varName}: parseInt(this.value), step: 0})" class="w-full">
-                        <span class="font-bold text-slate-700">${value}</span>
-                    </div>
+                <div class="popover-slider ${shown ? 'show' : ''}" onclick="event.stopPropagation()">
+                    <label class="text-sm">调整数值
+                        <input type="range" min="${min}" max="${max}" step="${step}" value="${value}" onchange="setParameter('${name}',this.value)">
+                    </label>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
     function renderVisualization() {
@@ -197,7 +211,7 @@
             const numB = createEditableNum(B, 'B', 1, 5);
             const numC = createEditableNum(C, 'C', 1, 5);
             formula = isT ? `${numA} <span class="op-mul">&times;</span> (${numB} <span class="op-mul">&times;</span> ${numC}) = ${A * B * C}` : `(${numA} <span class="op-mul">&times;</span> ${numB}) <span class="op-mul">&times;</span> ${numC} = ${A * B * C}`;
-            
+
             let blocksHTML = '';
             for(let r=0; r<A; r++){
                 for(let c=0; c<C; c++){
@@ -253,13 +267,14 @@
             `;
         }
         else if (state.mode === 'sub_prop') {
-            const maxVal = Math.min(A+B+10, 30);
+            T = Math.max(T, A + B);
+            const maxVal = Math.max(T, Math.min(A+B+10, 30));
             const numT = createEditableNum(T, 'T', A+B, maxVal);
             const numA = createEditableNum(A, 'A', 1, T-B);
             const numB = createEditableNum(B, 'B', 1, T-A);
-            
+
             formula = isT ? `${numT} - (${numA} + ${numB}) = ${T - A - B}` : `${numT} - ${numA} - ${numB} = ${T - A - B}`;
-            
+
             let stepHtml = '';
             if (!isT) {
                 stepHtml = `
@@ -287,20 +302,20 @@
                     ${stepHtml}
                     <div class="mt-8 flex justify-center gap-4">
                         <button onclick="setState({step: Math.max(0, state.step - 1)})" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300 ${step === 0 ? 'opacity-50 cursor-not-allowed' : ''}">上一步</button>
-                        <button onclick="setState({step: Math.min(2, state.step + 1)})" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 shadow-md ${step === 2 ? 'opacity-50 cursor-not-allowed' : ''}">下一步过程</button>
+                        <button onclick="setState({step: Math.min(2, state.step + 1)})" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 shadow-md ${step === 2 ? 'opacity-50 cursor-not-allowed' : ''}">下一步</button>
                     </div>
                 </div>
             `;
         }
         else if (state.mode === 'div_prop') {
             const total = A * B * C;
-            
-            const numTotal = createEditableNum(total, 'C', A*B, A*B*5); 
+
+            const numTotal = createEditableNum(total, 'totalGroups', A*B, A*B*10, A*B);
             const numA = createEditableNum(A, 'A', 1, 5);
             const numB = createEditableNum(B, 'B', 1, 5);
-            
+
             formula = isT ? `${numTotal} &divide; (${numA} <span class="op-mul">&times;</span> ${numB}) = ${total / (A * B)}` : `${numTotal} &divide; ${numA} &divide; ${numB} = ${total / (A * B)}`;
-            
+
             let displayHTML = '';
             if (!isT) {
                 if (step === 0) {
@@ -351,13 +366,13 @@
         }
         else if (state.mode === 'prod_prop') {
             B = Math.max(S, Math.floor(B / S) * S); 
-            
+
             const numA = createEditableNum(A, 'A', 2, 6);
-            const numB = createEditableNum(B, 'B', S, S*5);
+            const numB = createEditableNum(B, 'B', S, S*5, S);
             const numS = createEditableNum(S, 'scale', 2, 4); 
-            
+
             formula = isT ? `(${numA} <span class="op-mul">&times;</span> ${numS}) <span class="op-mul">&times;</span> (${numB} &divide; ${numS}) = ${A * B}` : `${numA} <span class="op-mul">&times;</span> ${numB} = ${A * B}`;
-            
+
             let smallWidth = B / S;
 
             let origGrid = `
@@ -400,12 +415,12 @@
             T = Math.max(B, Math.floor(T / B) * B);
             let Q = T / B;
 
-            const numT = createEditableNum(T, 'T', B, B*8);
+            const numT = createEditableNum(T, 'T', B, Math.max(T, B*8), B);
             const numB = createEditableNum(B, 'B', 1, 5);
             const numS = createEditableNum(S, 'scale', 2, 4);
-            
+
             formula = isT ? `(${numT} <span class="op-mul">&times;</span> ${numS}) &divide; (${numB} <span class="op-mul">&times;</span> ${numS}) = ${Q}` : `${numT} &divide; ${numB} = ${Q}`;
-            
+
             let g1 = `<div class="flex flex-wrap gap-2 p-3 border border-slate-300 rounded-lg bg-white shadow-sm w-full justify-center">`;
             for(let i=0; i<B; i++){
                 g1 += `<div class="border-2 border-c1 p-2 rounded flex flex-col items-center gap-1 bg-red-50 relative mt-3">
@@ -413,7 +428,7 @@
                        </div>`;
             }
             g1 += `</div>`;
-            
+
             let gMulti = `<div class="flex flex-col gap-3 p-3 box-solid bg-slate-50 w-full max-w-xl">`;
             for(let i=0; i<S; i++){
                 gMulti += g1;
@@ -437,21 +452,21 @@
 
         return `
             <div class="flex flex-col items-center w-full fade-in">
-                
+
                 <div class="w-full flex justify-center mb-6">
                     <button onclick="setState({isTransformed: !state.isTransformed, step: 0})" 
                             class="group relative px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 hover:shadow-xl active:scale-95 transition-all text-lg flex items-center gap-3">
                         <svg class="w-6 h-6 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
-                        点击切换形态
+                        比较两种表示
                     </button>
                 </div>
 
                 <div class="text-3xl sm:text-4xl font-mono font-bold text-slate-800 tracking-wider text-center mb-8 py-4 px-6 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm relative z-20">
                     ${formula}
                 </div>
-                
+
                 <div class="w-full overflow-x-auto scroll-area pb-4 flex justify-center relative z-10">
                     <div class="min-w-max px-4">
                         ${content}
@@ -461,80 +476,30 @@
         `;
     }
 
-    function renderSidebar() {
+    function renderControls() {
         const categories = ['基本律', '运算性质', '特殊规律'];
-        
-        let html = '';
-        categories.forEach(cat => {
-            html += `
-                <div class="mb-6">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">${cat}</h4>
-                    <div class="flex flex-col">
-            `;
-            for (const [key, val] of Object.entries(TABLE_DATA)) {
-                if (val.type === cat) {
-                    const isActive = state.mode === key;
-                    let activeClass = '';
-                    if (isActive) {
-                        if (cat === '基本律') activeClass = 'active active-basic';
-                        else if (cat === '运算性质') activeClass = 'active active-prop';
-                        else activeClass = 'active active-spec';
-                    }
-                    html += `<button onclick="setState({mode: '${key}', step: 0, isTransformed: false})" class="btn-side ${activeClass}">${val.name}</button>`;
-                }
-            }
-            html += `</div></div>`;
+        const groups = categories.map(category => {
+            const options = Object.entries(TABLE_DATA)
+                .filter(([, law]) => law.type === category)
+                .map(([key, law]) => `<option value="${key}" ${key === state.mode ? 'selected' : ''}>${law.name}</option>`);
+            return `<optgroup label="${category}">${options.join('')}</optgroup>`;
         });
-
-        const showSliders = true; 
-
-        if (showSliders) {
-            html += `
-                <div class="mt-4 pt-6 border-t border-slate-200">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">侧边控制面板</h4>
-                    <div class="space-y-3">
-                        <div class="number-input-group">
-                            <span class="text-sm font-bold text-slate-500 w-4">A</span>
-                            <input type="range" min="1" max="10" value="${state.valA}" oninput="setState({valA: parseInt(this.value), step: 0})">
-                            <input type="number" value="${state.valA}" onchange="setState({valA: parseInt(this.value), step: 0})">
-                        </div>
-                        <div class="number-input-group">
-                            <span class="text-sm font-bold text-slate-500 w-4">B</span>
-                            <input type="range" min="1" max="10" value="${state.valB}" oninput="setState({valB: parseInt(this.value), step: 0})">
-                            <input type="number" value="${state.valB}" onchange="setState({valB: parseInt(this.value), step: 0})">
-                        </div>
-                        ${['assoc_add', 'assoc_mul', 'dist', 'sub_prop', 'div_prop'].includes(state.mode) ? `
-                        <div class="number-input-group">
-                            <span class="text-sm font-bold text-slate-500 w-4">C</span>
-                            <input type="range" min="1" max="10" value="${state.valC}" oninput="setState({valC: parseInt(this.value), step: 0})">
-                            <input type="number" value="${state.valC}" onchange="setState({valC: parseInt(this.value), step: 0})">
-                        </div>
-                        ` : ''}
-                        ${['sub_prop', 'quot_prop'].includes(state.mode) ? `
-                        <div class="number-input-group">
-                            <span class="text-sm font-bold text-slate-500 w-4">T</span>
-                            <input type="range" min="${parseInt(state.valA) + parseInt(state.valB)}" max="30" value="${state.valT}" oninput="setState({valT: parseInt(this.value), step: 0})">
-                            <input type="number" value="${state.valT}" onchange="setState({valT: parseInt(this.value), step: 0})">
-                        </div>
-                        ` : ''}
-                        ${['prod_prop', 'quot_prop'].includes(state.mode) ? `
-                        <div class="number-input-group">
-                            <span class="text-sm font-bold text-slate-500 w-4" title="扩缩倍数">×</span>
-                            <input type="range" min="2" max="5" value="${state.scale}" oninput="setState({scale: parseInt(this.value), step: 0})">
-                            <input type="number" value="${state.scale}" onchange="setState({scale: parseInt(this.value), step: 0})">
-                        </div>
-                        ` : ''}
-                    </div>
-                    <div class="text-xs text-slate-400 mt-2">* 也可以直接点击上方算式中的蓝色数字进行快捷调节。</div>
-                </div>
-            `;
-        }
-
-        return html;
+        const inputs = [...parameters].map(([key, p]) => {
+            const name = { A:'第一个数', B:'第二个数', C:'第三个数', T:'总数', scale:'变化倍数', totalGroups:'被除数' }[key];
+            return `<label class="number-input-group">${name}
+                <input type="number" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.value}" onchange="setParameter('${key}',this.value)">
+            </label>`;
+        });
+        return `<label>选择规律 <select class="p-2 border rounded" onchange="setState({mode:this.value,step:0,isTransformed:false,activePopover:null})">${groups.join('')}</select></label>
+            <details class="mt-2" ${state.parametersOpen ? 'open' : ''} ontoggle="if(this.isConnected)state.parametersOpen=this.open"><summary>调整数值</summary>
+                <div class="flex flex-wrap gap-2 mt-2">${inputs.join('')}</div>
+            </details>`;
     }
 
     function render() {
         const app = document.getElementById('app');
+        parameters.clear();
+        const model = renderVisualization();
         app.innerHTML = `
             <header class="relative mb-6 px-12 text-center">
                 <a href="/" aria-label="返回主页" title="返回主页" class="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
@@ -544,16 +509,16 @@
                     </svg>
                 </a>
                 <h1 class="text-3xl font-bold text-slate-800">运算律直观演示</h1>
-                <p class="mt-1 text-slate-500">用图形变化理解运算律、运算性质与不变规律</p>
+                <p class="mt-1 text-slate-500">交换位置或重新组合，结果会改变吗？</p>
             </header>
-            <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
-                <aside class="w-full md:w-72 bg-slate-50 border-r border-slate-200 p-6 flex flex-col overflow-y-auto">
-                    ${renderSidebar()}
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                <aside class="bg-slate-50 border-b border-slate-200 px-5 py-3">
+                    ${renderControls()}
                 </aside>
-                
+
                 <main class="flex-1 flex flex-col p-6 md:p-8 relative bg-white overflow-hidden">
                     <div class="flex-1 flex flex-col items-center justify-center">
-                        ${renderVisualization()}
+                        ${model}
                     </div>
                 </main>
             </div>

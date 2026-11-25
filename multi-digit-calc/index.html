@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多位数乘法竖式实验室 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>多位数乘法 | Math101</title>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.45s ease-in; }
@@ -20,6 +20,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -39,7 +43,12 @@
                 emerald: 'bg-emerald-50 border-emerald-200 text-emerald-800',
                 rose: 'bg-rose-50 border-rose-200 text-rose-800',
             };
-            return <div className={"px-4 py-2.5 border rounded-lg text-sm leading-relaxed " + map[tone]}>{children}</div>;
+            const parts = React.Children.toArray(children);
+            const hasTitle = React.isValidElement(parts[0]) && parts[0].type === 'b';
+            return <details className={"px-4 py-2.5 border rounded-lg text-sm leading-relaxed " + map[tone]}>
+                <summary className="cursor-pointer font-bold">{hasTitle ? parts[0].props.children : '查看说明'}</summary>
+                <div>{hasTitle ? parts.slice(1) : children}</div>
+            </details>;
         };
 
         const StepBar = ({ step, maxStep, labels, onReset, onNext, color = 'indigo' }) => {
@@ -433,7 +442,7 @@
 
                     <Card>
                         <h3 className="font-bold text-slate-800 mb-1 text-center">{a} × {b} 的面积模型</h3>
-                        <p className="text-slate-500 text-sm text-center mb-4">长方形的面积就是"{a} 个 {b}"，把边长按数位拆开，大长方形就分成几小块。</p>
+                        <p className="text-slate-500 text-sm text-center mb-4">每个小方格的面积为 1。按数位拆分边长，再把各部分面积相加。</p>
 
                         <div className="flex justify-center overflow-x-auto pb-2">
                             <div className="inline-block">
@@ -984,17 +993,17 @@
         /* ============ 主框架 ============ */
 
         const TABS = [
-            { id: 'oral', name: '① 整十整百口算', comp: OralTab },
-            { id: 'decompose', name: '② 分解运算·拆成两堆', comp: DecomposeTab },
-            { id: 'area', name: '③ 面积模型·理解含义', comp: AreaTab },
-            { id: 'one', name: '④ 多位数×一位数', comp: OneDigitTab },
-            { id: 'two', name: '⑤ 两位数×两位数', comp: TwoDigitTab },
-            { id: 'zero', name: '⑥ 末尾有0的简算', comp: ZeroTab },
-            { id: 'practice', name: '⑦ 闯关练习', comp: PracticeTab },
+            { id: 'oral', name: '整十整百', comp: OralTab },
+            { id: 'decompose', name: '拆点阵', comp: DecomposeTab },
+            { id: 'area', name: '面积模型', comp: AreaTab },
+            { id: 'one', name: '乘一位数', comp: OneDigitTab },
+            { id: 'two', name: '乘两位数', comp: TwoDigitTab },
+            { id: 'zero', name: '末尾有 0', comp: ZeroTab },
+            { id: 'practice', name: '竖式练习', comp: PracticeTab },
         ];
 
         const App = () => {
-            const [tab, setTab] = useState('oral');
+            const [tab, setTab] = useState('decompose');
             const Active = TABS.find(t => t.id === tab).comp;
 
             return (
@@ -1006,8 +1015,7 @@
                                 <polyline points="9 22 9 12 15 12 15 22" />
                             </svg>
                         </a>
-                        <h1 className="text-3xl font-bold text-slate-800">多位数乘法竖式实验室</h1>
-                        <p className="text-slate-500 mt-1">从口算迁移到拆分与面积模型，再到竖式每一层部分积，把"为什么这样写"讲清楚</p>
+                        <h1 className="text-3xl font-bold text-slate-800">多位数乘法</h1>
                     </header>
 
                     <div className="max-w-5xl mx-auto flex flex-wrap justify-center gap-2 mb-8">

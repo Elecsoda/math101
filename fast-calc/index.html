@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>速算原理演示 | Math101</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>简便计算 | Math101</title>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; }
 
@@ -55,6 +55,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 
@@ -101,7 +105,7 @@ const METHODS = {
     couzheng: {
         cat: '加减巧算',
         chip: 'chip-add', side: 'active-add',
-        name: '凑整法 · 找“好朋友”',
+        name: '加法凑整',
         idea: '把能凑成整十、整百、整千的数先加（减）起来。',
         principle: '依据加法交换律、结合律，调整顺序，让“好朋友”先碰头：87+13=100。',
         // 演示步骤：每步给出一行算式（HTML）与一句说明
@@ -186,7 +190,7 @@ const METHODS = {
     mulcouzheng: {
         cat: '乘法巧算',
         chip: 'chip-mul', side: 'active-mul',
-        name: '乘法凑整 · 好朋友',
+        name: '乘法凑整',
         idea: '记住乘法好朋友：2×5=10、4×25=100、8×125=1000，先把它们配对。',
         principle: '依据乘法交换律、结合律，先让 25×4、125×8 等结合出整百整千。',
         demo: {
@@ -272,7 +276,7 @@ const METHODS = {
         chip: 'chip-div', side: 'active-div',
         name: '商不变规律',
         idea: '被除数和除数同时乘（或除以）相同的数（0 除外），商不变。',
-        principle: '被除数、除数同乘一个数，商不变。把除数凑成整十整百，除法就好算了：÷25 时同乘 4 变成 ÷100。',
+        principle: '被除数、除数同乘一个数，商不变（所乘的数不为 0）。把除数凑成整十整百，除法就好算了：÷25 时同乘 4 变成 ÷100。',
         demo: {
             title: '7200 ÷ 25',
             steps: [
@@ -299,7 +303,7 @@ const METHODS = {
         cat: '除法与乘除混合',
         chip: 'chip-div', side: 'active-div',
         name: '乘除混合 · 交换位置',
-        idea: '只有乘除的混合运算，可以交换因数、除数的位置，让好朋友先碰头。',
+        idea: '只有乘除时，把除以非零数写成乘它的倒数，再把能凑整的因数放在一起。',
         principle: '在连乘连除中，每个数带着自己前面的 ×或÷ 号一起搬家。交换后让 25÷25、4×4 这样的好算组合先算。',
         demo: {
             title: '25 × 4 ÷ 25 × 4',
@@ -327,7 +331,7 @@ const METHODS = {
         cat: '数列求和',
         chip: 'chip-seq', side: 'active-seq',
         name: '等差数列 · 首尾相加',
-        idea: '连续数求和：把首尾配对，每对的和都相同。',
+        idea: '等差数列的首项与末项、第二项与倒数第二项依次配对，每对的和相同。',
         principle: '高斯法：1+2+…+100 = (1+100)×100÷2。和 = (首+尾)×项数÷2。',
         demo: {
             title: '1 + 2 + 3 + … + 100',
@@ -375,7 +379,7 @@ function renderDemo() {
                 <div class="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500">${i + 1}</div>
                 <div>
                     <div class="text-2xl sm:text-3xl font-mono font-bold text-slate-800 leading-relaxed">${s.f}</div>
-                    <div class="mt-1 text-sm text-slate-500">${s.note}</div>
+                    ${i > 0 ? `<div class="mt-1 text-sm text-slate-500">${s.note}</div>` : ''}
                 </div>
             </div>`;
     }).join('');
@@ -383,17 +387,15 @@ function renderDemo() {
     return `
         <div class="fade-in">
             <div class="flex flex-wrap items-center gap-3 mb-2">
-                <span class="chip ${m.chip}">${m.cat}</span>
+
                 <h2 class="text-2xl font-bold text-slate-800">${m.name}</h2>
             </div>
-            <p class="text-slate-600">${m.idea}</p>
-            <div class="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                <span class="font-bold">原理：</span>${m.principle}
-            </div>
+
+            <details class="my-2 text-sm"><summary class="cursor-pointer">方法说明</summary><p>${m.principle}</p></details>
 
             <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-2 sm:p-4 overflow-x-auto scroll-area">
-                <div class="text-center text-sm font-bold text-slate-400 mb-2">例题：${d.title}</div>
-                <div class="min-w-max">${lines}</div>
+
+                <div class="min-w-0">${lines}</div>
             </div>
 
             <div class="mt-5 flex items-center justify-center gap-4">
@@ -412,7 +414,7 @@ function checkAnswer(idx) {
     const m = METHODS[state.mode];
     const key = state.mode + '_' + idx;
     const val = state.exVals[key];
-    const correct = parseFloat(val) === m.ex[idx].a;
+    const correct = String(val ?? '').trim() !== '' && Number(val) === m.ex[idx].a;
     setState({ exStatus: { ...state.exStatus, [key]: correct ? 'ok' : 'bad' } });
 }
 
@@ -446,24 +448,19 @@ function renderExercises() {
     return `
         <div class="fade-in">
             <h3 class="text-lg font-bold text-slate-800 mb-1">练一练 · ${m.name}</h3>
-            <p class="text-sm text-slate-500 mb-4">先在心里拆分、重组凑整，再填结果，回车或点“检查”判分。</p>
+
             <div class="grid grid-cols-1 gap-3">${rows}</div>
         </div>`;
 }
 
 /* ----------------------------- 侧边栏 ----------------------------- */
 function renderSidebar() {
-    let html = '';
-    CATS.forEach(cat => {
-        html += `<h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 mt-2">${cat}</h4><div class="flex flex-col mb-4">`;
-        for (const [key, m] of Object.entries(METHODS)) {
-            if (m.cat !== cat) continue;
-            const active = state.mode === key ? `active ${m.side}` : '';
-            html += `<button onclick="setState({mode:'${key}', step:0})" class="btn-side ${active}">${m.name}</button>`;
-        }
-        html += `</div>`;
+    const groups = CATS.map(category => {
+        const options = Object.entries(METHODS).filter(([, m]) => m.cat === category)
+            .map(([id, m]) => `<option value="${id}" ${id === state.mode ? 'selected' : ''}>${m.name}</option>`).join('');
+        return `<optgroup label="${category}">${options}</optgroup>`;
     });
-    return html;
+    return `<label>选择方法 <select class="border rounded p-2" onchange="setState({mode:this.value, step:0})">${groups.join('')}</select></label>`;
 }
 
 /* ----------------------------- 总装 ----------------------------- */
@@ -476,18 +473,16 @@ function render() {
                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
             </a>
-            <h1 class="text-3xl font-bold text-slate-800">速算原理演示</h1>
-            <p class="mt-1 text-slate-500">看清每道题怎样“拆分 → 重组 → 凑整”，再动手练一练</p>
+            <h1 class="text-3xl font-bold text-slate-800">简便计算</h1>
         </header>
 
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col md:flex-row min-h-[640px]">
-            <aside class="w-full md:w-64 bg-slate-50 border-r border-slate-200 p-5 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+            <aside class="bg-slate-50 border-b border-slate-200 px-5 py-3">
                 ${renderSidebar()}
             </aside>
             <main class="flex-1 p-6 md:p-8 overflow-hidden">
                 ${renderDemo()}
-                <hr class="my-8 border-slate-200">
-                ${renderExercises()}
+                <details class="mt-6" ${state.exerciseOpen ? 'open' : ''} ontoggle="if(this.isConnected)state.exerciseOpen=this.open"><summary class="cursor-pointer font-bold">本方法配套题</summary>${renderExercises()}</details>
             </main>
         </div>
 

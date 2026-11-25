@@ -20,6 +20,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -34,7 +38,7 @@
         const percentToFraction = pct => {
             const scaled = Math.round(pct * 10);        // 允许一位小数
             let n = scaled, d = 1000;
-            const g = gcd(Math.abs(n) || 1, d);
+            const g = gcd(Math.abs(n), d);
             return { n: n / g, d: d / g };
         };
 
@@ -46,25 +50,27 @@
             </span>
         );
 
-        /* ---------- 百方图：10×10 = 100 个小格 ---------- */
+        /* ---------- 百格图：10×10 = 100 个小格 ---------- */
         const HundredGrid = ({ pct, color = '#f59e0b', size = 232 }) => {
-            const filled = Math.round(clampPct(pct));       // 整数格
+            const filled = round1(clampPct(pct));
             const cell = size / 10;
             return (
-                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`百方图，涂色 ${filled} 格`}>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`百格图，涂色 ${filled} 格`}>
                     {Array.from({ length: 100 }, (_, i) => {
                         const r = Math.floor(i / 10), c = i % 10;
-                        const on = i < filled;
-                        return <rect key={i} x={c * cell} y={r * cell} width={cell} height={cell}
-                            fill={on ? color : '#ffffff'} stroke="#cbd5e1" strokeWidth="1"
-                            className={on ? 'cell-pop' : ''} style={{ animationDelay: on ? `${(i % 20) * .012}s` : '0s' }} />;
+                        const share = Math.max(0, Math.min(1, filled - i));
+                        return <g key={i}>
+                            <rect x={c * cell} y={r * cell} width={cell} height={cell} fill="white" />
+                            {share > 0 && <rect x={c * cell} y={r * cell} width={cell * share} height={cell} fill={color} />}
+                            <rect x={c * cell} y={r * cell} width={cell} height={cell} fill="none" stroke="#cbd5e1" strokeWidth="1" />
+                        </g>;
                     })}
                     <rect x="0.5" y="0.5" width={size - 1} height={size - 1} fill="none" stroke="#334155" strokeWidth="2.5" />
                 </svg>
             );
         };
 
-        /* ---------- 饼状图 ---------- */
+        /* ---------- 圆形图 ---------- */
         const PiePercent = ({ pct, color = '#8b5cf6', size = 210 }) => {
             const cx = 110, cy = 110, r = 96;
             const p = clampPct(pct) / 100;
@@ -77,7 +83,7 @@
                 : p <= 0 ? null
                 : <path d={`M ${cx} ${cy} L ${start[0]} ${start[1]} A ${r} ${r} 0 ${large} 1 ${x} ${y} Z`} fill={color} />;
             return (
-                <svg width={size} height={size} viewBox="0 0 220 220" role="img" aria-label={`饼状图，涂色 ${round1(pct)}%`}>
+                <svg width={size} height={size} viewBox="0 0 220 220" role="img" aria-label={`圆形图，涂色 ${round1(pct)}%`}>
                     <circle cx={cx} cy={cy} r={r} fill="#ffffff" stroke="#334155" strokeWidth="3" />
                     {wedge}
                     <circle cx={cx} cy={cy} r={r} fill="none" stroke="#334155" strokeWidth="3" />
@@ -122,59 +128,58 @@
         );
 
         /* ============ ① 直观认识 ============ */
-        const PRESETS = [1, 7, 25, 50, 63, 75, 100];
+        const PRESETS = [0, 25, 50, 75, 100, 125, 200];
+        const limitExploration = value => Math.max(0, Math.min(200, round1(Number(value) || 0)));
+        const OneHundreds = ({ pct, children }) => (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+                {children(Math.min(100, pct))}
+                {pct > 100 && children(round1(pct - 100))}
+            </div>
+        );
         const MeaningDemo = () => {
             const [pct, setPct] = useState(63);
-            const p = clampPct(pct);
+            const p = limitExploration(pct);
             return (
                 <section className="fade-in">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
-                        <p className="text-xl leading-relaxed m-0">百分数表示<b className="text-slate-800">一个数是另一个数的百分之几</b>。把整体<b>平均分成 100 份</b>，取了多少份，就是百分之多少。</p>
-                        <p className="text-slate-500 mt-2 mb-0 text-sm">写成 <b className="text-violet-600">{round1(p)}%</b>，读作“百分之 {round1(p)}”，也叫百分率或百分比。</p>
-                    </div>
-
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5 text-center">
-                        <div className="text-5xl font-bold text-violet-600 mb-1">{round1(p)}%</div>
-                        <div className="text-slate-500 mb-6">= 每 100 份里有 {round1(p)} 份</div>
-                        <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div className="flex flex-col items-center">
-                                <HundredGrid pct={p} color="#f59e0b" />
-                                <p className="text-sm text-slate-500 mt-2 mb-0">百方图：100 个小格，涂色 <b>{Math.round(p)}</b> 格</p>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <PiePercent pct={p} color="#8b5cf6" />
-                                <p className="text-sm text-slate-500 mt-2 mb-0">饼状图：整个圆当作 100%</p>
-                            </div>
-                        </div>
-                        <div className="mt-6 max-w-xl mx-auto">
-                            <ProgressBar pct={p} color="#0ea5e9" />
-                            <p className="text-sm text-slate-500 mt-2 mb-0">进度条：常用来表示完成了多少</p>
-                        </div>
-                    </div>
-
                     <div className="bg-white rounded-2xl border border-slate-200 p-5">
                         <label className="flex items-center gap-4">
-                            <span className="w-24 text-sm text-slate-500 shrink-0">拖动百分数</span>
-                            <input className="flex-1 accent-violet-500" type="range" min="0" max="100" value={p} onChange={e => setPct(+e.target.value)} />
+                            <span className="w-24 text-sm text-slate-500 shrink-0">涂色格数</span>
+                            <input className="flex-1 accent-violet-500" type="range" min="0" max="200" value={p} onChange={e => setPct(+e.target.value)} />
                             <b className="w-16 text-right text-violet-600 text-xl">{Math.round(p)}%</b>
                         </label>
                         <div className="flex flex-wrap justify-center gap-2 mt-4">
                             {PRESETS.map(v => <button key={v} onClick={() => setPct(v)} className={`px-3 py-1.5 rounded-xl border smooth ${Math.round(p) === v ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-500 hover:border-violet-300'}`}>{v}%</button>)}
                         </div>
                     </div>
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5 text-center">
+                        <div className="text-5xl font-bold text-violet-600 mb-1">{round1(p)}%</div>
+                        <div className="text-slate-500 mb-6">把一个完整的百格图看作 100%。</div>
+                        <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center">
+                                <OneHundreds pct={p}>{v => <HundredGrid pct={v} color="#f59e0b" />}</OneHundreds>
+                                <p className="text-sm text-slate-500 mt-2 mb-0">一共涂了 <b>{Math.round(p)}</b> 格</p>
+                            </div>
+                        </div>
+                        <details className="mt-4"><summary className="cursor-pointer text-violet-700">换成圆形图和进度条</summary>
+                            <div className="flex flex-col items-center mt-3"><OneHundreds pct={p}>{v => <PiePercent pct={v} color="#8b5cf6" />}</OneHundreds></div>
+                            <div className="max-w-xl mx-auto mt-3"><OneHundreds pct={p}>{v => <div className="w-full max-w-sm"><ProgressBar pct={v} color="#0ea5e9" /></div>}</OneHundreds></div>
+                        </details>
+
+                    </div>
+
                 </section>
             );
         };
 
         /* ============ ② 认识与转化 ============ */
-        const CONVERT_CASES = [50, 25, 20, 75, 12.5, 40, 100, 5];
+        const CONVERT_CASES = [0, 12.5, 25, 50, 100, 125, 200];
         const ConvertDemo = () => {
             const [pct, setPct] = useState(25);
             const [step, setStep] = useState(0);
-            const p = clampPct(pct);
-            const decimal = round1(p) / 100;           // 精确到千分位以内
+            const p = limitExploration(pct);
+            const decimal = Math.round(p * 10) / 1000;           // 精确到千分位以内
             const frac = percentToFraction(p);
-            const change = v => { setPct(v); setStep(0); };
+            const change = v => { setPct(limitExploration(v)); setStep(0); };
             return (
                 <section className="fade-in">
                     <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-5 text-center">
@@ -185,7 +190,7 @@
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <label className="text-sm text-slate-500">输入百分数
                                 <div className="mt-1 inline-flex items-center rounded-xl border-2 border-emerald-300 bg-white px-3 py-2 ml-2">
-                                    <input type="number" min="0" max="100" step="0.1" value={pct}
+                                    <input type="number" min="0" aria-label="百分号前的数，0 至 200" max="200" step="0.1" value={pct}
                                         onChange={e => change(e.target.value === '' ? 0 : +e.target.value)}
                                         className="w-24 text-center text-2xl font-bold outline-none" />
                                     <span className="text-2xl font-bold text-slate-500 ml-1">%</span>
@@ -201,7 +206,7 @@
 
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                         <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div className="flex justify-center"><HundredGrid pct={p} color="#10b981" /></div>
+                            <div className="flex justify-center"><OneHundreds pct={p}>{v => <HundredGrid pct={v} color="#10b981" />}</OneHundreds></div>
                             <div className="space-y-4">
                                 <div className="rounded-xl bg-violet-50 border border-violet-100 p-4 text-center">
                                     <div className="text-sm text-violet-500">百分数</div>
@@ -209,14 +214,14 @@
                                 </div>
                                 {step >= 1 && <div className="rounded-xl bg-sky-50 border border-sky-100 p-4 text-center fade-in">
                                     <div className="text-sm text-sky-600">化成小数：去掉 %，小数点向左移两位</div>
-                                    <div className="text-3xl font-bold text-sky-700 mt-1">{round1(p)}% ÷ 100 = {decimal}</div>
+                                    <div className="text-3xl font-bold text-sky-700 mt-1">{round1(p)}% = {round1(p)} ÷ 100 = {decimal}</div>
                                 </div>}
                                 {step >= 2 && <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center fade-in">
-                                    <div className="text-sm text-amber-600">化成分数：先写成分母是 100 的分数，再约分</div>
+                                    <div className="text-sm text-amber-600">化成分数：用整数作分子、分母，再约分</div>
                                     <div className="mt-1 flex items-center justify-center flex-wrap text-2xl font-bold text-amber-700">
-                                        {round1(p)}% = <Fraction n={round1(p)} d={100} size="text-xl" color="text-amber-500" /> = <Fraction n={frac.n} d={frac.d} size="text-2xl" color="text-amber-700" />
+                                        {round1(p)}% = <Fraction n={Number.isInteger(p) ? p : Math.round(p * 10)} d={Number.isInteger(p) ? 100 : 1000} size="text-xl" color="text-amber-500" /> = <Fraction n={frac.n} d={frac.d} size="text-2xl" color="text-amber-700" />
                                     </div>
-                                    <p className="text-xs text-amber-600 mt-2 mb-0">口诀：百分数化分数，先当作分母是 100，再约成最简分数。{round1(p) % 1 !== 0 && '（有小数时先把分子分母同时扩大再约分）'}</p>
+
                                 </div>}
                             </div>
                         </div>
@@ -300,7 +305,7 @@
             return (
                 <section className="fade-in">
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-5">
-                        <p className="text-lg leading-relaxed m-0">生活中到处都有百分数。它让我们<b className="text-slate-800">不看具体数量，也能一眼比较多少、快慢、浓淡</b>。</p>
+                        <p className="text-lg leading-relaxed m-0">选一个情境，说一说哪个量表示 100%。</p>
                     </div>
 
                     <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 mb-5">
@@ -332,17 +337,17 @@
                     </div>
 
                     <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mt-5 text-center text-sm text-slate-600">
-                        小贴士：百分数一般<b className="text-indigo-700">不带单位</b>，因为它表示的是两个数量的“倍比关系”，而不是具体的多少。
+                        百分数表示一个数是另一个数的百分之几。先确定哪个量相当于 100%。
                     </div>
                 </section>
             );
         };
 
         const TABS = [
-            { id: 'meaning', title: '① 直观认识', hint: '百方图·饼图·进度条', color: 'bg-violet-600' },
-            { id: 'convert', title: '② 认识与转化', hint: '百分数↔小数↔分数', color: 'bg-emerald-600' },
-            { id: 'calc', title: '③ 简单计算', hint: '求一个数的百分之几', color: 'bg-rose-600' },
-            { id: 'life', title: '④ 生活中的百分数', hint: '打折·电量·浓度', color: 'bg-sky-600' }
+            { id: 'meaning', title: '直观认识', hint: '百格图·饼图·进度条', color: 'bg-violet-600' },
+            { id: 'convert', title: '认识与转化', hint: '百分数↔小数↔分数', color: 'bg-emerald-600' },
+            { id: 'calc', title: '简单计算', hint: '求一个数的百分之几', color: 'bg-rose-600' },
+            { id: 'life', title: '生活中的百分数', hint: '打折·电量·浓度', color: 'bg-sky-600' }
         ];
 
         const App = () => {
@@ -353,18 +358,16 @@
                         <a href="/" aria-label="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 smooth">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                         </a>
-                        <div className="inline-flex px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold mb-2">六年级 · 百分数的认识</div>
                         <h1 className="text-3xl md:text-4xl font-bold text-slate-800 m-0">百分数的认识</h1>
-                        <p className="text-slate-500 mt-3 mb-0">把整体看作 <b>100 份</b>：<b className="text-violet-600">百分之几</b> 就是取了其中几份</p>
+
                     </header>
                     <nav className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-7" aria-label="知识模块">
-                        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`p-3 rounded-xl border-2 text-left smooth ${tab === t.id ? `${t.color} text-white border-transparent shadow-md` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}><b className="block">{t.title}</b><span className={`text-xs ${tab === t.id ? 'text-white/80' : 'text-slate-400'}`}>{t.hint}</span></button>)}
+                        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} className={`p-3 rounded-xl border-2 text-left smooth ${tab === t.id ? `${t.color} text-white border-transparent shadow-md` : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}`}><b className="block">{t.title}</b></button>)}
                     </nav>
                     {tab === 'meaning' && <MeaningDemo />}
                     {tab === 'convert' && <ConvertDemo />}
                     {tab === 'calc' && <CalcDemo />}
                     {tab === 'life' && <LifeDemo />}
-                    <footer className="text-center text-slate-400 text-sm mt-10">Math101 · 百分数可视化 · 适用人教版六年级上册</footer>
                 </main>
             );
         };

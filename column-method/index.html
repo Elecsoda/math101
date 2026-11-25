@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>竖式进位与退位 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.5s ease-in; }
@@ -20,6 +20,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -91,16 +95,25 @@
 
             return (
                 <div className="fade-in flex flex-col items-center">
-                    <Controls a={a} b={b} op="+" setA={setA} setB={setB} setStep={setStep} randomize={randomize} max={89} />
+                    <Controls a={a} b={b} op="+" setA={setA} setB={setB} setStep={setStep} randomize={randomize} max={99} />
 
                     {carry === 0 && (
                         <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-                            提示：个位 {aO} + {bO} = {onesSum}，没满 10，不需要进位。换一题试试满十进一。
+                            个位 {aO} + {bO} = {onesSum}，不用进位。
                         </div>
                     )}
 
-                    <div className="flex gap-12 bg-white rounded-xl shadow p-6 mb-6">
-                        <PlaceColumn label="十位" bundles={tensShown} ones={0} popBundle={popB} />
+                    <div className="flex flex-wrap justify-center gap-4 bg-white rounded-xl shadow p-4 mb-4">
+                        {step >= 3 && tensSum >= 10 && (
+                            <div className="text-center">
+                                <div className="text-sm font-bold text-gray-500 mb-2">百位</div>
+                                <div className="inline-grid grid-cols-10 gap-px bg-emerald-200 p-px" role="img" aria-label="一百，十行十列">
+                                    {Array.from({ length: 100 }, (_, i) => <span key={i} className="w-1.5 h-1.5 bg-emerald-600" />)}
+                                </div>
+                                <p className="text-xs mt-1">10 个十</p>
+                            </div>
+                        )}
+                        <PlaceColumn label="十位" bundles={step >= 3 ? tensSum % 10 : tensShown} ones={0} popBundle={popB} />
                         <div className="w-px bg-gray-200" />
                         <PlaceColumn label="个位" bundles={0} ones={onesShown} onesHighlight={onesHi} />
                     </div>
@@ -109,7 +122,7 @@
                         onesResult={onesResult} tensSum={tensSum} />
 
                     <StepBar step={step} maxStep={4} color="blue"
-                        labels={['摆出两个数', '合并个位', '满十进一（打捆）', '合并十位', '完成']}
+                        labels={['先摆第一个加数', '两数合在一起', carry ? '个位满十，进一到十位' : '个位不用进位', tensSum >= 10 ? '十位满十，进一到百位' : '读出十位', '完成']}
                         onPrev={() => setStep(0)} onNext={() => setStep(s => Math.min(4, s + 1))} />
                 </div>
             );
@@ -143,13 +156,20 @@
                 setA(na); setB(nb); setStep(0);
             };
 
+            if (b > a) return (
+                <div className="flex flex-col items-center">
+                    <Controls a={a} b={b} op="−" setA={setA} setB={setB} setStep={setStep} randomize={randomize} max={99} />
+                    <p role="status">请把减数调到 {a} 或更小，再用小棒表示这道减法。</p>
+                </div>
+            );
+
             return (
                 <div className="fade-in flex flex-col items-center">
                     <Controls a={a} b={b} op="−" setA={setA} setB={setB} setStep={setStep} randomize={randomize} max={99} />
 
                     {!needBorrow && (
                         <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-                            提示：个位 {aO} 够减 {bO}，不需要退位。换一题试试个位不够减。
+                            个位 {aO} 够减 {bO}，不用退位。
                         </div>
                     )}
 
@@ -162,7 +182,7 @@
                     <VerticalForm a={a} b={b} op="−" total={total} borrow={needBorrow} step={step} />
 
                     <StepBar step={step} maxStep={4} color="rose"
-                        labels={['摆出被减数', '个位不够减', '借一当十（拆捆）', '减去个位', '减去十位 · 完成']}
+                        labels={['摆出被减数', needBorrow ? '个位不够减' : '个位够减', needBorrow ? '从十位退一，换成十个一' : '个位不用退位', '减去个位', '减去十位，完成']}
                         onPrev={() => setStep(0)} onNext={() => setStep(s => Math.min(4, s + 1))} />
                 </div>
             );
@@ -174,14 +194,14 @@
                 <div className="flex items-center gap-2">
                     <label className="font-semibold text-gray-700">{op === '+' ? '加数' : '被减数'}</label>
                     <input type="number" min="10" max={max} value={a}
-                        onChange={e => { setA(Math.max(10, Math.min(99, +e.target.value || 10))); setStep(0); }}
+                        onChange={e => { setA(Math.max(10, Math.min(99, Math.trunc(+e.target.value) || 10))); setStep(0); }}
                         className="w-20 text-center text-lg border-2 border-blue-300 rounded p-1.5" />
                 </div>
                 <span className="text-2xl font-bold text-gray-400">{op}</span>
                 <div className="flex items-center gap-2">
                     <label className="font-semibold text-gray-700">{op === '+' ? '加数' : '减数'}</label>
                     <input type="number" min="1" max={max} value={b}
-                        onChange={e => { setB(Math.max(1, Math.min(99, +e.target.value || 1))); setStep(0); }}
+                        onChange={e => { setB(Math.max(1, Math.min(99, Math.trunc(+e.target.value) || 1))); setStep(0); }}
                         className="w-20 text-center text-lg border-2 border-green-300 rounded p-1.5" />
                 </div>
                 <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
@@ -241,7 +261,7 @@
             const [tab, setTab] = useState('add');
             return (
                 <div className="min-h-screen py-8 px-4">
-                    <header className="relative max-w-4xl mx-auto text-center mb-8 px-12">
+                    <header className="relative max-w-4xl mx-auto text-center mb-4 px-12">
                         <a href="/" aria-label="返回主页" title="返回主页" className="absolute left-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -249,10 +269,10 @@
                             </svg>
                         </a>
                         <h1 className="text-3xl font-bold text-slate-800">竖式进位与退位</h1>
-                        <p className="text-slate-500 mt-1">用数位小棒"打捆 / 拆捆"，把满十进一、借一当十做成动作</p>
+                        <p className="text-slate-500 mt-1">看看十根散棒可以换成什么。</p>
                     </header>
 
-                    <div className="flex justify-center gap-3 mb-8">
+                    <div className="flex justify-center gap-3 mb-4">
                         <button onClick={() => setTab('add')}
                             className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " + (tab === 'add' ? "bg-blue-500 text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
                             进位加法

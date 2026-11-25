@@ -21,6 +21,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -138,7 +142,7 @@
                 );
                 return (
                     <div>
-                        <p className="text-sm text-gray-500 mb-3 text-center">三条对齐着看：把上面两条<b>叠加</b>，正好是最下面的"和"。每条都分成 {c.n} 份，<b>每份一样大</b>。</p>
+                        <p className="text-sm text-gray-500 mb-3 text-center">三条对齐着看：把两段涂色部分<b>首尾相接</b>，正好是最下面的"和"。每条都分成 {c.n} 份，<b>每份一样大</b>。</p>
                         <div className="space-y-2 inline-block">
                             {row(<Fraction num={c.a} den={c.n} color="text-amber-600" size="text-xl" />, FILL_A, colsA, 'a2a' + ci)}
                             <div className="flex items-center gap-3"><div className="text-right text-xl text-gray-400 font-bold" style={{ width: labelW }}>＋</div><div style={{ width: 340 }}></div></div>
@@ -580,7 +584,7 @@
                             {UNLIKE_CASES.map((q, i) => <option key={i} value={i}>{q.a}/{q.b} {q.op} {q.c}/{q.d}</option>)}
                         </select>
                     </label>
-                    <p>每条同样长的纸条都代表 1。先看两种颜色的每一小份有多长，再想怎样把它们合起来或去掉一部分。</p>
+                    <p>两条纸条都代表 1。怎样把每一小份分得一样长？</p>
                     {[[a, b, left, FILL_A], [c, d, right, FILL_B]].map(([num, den, converted, color]) => (
                         <div key={den}>
                             <p className="mb-1">{frac(num, den)} {step > 0 && <>＝ {frac(converted, unit)}　每一份再平均分成 {unit / den} 小份。</>}</p>
@@ -613,10 +617,10 @@
         };
 
         const TABS = [
-            { id: 'add', title: '① 同分母加法', hint: '分母不变 · 分子相加', color: 'bg-amber-500' },
-            { id: 'sub', title: '② 同分母减法', hint: '分母不变 · 分子相减', color: 'bg-sky-500' },
-            { id: 'one', title: '③ 1 减几分之几', hint: '先把 1 看成 n/n', color: 'bg-purple-500' },
-            { id: 'why', title: '④ 为什么分母不变', hint: '份一样大才能相加', color: 'bg-rose-500' },
+            { id: 'add', title: '同分母加法', hint: '分母不变 · 分子相加', color: 'bg-amber-500' },
+            { id: 'sub', title: '同分母减法', hint: '分母不变 · 分子相减', color: 'bg-sky-500' },
+            { id: 'one', title: '1 减几分之几', hint: '先把 1 看成 n/n', color: 'bg-purple-500' },
+            { id: 'why', title: '为什么分母不变', hint: '份一样大才能相加', color: 'bg-rose-500' },
             { id: 'practice', title: '同分母练习', hint: '看图填出结果', color: 'bg-green-500' },
             { id: 'unlike', title: '异分母加减', hint: '先通分，再计算', color: 'bg-indigo-600' },
         ];
@@ -639,7 +643,7 @@
                             </svg>
                         </a>
                         <h1 className="text-3xl font-bold text-gray-800">分数加减：同分母与异分母</h1>
-                        <p className="text-gray-500 mt-2">每份一样大，才能直接数份数。分母不同时，先把分数化成同分母分数。</p>
+
                     </header>
 
                     <div className="flex flex-wrap justify-center gap-2 mb-6">
@@ -648,7 +652,6 @@
                                 className={"px-4 py-2 rounded-xl text-sm font-bold smooth border-2 text-left " +
                                     (tab === t.id ? t.color + ' text-white border-transparent shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300')}>
                                 {t.title}
-                                <span className={"block text-[11px] font-normal " + (tab === t.id ? 'text-white/80' : 'text-gray-400')}>{t.hint}</span>
                             </button>
                         ))}
                     </div>
@@ -661,10 +664,6 @@
                         {tab === 'practice' && <PracticeMode />}
                         {tab === 'unlike' && <UnlikeDemo />}
                     </div>
-
-                    <footer className="text-center text-gray-400 text-sm mt-10">
-                        Math101 · 分数加减可视化
-                    </footer>
                 </div>
             );
         };

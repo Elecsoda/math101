@@ -33,6 +33,12 @@ python3 -m http.server 8000
 
 拆站前已迁至几何、应用题和奥数站的 50 个工具目录，由 Netlify 按根目录的 `_redirects` 转到对应工具。
 
+## 分层练习
+
+每个工具都可打开「分层练习」，一次作答一题。基础题辨认概念，进阶题转换表示或运用方法，挑战题侧重推理、纠错和实际应用。输入、选择、读图、读表和步骤排序按题目需要使用。解析在作答后或点「看解析」时出现。教师也可以在工具地址后加 `?practice=1`、`?practice=2` 或 `?practice=3` 直达相应难度。
+
+三个主题题库 `practice-number.js`、`practice-integer.js`、`practice-rational.js` 与 `practice-models.js` 中的题均为本站自编。`practice-sources.js` 按 math105 的册、讲、题号链接《小学数学思维培养教程》原题，在原站打开。练习面板和精确数值判分在 `lesson-practice.js`，样式在 `lesson-practice.css`。
+
 ## 工具列表（共 30 个）
 
 - `/big-number-practice`

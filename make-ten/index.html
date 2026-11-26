@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>凑十法 / 借十法 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>凑十法与破十法 | Math101</title>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.5s ease-in; }
@@ -20,6 +20,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -86,14 +90,14 @@
                         <div className="flex items-center gap-2">
                             <label className="font-semibold text-gray-700">第一个数</label>
                             <input type="number" min="1" max="9" value={a}
-                                onChange={e => { setA(Math.max(1, Math.min(9, +e.target.value || 1))); setStep(0); }}
+                                onChange={e => { setA(Math.max(1, Math.min(9, Math.trunc(+e.target.value) || 1))); setStep(0); }}
                                 className="w-16 text-center text-lg border-2 border-blue-300 rounded p-1.5" />
                         </div>
                         <span className="text-2xl font-bold text-gray-400">+</span>
                         <div className="flex items-center gap-2">
                             <label className="font-semibold text-gray-700">第二个数</label>
                             <input type="number" min="1" max="9" value={b}
-                                onChange={e => { setB(Math.max(1, Math.min(9, +e.target.value || 1))); setStep(0); }}
+                                onChange={e => { setB(Math.max(1, Math.min(9, Math.trunc(+e.target.value) || 1))); setStep(0); }}
                                 className="w-16 text-center text-lg border-2 border-green-300 rounded p-1.5" />
                         </div>
                         <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
@@ -101,7 +105,7 @@
 
                     {!needsCarry && (
                         <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-                            提示：{a} + {b} = {total}，没有超过 10，不需要凑十。试试让两数之和大于 10。
+                            提示：{a} + {b} = {total}，没有超过 10，可以直接相加。
                         </div>
                     )}
 
@@ -189,14 +193,14 @@
                         <div className="flex items-center gap-2">
                             <label className="font-semibold text-gray-700">被减数</label>
                             <input type="number" min="11" max="18" value={a}
-                                onChange={e => { setA(Math.max(11, Math.min(18, +e.target.value || 11))); setStep(0); }}
+                                onChange={e => { setA(Math.max(11, Math.min(18, Math.trunc(+e.target.value) || 11))); setStep(0); }}
                                 className="w-16 text-center text-lg border-2 border-rose-300 rounded p-1.5" />
                         </div>
                         <span className="text-2xl font-bold text-gray-400">−</span>
                         <div className="flex items-center gap-2">
                             <label className="font-semibold text-gray-700">减数</label>
-                            <input type="number" min="2" max="9" value={b}
-                                onChange={e => { setB(Math.max(1, Math.min(9, +e.target.value || 1))); setStep(0); }}
+                            <input type="number" min="1" max="9" value={b}
+                                onChange={e => { setB(Math.max(1, Math.min(9, Math.trunc(+e.target.value) || 1))); setStep(0); }}
                                 className="w-16 text-center text-lg border-2 border-blue-300 rounded p-1.5" />
                         </div>
                         <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
@@ -204,7 +208,7 @@
 
                     {!needsBorrow && (
                         <div className="mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-                            提示：当个位不够减（{ones} 小于 {b}）时才需要借十。试试让减数个位更大一些。
+                            个位 {ones} 够减 {b}，直接算得 {total}。
                         </div>
                     )}
 
@@ -236,7 +240,7 @@
                             <p className="smooth-transition text-gray-700">
                                 10 − <span className="text-amber-600 font-bold">{b}</span> =
                                 <span className="text-rose-700 font-bold"> {tenLeft}</span>
-                                <span className="text-sm text-gray-400 ml-2">（把十位拆成 10，先减去整个 {b}）</span>
+                                <span className="text-sm text-gray-400 ml-2">（从 10 个一里减去 {b} 个一）</span>
                             </p>
                         )}
                         {needsBorrow && step >= 3 && (
@@ -252,7 +256,7 @@
                                 className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700">重置</button>
                             <button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={step === 3}
                                 className="px-6 py-2.5 rounded-lg font-semibold smooth-transition bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-40">
-                                {step === 0 ? '开始借十' : step === 1 ? '从十里减' : step === 2 ? '合并结果' : '完成'}
+                                {step === 0 ? '拆开一个十' : step === 1 ? '从十里减' : step === 2 ? '合并结果' : '完成'}
                             </button>
                         </div>
                     )}
@@ -271,8 +275,8 @@
                                 <polyline points="9 22 9 12 15 12 15 22" />
                             </svg>
                         </a>
-                        <h1 className="text-3xl font-bold text-slate-800">凑十法 / 借十法</h1>
-                        <p className="text-slate-500 mt-1">用十格阵和计数珠，把进位与退位"看得见"</p>
+                        <h1 className="text-3xl font-bold text-slate-800">凑十法与破十法</h1>
+                        <p className="text-slate-500 mt-1">{tab === 'add' ? '给第一框补几颗，能凑成十？' : '从一个十里减去几颗，再和个位合起来。'}</p>
                     </header>
 
                     <div className="flex justify-center gap-3 mb-8">
@@ -282,7 +286,7 @@
                         </button>
                         <button onClick={() => setTab('sub')}
                             className={"px-6 py-2.5 rounded-full font-semibold smooth-transition " + (tab === 'sub' ? "bg-rose-500 text-white shadow" : "bg-white text-gray-600 hover:bg-gray-100")}>
-                            借十法（退位减）
+                            破十法（退位减）
                         </button>
                     </div>
 

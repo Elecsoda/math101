@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>分数的初步认识 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.45s ease-in; }
@@ -22,6 +22,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-rational.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -35,7 +39,7 @@
         //   ② 几分之一 —— 分母是分成的份数，分子是 1
         //   ③ 几分之几 —— 分子是取的份数
         //   ④ 比大小 —— 同分子 / 同分母直观比较
-        //   练习 —— 看图写分数 / 判断是否平均分
+        //   练习 —— 看图填写份数 / 判断是否平均分
         // 两种"整体"：圆（披萨）、长条（巧克力），都用同一套涂色逻辑。
         // ============================================================
 
@@ -161,13 +165,17 @@
                 <div className="fade-in">
                     <div className="bg-white rounded-xl shadow-sm p-5 mb-4 border border-gray-100">
                         <p className="text-xl text-gray-800 leading-relaxed">
-                            要用分数，先要<b className="text-rose-600">平均分</b>——把一个整体分成<b>每份一样大</b>的几份。
-                            拖动滑块，把它平均分成不同的份数看看：
+                            拖动滑块。两幅图都分成 {n} 份，哪幅图的每一份都同样大？
                         </p>
                     </div>
 
+                    <div className="bg-rose-50 rounded-xl p-3 mb-3 border border-rose-100 flex flex-col sm:flex-row items-center gap-4">
+                        <input aria-label="平均分的份数" type="range" min="2" max="12" value={n} onChange={e => setN(Number(e.target.value))}
+                            className="flex-1 accent-rose-500" />
+                        <span className="text-gray-600">分成 <b className="text-rose-600 text-xl">{n}</b> 份</span>
+                    </div>
                     <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100">
-                        <p className="text-center text-sm text-gray-400 mb-4">同样一个整体，都分成 {n} 份 —— 但只有左边是"平均分"</p>
+                        <p className="text-center text-sm text-gray-400 mb-4">两个整体同样大</p>
                         <div className="flex flex-col sm:flex-row gap-8 items-stretch justify-center">
                             <div className="flex-1 text-center rounded-xl border-2 border-green-200 bg-green-50/40 p-4">
                                 <div className="inline-block"><Shape kind={shapeKind} n={n} k={0} animKey={'eq' + n} big /></div>
@@ -177,19 +185,12 @@
                             <div className="flex-1 text-center rounded-xl border-2 border-rose-200 bg-rose-50/40 p-4">
                                 <div className="inline-block"><UnevenShape kind={shapeKind} n={n} animKey={'uneq' + n} /></div>
                                 <p className="mt-3 text-rose-600 font-bold">✗ 不是平均分</p>
-                                <p className="text-sm text-gray-500">虽然也是 {n} 份，但每份大小不一样，<b>不能</b>用 <Fraction num={1} den={n} size="text-base" color="text-rose-500" /> 表示</p>
+                                <p className="text-sm text-gray-500">只知道分成 {n} 份，还不能说任意一份都占整体的 <Fraction num={1} den={n} size="text-base" color="text-rose-500" /></p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-rose-50 rounded-xl p-5 border border-rose-100 flex flex-col sm:flex-row items-center gap-4">
-                        <input type="range" min="2" max="12" value={n} onChange={e => setN(Number(e.target.value))}
-                            className="flex-1 accent-rose-500" />
-                        <span className="text-gray-600">分成 <b className="text-rose-600 text-xl">{n}</b> 份</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-4 bg-white/70 rounded-lg p-3 border border-gray-100">
-                        💡 关键词是"<b className="text-rose-600">平均</b>"。只有把整体分成每份一样大的几份，才能用分数来表示其中的份数。
-                    </p>
+
                 </div>
             );
         };
@@ -347,7 +348,7 @@
         };
 
         // ============================================================
-        // 练习：看图写分数（填分子 / 分母）+ 判断是否平均分
+        // 练习：看图填写份数（填分子 / 分母）+ 判断是否平均分
         // ============================================================
         function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
         function makeReadQ() {
@@ -363,8 +364,8 @@
             const [den, setDen] = useState('');
             const [checked, setChecked] = useState(false);
 
-            const numOk = Number(num) === q.k;
-            const denOk = Number(den) === q.n;
+            const numOk = /^\d+$/.test(num) && Number(num) === q.k;
+            const denOk = /^\d+$/.test(den) && Number(den) === q.n;
             const allOk = checked && numOk && denOk;
 
             const next = () => { setQ(makeReadQ()); setNum(''); setDen(''); setChecked(false); };
@@ -376,16 +377,16 @@
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 text-center">
-                        <p className="text-gray-500 mb-4">看图：涂色部分是整个图形的几分之几？</p>
+                        <p className="text-gray-500 mb-4">按图填写：分母写平均分的总份数，分子写涂色份数。</p>
                         <Shape kind={q.kind} n={q.n} k={q.k} animKey={'pr' + q.n + q.k + q.kind} big />
 
                         <div className="mt-6 flex items-center justify-center gap-3">
                             <span className="text-gray-500">涂色部分 =</span>
                             <span className="inline-flex flex-col items-center">
-                                <input type="number" value={num} onChange={e => { setNum(e.target.value); setChecked(false); }}
+                                <input type="number" aria-label="涂色份数，填在分子" value={num} onChange={e => { setNum(e.target.value); setChecked(false); }}
                                     className="w-16 text-center text-2xl border-2 border-amber-300 rounded p-1" placeholder="?" />
                                 <span className="w-16 border-t-2 border-gray-600 my-1"></span>
-                                <input type="number" value={den} onChange={e => { setDen(e.target.value); setChecked(false); }}
+                                <input type="number" aria-label="总份数，填在分母" value={den} onChange={e => { setDen(e.target.value); setChecked(false); }}
                                     className="w-16 text-center text-2xl border-2 border-sky-300 rounded p-1" placeholder="?" />
                             </span>
                         </div>
@@ -421,11 +422,11 @@
         // 顶层
         // ============================================================
         const TABS = [
-            { id: 'equal', title: '① 认识平均分', hint: '每份一样大才能用分数', color: 'bg-rose-500', shape: true },
-            { id: 'unit', title: '② 几分之一', hint: '分母是份数，分子是 1', color: 'bg-sky-500', shape: true },
-            { id: 'frac', title: '③ 几分之几', hint: '分子是取的份数', color: 'bg-amber-500', shape: true },
-            { id: 'compare', title: '④ 比大小', hint: '画成等长长条比涂色', color: 'bg-purple-500', shape: false },
-            { id: 'practice', title: '✏️ 我来试试', hint: '看图写分数 · 判分', color: 'bg-green-500', shape: false },
+            { id: 'equal', title: '认识平均分', hint: '每份一样大才能用分数', color: 'bg-rose-500', shape: true },
+            { id: 'unit', title: '几分之一', hint: '分母是份数，分子是 1', color: 'bg-sky-500', shape: true },
+            { id: 'frac', title: '几分之几', hint: '分子是取的份数', color: 'bg-amber-500', shape: true },
+            { id: 'compare', title: '比大小', hint: '画成等长长条比涂色', color: 'bg-purple-500', shape: false },
+            { id: 'practice', title: '✏️ 我来试试', hint: '看图填写份数 · 判分', color: 'bg-green-500', shape: false },
         ];
 
         const App = () => {
@@ -443,12 +444,6 @@
                             </svg>
                         </a>
                         <h1 className="text-3xl font-bold text-gray-800">分数的初步认识</h1>
-                        <p className="text-gray-500 mt-2">把一个整体<b>平均分</b>成几份，取这样的几份，就是"几分之几"</p>
-                        <div className="inline-flex items-center gap-2 mt-4 text-base">
-                            <span className="text-gray-500">例：</span>
-                            <Fraction num={3} den={4} size="text-3xl" />
-                            <span className="text-gray-400 text-sm">= 平均分成 4 份，取其中 3 份</span>
-                        </div>
                     </header>
 
                     {/* 模块切换 */}
@@ -458,7 +453,6 @@
                                 className={"px-4 py-2 rounded-xl text-sm font-bold smooth border-2 text-left " +
                                     (tab === t.id ? t.color + ' text-white border-transparent shadow' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300')}>
                                 {t.title}
-                                <span className={"block text-[11px] font-normal " + (tab === t.id ? 'text-white/80' : 'text-gray-400')}>{t.hint}</span>
                             </button>
                         ))}
                     </div>
@@ -483,10 +477,6 @@
                         {tab === 'compare' && <CompareDemo />}
                         {tab === 'practice' && <PracticeMode />}
                     </div>
-
-                    <footer className="text-center text-gray-400 text-sm mt-10">
-                        Math101 · 分数可视化 · 适用人教版三年级上册《分数的初步认识》
-                    </footer>
                 </div>
             );
         };

@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>每份数 × 份数 = 总数 | Math101</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../vendor/react.production.min.js" crossorigin></script>
+    <script src="../vendor/react-dom.production.min.js" crossorigin></script>
+    <script src="../vendor/babel.min.js"></script>
+    <script src="../vendor/tailwind.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
         .fade-in { animation: fadeIn 0.45s ease-in; }
@@ -25,6 +25,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <div id="root"></div>
@@ -443,7 +447,6 @@
                     <div className="bg-white rounded-xl shadow-sm p-6 mb-5 border border-gray-100 overflow-x-auto" style={{ minHeight: 180 }}>
                         {step === 0 && (
                             <div className="text-gray-500 text-center py-8">
-                                <p className="mb-3">这道题在讲一个关系：</p>
                                 <div className="inline-flex items-center gap-2 text-lg font-bold">
                                     <span className="px-3 py-1.5 rounded-lg bg-orange-100 text-orange-700 border-2 border-orange-300">每份数</span>
                                     <span>×</span>
@@ -451,7 +454,7 @@
                                     <span>=</span>
                                     <span className="px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700 border-2 border-purple-300">总数</span>
                                 </div>
-                                <p className="mt-4 text-sm">题里已经告诉我们两个，要求的是 <b className="text-purple-600">{ROLE_NAME[ask]}</b>。点"下一步"画图 →</p>
+                                <p className="mt-4 text-sm">本题求 <b className="text-purple-600">{ROLE_NAME[ask]}</b>。</p>
                             </div>
                         )}
                         {step >= 1 && board()}
@@ -460,7 +463,7 @@
                     {/* 列式区 */}
                     {step >= 2 && (
                         <div className="bg-purple-50 rounded-xl p-5 mb-5 border border-purple-100 fade-in">
-                            <p className="text-gray-500 mb-3 text-sm">把图和公式对应起来：</p>
+
                             <FormulaStrip each={q.each} groups={q.groups} total={sol.total} ask={ask} />
                             <p className="text-2xl font-bold font-mono text-purple-700 text-center my-4">{sol.expr}</p>
                             <p className="text-sm text-gray-600 bg-white/60 rounded-lg p-3">💡 {sol.why}</p>
@@ -915,14 +918,6 @@
                             </svg>
                         </a>
                         <h1 className="text-3xl font-bold text-gray-800">每份数 × 份数 = 总数</h1>
-                        <p className="text-gray-500 mt-2">读懂乘法 / 除法应用题：把"几个几"画成图，再列出算式</p>
-                        <div className="inline-flex items-center gap-2 mt-4 text-base font-bold">
-                            <span className="px-3 py-1.5 rounded-lg bg-orange-100 text-orange-700">每份数</span>
-                            <span className="text-gray-400">×</span>
-                            <span className="px-3 py-1.5 rounded-lg bg-sky-100 text-sky-700">份数</span>
-                            <span className="text-gray-400">=</span>
-                            <span className="px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700">总数</span>
-                        </div>
                     </header>
 
                     {/* 基础 / 进阶 模块切换 */}
@@ -933,7 +928,8 @@
 
                     <div className="flex flex-col md:flex-row gap-6 items-start">
                         {/* 左侧题目列表 */}
-                        <aside className="w-full md:w-60 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:sticky md:top-6">
+                        <details className="w-full md:w-52 shrink-0 bg-white rounded-xl border border-gray-100 p-3">
+                            <summary className="cursor-pointer font-bold">选例题或练习</summary>
                             {module === 'basic' && <>
                                 {groupDef.map(g => (
                                     <div key={g.kind}>
@@ -952,7 +948,7 @@
                                     className={"w-full text-left px-3 py-2 rounded-lg text-sm smooth flex items-center gap-2 " +
                                         (sel.kind === 'practice' ? 'bg-green-500 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100')}>
                                     <span className={"w-1.5 h-1.5 rounded-full shrink-0 " + (sel.kind === 'practice' ? 'bg-white' : 'bg-green-400')}></span>
-                                    我来试试 · 判分
+                                    基础练习
                                 </button>
                             </>}
 
@@ -970,7 +966,7 @@
                                     </div>
                                 ))}
                             </>}
-                        </aside>
+                        </details>
 
                         {/* 右侧主区 */}
                         <main className="flex-1 min-w-0 w-full">
@@ -982,9 +978,6 @@
                         </main>
                     </div>
 
-                    <footer className="text-center text-gray-400 text-sm mt-10">
-                        Math101 · 乘法结构可视化 · 适用人教版二 / 三年级（表内乘除法 · 两步解决问题）
-                    </footer>
                 </div>
             );
         };

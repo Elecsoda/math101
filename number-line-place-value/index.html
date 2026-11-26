@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>万以内数与大数数位表 | Math101</title>
+    <title>数一数，认识数位 | Math101</title>
     <style>
         :root {
             --bg: #f4f7fb;
@@ -175,6 +175,18 @@
         .slider-row input[type=range] { flex: 1; min-width: 220px; }
         .result-line { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: #eef2ff; color: #312e81; font-weight: 950; line-height: 1.6; }
 
+        .count-board { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0; }
+        .count-set { flex: 1 1 240px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; }
+        .count-set h3 { margin: 0 0 10px; }
+        .ten-frame { display: grid; grid-template-columns: repeat(5, 1fr); width: min(100%, 200px); margin-bottom: 6px; border: 1px solid #8191a6; }
+        .ten-frame i { aspect-ratio: 1.25; display: grid; place-items: center; border: 1px solid #a8b5c5; }
+        .ten-frame .filled::before { content: ""; width: 65%; aspect-ratio: 1; border-radius: 50%; background: #4338ca; }
+        #set-b .filled::before { background: #c2410c; }
+        #view-count .btn:disabled { opacity: .4; cursor: default; }
+        .count-set p { min-height: 1.5em; }
+        #compare-output { min-height: 1.5em; }
+        [hidden] { display: none !important; }
+
         @media (max-width: 760px) {
             .page { padding: 16px; }
             .topbar { display: block; }
@@ -185,6 +197,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <main class="page">
@@ -192,17 +208,17 @@
             <div class="brand">
                 <div class="brand-icon">位</div>
                 <div>
-                    <h1>万以内数与大数数位表</h1>
-                    <p class="sub">依照读大数工具，用数位表和算珠理解十进制位值</p>
+                    <h1>数一数，认识数位</h1>
                 </div>
             </div>
             <a class="btn" href="../">返回首页</a>
         </header>
 
         <div class="tabs">
-            <button class="tab active" data-view="table">数位表<small>四位一级读大数</small></button>
-            <button class="tab" data-view="abacus">算珠表示<small>每位几颗珠</small></button>
-            <button class="tab" data-view="exchange">十进制换位<small>10 个换 1 个</small></button>
+            <button class="tab" data-view="count">数到二十</button>
+            <button class="tab active" data-view="table">数位表</button>
+            <button class="tab" data-view="abacus">算珠表示</button>
+            <button class="tab" data-view="exchange">十进制换位</button>
         </div>
 
         <section class="card panel">
@@ -212,9 +228,38 @@
                 <button class="btn" id="randomBtn">随机大数</button>
             </div>
 
+            <div class="view" id="view-count">
+                <h2>数一数，两盘各有几颗？</h2>
+                <p class="lead">一格放一颗，一行有五格。满一框是十颗。</p>
+                <div class="count-board">
+                    <div class="count-set" id="set-a">
+                        <h3>甲盘</h3>
+                        <div class="frames" role="img" aria-label="甲盘十格框"></div>
+                        <p class="quantity" aria-live="polite"></p>
+                        <button class="btn" data-change="-1" aria-label="甲盘拿走一颗">拿走 1 颗</button>
+                        <button class="btn" data-change="1" aria-label="甲盘放入一颗">放入 1 颗</button>
+                    </div>
+                    <div class="count-set" id="set-b">
+                        <h3>乙盘</h3>
+                        <div class="frames" role="img" aria-label="乙盘十格框"></div>
+                        <p class="quantity" aria-live="polite"></p>
+                        <button class="btn" data-change="-1" aria-label="乙盘拿走一颗">拿走 1 颗</button>
+                        <button class="btn" data-change="1" aria-label="乙盘放入一颗">放入 1 颗</button>
+                    </div>
+                </div>
+                <h3>甲盘和乙盘之间填哪个符号？</h3>
+                <div id="compare-choices" class="preset-row">
+                    <button class="btn" data-sign="&gt;">&gt; 大于</button>
+                    <button class="btn" data-sign="=">= 等于</button>
+                    <button class="btn" data-sign="&lt;">&lt; 小于</button>
+                </div>
+                <p id="compare-output" role="status"></p>
+                <button class="btn" id="new-pair">换两盘数一数</button>
+            </div>
+
             <div class="view active" id="view-table">
-                <h2>数位表：每一位都有自己的价值</h2>
-                <p class="lead">同样是数字 8，放在个位表示 8，放在万位表示 8 万。先看数位，再读数。</p>
+                <h2>同一个 8 在不同数位上表示多少？</h2>
+                <p class="lead">输入 8，再试试 80 或 800。</p>
                 <div style="overflow-x:auto">
                     <table class="place-table" id="placeTable"></table>
                 </div>
@@ -222,27 +267,25 @@
                     <div class="num" id="readDigits"></div>
                     <div class="chinese" id="readChinese"></div>
                 </div>
+                <details><summary>查看数位与读数规则</summary>
                 <div class="explain-grid">
                     <div class="explain">从<b>个位</b>起，每<b>四位</b>分一级：个级、万级、亿级。</div>
-                    <div class="explain">一个数字的大小由<b>数字本身</b>和<b>所在数位</b>共同决定。</div>
+                    <div class="explain">一个数字表示的数值与它<b>所在的数位</b>有关。</div>
                     <div class="explain">每级末尾的 0 不读，中间连续几个 0 通常只读<b>一个零</b>。</div>
                 </div>
+                </details>
             </div>
 
             <div class="view" id="view-abacus">
-                <h2>算珠表示：一列就是一个数位</h2>
-                <p class="lead">进位模式：点某一位的 + / -。加到 10 颗会自动向左进 1；不够减时，会向左边高一位借 1，换成这一位的 10 颗再减。</p>
+                <h2>一列算珠表示哪个数位？</h2>
+                <p class="lead">点某一列的 + 或 −，观察相邻数位。</p>
                 <div class="abacus-wrap"><div class="abacus" id="abacus"></div></div>
                 <div class="result-line" id="abacusLine"></div>
             </div>
 
             <div class="view" id="view-exchange">
-                <h2>十进制换位：每向左一位，单位扩大 10 倍</h2>
-                <p class="lead">上面的随机大数会在这里拆开：看它有几个 1、几个 10、几个 100、几个 1000……再看十、百、千这些单位是怎样由 10 一层一层乘出来的。</p>
-                <div class="place-power-grid" id="placePowerGrid"></div>
-                <div class="breakdown-head" id="breakdownHead"></div>
-                <div class="breakdown-grid" id="placeBreakdownGrid"></div>
-                <div class="result-line" id="breakdownLine"></div>
+                <h2>多少个一能换成一个十？</h2>
+                <p class="lead">拖动滑块，每满十个低一级单位就换成一个高一级单位。</p>
                 <div class="slider-row">
                     <label for="unitSelect"><b>低一级单位</b></label>
                     <select id="unitSelect" class="btn">
@@ -267,6 +310,12 @@
                     </div>
                 </div>
                 <div class="result-line" id="exchangeLine"></div>
+                <details><summary>查看各数位的组成</summary>
+                <div class="place-power-grid" id="placePowerGrid"></div>
+                <div class="breakdown-head" id="breakdownHead"></div>
+                <div class="breakdown-grid" id="placeBreakdownGrid"></div>
+                <div class="result-line" id="breakdownLine"></div>
+                </details>
             </div>
         </section>
     </main>
@@ -567,7 +616,7 @@
                 return `${digit} 个${formatValue(10 ** pos)}`;
             }).filter(Boolean);
             $("placeBreakdownGrid").innerHTML = cards;
-            $("breakdownLine").textContent = `${groupNumber(s)} = ${terms.join(" + ") || "0 个一"}。例如：1 个百 = 10 个十 = 10×10；1 个千 = 10 个百 = 10×10×10。`;
+            $("breakdownLine").textContent = `${groupNumber(s)} = ${terms.join(" + ") || "0 个一"}。`;
         }
 
         function renderExchange() {
@@ -621,13 +670,73 @@
             });
         }
 
-        document.querySelectorAll(".tab").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === btn));
-                document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + btn.dataset.view));
-                if (btn.dataset.view === "exchange") renderExchange();
+        const quantities = { a: 9, b: 10 };
+
+        function showCounters(id) {
+            const panel = $("set-" + id);
+            const count = quantities[id];
+            const frames = panel.querySelector(".frames");
+            frames.innerHTML = [0, 10].map(start => {
+                const cells = Array.from({ length: 10 }, (_, i) =>
+                    i + start < count ? '<i class="filled"></i>' : '<i></i>');
+                return '<div class="ten-frame">' + cells.join("") + '</div>';
+            }).join("");
+            frames.setAttribute("aria-label", count + " 颗棋子");
+            const tens = Math.floor(count / 10), ones = count % 10;
+            panel.querySelector(".quantity").textContent = count === 0 ? "0 颗，盘里是空的。" :
+                count < 10 ? count + " 颗" : count + " 颗，有 " + tens + " 个十和 " + ones + " 个一。";
+            panel.querySelector('[data-change="-1"]').disabled = count === 0;
+            panel.querySelector('[data-change="1"]').disabled = count === 20;
+            $("compare-output").textContent = "";
+        }
+
+        for (const id of ["a", "b"]) {
+            $("set-" + id).querySelectorAll("[data-change]").forEach(button => {
+                button.addEventListener("click", () => {
+                    quantities[id] += Number(button.dataset.change);
+                    showCounters(id);
+                });
+            });
+            showCounters(id);
+        }
+
+        $("compare-choices").querySelectorAll("button").forEach(button => {
+            button.addEventListener("click", () => {
+                const { a, b } = quantities;
+                const sign = a === b ? "=" : a < b ? "<" : ">";
+                const difference = Math.abs(a - b);
+                const reason = difference === 0 ? "两盘一一配对，正好配完。" :
+                    (a > b ? "甲盘" : "乙盘") + "多 " + difference + " 颗。";
+                $("compare-output").textContent = button.dataset.sign === sign ?
+                    "对了！" + a + " " + sign + " " + b + "。" + reason :
+                    "再看看。" + reason + "先读甲盘的数，再选符号。";
             });
         });
+        $("new-pair").addEventListener("click", () => {
+            for (const id of ["a", "b"]) {
+                quantities[id] = Math.floor(Math.random() * 21);
+                showCounters(id);
+            }
+        });
+
+        function selectView(name) {
+            const view = $("view-" + name);
+            if (!view) return;
+            document.querySelectorAll(".tab").forEach(tab => {
+                const active = tab.dataset.view === name;
+                tab.classList.toggle("active", active);
+                tab.setAttribute("aria-pressed", String(active));
+            });
+            document.querySelectorAll(".view").forEach(item => item.classList.toggle("active", item === view));
+            $("presets").hidden = $("mainControls").hidden = name === "count";
+            if (name === "exchange") renderExchange();
+        }
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.addEventListener("click", () => selectView(btn.dataset.view));
+        });
+        const openLinkedView = () => selectView(location.hash.slice(1) || "table");
+        window.addEventListener("hashchange", openLinkedView);
+        openLinkedView();
         $("numInput").addEventListener("input", () => {
             lastChangedPos = null;
             lastActionText = "可以直接点每一位的 + 或 -，观察进位和借位。";

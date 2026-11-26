@@ -405,19 +405,16 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-number.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
 <div class="page">
     <header class="hero">
         <a class="home" href="/" aria-label="返回工具主页">← 返回工具主页</a>
-        <div class="eyebrow">四年级 · 数与代数</div>
-        <h1>大数的认识·分类练习</h1>
-        <p class="hero-copy">将原文档中的题目按题型完整整理，保留原题号与必要题图。每次只显示一道题，可逐题切换、关键词检索、随机抽题或打印当前题目。</p>
-        <div class="hero-stats" aria-label="题库概览">
-            <div class="hero-stat"><strong>34</strong><span>原卷题目</span></div>
-            <div class="hero-stat"><strong>6</strong><span>题型大类</span></div>
-            <div class="hero-stat"><strong>0</strong><span>答案与解析</span></div>
-        </div>
+        <h1>大数的认识</h1>
     </header>
 
     <nav class="category-nav" aria-label="题型分类">
@@ -433,17 +430,14 @@
     <div class="toolbar">
         <label class="search-wrap">
             <span class="search-icon" aria-hidden="true">⌕</span>
-            <input class="search" id="searchInput" type="search" placeholder="搜索题目，如：四舍五入、读作、万……" aria-label="搜索题目">
+            <input class="search" id="searchInput" type="search" placeholder="按关键词找题" aria-label="搜索题目">
         </label>
         <button class="tool-btn primary" id="randomBtn" type="button">随机抽一题</button>
         <button class="tool-btn" id="browseBtn" type="button">浏览全部问题</button>
-        <button class="tool-btn" id="printBtn" type="button" title="打印当前筛选结果">打印当前题目</button>
+        <button class="tool-btn" id="printBtn" type="button" title="打印当前题目">打印当前题目</button>
     </div>
 
-    <div class="notice">
-        <span aria-hidden="true">✦</span>
-        <div><strong>纯练习模式：</strong>本工具不提供答案、解析或正误判断。选择项与作图操作仅用于记录自己的作答。</div>
-    </div>
+    <p class="notice">原卷共 34 题，可记录作答，教师核对。</p>
     <div class="result-line" id="resultLine" aria-live="polite">当前：选择题 · 原题第1题</div>
     <div class="empty-state" id="emptyState">没有找到匹配的题目，请换个关键词试试。</div>
 

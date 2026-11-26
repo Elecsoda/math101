@@ -195,6 +195,10 @@
     </style>
     <link rel="stylesheet" href="../ipad-touch-adapter.css">
     <script src="../ipad-touch-adapter.js" defer></script>
+    <script src="../lesson-practice.js" defer></script>
+    <script src="../practice-integer.js" defer></script>
+    <script src="../practice-models.js" defer></script>
+    <script src="../practice-sources.js" defer></script>
 </head>
 <body>
     <main class="page">
@@ -202,8 +206,8 @@
             <div class="brand">
                 <div class="icon">倍</div>
                 <div>
-                    <h1>倍的认识</h1>
-                    <p class="sub">从“几倍”直观出发，理解倍数、因数与质数合数的关系</p>
+                    <h1>倍、因数与倍数</h1>
+
                 </div>
             </div>
             <div class="tools">
@@ -245,15 +249,14 @@
             const unitBar = range(1, one).map(() => `<span class="seg unit">●</span>`).join("");
             const manyBar = range(1, n).map(() => `<div class="bar" style="gap:5px">${range(1, one).map(() => `<span class="seg">●</span>`).join("")}</div>`).join(`<span style="width:2px"></span>`);
             return `
-                <h2>倍的直观认识 · 一个量是另一个量的几倍</h2>
-                <p class="lead">把<strong style="color:#16a34a">较小的量（1 倍量）</strong>当成“1 份”，
-                看较大的量里面有<strong style="color:#2563eb">几个这样的份</strong>，就是它的几倍。</p>
+                <h2>蓝点的个数是绿点的几倍？</h2>
+                <p class="lead">把绿点看作一份，摆出同样多的几份。</p>
 
                 <div class="controls">
-                    <div class="ctl"><label>1 倍量（每份）</label>
+                    <div class="ctl"><label for="i_one">每份几个</label>
                         <input type="range" id="i_one" min="1" max="8" value="${one}">
                         <span class="val">${one}</span></div>
-                    <div class="ctl"><label>倍数</label>
+                    <div class="ctl"><label for="i_n">份数</label>
                         <input type="range" id="i_n" min="1" max="6" value="${n}">
                         <span class="val">${n}</span></div>
                 </div>
@@ -271,6 +274,7 @@
 
                 <div class="formula">${many} 是 ${one} 的 ${n} 倍　→　${one} × ${n} = ${many}</div>
 
+                <details><summary>用算式表示</summary>
                 <div class="two">
                     <div class="mini"><small>求几倍量（已知 1 倍量和倍数）</small>
                         <strong>${one} × ${n} = ${many}</strong></div>
@@ -279,8 +283,7 @@
                 </div>
                 <div class="note">数量关系：<b>1 倍量 × 倍数 = 几倍量</b>；
                 反过来 <b>几倍量 ÷ 1 倍量 = 倍数</b>，<b>几倍量 ÷ 倍数 = 1 倍量</b>。三者知二求一。</div>
-                <p class="hint" style="margin-top:14px">读法举例：上图中绿色是 1 份，蓝色一共摆了 ${n} 份，
-                所以“${many} 里面有 ${n} 个 ${one}”，即 ${many} 是 ${one} 的 ${n} 倍。</p>
+                </details>
             `;
         }
         function bindIntro() {
@@ -312,9 +315,9 @@
                 `<div class="arr-box">${dotArray(x, y)}<div class="cap">${x} × ${y} = ${n}</div></div>`).join("");
             return `
                 <h2>倍数与因数 · 同一个乘法算式里的两个身份</h2>
-                <p class="lead">在 <b>a × b = c</b> 里：<strong style="color:#2563eb">a、b 是 c 的因数</strong>，
+                <p class="lead">这里讨论正整数。在 <b>a × b = c</b> 里：<strong style="color:#2563eb">a、b 是 c 的因数</strong>，
                 <strong style="color:#7c3aed">c 是 a、b 的倍数</strong>。把 ${n} 个圆点排成整齐的长方形，
-                <b>每一种排法就对应一对因数</b>。</p>
+                <b>把旋转后相同的排法算作一种，每种排法对应一对因数</b>。</p>
 
                 <div class="controls">
                     <div class="ctl"><label>把多少个点排成长方形</label>
@@ -372,7 +375,7 @@
             return `
                 <h2>2、3、5 倍数的特征 · 在百数表里看规律</h2>
                 <p class="lead">在 1~100 表里把某个数的倍数涂上颜色，规律一眼就能看见：
-                <b>2 的倍数</b>整整齐齐成两列、<b>5 的倍数</b>排成两竖列、<b>3 的倍数</b>斜着走。</p>
+                <b>2 的倍数</b>排在第 2、4、6、8、10 列、<b>5 的倍数</b>排成两竖列、<b>3 的倍数</b>斜着走。</p>
 
                 <div class="swatches">
                     ${sw(2, "2 的倍数", "#60a5fa")}
@@ -474,7 +477,7 @@
                 <div class="rects">${rects}</div>
                 <p class="hint" style="margin-top:12px">${demo} 只能摆 ${demoPairs.length} 种，所以它是
                 <b style="color:${demoPrime ? "#16a34a" : "#dc2626"}">${demoPrime ? "质数" : "合数"}</b>。
-                只能摆 1 种（1×它本身）的就是质数。</p>
+                大于 1 的整数，如果只能摆出 1 × 它本身这一种，就是质数（旋转后算同一种）。</p>
 
                 <h3 style="margin:20px 0 8px">1~50 的质数（绿）与合数（红）</h3>
                 <div class="legend">

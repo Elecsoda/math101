@@ -24,8 +24,22 @@
     <script src="../practice-rational.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
     <div id="root"></div>
     <script type="text/babel">
         const { useMemo, useState } = React;
@@ -121,9 +135,9 @@
 
         const StepButtons = ({ step, setStep, max }) => (
             <div className="flex justify-center gap-3 mt-5">
-                {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
-                {step < max && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
-                {step === max && <button onClick={() => setStep(0)} className="px-6 py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow smooth">重新演示 ↻</button>}
+                {step > 0 && <button data-workspace-action="secondary" onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
+                {step < max && <button data-workspace-action="primary" onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
+                {step === max && <button data-workspace-action="secondary" onClick={() => setStep(0)} className="px-6 py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow smooth">重新演示 ↻</button>}
             </div>
         );
 
@@ -144,7 +158,7 @@
                     <div className="bg-white rounded-2xl border border-slate-200 p-5">
                         <label className="flex items-center gap-4">
                             <span className="w-24 text-sm text-slate-500 shrink-0">涂色格数</span>
-                            <input className="flex-1 accent-violet-500" type="range" min="0" max="200" value={p} onChange={e => setPct(+e.target.value)} />
+                            <input className="flex-1 min-w-0 accent-violet-500" type="range" min="0" max="200" value={p} onChange={e => setPct(+e.target.value)} />
                             <b className="w-16 text-right text-violet-600 text-xl">{Math.round(p)}%</b>
                         </label>
                         <div className="flex flex-wrap justify-center gap-2 mt-4">

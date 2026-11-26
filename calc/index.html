@@ -196,8 +196,22 @@
     <script src="../practice-integer.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
 <div class="page">
     <header>
         <a href="/" class="home" aria-label="返回主页" title="返回主页">
@@ -219,7 +233,7 @@
                     <div class="kicker" id="tabMeta"></div>
                     <h2 id="tabTitle"></h2>
                 </div>
-                <button class="btn" id="nextBtn">换一题</button>
+                <button data-workspace-action="secondary" class="btn" id="nextBtn">换一题</button>
             </div>
 
             <div class="question-card" id="questionCard">
@@ -228,7 +242,7 @@
                 <div class="meta" id="questionMeta"></div>
                 <div class="answer-row">
                     <input id="answerInput" aria-label="计算结果" autocomplete="off" placeholder="输入答案">
-                    <button class="btn primary" id="checkBtn">检查</button>
+                    <button data-workspace-action="primary" class="btn primary" id="checkBtn">检查</button>
                 </div>
                 <div class="feedback" id="feedback"></div>
             </div>

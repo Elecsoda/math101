@@ -42,8 +42,22 @@
     <script src="../practice-rational.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
-<body class="p-2 md:p-4">
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
+<body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
     <div class="max-w-4xl mx-auto space-y-4">
         <!-- 顶部导航条 -->
         <nav class="relative flex min-h-10 items-center justify-center px-12 py-1">
@@ -81,7 +95,7 @@
                     </select>
                     <button id="minus-step" class="btn-sm bg-slate-100 text-slate-700 border border-slate-300">−0.1</button>
                     <button id="plus-step" class="btn-sm bg-blue-600 text-white">+0.1</button>
-                    <button onclick="reset()" class="px-2 py-2 text-sm text-slate-600 underline">重置</button>
+                    <button data-workspace-action="secondary" onclick="reset()" class="px-2 py-2 text-sm text-slate-600 underline">重置</button>
                 </div>
             </div>
         </div>

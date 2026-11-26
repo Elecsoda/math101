@@ -24,8 +24,22 @@
     <script src="../practice-number.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useMemo } = React;
@@ -100,7 +114,7 @@
                                 onChange={e => { setB(Math.max(1, Math.min(9, Math.trunc(+e.target.value) || 1))); setStep(0); }}
                                 className="w-16 text-center text-lg border-2 border-green-300 rounded p-1.5" />
                         </div>
-                        <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
+                        <button data-workspace-action="secondary" onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
                     </div>
 
                     {!needsCarry && (
@@ -148,7 +162,7 @@
 
                     {needsCarry && (
                         <div className="flex gap-3 mt-5">
-                            <button onClick={reset} disabled={step === 0}
+                            <button data-workspace-action="secondary" onClick={reset} disabled={step === 0}
                                 className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700">重置</button>
                             <button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={step === 3}
                                 className="px-6 py-2.5 rounded-lg font-semibold smooth-transition bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-40">
@@ -203,7 +217,7 @@
                                 onChange={e => { setB(Math.max(1, Math.min(9, Math.trunc(+e.target.value) || 1))); setStep(0); }}
                                 className="w-16 text-center text-lg border-2 border-blue-300 rounded p-1.5" />
                         </div>
-                        <button onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
+                        <button data-workspace-action="secondary" onClick={randomize} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold text-gray-700 smooth-transition">换一题</button>
                     </div>
 
                     {!needsBorrow && (
@@ -252,7 +266,7 @@
 
                     {needsBorrow && (
                         <div className="flex gap-3 mt-5">
-                            <button onClick={() => setStep(0)} disabled={step === 0}
+                            <button data-workspace-action="secondary" onClick={() => setStep(0)} disabled={step === 0}
                                 className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-gray-100 hover:bg-gray-200 disabled:opacity-40 text-gray-700">重置</button>
                             <button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={step === 3}
                                 className="px-6 py-2.5 rounded-lg font-semibold smooth-transition bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-40">

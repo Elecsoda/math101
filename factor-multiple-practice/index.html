@@ -226,8 +226,22 @@
     <script src="../practice-integer.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
 <div class="page">
     <header class="hero">
         <a class="home" href="/" aria-label="返回工具主页">← 返回工具主页</a>
@@ -240,7 +254,7 @@
 
     <div class="toolbar">
         <label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span><input class="search" id="searchInput" type="search" placeholder="搜索题目，如：质数、最大公因数、3的倍数……" aria-label="搜索题目"></label>
-        <button class="tool-btn primary" id="randomBtn" type="button">随机抽一题</button>
+        <button data-workspace-action="primary" class="tool-btn primary" id="randomBtn" type="button">随机抽一题</button>
         <button class="tool-btn" id="browseBtn" type="button">浏览全部问题</button>
         <button class="tool-btn" id="printBtn" type="button">打印当前题目</button>
     </div>

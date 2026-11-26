@@ -42,9 +42,11 @@
         const shadow = host.attachShadow({mode: 'open'});
         shadow.innerHTML = `
           <link rel="stylesheet" href="../lesson-practice.css">
+          <link rel="stylesheet" href="/suite-lesson.css">
           <aside class="launcher" aria-label="本课">
-            <span id="prompt"></span>
-            <button id="open" type="button" aria-haspopup="dialog">分层练习</button>
+            <span id="prompt" class="prompt"></span>
+            <a class="open-course" href="/#study-route">课程顺序</a>
+            <button id="open" class="open-practice" type="button" aria-haspopup="dialog">分层练习</button>
           </aside>
           <dialog aria-labelledby="lesson-title">
             <div class="sheet">
@@ -311,7 +313,10 @@
         });
         get('close').addEventListener('click', () => dialog.close());
         dialog.addEventListener('close', () => get('open').focus());
-        document.body.prepend(host);
+        shadow.querySelector('.open-course').href = '/#unit-' + encodeURIComponent(slug);
+        const siteNav = document.querySelector('.ym-suite-nav');
+        if (siteNav) siteNav.after(host);
+        else document.body.prepend(host);
         const linkedLevel = new URLSearchParams(location.search).get('practice');
         if (['1', '2', '3'].includes(linkedLevel)) {
             level = Number(linkedLevel) - 1;

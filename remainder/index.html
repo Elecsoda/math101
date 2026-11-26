@@ -28,8 +28,22 @@
     <script src="../practice-integer.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -967,7 +981,7 @@
                     <LevelPicker value={level} onChange={onLevel} />
                     <div className="flex items-center gap-3">
                         <InlineEq dividend={dividend} divisor={divisor} q={q} r={r} showAns={step >= maxStep} />
-                        <button onClick={() => newProblem()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 smooth-transition">换一题</button>
+                        <button data-workspace-action="secondary" onClick={() => newProblem()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 smooth-transition">换一题</button>
                     </div>
 
                     <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start justify-center w-full">
@@ -1003,7 +1017,7 @@
                     <LevelPicker value={level} onChange={onLevel} />
                     <div className="flex items-center gap-3">
                         <InlineEq dividend={dividend} divisor={divisor} q={q} r={r} showAns />
-                        <button onClick={() => newProblem()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 smooth-transition">换一题</button>
+                        <button data-workspace-action="secondary" onClick={() => newProblem()} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold text-gray-700 smooth-transition">换一题</button>
                     </div>
 
                     <div className="bg-white rounded-xl shadow p-6 w-full max-w-xl">
@@ -1150,7 +1164,7 @@
                         {result === 'show' && <div className="text-gray-500 fade-in">正确答案：商 = <b className="text-blue-600">{q}</b>，余数 = <b className="text-rose-500">{r}</b></div>}
 
                         <div className="flex gap-3 flex-wrap justify-center">
-                            <button onClick={check} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-indigo-500 hover:bg-indigo-600 smooth-transition">检查</button>
+                            <button data-workspace-action="primary" onClick={check} className="px-6 py-2.5 rounded-lg font-semibold text-white bg-indigo-500 hover:bg-indigo-600 smooth-transition">检查</button>
                             <button onClick={() => setResult(result === 'show' ? null : 'show')} className="px-4 py-2.5 rounded-lg font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 smooth-transition">
                                 {result === 'show' ? '隐藏答案' : '看答案'}
                             </button>

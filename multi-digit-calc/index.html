@@ -24,8 +24,22 @@
     <script src="../practice-integer.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useMemo, useEffect } = React;
@@ -61,7 +75,7 @@
                 <div className="flex flex-col items-center gap-3 mt-6">
                     <div className="text-slate-600 font-semibold text-center min-h-[1.5rem] px-4">{labels[step]}</div>
                     <div className="flex gap-3">
-                        <button onClick={onReset} disabled={step === 0}
+                        <button data-workspace-action="secondary" onClick={onReset} disabled={step === 0}
                             className="px-5 py-2.5 rounded-lg font-semibold smooth-transition bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700">重来</button>
                         <button onClick={onNext} disabled={step === maxStep}
                             className={"px-6 py-2.5 rounded-lg font-semibold smooth-transition text-white disabled:opacity-40 " + btn}>
@@ -225,7 +239,7 @@
                                 <NumberInput label="每份数" value={a} min={11} max={29} onChange={v => { setA(v); setStep(0); }} />
                                 <span className="text-2xl font-bold text-slate-400">×</span>
                                 <NumberInput label="份数" value={b} min={2} max={9} onChange={v => { setB(v); setStep(0); }} color="emerald" />
-                                <button onClick={randomize}
+                                <button data-workspace-action="secondary" onClick={randomize}
                                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
                             </div>
                         </Card>
@@ -245,7 +259,7 @@
                             <NumberInput label="每份数" value={a} min={11} max={29} onChange={v => { setA(v); setStep(0); }} />
                             <span className="text-2xl font-bold text-slate-400">×</span>
                             <NumberInput label="份数" value={b} min={2} max={9} onChange={v => { setB(v); setStep(0); }} color="emerald" />
-                            <button onClick={randomize}
+                            <button data-workspace-action="secondary" onClick={randomize}
                                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
                         </div>
                         <p className="text-center text-sm text-slate-500 mt-3">
@@ -594,7 +608,7 @@
                             <NumberInput label="多位数" value={a} min={10} max={9999} onChange={v => { setA(v); setStep(0); }} />
                             <span className="text-2xl font-bold text-slate-400">×</span>
                             <NumberInput label="一位数" value={b} min={2} max={9} onChange={v => { setB(v); setStep(0); }} color="emerald" />
-                            <button onClick={randomize}
+                            <button data-workspace-action="secondary" onClick={randomize}
                                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
                         </div>
                     </Card>
@@ -706,7 +720,7 @@
                             <NumberInput label="因数一" value={a} min={10} max={99} onChange={v => { setA(v); setStep(0); }} />
                             <span className="text-2xl font-bold text-slate-400">×</span>
                             <NumberInput label="因数二" value={b} min={10} max={99} onChange={v => { setB(v); setStep(0); }} color="emerald" />
-                            <button onClick={randomize}
+                            <button data-workspace-action="secondary" onClick={randomize}
                                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
                         </div>
                     </Card>
@@ -815,7 +829,7 @@
                             <NumberInput label="因数一" value={a} min={10} max={9990} onChange={setA} />
                             <span className="text-2xl font-bold text-slate-400">×</span>
                             <NumberInput label="因数二" value={b} min={10} max={990} onChange={setB} color="emerald" />
-                            <button onClick={() => { setA([120, 250, 480, 306, 1200][Math.floor(Math.random() * 5)]); setB([40, 30, 50, 20, 60][Math.floor(Math.random() * 5)]); }}
+                            <button data-workspace-action="secondary" onClick={() => { setA([120, 250, 480, 306, 1200][Math.floor(Math.random() * 5)]); setB([40, 30, 50, 20, 60][Math.floor(Math.random() * 5)]); }}
                                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700 smooth-transition">换一题</button>
                         </div>
                     </Card>
@@ -965,7 +979,7 @@
 
                         <div className="mt-5 flex gap-3 justify-center">
                             {!checked
-                                ? <button onClick={submit} disabled={input === ''}
+                                ? <button data-workspace-action="primary" onClick={submit} disabled={input === ''}
                                     className="px-8 py-2.5 rounded-lg font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 smooth-transition">检查</button>
                                 : <button onClick={next}
                                     className="px-8 py-2.5 rounded-lg font-semibold text-white bg-emerald-500 hover:bg-emerald-600 smooth-transition">下一题</button>}

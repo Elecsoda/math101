@@ -1,0 +1,118 @@
+/* Course controls live in shadow roots, so all subjects load this sheet there. */
+:host {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    grid-column: 1 / -1;
+    flex: none;
+    color: var(--ym-ink, #183b37);
+    font: 400 16px/1.55 var(--ym-font, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif);
+    background: var(--ym-surface, #fff);
+    border-bottom: 1px solid var(--ym-line, #d4dfda);
+}
+.launcher {
+    width: min(calc(100% - 32px), 1120px);
+    min-height: 66px;
+    margin: auto;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    background: transparent;
+    border: 0;
+}
+.launcher :is(.prompt, #prompt) {
+    flex: 1;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ym-muted, #536863);
+}
+button, .open-course, .question-link, .activity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid var(--ym-line, #d4dfda);
+    border-radius: 12px;
+    background: var(--ym-surface, #fff);
+    color: var(--ym-ink, #183b37);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    cursor: pointer;
+}
+button:hover, .open-course:hover, .question-link:hover, .activity:hover {
+    border-color: var(--ym-accent, #176554);
+    background: #eef5f1;
+}
+button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible, select:focus-visible {
+    outline: 3px solid #217b68;
+    outline-offset: 3px;
+}
+.launcher .open-course, .launcher :is(#open, .open-practice) { white-space: nowrap; }
+.launcher .open-course { color: var(--ym-accent, #176554); }
+.launcher :is(#open, .open-practice), .primary, .extra-actions button[type="submit"],
+:is(#levels, .levels) button[aria-pressed="true"] {
+    background: var(--ym-accent, #176554);
+    border-color: var(--ym-accent, #176554);
+    color: #fff;
+    font-weight: 650;
+}
+dialog {
+    width: min(620px, calc(100% - 24px));
+    max-height: min(88dvh, 820px);
+    margin: auto;
+    padding: 0;
+    color: var(--ym-ink, #183b37);
+    background: #fff;
+    border: 1px solid var(--ym-line, #d4dfda);
+    border-radius: 16px;
+    box-shadow: 0 18px 60px #183b3729;
+}
+dialog::backdrop { background: rgb(16 38 34 / 52%); }
+.sheet { padding: clamp(16px, 3vw, 28px); }
+.dialog-head { gap: 12px; align-items: flex-start; margin: 0 0 12px; }
+.dialog-head button { flex: none; }
+h2 { color: var(--ym-ink, #183b37); font-size: clamp(20px, 3vw, 24px); line-height: 1.35; }
+:is(.eyebrow, .availability, .progress, .prior, .pick, .kind, .question-link small) { color: var(--ym-muted, #536863); }
+:is(#levels, .levels) { display: flex; gap: 6px; margin: 16px 0; }
+:is(#levels, .levels) button { flex: 1; }
+:is(.option, .extra-option, .entry input, .extra-answer input, .pick select) {
+    min-height: 44px;
+    border: 1px solid var(--ym-line, #d4dfda);
+    border-radius: 10px;
+    color: var(--ym-ink, #183b37);
+}
+.option:has(input:checked), .extra-option:has(input:checked) {
+    border-color: var(--ym-accent, #176554);
+    background: #eaf4ef;
+}
+input[type="radio"] { accent-color: var(--ym-accent, #176554); }
+.question-link { justify-content: space-between; }
+.sequence button { justify-content: flex-start; }
+.explanation, .extra-explanation {
+    padding: 10px 14px;
+    border: 0;
+    border-left: 3px solid var(--ym-accent, #176554);
+    border-radius: 0 8px 8px 0;
+    background: #eff6f2;
+    color: var(--ym-ink, #183b37);
+}
+summary, a, .method { color: var(--ym-accent, #176554); }
+@media (max-width: 560px) {
+    .launcher {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        justify-content: start;
+        gap: 8px;
+        padding: 10px 0 12px;
+    }
+    .launcher :is(.prompt, #prompt) { grid-column: 1 / -1; width: min(100%, calc(100vw - 32px)); font-size: 14px; }
+    .launcher :is(#open, .open-practice) { justify-self: start; }
+}
+@media print { :host { display: none; } }

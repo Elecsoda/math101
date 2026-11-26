@@ -30,8 +30,22 @@
     <script src="../practice-rational.js" defer></script>
     <script src="../practice-models.js" defer></script>
     <script src="../practice-sources.js" defer></script>
-</head>
+<link rel="stylesheet" href="/math-suite.css">
+<link rel="stylesheet" href="/suite-explorer.css"></head>
 <body>
+<nav class="ym-suite-nav cross-nav" aria-label="数学工具站">
+  <div class="ym-nav-inner">
+    <a class="ym-nav-home" href="/" aria-label="数学工具站，计算首页"><span class="ym-nav-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ym-nav-brand">数学工具站</span></a>
+    <div class="ym-nav-sites">
+      <a class="ym-nav-link" href="/" aria-current="location">计算</a>
+      <a class="ym-nav-link" href="https://math102.yumath.com/">几何</a>
+      <a class="ym-nav-link" href="https://math103.yumath.com/">应用题</a>
+      <a class="ym-nav-link" href="https://math104.yumath.com/">奥数思维</a>
+      <a class="ym-nav-link" href="https://math105.yumath.com/">思维题库</a>
+    </div>
+  </div>
+</nav>
+
     <div id="root"></div>
     <script type="text/babel">
         const { useEffect, useMemo, useState, useRef } = React;
@@ -101,8 +115,8 @@
 
         const StepButtons = ({ step, setStep, max }) => (
             <div className="flex justify-center gap-3 mt-5">
-                {step > 0 && <button onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
-                {step < max && <button onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
+                {step > 0 && <button data-workspace-action="secondary" onClick={() => setStep(step - 1)} className="px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 smooth">← 上一步</button>}
+                {step < max && <button data-workspace-action="primary" onClick={() => setStep(step + 1)} className="px-6 py-2.5 rounded-xl bg-slate-800 text-white hover:bg-slate-700 shadow smooth">下一步 →</button>}
                 {step === max && <button onClick={() => setStep(0)} className="px-6 py-2.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow smooth">再演示一次 ↻</button>}
             </div>
         );
@@ -135,7 +149,7 @@
         const Bar = ({ den, filled, width = 320, height = 46, color = C.a, groupEvery = 0, animKey = '', faded = false }) => {
             const seg = width / den;
             return (
-                <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="max-w-full overflow-visible">
+                <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="max-w-full h-auto overflow-visible">
                     {Array.from({ length: den }).map((_, i) => (
                         <rect key={animKey + i} className="piece-in" style={{ animationDelay: `${i * .03}s` }}
                             x={i * seg} y={2} width={seg} height={height - 4}
@@ -270,7 +284,7 @@
 
                         {/* 离散量：小圆点，最贴近"12个苹果"的现实情境 */}
                         <div className="flex justify-center mb-4">
-                            <svg width={perRow * (BOX + GAP)} height={Math.ceil(whole / perRow) * (BOX + GAP) + 26} className="max-w-full overflow-visible">
+                            <svg width={perRow * (BOX + GAP)} height={Math.ceil(whole / perRow) * (BOX + GAP) + 26} className="max-w-full h-auto overflow-visible">
                                 {Array.from({ length: whole }).map((_, i) => {
                                     const groupIdx = Math.floor(i / per);           // 属于第几份
                                     const picked = step >= 2 && groupIdx < n;
@@ -369,12 +383,12 @@
                         </p>
                     </Card>
 
-                    <div className="grid lg:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                         <Card>
                             {/* c/d 画成横条（沿高度方向取），a/b 画成竖条（沿宽度方向取），标签必须与图形一致 */}
                             <StepDots step={step} labels={['整张纸', `横折取 ${c}/${d}`, `竖折取 ${a}/${b}`, '数重叠格']} />
                             <div className="flex justify-center">
-                                <svg width={S + 46} height={S + 46} viewBox={`0 0 ${S + 46} ${S + 46}`} className="max-w-full overflow-visible">
+                                <svg width={S + 46} height={S + 46} viewBox={`0 0 ${S + 46} ${S + 46}`} className="max-w-full h-auto overflow-visible">
                                     <g transform="translate(40, 6)">
                                         {/* 底色 */}
                                         <rect x="0" y="0" width={S} height={S} fill={C.empty} stroke={C.strong} strokeWidth="3" />
@@ -561,7 +575,7 @@
                         <StepDots step={step} labels={['原来有多少', divisible ? `${n} 份分成 ${k} 堆` : `每份再切 ${k} 小份`, '每人得多少', '发现规律']} />
 
                         <div className="flex justify-center mb-4">
-                            <svg width={W + 8} height={H} viewBox={`0 0 ${W + 8} ${H}`} className="max-w-full overflow-visible">
+                            <svg width={W + 8} height={H} viewBox={`0 0 ${W + 8} ${H}`} className="max-w-full h-auto overflow-visible">
                                 <g transform="translate(4,10)">
                                     {/* 原始的 d 等分长条 */}
                                     {Array.from({ length: d }).map((_, i) => (
@@ -669,7 +683,7 @@
                     <Card>
                         <p className="text-center text-slate-500 text-sm mb-3">👇 点「再装一瓶」，一瓶一瓶地量过去，数一数能装几瓶</p>
                         <div className="flex justify-center mb-4">
-                            <svg width={W + 10} height={H + 46} viewBox={`0 0 ${W + 10} ${H + 46}`} className="max-w-full overflow-visible">
+                            <svg width={W + 10} height={H + 46} viewBox={`0 0 ${W + 10} ${H + 46}`} className="max-w-full h-auto overflow-visible">
                                 <g transform="translate(5,8)">
                                     {/* 被除数长条：按公分母切成小格 */}
                                     {Array.from({ length: common }).map((_, i) => (

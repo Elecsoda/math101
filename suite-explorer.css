@@ -1,0 +1,139 @@
+/* Presentation of the arithmetic and geometry workspaces. Drawing surfaces and
+   their controls keep their coordinate systems and mathematical colour keys. */
+html body {
+    margin: 0;
+    padding: 0;
+    background: var(--ym-bg, #f4f7f5);
+    color: var(--ym-ink, #183b37);
+    font-family: var(--ym-font, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif);
+}
+body > :is(.page, main, #app, .max-w-4xl, .max-w-5xl),
+#root > :has(h1) {
+    box-sizing: border-box;
+    width: min(calc(100% - 64px), 1120px);
+    max-width: none;
+    margin-inline: auto;
+    padding: clamp(16px, 2.5vw, 28px) 0 28px;
+    background: transparent;
+}
+body:has(.ym-suite-nav) h1 {
+    margin: 0;
+    color: var(--ym-ink, #183b37) !important;
+    font: 700 clamp(26px, 3vw, 30px)/1.35 var(--ym-font, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif) !important;
+    letter-spacing: -.025em;
+    text-align: start;
+    text-shadow: none;
+}
+html body :is(header, nav, .topbar):has(h1) {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: start;
+    color: var(--ym-ink, #183b37);
+    background: transparent;
+    box-shadow: none;
+}
+body .hero:has(h1)::before, body .hero:has(h1)::after { content: none; }
+body :is(header, .topbar, nav):has(h1) :is(.home, .home-link, [href="/"], [href="../"], .brand-icon, .brand > .icon) { display: none; }
+body :is(header, .topbar):has(h1) :is(.brand, .hero-top) { color: inherit; }
+body :is(header, .topbar, nav):has(h1) h1 + p:not(:empty) {
+    margin: 6px 0 0;
+    color: var(--ym-muted, #536863);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+body :is(header, .topbar):has(h1) h1 + p:empty { display: none; }
+body main > h1 { margin-bottom: 16px; }
+body :is(.tabs, .mode-tabs, .category-nav, .lesson-nav, .lesson-nav-wrap) {
+    border-color: var(--ym-line, #d4dfda);
+    background-color: transparent;
+    box-shadow: none;
+}
+body :is(.tabs, .mode-tabs, .category-nav, .lesson-nav) { max-width: 100%; }
+body :is(.topbar, header):has(h1) + .flex:has(> button) {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+body :is(.tab, .chip, .step, .category, .category-btn, .nav-button, .primary-button, .secondary-button, .small-btn, .tool-btn, .actions button, .toolbar .btn),
+body :is(header:has(h1) + .flex, nav[aria-label="知识模块"], .tabs, .mode-tabs) > button,
+body header:has(h1) > .flex > button {
+    border: 1px solid var(--ym-line, #d4dfda);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--ym-ink, #183b37);
+    box-shadow: none;
+    font-weight: 600;
+    line-height: 1.4;
+}
+body :is(.tab, .chip, .step, .category, .category-btn, .nav-button, .primary-button, .secondary-button, .small-btn, .tool-btn, .actions button, .toolbar .btn),
+body :is(header:has(h1) + .flex, nav[aria-label="知识模块"], .tabs, .mode-tabs) > button { min-height: 44px; }
+body :is(.tab, .chip, .step, .category, .mode, .category-btn, .nav-button, .actions button, .btn, .small-btn, .tool-btn):is(.active, .primary, [aria-pressed="true"]),
+body .segmented button.active,
+body .drawing-desk :is(button[aria-pressed="true"], .desk-primary),
+body :is(.tabs, .mode-tabs, .category-nav, .lesson-nav, nav[aria-label="知识模块"], header:has(h1) + .flex) > button:is(.active, [aria-pressed="true"], .text-white),
+body header:has(h1) > .flex > button.text-white,
+body button.primary-button {
+    border-color: var(--ym-accent, #176554);
+    color: #fff;
+    background: var(--ym-accent, #176554);
+}
+body :is(.tab, .category-btn, .nav-button).active :is(small, .nav-index) { color: inherit; }
+body .nav-button.active .nav-index { background: transparent; }
+body button[data-workspace-action] {
+    min-height: 44px;
+    border: 1px solid var(--ym-line, #d4dfda);
+    border-radius: 12px;
+    background: white;
+    color: var(--ym-ink, #183b37);
+    box-shadow: none;
+    font-weight: 600;
+}
+body button[data-workspace-action="primary"] {
+    background: var(--ym-accent, #176554);
+    border-color: var(--ym-accent, #176554);
+    color: white;
+}
+body button[data-workspace-action]:disabled { opacity: .5; }
+body :is(.card, .panel, .question-card, .question-sheet, .workspace, .module-card),
+body :is(.bg-white.rounded-3xl, .bg-white.shadow-xl, .bg-white.shadow-lg) {
+    border-color: var(--ym-line, #d4dfda);
+    border-radius: 12px;
+    background-color: #fff;
+    box-shadow: 0 2px 9px rgb(24 59 55 / 5%);
+}
+body button:focus-visible, body input:focus-visible, body select:focus-visible {
+    outline: 3px solid #217b68;
+    outline-offset: 2px;
+}
+body :is(select, input[type="text"], input[type="number"], input[type="search"]):not([class*="absolute"]) {
+    border-color: var(--ym-line, #d4dfda);
+    border-radius: 9px;
+}
+@media (max-width: 720px) {
+    body > :is(.page, main, #app, .max-w-4xl, .max-w-5xl), #root > :has(h1) {
+        width: calc(100% - 32px);
+    }
+}
+@media (max-width: 510px) {
+    body > :is(.page, main, #app, .max-w-4xl, .max-w-5xl), #root > :has(h1) {
+        width: calc(100% - 24px);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    body :is(.fade-in, .piece-in, .slide-in, .view.active) { animation: none; }
+}
+@media (max-width: 560px) {
+    body :is(.tabs, .mode-tabs) { flex-wrap: wrap; }
+    body .page > :is(.tabs, nav.mode-tabs) {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 94px), 1fr));
+    }
+}
